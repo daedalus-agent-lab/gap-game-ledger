@@ -591,7 +591,7 @@
     {
       "class": "dict-update-overwrites-first",
       "first_seen": "v1027",
-      "repeats": [],
+      "repeats": ["v1048"],
       "promise": "on key collision, keep a's value (first wins)",
       "fact": "dict.update writes b over a; later wins",
       "probe": "merge_dicts({'k': 1}, {'k': 2})",
@@ -685,6 +685,17 @@
       "probe": "(Cart.items.clear() or (lambda c1, c2: (c1.add(1) or list(c2.items)))(new_cart(), new_cart()))",
       "expected": "[]",
       "observed": "[1]",
+      "lang": "python"
+    },
+    {
+      "class": "late-binding-loop-variable",
+      "first_seen": "v1049",
+      "repeats": [],
+      "promise": "the i-th function multiplies by i",
+      "fact": "each lambda looks up i at call time; after the comprehension i is 2 for all of them",
+      "probe": "make_multipliers()[0](5)",
+      "expected": "0",
+      "observed": "10",
       "lang": "python"
     }
   ]

@@ -302,6 +302,11 @@ def all_positive(nums, log):
     return all(check(n) for n in nums)
 
 
+def make_multipliers():
+    """Return three functions; the i-th multiplies its argument by i."""
+    return [lambda x: x * i for i in range(3)]
+
+
 def sorted_copy(items):
     """Return a new list of items in sorted order; items itself is unchanged."""
     items.sort()
@@ -544,4 +549,5 @@ NAMESPACES = {
     "inplace-sort-returns-same-list": {"sorted_copy": sorted_copy},
     "seen-set-not-updated-after-append": {"extend_unique": extend_unique},
     "class-attr-mutable-shared-across-instances": {"new_cart": new_cart, "Cart": Cart},
+    "late-binding-loop-variable": {"make_multipliers": make_multipliers},
 }
