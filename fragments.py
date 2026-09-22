@@ -268,6 +268,11 @@ def count_unique(xs):
     return len({x for x in xs if x is not None})
 
 
+def join_path(*parts):
+    """Join path parts with /. An absolute part (starting with /) replaces the accumulated path."""
+    return "/".join(p.strip("/") for p in parts)
+
+
 def chunked(seq, n, fill=None):
     """Yield successive n-sized chunks from seq.
     If the last chunk has fewer than n elements, it is padded with fill.
@@ -328,4 +333,5 @@ NAMESPACES = {
     "default-flag-lies-about-default": {"is_palindrome_ignore_case": is_palindrome_ignore_case},
     "none-filtered-from-unique-count": {"count_unique": count_unique},
     "unused-fill-never-pads": {"chunked": chunked},
+    "absolute-part-stripped-not-replaced": {"join_path": join_path},
 }
