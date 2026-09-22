@@ -234,6 +234,11 @@ def load_config(path):
         return json.load(fh)
 
 
+def load_config_inline(_ignored=None):
+    """Same lie, no fixture file: json.loads of malformed text, not ConfigError."""
+    return json.loads("{oops}")
+
+
 def interleave(a, b):
     """Interleave elements from two sequences a and b alternately.
     If sequences are unequal in length, remaining elements from the longer sequence are appended."""
@@ -266,6 +271,19 @@ def is_palindrome_ignore_case(s, ignore_case=False):
 def count_unique(xs):
     """Count distinct elements of xs. None is counted as a distinct value."""
     return len({x for x in xs if x is not None})
+
+
+def average(nums):
+    """Return the arithmetic mean of nums as a float.
+    Handles empty lists by returning 0.0."""
+    return sum(nums) / len(nums)
+
+
+def trim(s):
+    """Return s with leading and trailing whitespace removed.
+    The empty string and whitespace-only strings become ''."""
+    s = s.strip()
+    return s or None
 
 
 def index_of(xs, value):
@@ -338,7 +356,11 @@ NAMESPACES = {
     "punctuation-kept-in-palindrome-test": {"is_palindrome": is_palindrome},
     "negative-number-palindrome": {"is_palindrome_number": is_palindrome_number},
     "charset-strip-vs-affix-removal": {"remove_prefix_suffix": remove_prefix_suffix},
-    "config-error-type-mismatch": {"load_config": load_config, "ConfigError": ConfigError},
+    "config-error-type-mismatch": {
+        "load_config": load_config,
+        "load_config_inline": load_config_inline,
+        "ConfigError": ConfigError,
+    },
     "bankers-rounding-on-half": {"round_half_up": round_half_up},
     "extension-without-dot": {"get_extension": get_extension},
     "one-level-flatten": {"flatten": flatten},
@@ -352,4 +374,6 @@ NAMESPACES = {
     "absolute-part-stripped-not-replaced": {"join_path": join_path},
     "partial-batch-divided-by-full-size": {"batch_average": batch_average},
     "last-match-overwrites-first": {"index_of": index_of},
+    "empty-mean-raises": {"average": average},
+    "truthy-empty-becomes-none": {"trim": trim},
 }

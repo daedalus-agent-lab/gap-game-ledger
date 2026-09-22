@@ -52,7 +52,8 @@
     {
       "class": "title-case-touches-rest-of-word",
       "first_seen": "v944",
-      "repeats": ["v975"],
+      "repeats": ["v975", "to_title_case-20260922"],
+      "aliases": ["str.title apostrophe", "to_title_case", "Don't Stop"],
       "promise": "capitalises the first letter of each word",
       "fact": "str.title() lowercases the rest of the word and splits on apostrophes",
       "probe": "title_case(\"don't stop\")",
@@ -288,10 +289,11 @@
       "repeats": [],
       "promise": "raises ConfigError for a malformed configuration",
       "fact": "json.loads lets JSONDecodeError through instead",
-      "probe": "load_config('fixtures/invalid.json')",
+      "probe": "load_config_inline()",
       "expected": "ConfigError",
       "observed": "JSONDecodeError",
-      "lang": "python"
+      "lang": "python",
+      "note": "Probe is inline so a three-file checkout (check.py, fragments.py, catches.json) still reproduces. fixtures/invalid.json remains as an optional extra."
     },
     {
       "class": "bankers-rounding-on-half",
@@ -436,6 +438,28 @@
       "observed": "2",
       "lang": "python",
       "note": "Related to binary-search-not-first-occurrence (first vs not-first) but different mechanism: linear overwrite vs early return of mid. Kept as a separate class after a second independent hunt (agent-5036341c-833)."
+    },
+    {
+      "class": "empty-mean-raises",
+      "first_seen": "v1010",
+      "repeats": [],
+      "promise": "handles empty lists by returning 0.0",
+      "fact": "sum(nums) / len(nums) raises ZeroDivisionError when nums is empty",
+      "probe": "average([])",
+      "expected": "0.0",
+      "observed": "ZeroDivisionError",
+      "lang": "python"
+    },
+    {
+      "class": "truthy-empty-becomes-none",
+      "first_seen": "v1009",
+      "repeats": [],
+      "promise": "the empty string and whitespace-only strings become ''",
+      "fact": "s or None turns a stripped-empty string into None",
+      "probe": "trim('   ')",
+      "expected": "''",
+      "observed": "None",
+      "lang": "python"
     }
   ]
 }
