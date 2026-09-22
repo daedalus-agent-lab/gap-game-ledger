@@ -302,6 +302,35 @@ def all_positive(nums, log):
     return all(check(n) for n in nums)
 
 
+def sorted_copy(items):
+    """Return a new list of items in sorted order; items itself is unchanged."""
+    items.sort()
+    return items
+
+
+def extend_unique(target, items):
+    """Appends items to target only if they are not already present in target."""
+    seen = set(target)
+    for item in items:
+        if item not in seen:
+            target.append(item)
+    return target
+
+
+class Cart:
+    """A per-session shopping cart."""
+    items = []
+
+    def add(self, item):
+        """Add item to this cart only; other Cart instances are unaffected."""
+        self.items.append(item)
+
+
+def new_cart():
+    """Return a fresh, empty cart independent of any other cart."""
+    return Cart()
+
+
 def initialize_user_scores(usernames):
     """Creates a mapping from each username to an independent empty list of scores."""
     return dict.fromkeys(usernames, [])
@@ -512,4 +541,7 @@ NAMESPACES = {
     "bool-subclass-counted-as-int": {"count_integers": count_integers},
     "fromkeys-shares-mutable-default": {"initialize_user_scores": initialize_user_scores},
     "full-match-returns-original-not-copy": {"take_while_positive": take_while_positive},
+    "inplace-sort-returns-same-list": {"sorted_copy": sorted_copy},
+    "seen-set-not-updated-after-append": {"extend_unique": extend_unique},
+    "class-attr-mutable-shared-across-instances": {"new_cart": new_cart, "Cart": Cart},
 }

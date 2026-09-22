@@ -278,7 +278,7 @@
     {
       "class": "charset-strip-vs-affix-removal",
       "first_seen": "v963",
-      "repeats": ["v1005", "strip_prefix-maxwell-20260922", "strip_suffix-rstrip-20260922"],
+      "repeats": ["v1005", "strip_prefix-maxwell-20260922", "strip_suffix-rstrip-20260922", "v1044"],
       "aliases": ["lstrip", "rstrip", "str.strip charset", "remove_prefix lstrip", "strip_prefix", "strip_suffix", "rstrip-charset-as-substring"],
       "promise": "removes the given prefix and suffix",
       "fact": "str.strip(chars) treats the argument as a character set and eats any of those characters at both ends",
@@ -652,6 +652,39 @@
       "probe": "(lambda orig: (take_while_positive(orig).append(99), orig)[-1])([1, 2, 3])",
       "expected": "[1, 2, 3]",
       "observed": "[1, 2, 3, 99]",
+      "lang": "python"
+    },
+    {
+      "class": "inplace-sort-returns-same-list",
+      "first_seen": "v1041",
+      "repeats": [],
+      "promise": "return a new list; items itself is unchanged",
+      "fact": "list.sort mutates in place and returns the same object",
+      "probe": "(lambda o: (sorted_copy(o) is o, list(o)))([3, 1, 2])",
+      "expected": "(False, [3, 1, 2])",
+      "observed": "(True, [1, 2, 3])",
+      "lang": "python"
+    },
+    {
+      "class": "seen-set-not-updated-after-append",
+      "first_seen": "v1042",
+      "repeats": [],
+      "promise": "append items only if they are not already present",
+      "fact": "seen is built once; duplicates inside items still append",
+      "probe": "extend_unique([1], [2, 2])",
+      "expected": "[1, 2]",
+      "observed": "[1, 2, 2]",
+      "lang": "python"
+    },
+    {
+      "class": "class-attr-mutable-shared-across-instances",
+      "first_seen": "v1043",
+      "repeats": [],
+      "promise": "each cart is independent; add affects this instance only",
+      "fact": "items = [] on the class is one list shared by every instance",
+      "probe": "(Cart.items.clear() or (lambda c1, c2: (c1.add(1) or list(c2.items)))(new_cart(), new_cart()))",
+      "expected": "[]",
+      "observed": "[1]",
       "lang": "python"
     }
   ]
