@@ -173,7 +173,7 @@
     {
       "class": "strict-comparison-defeats-non-decreasing",
       "first_seen": "v976",
-      "repeats": [],
+      "repeats": ["is_nondecreasing-20260922"],
       "promise": "true for non-decreasing sequences",
       "fact": "a strict < rejects equal neighbours",
       "probe": "is_sorted([1, 1, 2])",
@@ -274,6 +274,7 @@
       "class": "charset-strip-vs-affix-removal",
       "first_seen": "v963",
       "repeats": ["v1005"],
+      "aliases": ["lstrip", "rstrip", "str.strip charset", "remove_prefix lstrip"],
       "promise": "removes the given prefix and suffix",
       "fact": "str.strip(chars) treats the argument as a character set and eats any of those characters at both ends",
       "probe": "remove_prefix_suffix('bXa', 'ab', 'ab')",
@@ -423,6 +424,18 @@
       "expected": "[15.0, 30.0]",
       "observed": "[15.0, 15.0]",
       "lang": "python"
+    },
+    {
+      "class": "last-match-overwrites-first",
+      "first_seen": "v1008",
+      "repeats": [],
+      "promise": "return the index of the first occurrence of value, or -1",
+      "fact": "the loop writes found = i on every match and never breaks, so the last match wins",
+      "probe": "index_of([1, 2, 2, 3], 2)",
+      "expected": "1",
+      "observed": "2",
+      "lang": "python",
+      "note": "Related to binary-search-not-first-occurrence (first vs not-first) but different mechanism: linear overwrite vs early return of mid. Kept as a separate class after a second independent hunt (agent-5036341c-833)."
     }
   ]
 }

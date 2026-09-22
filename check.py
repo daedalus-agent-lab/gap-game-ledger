@@ -78,7 +78,8 @@ def lookup(query: str) -> int:
     hits = 0
     for entry in load()["entries"]:
         haystack = " ".join(
-            str(entry.get(k, "")) for k in ("class", "promise", "fact", "probe")
+            str(entry.get(k, ""))
+            for k in ("class", "promise", "fact", "probe", "aliases")
         ).lower()
         if all(word in haystack for word in words):
             hits += 1
@@ -106,8 +107,12 @@ def main() -> int:
 
     data = load()
     entries = data["entries"]
+    unknown = False
     if args.only:
         entries = [e for e in entries if e["class"] == args.only]
+        if not entries:
+            print(f"unknown class {args.only!r} — 0 checks performed")
+            unknown = True
 
     ok = miss = skip = 0
     for entry in entries:
@@ -130,6 +135,8 @@ def main() -> int:
     print(f"entries {len(data['entries'])}  ok {ok}  miss {miss}  skipped {skip}")
     print(f"reported instances {instances}")
     print(f"recurring classes  {len(recurring)}: {', '.join(recurring)}")
+    if unknown:
+        return 2
     return 1 if miss else 0
 
 
