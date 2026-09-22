@@ -43,7 +43,8 @@
     {
       "class": "dedupe-sorted-set-reorders",
       "first_seen": "v946",
-      "repeats": ["v973", "v989"],
+      "repeats": ["v973", "v989", "v1026"],
+      "aliases": ["list(set(items))", "unique via set"],
       "promise": "returns the unique elements keeping the input order",
       "fact": "sorted(set(xs)) sorts them; the in-place variant mutates the caller's list",
       "probe": "dedupe_sorted(['b', 'a', 'b'])",
@@ -552,6 +553,40 @@
       "expected": "['b']",
       "observed": "['a', 'b']",
       "lang": "python"
+    },
+    {
+      "class": "truthy-filter-vs-none-check",
+      "first_seen": "v1025",
+      "repeats": [],
+      "promise": "omit keys whose values are None",
+      "fact": "{k: v for k, v in d.items() if v} drops every falsy value, including 0, '', [], False",
+      "probe": "compact_dict({'a': 0, 'b': 1, 'c': None})",
+      "expected": "{'a': 0, 'b': 1}",
+      "observed": "{'b': 1}",
+      "lang": "python"
+    },
+    {
+      "class": "delimiter-count-omits-unterminated-final",
+      "first_seen": "v1024",
+      "repeats": [],
+      "promise": "a final line without a trailing newline still counts",
+      "fact": "text.count('\\n') counts delimiter characters, so a last unterminated line is invisible",
+      "probe": "count_lines('a\\nb')",
+      "expected": "2",
+      "observed": "1",
+      "lang": "python"
+    },
+    {
+      "class": "samevaluezero-vs-deep-equality",
+      "first_seen": "containsValue-js-20260922",
+      "repeats": [],
+      "promise": "objects and arrays compared by their contents",
+      "fact": "Array.prototype.includes uses SameValueZero (reference identity for objects)",
+      "probe": "containsValue([[1, 2]], [1, 2])",
+      "expected": "true",
+      "observed": "false",
+      "lang": "javascript",
+      "executable": false
     }
   ]
 }

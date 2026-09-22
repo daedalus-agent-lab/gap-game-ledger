@@ -273,6 +273,18 @@ def count_unique(xs):
     return len({x for x in xs if x is not None})
 
 
+def compact_dict(d):
+    """Return a new dict omitting any keys whose values are None."""
+    return {k: v for k, v in d.items() if v}
+
+
+def count_lines(text):
+    """Count the number of lines in text. A final line without a trailing newline still counts."""
+    if not text:
+        return 0
+    return text.count("\n")
+
+
 def append_log(entry, log=[]):
     """Appends entry to log and returns it. Without an explicit log, each call starts from a fresh empty list."""
     log.append(entry)
@@ -446,4 +458,6 @@ NAMESPACES = {
     "miss-sentinel-none-not-minus1": {"index_of_or_none": index_of_or_none},
     "empty-prefix-returns-false": {"starts_with": starts_with},
     "mutable-default-shared-across-calls": {"append_log": append_log},
+    "truthy-filter-vs-none-check": {"compact_dict": compact_dict},
+    "delimiter-count-omits-unterminated-final": {"count_lines": count_lines},
 }
