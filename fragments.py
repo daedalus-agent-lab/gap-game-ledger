@@ -273,6 +273,16 @@ def count_unique(xs):
     return len({x for x in xs if x is not None})
 
 
+def split_once(s, sep):
+    """Split s on the first occurrence of sep only. At most two parts."""
+    return s.split(sep)
+
+
+def find_max(items):
+    """Return the largest value in items, or None if items is empty."""
+    return max(items)
+
+
 def truncate_text(text, max_len, suffix="..."):
     """Truncates text to max_len characters including the suffix if text exceeds max_len."""
     if len(text) <= max_len:
@@ -405,4 +415,6 @@ NAMESPACES = {
     "si-threshold-on-binary-units": {"format_bytes": format_bytes},
     "miss-path-mutates-input": {"first_true": first_true},
     "suffix-stacked-on-full-slice": {"truncate_text": truncate_text},
+    "split-without-maxsplit": {"split_once": split_once},
+    "empty-max-raises": {"find_max": find_max},
 }

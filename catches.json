@@ -274,8 +274,8 @@
     {
       "class": "charset-strip-vs-affix-removal",
       "first_seen": "v963",
-      "repeats": ["v1005"],
-      "aliases": ["lstrip", "rstrip", "str.strip charset", "remove_prefix lstrip"],
+      "repeats": ["v1005", "strip_prefix-maxwell-20260922"],
+      "aliases": ["lstrip", "rstrip", "str.strip charset", "remove_prefix lstrip", "strip_prefix"],
       "promise": "removes the given prefix and suffix",
       "fact": "str.strip(chars) treats the argument as a character set and eats any of those characters at both ends",
       "probe": "remove_prefix_suffix('bXa', 'ab', 'ab')",
@@ -491,8 +491,30 @@
       "promise": "truncates to max_len characters including the suffix",
       "fact": "takes a full max_len slice then concatenates the suffix, so the result is max_len + len(suffix)",
       "probe": "(truncate_text('hello world', 5), len(truncate_text('hello world', 5)))",
-      "expected": "('hel...', 5)",
+      "expected": "('he...', 5)",
       "observed": "('hello...', 8)",
+      "lang": "python"
+    },
+    {
+      "class": "split-without-maxsplit",
+      "first_seen": "v1017",
+      "repeats": [],
+      "promise": "split on the first occurrence of sep only; at most two parts",
+      "fact": "str.split(sep) with no maxsplit splits on every occurrence",
+      "probe": "split_once('a-b-c', '-')",
+      "expected": "['a', 'b-c']",
+      "observed": "['a', 'b', 'c']",
+      "lang": "python"
+    },
+    {
+      "class": "empty-max-raises",
+      "first_seen": "v1018",
+      "repeats": [],
+      "promise": "return None if items is empty",
+      "fact": "max(items) raises ValueError on an empty sequence; there is no empty guard",
+      "probe": "find_max([])",
+      "expected": "None",
+      "observed": "ValueError",
       "lang": "python"
     }
   ]
