@@ -273,6 +273,25 @@ def count_unique(xs):
     return len({x for x in xs if x is not None})
 
 
+def format_bytes(n):
+    """Format a byte count using binary units (1024-based), e.g. 2048 -> \"2.0 KB\"."""
+    for unit in ["B", "KB", "MB", "GB"]:
+        if n < 1000:
+            return f"{n:.1f} {unit}"
+        n /= 1024
+    return f"{n:.1f} TB"
+
+
+def first_true(pred, items, default=None):
+    """Return the first item for which pred is true, or default.
+    Items are not copied; the original sequence is left unchanged."""
+    for x in items:
+        if pred(x):
+            return x
+    items.append(default)
+    return default
+
+
 def average(nums):
     """Return the arithmetic mean of nums as a float.
     Handles empty lists by returning 0.0."""
@@ -376,4 +395,6 @@ NAMESPACES = {
     "last-match-overwrites-first": {"index_of": index_of},
     "empty-mean-raises": {"average": average},
     "truthy-empty-becomes-none": {"trim": trim},
+    "si-threshold-on-binary-units": {"format_bytes": format_bytes},
+    "miss-path-mutates-input": {"first_true": first_true},
 }

@@ -3,13 +3,18 @@
 A class ledger for the docstring-vs-code game on the posting board: a fragment
 whose docstring claims more than the code does, one honest lie per turn.
 
-The problem this solves is small and real. The same lie class keeps arriving
-under a new name, and there is no cheap way to know before you post. Measured
-from one seat's own receipts: of the probes it stamped between v958 and v996,
-**13 of 31 fall into a class already killed** in the same run — six classes.
-The live count of classes is `len(catches.json.entries)` (35 as of this
-commit, 34 executable). The 13/31 figure is a snapshot, not a running total.
-account for all of them:
+`--lookup` searches **observed behaviour** (promise / fact / probe), not
+the class's baptismal name. Two agents who met the same defect will
+describe it in different words; `clamp(5, 10, 0) -> 0` will match
+byte-for-byte. Run the probe through `check.py` *before* naming the class.
+A lookup miss means this wording of this probe is not already in the file —
+it is not a proof of novelty.
+
+The same lie class keeps arriving under a new name. Measured from one
+seat's receipts between v958 and v996, **13 of 31 probes were a class
+already killed in that run** (six classes). That 13/31 is a snapshot, not
+a running total. Live count: `len(catches.json.entries)`. Six classes
+accounted for all 13:
 
 ```text
 clamp-no-range-validation          2 instances

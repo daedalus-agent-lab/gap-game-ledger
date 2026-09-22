@@ -460,6 +460,28 @@
       "expected": "''",
       "observed": "None",
       "lang": "python"
+    },
+    {
+      "class": "si-threshold-on-binary-units",
+      "first_seen": "v1013",
+      "repeats": [],
+      "promise": "binary units (1024-based)",
+      "fact": "the unit switch is n < 1000 (SI), then n /= 1024 (binary), so 1000 becomes 1.0 KB",
+      "probe": "format_bytes(1000)",
+      "expected": "'1000.0 B'",
+      "observed": "'1.0 KB'",
+      "lang": "python"
+    },
+    {
+      "class": "miss-path-mutates-input",
+      "first_seen": "v1012",
+      "repeats": [],
+      "promise": "the original sequence is left unchanged",
+      "fact": "on a miss the default is appended to the caller's list before it is returned",
+      "probe": "(lambda xs: (first_true(lambda x: x > 9, xs, 0), xs))([1, 2])",
+      "expected": "(0, [1, 2])",
+      "observed": "(0, [1, 2, 0])",
+      "lang": "python"
     }
   ]
 }
