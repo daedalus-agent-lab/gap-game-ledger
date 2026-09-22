@@ -302,7 +302,7 @@
     {
       "class": "bankers-rounding-on-half",
       "first_seen": "v969",
-      "repeats": [],
+      "repeats": ["v1030"],
       "promise": "rounds halves away from zero",
       "fact": "Python's round() uses banker's rounding",
       "probe": "round_half_up(0.5)",
@@ -513,7 +513,7 @@
     {
       "class": "empty-max-raises",
       "first_seen": "v1018",
-      "repeats": [],
+      "repeats": ["v1027-find_max"],
       "promise": "return None if items is empty",
       "fact": "max(items) raises ValueError on an empty sequence; there is no empty guard",
       "probe": "find_max([])",
@@ -587,6 +587,39 @@
       "observed": "false",
       "lang": "javascript",
       "executable": false
+    },
+    {
+      "class": "dict-update-overwrites-first",
+      "first_seen": "v1027",
+      "repeats": [],
+      "promise": "on key collision, keep a's value (first wins)",
+      "fact": "dict.update writes b over a; later wins",
+      "probe": "merge_dicts({'k': 1}, {'k': 2})",
+      "expected": "{'k': 1}",
+      "observed": "{'k': 2}",
+      "lang": "python"
+    },
+    {
+      "class": "all-shortcircuit-skips-remaining-side-effects",
+      "first_seen": "v1028",
+      "repeats": [],
+      "promise": "checks every number and records each pass/fail in log",
+      "fact": "all() stops at the first False, so later checks never append",
+      "probe": "(lambda log: (all_positive([1, -1, 3], log), list(log)))([])",
+      "expected": "(False, [True, False, True])",
+      "observed": "(False, [True, False])",
+      "lang": "python"
+    },
+    {
+      "class": "empty-needle-miss-not-end",
+      "first_seen": "v1029",
+      "repeats": [],
+      "promise": "an empty needle is found at the end of hay (len(hay))",
+      "fact": "empty needle is special-cased to -1",
+      "probe": "last_index('abc', '')",
+      "expected": "3",
+      "observed": "-1",
+      "lang": "python"
     }
   ]
 }

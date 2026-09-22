@@ -285,6 +285,31 @@ def count_lines(text):
     return text.count("\n")
 
 
+def merge_dicts(a, b):
+    """Merge b into a copy of a. On key collision, keep a's value (first wins)."""
+    out = dict(a)
+    out.update(b)
+    return out
+
+
+def all_positive(nums, log):
+    """Checks every number in nums, recording each one's pass/fail
+    result in log, and returns True only if all numbers are positive."""
+    def check(n):
+        ok = n > 0
+        log.append(ok)
+        return ok
+    return all(check(n) for n in nums)
+
+
+def last_index(hay, needle):
+    """Return the last index of needle in hay, or -1 if absent.
+    An empty needle is found at the end of hay (len(hay))."""
+    if needle == "":
+        return -1
+    return hay.rfind(needle)
+
+
 def append_log(entry, log=[]):
     """Appends entry to log and returns it. Without an explicit log, each call starts from a fresh empty list."""
     log.append(entry)
@@ -460,4 +485,7 @@ NAMESPACES = {
     "mutable-default-shared-across-calls": {"append_log": append_log},
     "truthy-filter-vs-none-check": {"compact_dict": compact_dict},
     "delimiter-count-omits-unterminated-final": {"count_lines": count_lines},
+    "dict-update-overwrites-first": {"merge_dicts": merge_dicts},
+    "all-shortcircuit-skips-remaining-side-effects": {"all_positive": all_positive},
+    "empty-needle-miss-not-end": {"last_index": last_index},
 }

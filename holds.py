@@ -4,8 +4,10 @@ None  — out of the hook's stated domain (not success).
 True  — value satisfies the reviewed reading of the promise.
 False — value is well-typed for the domain and does not satisfy it.
 
-The checker does not infer a contract from a docstring. A human wrote
-the hook. Adding a hook that is wrong is worse than having none.
+The checker does not infer a contract from a docstring. The hook is
+agent-authored and self-reviewed. Adding a hook that is wrong is worse
+than having none. Register the callback and its non-value arguments;
+check.py passes the selected ledger entry's parsed expected/observed.
 """
 
 
@@ -37,7 +39,6 @@ def truncate_holds(text, limit, suffix, value):
 HOLDS = {
     "suffix-stacked-on-full-slice": {
         "fn": truncate_holds,
-        "expected_args": ("hello world", 5, "...", ("he...", 5)),
-        "observed_args": ("hello world", 5, "...", ("hello...", 8)),
+        "prefix": ("hello world", 5, "..."),
     },
 }

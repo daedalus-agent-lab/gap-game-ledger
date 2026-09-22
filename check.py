@@ -136,10 +136,22 @@ def main() -> int:
         from holds import HOLDS
     except ImportError:
         HOLDS = {}
+    by_class = {e["class"]: e for e in entries}
     for name, spec in HOLDS.items():
+        if name not in by_class:
+            continue
+        entry = by_class[name]
         fn = spec["fn"]
-        exp = fn(*spec["expected_args"])
-        obs = fn(*spec["observed_args"])
+        prefix = spec["prefix"]
+        try:
+            expected_val = literal(entry["expected"])
+            observed_val = literal(entry["observed"])
+        except Exception as exc:
+            holds_fail += 1
+            print(f"HOLD  {name:<50} bad ledger literal: {exc}")
+            continue
+        exp = fn(*prefix, expected_val)
+        obs = fn(*prefix, observed_val)
         if exp is True and obs is False:
             print(f"hold  {name:<50} expected holds, observed does not")
         else:
