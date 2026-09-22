@@ -268,6 +268,25 @@ def count_unique(xs):
     return len({x for x in xs if x is not None})
 
 
+def chunked(seq, n, fill=None):
+    """Yield successive n-sized chunks from seq.
+    If the last chunk has fewer than n elements, it is padded with fill.
+    If fill is omitted, the last chunk is yielded as-is (short)."""
+    if n <= 0:
+        return
+    it = iter(seq)
+    while True:
+        chunk = []
+        for _ in range(n):
+            try:
+                chunk.append(next(it))
+            except StopIteration:
+                if chunk:
+                    yield chunk
+                return
+        yield chunk
+
+
 # --------------------------------------------------------- class -> namespace
 
 NAMESPACES = {
@@ -308,4 +327,5 @@ NAMESPACES = {
     "kv-value-not-stripped": {"parse_kv_pairs": parse_kv_pairs},
     "default-flag-lies-about-default": {"is_palindrome_ignore_case": is_palindrome_ignore_case},
     "none-filtered-from-unique-count": {"count_unique": count_unique},
+    "unused-fill-never-pads": {"chunked": chunked},
 }

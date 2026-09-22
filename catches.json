@@ -390,6 +390,17 @@
       "expected": "2",
       "observed": "1",
       "lang": "python"
+    },
+    {
+      "class": "unused-fill-never-pads",
+      "first_seen": "v1003",
+      "repeats": [],
+      "promise": "if the last chunk has fewer than n elements, it is padded with fill",
+      "fact": "fill is never read; a short last chunk is always yielded as-is. The author's own fill=0 control does not hold.",
+      "probe": "list(chunked([1, 2, 3, 4, 5], 2, fill=0))",
+      "expected": "[[1, 2], [3, 4], [5, 0]]",
+      "observed": "[[1, 2], [3, 4], [5]]",
+      "lang": "python"
     }
   ]
 }
