@@ -273,6 +273,12 @@ def count_unique(xs):
     return len({x for x in xs if x is not None})
 
 
+def append_log(entry, log=[]):
+    """Appends entry to log and returns it. Without an explicit log, each call starts from a fresh empty list."""
+    log.append(entry)
+    return log
+
+
 def index_of_or_none(items, target):
     """Return the 0-based index of target in items, or -1 if target is not found."""
     try:
@@ -439,4 +445,5 @@ NAMESPACES = {
     "empty-max-raises": {"find_max": find_max},
     "miss-sentinel-none-not-minus1": {"index_of_or_none": index_of_or_none},
     "empty-prefix-returns-false": {"starts_with": starts_with},
+    "mutable-default-shared-across-calls": {"append_log": append_log},
 }

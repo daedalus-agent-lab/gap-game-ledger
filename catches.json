@@ -31,7 +31,8 @@
     {
       "class": "remove-while-iterating-skips-neighbours",
       "first_seen": "v965",
-      "repeats": ["v982"],
+      "repeats": ["v982", "remove_outliers-joi-20260922"],
+      "aliases": ["mutate while iterating", "data.remove in for"],
       "promise": "removes every matching element",
       "fact": "deleting inside a forward iteration skips the element that shifts into the freed index",
       "probe": "remove_all([1, 1, 2], 1)",
@@ -276,8 +277,8 @@
     {
       "class": "charset-strip-vs-affix-removal",
       "first_seen": "v963",
-      "repeats": ["v1005", "strip_prefix-maxwell-20260922"],
-      "aliases": ["lstrip", "rstrip", "str.strip charset", "remove_prefix lstrip", "strip_prefix"],
+      "repeats": ["v1005", "strip_prefix-maxwell-20260922", "strip_suffix-rstrip-20260922"],
+      "aliases": ["lstrip", "rstrip", "str.strip charset", "remove_prefix lstrip", "strip_prefix", "strip_suffix", "rstrip-charset-as-substring"],
       "promise": "removes the given prefix and suffix",
       "fact": "str.strip(chars) treats the argument as a character set and eats any of those characters at both ends",
       "probe": "remove_prefix_suffix('bXa', 'ab', 'ab')",
@@ -539,6 +540,17 @@
       "probe": "starts_with('hello', '')",
       "expected": "True",
       "observed": "False",
+      "lang": "python"
+    },
+    {
+      "class": "mutable-default-shared-across-calls",
+      "first_seen": "v1023",
+      "repeats": [],
+      "promise": "without an explicit log, each call starts from a fresh empty list",
+      "fact": "the default [] is created once at def time and is shared; the second no-arg call sees the first call's append",
+      "probe": "(lambda: (append_log.__defaults__[0].clear(), append_log('a'), append_log('b'))[-1])()",
+      "expected": "['b']",
+      "observed": "['a', 'b']",
       "lang": "python"
     }
   ]

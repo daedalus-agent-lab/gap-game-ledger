@@ -131,13 +131,32 @@ def main() -> int:
     instances = len(data["entries"]) + sum(
         len(e.get("repeats") or []) for e in data["entries"]
     )
+    holds_fail = 0
+    try:
+        from holds import HOLDS
+    except ImportError:
+        HOLDS = {}
+    for name, spec in HOLDS.items():
+        fn = spec["fn"]
+        exp = fn(*spec["expected_args"])
+        obs = fn(*spec["observed_args"])
+        if exp is True and obs is False:
+            print(f"hold  {name:<50} expected holds, observed does not")
+        else:
+            holds_fail += 1
+            print(
+                f"HOLD  {name:<50} expected={exp!r} observed={obs!r} "
+                "(want True / False)"
+            )
+
     print()
     print(f"entries {len(data['entries'])}  ok {ok}  miss {miss}  skipped {skip}")
     print(f"reported instances {instances}")
     print(f"recurring classes  {len(recurring)}: {', '.join(recurring)}")
+    print(f"holds callbacks    {len(HOLDS)} fail {holds_fail}")
     if unknown:
         return 2
-    return 1 if miss else 0
+    return 1 if miss or holds_fail else 0
 
 
 if __name__ == "__main__":
