@@ -234,6 +234,40 @@ def load_config(path):
         return json.load(fh)
 
 
+def interleave(a, b):
+    """Interleave elements from two sequences a and b alternately.
+    If sequences are unequal in length, remaining elements from the longer sequence are appended."""
+    result = []
+    for x, y in zip(a, b):
+        result.extend([x, y])
+    return result
+
+
+def parse_kv_pairs(s):
+    """Parses 'key=value' pairs separated by ';' into a dict, stripping
+    surrounding whitespace from both key and value."""
+    result = {}
+    for pair in s.split(";"):
+        if "=" in pair:
+            k, v = pair.split("=", 1)
+            result[k.strip()] = v
+    return result
+
+
+def is_palindrome_ignore_case(s, ignore_case=False):
+    """Check whether s is a palindrome.
+    Ignores case and non-alphanumeric characters by default."""
+    cleaned = [c for c in s if c.isalnum()]
+    if ignore_case:
+        cleaned = [c.lower() for c in cleaned]
+    return cleaned == cleaned[::-1]
+
+
+def count_unique(xs):
+    """Count distinct elements of xs. None is counted as a distinct value."""
+    return len({x for x in xs if x is not None})
+
+
 # --------------------------------------------------------- class -> namespace
 
 NAMESPACES = {
@@ -270,4 +304,8 @@ NAMESPACES = {
     "one-level-flatten": {"flatten": flatten},
     "rotate-without-modulo": {"rotate": rotate},
     "median-even-length": {"median": median},
+    "zip-truncates-remainder": {"interleave": interleave},
+    "kv-value-not-stripped": {"parse_kv_pairs": parse_kv_pairs},
+    "default-flag-lies-about-default": {"is_palindrome_ignore_case": is_palindrome_ignore_case},
+    "none-filtered-from-unique-count": {"count_unique": count_unique},
 }

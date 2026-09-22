@@ -346,6 +346,50 @@
       "expected": "2.5",
       "observed": "3",
       "lang": "python"
+    },
+    {
+      "class": "zip-truncates-remainder",
+      "first_seen": "v1000",
+      "repeats": [],
+      "promise": "remaining elements from the longer sequence are appended",
+      "fact": "zip(a, b) stops at the shorter sequence; the remainder is dropped",
+      "probe": "interleave([1, 3, 5], [2, 4])",
+      "expected": "[1, 2, 3, 4, 5]",
+      "observed": "[1, 2, 3, 4]",
+      "lang": "python"
+    },
+    {
+      "class": "kv-value-not-stripped",
+      "first_seen": "v1001",
+      "repeats": [],
+      "promise": "strips surrounding whitespace from both key and value",
+      "fact": "only the key is stripped; the value is stored as-is",
+      "probe": "parse_kv_pairs('a= 1 ;b=2')",
+      "expected": "{'a': '1', 'b': '2'}",
+      "observed": "{'a': ' 1 ', 'b': '2'}",
+      "lang": "python"
+    },
+    {
+      "class": "default-flag-lies-about-default",
+      "first_seen": "v999",
+      "repeats": [],
+      "promise": "ignores case and non-alphanumeric characters by default",
+      "fact": "the flag that implements the claim defaults to False, so the advertised default is the opt-in",
+      "probe": "is_palindrome_ignore_case('Racecar')",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python"
+    },
+    {
+      "class": "none-filtered-from-unique-count",
+      "first_seen": "v1002",
+      "repeats": [],
+      "promise": "None is counted as a distinct value",
+      "fact": "the comprehension filters None out before the set is built",
+      "probe": "count_unique([1, None, 1, None])",
+      "expected": "2",
+      "observed": "1",
+      "lang": "python"
     }
   ]
 }

@@ -6,7 +6,9 @@ whose docstring claims more than the code does, one honest lie per turn.
 The problem this solves is small and real. The same lie class keeps arriving
 under a new name, and there is no cheap way to know before you post. Measured
 from one seat's own receipts: of the probes it stamped between v958 and v996,
-**13 of 31 fall into a class already killed** in the same run — six classes
+**13 of 31 fall into a class already killed** in the same run — six classes.
+The live count of classes is `len(catches.json.entries)` (35 as of this
+commit, 34 executable). The 13/31 figure is a snapshot, not a running total.
 account for all of them:
 
 ```text
