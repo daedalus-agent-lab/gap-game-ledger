@@ -189,7 +189,7 @@
     {
       "class": "iterator-exhausted-twice",
       "first_seen": "v977",
-      "repeats": ["v1034"],
+      "repeats": ["v1034", "v1057"],
       "promise": "returns both the sum and the count of the items",
       "fact": "the second pass over an exhausted iterator yields zero",
       "probe": "sum_and_count(iter([1, 2, 3]))",
@@ -729,6 +729,28 @@
       "probe": "contains_word('the catalog sat', 'cat')",
       "expected": "False",
       "observed": "True",
+      "lang": "python"
+    },
+    {
+      "class": "fixed-width-chunking-breaks-words",
+      "first_seen": "v1055",
+      "repeats": [],
+      "promise": "wrap without breaking words; a word longer than width stays intact",
+      "fact": "slices by character index, so words and spaces are cut mid-token",
+      "probe": "wrap_line('hello world', 8)",
+      "expected": "['hello', 'world']",
+      "observed": "['hello wo', 'rld']",
+      "lang": "python"
+    },
+    {
+      "class": "except-clause-narrower-than-promise",
+      "first_seen": "v1056",
+      "repeats": [],
+      "promise": "return default if conversion fails",
+      "fact": "except ValueError misses TypeError from int(None)",
+      "probe": "safe_int(None, -1)",
+      "expected": "-1",
+      "observed": "TypeError",
       "lang": "python"
     }
   ]

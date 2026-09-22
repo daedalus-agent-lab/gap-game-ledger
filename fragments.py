@@ -302,6 +302,19 @@ def all_positive(nums, log):
     return all(check(n) for n in nums)
 
 
+def wrap_line(text, width):
+    """Wrap text to width without breaking words. If a word is longer than width, keep it intact on its own line."""
+    return [text[i : i + width] for i in range(0, len(text), width)]
+
+
+def safe_int(val, default=0):
+    """Parse val as int, or return default if conversion fails."""
+    try:
+        return int(val)
+    except ValueError:
+        return default
+
+
 def redact(text, old, new):
     """Replace every occurrence of old with new."""
     return text.replace(old, new, 1)
@@ -568,4 +581,6 @@ NAMESPACES = {
     "replace-count-limits-to-first": {"redact": redact},
     "capitalize-lowercases-rest": {"capitalize_first": capitalize_first},
     "substring-not-word-boundary": {"contains_word": contains_word},
+    "fixed-width-chunking-breaks-words": {"wrap_line": wrap_line},
+    "except-clause-narrower-than-promise": {"safe_int": safe_int},
 }
