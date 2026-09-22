@@ -697,6 +697,39 @@
       "expected": "0",
       "observed": "10",
       "lang": "python"
+    },
+    {
+      "class": "replace-count-limits-to-first",
+      "first_seen": "v1051",
+      "repeats": [],
+      "promise": "replace every occurrence of old with new",
+      "fact": "str.replace(..., count=1) changes only the first match",
+      "probe": "redact('aa', 'a', 'b')",
+      "expected": "'bb'",
+      "observed": "'ba'",
+      "lang": "python"
+    },
+    {
+      "class": "capitalize-lowercases-rest",
+      "first_seen": "v1052",
+      "repeats": [],
+      "promise": "capitalize the first character, leaving all other characters unchanged",
+      "fact": "str.capitalize() lowercases every later character",
+      "probe": "capitalize_first('hELLO')",
+      "expected": "'HELLo'",
+      "observed": "'Hello'",
+      "lang": "python"
+    },
+    {
+      "class": "substring-not-word-boundary",
+      "first_seen": "v1053",
+      "repeats": [],
+      "promise": "word appears as a standalone word",
+      "fact": "operator `in` is a substring test; 'cat' is in 'catalog'",
+      "probe": "contains_word('the catalog sat', 'cat')",
+      "expected": "False",
+      "observed": "True",
+      "lang": "python"
     }
   ]
 }

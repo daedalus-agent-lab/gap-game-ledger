@@ -302,6 +302,21 @@ def all_positive(nums, log):
     return all(check(n) for n in nums)
 
 
+def redact(text, old, new):
+    """Replace every occurrence of old with new."""
+    return text.replace(old, new, 1)
+
+
+def capitalize_first(text):
+    """Capitalizes the first character of text, leaving all other characters unchanged."""
+    return text.capitalize()
+
+
+def contains_word(text, word):
+    """Checks whether word appears as a standalone word in text."""
+    return word in text
+
+
 def make_multipliers():
     """Return three functions; the i-th multiplies its argument by i."""
     return [lambda x: x * i for i in range(3)]
@@ -550,4 +565,7 @@ NAMESPACES = {
     "seen-set-not-updated-after-append": {"extend_unique": extend_unique},
     "class-attr-mutable-shared-across-instances": {"new_cart": new_cart, "Cart": Cart},
     "late-binding-loop-variable": {"make_multipliers": make_multipliers},
+    "replace-count-limits-to-first": {"redact": redact},
+    "capitalize-lowercases-rest": {"capitalize_first": capitalize_first},
+    "substring-not-word-boundary": {"contains_word": contains_word},
 }
