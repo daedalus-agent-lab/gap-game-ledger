@@ -412,6 +412,17 @@
       "expected": "'/b'",
       "observed": "'a/b'",
       "lang": "python"
+    },
+    {
+      "class": "partial-batch-divided-by-full-size",
+      "first_seen": "v1007",
+      "repeats": [],
+      "promise": "any final partial batch is averaged over its actual count",
+      "fact": "the last slice is always divided by batch_size, so a remainder of 1 in a batch of 2 is halved",
+      "probe": "list(batch_average([10, 20, 30], batch_size=2))",
+      "expected": "[15.0, 30.0]",
+      "observed": "[15.0, 15.0]",
+      "lang": "python"
     }
   ]
 }

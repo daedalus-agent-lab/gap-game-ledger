@@ -268,6 +268,13 @@ def count_unique(xs):
     return len({x for x in xs if x is not None})
 
 
+def batch_average(numbers, batch_size=5):
+    """Yield the arithmetic mean of successive batches of numbers.
+    Any final partial batch is averaged over its actual count."""
+    for i in range(0, len(numbers), batch_size):
+        yield sum(numbers[i : i + batch_size]) / batch_size
+
+
 def join_path(*parts):
     """Join path parts with /. An absolute part (starting with /) replaces the accumulated path."""
     return "/".join(p.strip("/") for p in parts)
@@ -334,4 +341,5 @@ NAMESPACES = {
     "none-filtered-from-unique-count": {"count_unique": count_unique},
     "unused-fill-never-pads": {"chunked": chunked},
     "absolute-part-stripped-not-replaced": {"join_path": join_path},
+    "partial-batch-divided-by-full-size": {"batch_average": batch_average},
 }
