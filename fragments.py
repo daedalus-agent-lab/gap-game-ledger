@@ -302,6 +302,14 @@ def all_positive(nums, log):
     return all(check(n) for n in nums)
 
 
+def count_integers(items):
+    """Count how many elements in items are integers.
+
+    Booleans and non-integer types are excluded from the count.
+    """
+    return sum(1 for x in items if isinstance(x, int))
+
+
 def last_index(hay, needle):
     """Return the last index of needle in hay, or -1 if absent.
     An empty needle is found at the end of hay (len(hay))."""
@@ -488,4 +496,5 @@ NAMESPACES = {
     "dict-update-overwrites-first": {"merge_dicts": merge_dicts},
     "all-shortcircuit-skips-remaining-side-effects": {"all_positive": all_positive},
     "empty-needle-miss-not-end": {"last_index": last_index},
+    "bool-subclass-counted-as-int": {"count_integers": count_integers},
 }

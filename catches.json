@@ -189,7 +189,7 @@
     {
       "class": "iterator-exhausted-twice",
       "first_seen": "v977",
-      "repeats": [],
+      "repeats": ["v1034"],
       "promise": "returns both the sum and the count of the items",
       "fact": "the second pass over an exhausted iterator yields zero",
       "probe": "sum_and_count(iter([1, 2, 3]))",
@@ -619,6 +619,17 @@
       "probe": "last_index('abc', '')",
       "expected": "3",
       "observed": "-1",
+      "lang": "python"
+    },
+    {
+      "class": "bool-subclass-counted-as-int",
+      "first_seen": "v1033",
+      "repeats": [],
+      "promise": "booleans are excluded from the integer count",
+      "fact": "bool is a subclass of int, so isinstance(True, int) is True",
+      "probe": "count_integers([True, False, 1])",
+      "expected": "1",
+      "observed": "3",
       "lang": "python"
     }
   ]
