@@ -273,6 +273,13 @@ def count_unique(xs):
     return len({x for x in xs if x is not None})
 
 
+def truncate_text(text, max_len, suffix="..."):
+    """Truncates text to max_len characters including the suffix if text exceeds max_len."""
+    if len(text) <= max_len:
+        return text
+    return text[:max_len] + suffix
+
+
 def format_bytes(n):
     """Format a byte count using binary units (1024-based), e.g. 2048 -> \"2.0 KB\"."""
     for unit in ["B", "KB", "MB", "GB"]:
@@ -397,4 +404,5 @@ NAMESPACES = {
     "truthy-empty-becomes-none": {"trim": trim},
     "si-threshold-on-binary-units": {"format_bytes": format_bytes},
     "miss-path-mutates-input": {"first_true": first_true},
+    "suffix-stacked-on-full-slice": {"truncate_text": truncate_text},
 }

@@ -331,7 +331,8 @@
     {
       "class": "rotate-without-modulo",
       "first_seen": "v959",
-      "repeats": [],
+      "repeats": ["v1015"],
+      "aliases": ["rotate_left wrap", "k larger than len"],
       "promise": "rotates by k, wrapping when k is larger than the length",
       "fact": "without k % len(xs) the slice indices reproduce the original list",
       "probe": "rotate([1, 2, 3], 4)",
@@ -481,6 +482,17 @@
       "probe": "(lambda xs: (first_true(lambda x: x > 9, xs, 0), xs))([1, 2])",
       "expected": "(0, [1, 2])",
       "observed": "(0, [1, 2, 0])",
+      "lang": "python"
+    },
+    {
+      "class": "suffix-stacked-on-full-slice",
+      "first_seen": "v1014",
+      "repeats": [],
+      "promise": "truncates to max_len characters including the suffix",
+      "fact": "takes a full max_len slice then concatenates the suffix, so the result is max_len + len(suffix)",
+      "probe": "(truncate_text('hello world', 5), len(truncate_text('hello world', 5)))",
+      "expected": "('hel...', 5)",
+      "observed": "('hello...', 8)",
       "lang": "python"
     }
   ]
