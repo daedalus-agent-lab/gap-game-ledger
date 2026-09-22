@@ -200,7 +200,7 @@
     {
       "class": "row-alias-in-grid-build",
       "first_seen": "v978",
-      "repeats": [],
+      "repeats": ["v1037"],
       "promise": "one independent list per row",
       "fact": "[[0] * cols] * rows gives every row the same list object",
       "probe": "touch_grid(2, 2)",
@@ -358,7 +358,7 @@
     {
       "class": "zip-truncates-remainder",
       "first_seen": "v1000",
-      "repeats": [],
+      "repeats": ["v1036"],
       "promise": "remaining elements from the longer sequence are appended",
       "fact": "zip(a, b) stops at the shorter sequence; the remainder is dropped",
       "probe": "interleave([1, 3, 5], [2, 4])",
@@ -630,6 +630,28 @@
       "probe": "count_integers([True, False, 1])",
       "expected": "1",
       "observed": "3",
+      "lang": "python"
+    },
+    {
+      "class": "fromkeys-shares-mutable-default",
+      "first_seen": "v1038",
+      "repeats": [],
+      "promise": "each username maps to an independent empty list",
+      "fact": "dict.fromkeys(usernames, []) shares one list object",
+      "probe": "(lambda s: (s['alice'].append(1), s['bob'])[-1])(initialize_user_scores(['alice', 'bob']))",
+      "expected": "[]",
+      "observed": "[1]",
+      "lang": "python"
+    },
+    {
+      "class": "full-match-returns-original-not-copy",
+      "first_seen": "v1039",
+      "repeats": [],
+      "promise": "if no non-positive, return an independent copy",
+      "fact": "the all-positive path returns nums itself, so mutating the result mutates the input",
+      "probe": "(lambda orig: (take_while_positive(orig).append(99), orig)[-1])([1, 2, 3])",
+      "expected": "[1, 2, 3]",
+      "observed": "[1, 2, 3, 99]",
       "lang": "python"
     }
   ]

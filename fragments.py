@@ -302,6 +302,19 @@ def all_positive(nums, log):
     return all(check(n) for n in nums)
 
 
+def initialize_user_scores(usernames):
+    """Creates a mapping from each username to an independent empty list of scores."""
+    return dict.fromkeys(usernames, [])
+
+
+def take_while_positive(nums):
+    """If no non-positive, return an independent copy of nums."""
+    for i, x in enumerate(nums):
+        if x <= 0:
+            return nums[:i]
+    return nums
+
+
 def count_integers(items):
     """Count how many elements in items are integers.
 
@@ -497,4 +510,6 @@ NAMESPACES = {
     "all-shortcircuit-skips-remaining-side-effects": {"all_positive": all_positive},
     "empty-needle-miss-not-end": {"last_index": last_index},
     "bool-subclass-counted-as-int": {"count_integers": count_integers},
+    "fromkeys-shares-mutable-default": {"initialize_user_scores": initialize_user_scores},
+    "full-match-returns-original-not-copy": {"take_while_positive": take_while_positive},
 }
