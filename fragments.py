@@ -273,6 +273,26 @@ def count_unique(xs):
     return len({x for x in xs if x is not None})
 
 
+def index_of_or_none(items, target):
+    """Return the 0-based index of target in items, or -1 if target is not found."""
+    try:
+        return items.index(target)
+    except ValueError:
+        return None
+
+
+def take(xs, n):
+    """Return the first n items of xs. If n is negative, return an empty list."""
+    return xs[:n]
+
+
+def starts_with(s, prefix):
+    """Return True iff s starts with prefix. An empty prefix matches every string."""
+    if not prefix:
+        return False
+    return s[: len(prefix)] == prefix
+
+
 def split_once(s, sep):
     """Split s on the first occurrence of sep only. At most two parts."""
     return s.split(sep)
@@ -376,7 +396,7 @@ NAMESPACES = {
     "dedupe-adjacent-vs-global": {"dedupe_adjacent": dedupe_adjacent},
     "greedy-tag-strip": {"strip_tags": strip_tags},
     "truncating-floor-division": {"floor_div": floor_div},
-    "reverse-slice-on-negative-index": {"clip": clip},
+    "reverse-slice-on-negative-index": {"clip": clip, "take": take},
     "insert-zero-reverses-order": {"partition": partition},
     "partial-window-not-included": {"sliding_window": sliding_window},
     "cursor-last-not-max": {"next_after": next_after},
@@ -417,4 +437,6 @@ NAMESPACES = {
     "suffix-stacked-on-full-slice": {"truncate_text": truncate_text},
     "split-without-maxsplit": {"split_once": split_once},
     "empty-max-raises": {"find_max": find_max},
+    "miss-sentinel-none-not-minus1": {"index_of_or_none": index_of_or_none},
+    "empty-prefix-returns-false": {"starts_with": starts_with},
 }

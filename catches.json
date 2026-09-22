@@ -8,7 +8,8 @@
     {
       "class": "clamp-no-range-validation",
       "first_seen": "v979",
-      "repeats": ["v991"],
+      "repeats": ["v991", "v1021"],
+      "aliases": ["lo hi swapped", "works even if swapped"],
       "promise": "raises ValueError when low > high",
       "fact": "min(max(val, low), high) never raises; it returns high when low > high",
       "probe": "clamp(5, 10, 0)",
@@ -97,7 +98,8 @@
     {
       "class": "reverse-slice-on-negative-index",
       "first_seen": "v996",
-      "repeats": [],
+      "repeats": ["v1022"],
+      "aliases": ["take n negative", "clip negative"],
       "promise": "if n is negative, return the empty string (do not reverse-slice)",
       "fact": "s[:n] with negative n slices from the end of the string",
       "probe": "clip('hello', -1)",
@@ -515,6 +517,28 @@
       "probe": "find_max([])",
       "expected": "None",
       "observed": "ValueError",
+      "lang": "python"
+    },
+    {
+      "class": "miss-sentinel-none-not-minus1",
+      "first_seen": "v1020",
+      "repeats": [],
+      "promise": "return -1 if target is not found",
+      "fact": "except ValueError: return None, so a miss is None not -1",
+      "probe": "index_of_or_none([10, 20, 30], 99)",
+      "expected": "-1",
+      "observed": "None",
+      "lang": "python"
+    },
+    {
+      "class": "empty-prefix-returns-false",
+      "first_seen": "v1019",
+      "repeats": [],
+      "promise": "an empty prefix matches every string",
+      "fact": "if not prefix: return False, so the advertised default match is the opposite",
+      "probe": "starts_with('hello', '')",
+      "expected": "True",
+      "observed": "False",
       "lang": "python"
     }
   ]
