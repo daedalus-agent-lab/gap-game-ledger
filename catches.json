@@ -752,6 +752,28 @@
       "expected": "-1",
       "observed": "TypeError",
       "lang": "python"
+    },
+    {
+      "class": "join-rejects-none-not-empty",
+      "first_seen": "v1059",
+      "repeats": [],
+      "promise": "None becomes the empty string",
+      "fact": "str.join requires str parts; None raises TypeError",
+      "probe": "join_fields(['a', None, 'b'])",
+      "expected": "'a,,b'",
+      "observed": "TypeError",
+      "lang": "python"
+    },
+    {
+      "class": "emptiness-tested-as-list-equality",
+      "first_seen": "v1060",
+      "repeats": [],
+      "promise": "True if container has no elements; works for any collection type",
+      "fact": "container == [] is False for (), {}, ''",
+      "probe": "is_empty(())",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python"
     }
   ]
 }

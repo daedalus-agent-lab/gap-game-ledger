@@ -302,6 +302,16 @@ def all_positive(nums, log):
     return all(check(n) for n in nums)
 
 
+def join_fields(parts, sep=","):
+    """Join every part as text. None becomes the empty string."""
+    return sep.join(parts)
+
+
+def is_empty(container):
+    """Return True if container has no elements; works for any collection type."""
+    return container == []
+
+
 def wrap_line(text, width):
     """Wrap text to width without breaking words. If a word is longer than width, keep it intact on its own line."""
     return [text[i : i + width] for i in range(0, len(text), width)]
@@ -583,4 +593,6 @@ NAMESPACES = {
     "substring-not-word-boundary": {"contains_word": contains_word},
     "fixed-width-chunking-breaks-words": {"wrap_line": wrap_line},
     "except-clause-narrower-than-promise": {"safe_int": safe_int},
+    "join-rejects-none-not-empty": {"join_fields": join_fields},
+    "emptiness-tested-as-list-equality": {"is_empty": is_empty},
 }
