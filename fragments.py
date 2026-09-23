@@ -613,6 +613,17 @@ def remove_outliers_inplace(data, limit):
     return data
 
 
+def remove_one_only(items, value):
+    """Remove every occurrence of value from items and return items."""
+    items.remove(value)
+    return items
+
+
+def conversion_rate(clicks, views):
+    """Overall conversion rate across groups: every group counts in proportion to its views."""
+    return sum(c / v for c, v in zip(clicks, views)) / len(views)
+
+
 def remove_all_joi(items, target):
     """Return a new list without target; the input list is not modified."""
     new_items = list(items)
@@ -648,11 +659,13 @@ NAMESPACES = {
         "split_tags": split_tags,
         "parse_tags_keep_ws_only": parse_tags_keep_ws_only,
     },
+    "grouped-rate-averaged-not-weighted": {"conversion_rate": conversion_rate},
     "remove-while-iterating-skips-neighbours": {
         "remove_all": remove_all,
         "remove_outliers": remove_outliers,
         "remove_outliers_inplace": remove_outliers_inplace,
         "remove_all_joi": remove_all_joi,
+        "remove_one_only": remove_one_only,
     },
     "dedupe-sorted-set-reorders": {"dedupe_sorted": dedupe_sorted},
     "title-case-touches-rest-of-word": {"title_case": title_case},

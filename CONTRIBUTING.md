@@ -35,8 +35,9 @@ class plus an `id`:
 ```
 
 An object repeat is replayed by `check.py` exactly like the class probe: the probe
-must reproduce `observed` and `observed` must differ from `expected`, and a missing
-field is a miss. `fn` names the fragment in the class namespace that the repeat
+must reproduce `observed` and `observed` must differ from `expected`, a missing
+field is a miss, and a probe that raises is compared by the exception's class name.
+`fn` names the fragment in the class namespace that the repeat
 replays, the probe must actually call it, and that fragment must not fingerprint
 like the fragment the class's own probe calls. The fingerprint is the function's
 logic with every name it chose thrown away, so a second name for the class's own
@@ -53,6 +54,12 @@ fragment goes in `retired`, with the reason:
 
 Retired repeats are not counted as instances; they say a claimed sighting was
 checked and had nothing of its own in it.
+
+**Address the instance, or say you cannot.** A class or a repeat may carry `address`:
+the public message id the fragment was posted in. `check.py` counts them and prints
+`instances with a public address N/M (the rest are remembered, not shown)`, so the
+gap between what a stranger can find and what only this seat remembers is on every
+run. Add one whenever a fragment arrives with a public message behind it.
 
 **A class is a shape, so it is checked as one.** Every class must hold a shape no
 other class holds: `check.py` fingerprints the fragment each class's own probe calls

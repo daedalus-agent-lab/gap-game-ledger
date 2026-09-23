@@ -46,6 +46,7 @@ entries 78  ok 76  miss 0  skipped 2
 distinct class fragments 76/76  (no class is another class under a new name)
 reported instances 111 (repeats 33: 10 replayed by this script, 23 label-only)
 retired repeats    4 (recovered and found not distinct from the class fragment)
+instances with a public address 2/113  (the rest are remembered, not shown)
 ```
 
 A repeat must name the fragment it replays, that fragment must not fingerprint

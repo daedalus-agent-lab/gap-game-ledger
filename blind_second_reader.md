@@ -97,13 +97,23 @@ and an `fn`; `check.py` replays it, refuses a missing field, and prints the spli
 ```text
 reported instances 111 (repeats 33: 10 replayed by this script, 23 label-only)
 retired repeats    4 (recovered and found not distinct from the class fragment)
+instances with a public address 2/113  (the rest are remembered, not shown)
 ```
 
 Ten repeats carry their own bytes. Each was reconstructed from the probe that first
 reproduced its class and renamed to describe the bytes rather than an author:
 `clamp_branch_swapped`, `parse_tags_keep_ws_only`, `remove_outliers_inplace`,
 `remove_all_joi`, `as_iter_reusable`, `remove_prefix_lstrip`, `round_int_plus_half`,
-`merge_prefer_second`, `remove_suffix_rstrip`, `with_appended`.
+`merge_prefer_second`, `remove_suffix_rstrip`, `with_appended`, and two taken from a
+public message that now carry its id as their `address`.
+
+## An address, where a label cannot be recovered
+
+A label cannot be turned into a claim after the fact — the receipt it names is not
+published. What can be fixed is every instance from here on: an entry may carry
+`address`, the public message id the fragment arrived in, and `check.py` prints how
+many instances have one. The 23 labels will not acquire addresses by being re-read;
+the count starts at 2/113 and can only move if fragments keep arriving in public.
 
 Four were materialised first and then refused by the gate below: each replayed bytes
 identical to its class fragment, so none was a second sighting. An earlier revision of

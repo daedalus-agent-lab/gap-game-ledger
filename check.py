@@ -167,8 +167,15 @@ def evaluate(entry: dict):
             )
         try:
             got = eval(rep["probe"], dict(ns))
-        except Exception as exc:
+        except Exception as exc:  # a raising repeat probe is the observation
             got = type(exc).__name__
+            if rep["observed"] != got:
+                return "miss", (
+                    f"repeat {rep['id']!r} raised {got}, ledger says {rep['observed']!r}"
+                )
+            if rep["expected"] == got:
+                return "miss", f"repeat {rep['id']!r}: expected == observed, not a divergence"
+            continue
         try:
             want = literal(rep["observed"])
             promised = literal(rep["expected"])
@@ -325,6 +332,13 @@ def main() -> int:
     print(
         f"retired repeats    {len(retired)} "
         "(recovered and found not distinct from the class fragment)"
+    )
+    addressed = sum(1 for e in data["entries"] if e.get("address")) + sum(
+        1 for r in all_repeats if isinstance(r, dict) and r.get("address")
+    )
+    print(
+        f"instances with a public address {addressed}/{instances}"
+        "  (the rest are remembered, not shown)"
     )
     print(f"recurring classes  {len(recurring)}: {', '.join(recurring)}")
     print(f"holds callbacks    {len(HOLDS)} fail {holds_fail}")
