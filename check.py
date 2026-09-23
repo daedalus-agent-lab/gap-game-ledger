@@ -249,16 +249,43 @@ def class_collisions(data: dict) -> tuple[int, list[str]]:
     return counted, problems
 
 
+def addresses(data) -> int:
+    """Print every instance that carries a public address and the line from it.
+
+    An address without a line is a direction, not evidence: the reader has to
+    trust that the fragment is in the message. With the line, they can fetch the
+    message and look for it themselves.
+    """
+    rows = []
+    for entry in data["entries"]:
+        if entry.get("address"):
+            rows.append((entry["class"], "class", entry["address"],
+                         entry.get("address_quote", "")))
+        for rep in entry.get("repeats") or []:
+            if isinstance(rep, dict) and rep.get("address"):
+                rows.append((entry["class"], rep["id"], rep["address"],
+                             rep.get("address_quote", "")))
+    for name, what, addr, quote in rows:
+        print(f"{name}  ({what})  {addr}")
+        print(f"    {quote or 'NO QUOTE — this address is a direction, not evidence'}")
+    print(f"\n{len(rows)} address(es) on "
+          f"{len(data['entries']) + sum(len(e.get('repeats') or []) for e in data['entries'])} instances")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--class", dest="only")
     ap.add_argument("--lookup")
+    ap.add_argument("--addresses", action="store_true")
     args = ap.parse_args()
 
     if args.lookup:
         return lookup(args.lookup)
 
     data = load()
+    if args.addresses:
+        return addresses(data)
     entries = data["entries"]
     unknown = False
     if args.only:
@@ -339,15 +366,27 @@ def main() -> int:
     addressed = sum(1 for e in data["entries"] if e.get("address")) + sum(
         1 for r in all_repeats if isinstance(r, dict) and r.get("address")
     )
+    quoted = sum(1 for e in data["entries"] if e.get("address") and e.get("address_quote")) + sum(
+        1 for r in all_repeats
+        if isinstance(r, dict) and r.get("address") and r.get("address_quote")
+    )
     print(
-        f"instances with a public address {addressed}/{instances}"
+        f"instances with a public address {addressed}/{instances} "
+        f"({quoted} of them quote the message)"
         "  (the rest are remembered, not shown)"
     )
+    unquoted = [e["class"] for e in data["entries"]
+                if e.get("address") and not e.get("address_quote")]
+    unquoted += [f"{e['class']}/{r['id']}" for e in data["entries"]
+                 for r in (e.get("repeats") or [])
+                 if isinstance(r, dict) and r.get("address") and not r.get("address_quote")]
+    for name in unquoted:
+        print(f"NOQUOTE  {name:<50} has an address but no line from it")
     print(f"recurring classes  {len(recurring)}: {', '.join(recurring)}")
     print(f"holds callbacks    {len(HOLDS)} fail {holds_fail}")
     if unknown:
         return 2
-    return 1 if miss or holds_fail or collisions else 0
+    return 1 if miss or holds_fail or collisions or unquoted else 0
 
 
 if __name__ == "__main__":

@@ -66,6 +66,12 @@ the public message id the fragment was posted in. `check.py` counts them and pri
 gap between what a stranger can find and what only this seat remembers is on every
 run. Add one whenever a fragment arrives with a public message behind it.
 
+An `address` must come with `address_quote`: a literal line from that message. A
+bare id is a direction, not evidence — the reader still has to take someone's word
+that the fragment is in there. With the line, they fetch the message and look. The
+gate refuses an address with no quote (`NOQUOTE`, exit 1), and `--addresses` prints
+them all with their lines so the check is one fetch each.
+
 **A class is a shape, so it is checked as one.** Every class must hold a shape no
 other class holds: `check.py` fingerprints the fragment each class's own probe calls
 and prints `DUPE` with a non-zero exit if two class names cover one logic — or if a

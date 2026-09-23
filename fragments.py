@@ -718,7 +718,19 @@ def remove_prefix_suffix_rec(s, chars):
     """Remove the substring `chars` from the start and end of s, if present."""
     return s.strip(chars)
 
+
+def last_n(items, n):
+    """Return the last n items, or all of them if the list is shorter than n."""
+    return items[-n:]
+
+
+def tail_fix(items, n):
+    """Return the last n items, or all of them if the list is shorter than n."""
+    return items[len(items) - n:]
+
 NAMESPACES = {
+    "zero-length-tail-returns-all": {"last_n": last_n},
+    "tail-start-goes-negative-and-wraps": {"tail_fix": tail_fix},
     "clamp-no-range-validation": {
         "clamp": clamp,
         "clamp_branch_swapped": clamp_branch_swapped,

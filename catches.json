@@ -26,7 +26,8 @@
           "expected": "5",
           "observed": "10",
           "fn": "clamp_minmax_reversed",
-          "address": "3241b5ee-ea96-4342-b8ee-4689dcd41b42"
+          "address": "3241b5ee-ea96-4342-b8ee-4689dcd41b42",
+          "address_quote": "def clamp(x, lo, hi):"
         }
       ],
       "aliases": [
@@ -101,7 +102,8 @@
           "expected": "[1, 3]",
           "observed": "ValueError",
           "fn": "remove_one_only",
-          "address": "56f3033c-279b-4879-ad4f-1b686df45821"
+          "address": "56f3033c-279b-4879-ad4f-1b686df45821",
+          "address_quote": "при нуле вхождений «удалить всё» — это пустая операция, а `remove` бросает исключение"
         }
       ],
       "aliases": [
@@ -1261,7 +1263,8 @@
       "expected": "0.10891089108910891",
       "observed": "0.55",
       "lang": "python",
-      "note": "the equal-views control that hides it: conversion_rate([5, 15], [50, 50]) == 0.2 == the pooled rate"
+      "note": "the equal-views control that hides it: conversion_rate([5, 15], [50, 50]) == 0.2 == the pooled rate",
+      "address_quote": "return sum(c / v for c, v in zip(clicks, views)) / len(views)"
     },
     {
       "class": "off-by-one-excludes-valid-upper-bound",
@@ -1277,7 +1280,42 @@
       "expected": "True",
       "observed": "False",
       "lang": "python",
-      "note": "the control hides it: is_valid_port(8080) is True, and 0 and 65536 are correctly False"
+      "note": "the control hides it: is_valid_port(8080) is True, and 0 and 65536 are correctly False",
+      "address_quote": "0 < n < 65535"
+    },
+    {
+      "class": "zero-length-tail-returns-all",
+      "first_seen": "2d9b7e0f-8e84-4c12-b7bb-08afa05114b7",
+      "address": "2d9b7e0f-8e84-4c12-b7bb-08afa05114b7",
+      "address_quote": "def last_n(items, n):",
+      "aliases": [
+        "items[-n:] with n=0",
+        "empty tail"
+      ],
+      "promise": "the last n items, or all of them when the list is shorter than n",
+      "fact": "-0 is 0, so items[-n:] with n=0 is items[0:]: the whole list, not an empty one",
+      "probe": "last_n([1, 2, 3], 0)",
+      "expected": "[]",
+      "observed": "[1, 2, 3]",
+      "lang": "python",
+      "note": "the control last_n([1, 2, 3], 2) == [2, 3] is green, and the shorter-than-n clause is not involved at all"
+    },
+    {
+      "class": "tail-start-goes-negative-and-wraps",
+      "first_seen": "9246ccb8-0046-4090-9781-6b92c7b5fe42",
+      "address": "9246ccb8-0046-4090-9781-6b92c7b5fe42",
+      "address_quote": "items[len(items) - n:]",
+      "aliases": [
+        "slice start computed as len - n",
+        "negative start index"
+      ],
+      "promise": "the last n items, or all of them when the list is shorter than n",
+      "fact": "len(items) - n goes negative once n exceeds the length, and a negative slice start counts from the end",
+      "probe": "tail_fix([1, 2, 3], 5)",
+      "expected": "[1, 2, 3]",
+      "observed": "[2, 3]",
+      "lang": "python",
+      "note": "written as a repair for items[-n:]; the repair carries its own lie, and the control n=2 never reaches the wrapped index"
     }
   ]
 }

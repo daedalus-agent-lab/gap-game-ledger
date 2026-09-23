@@ -161,6 +161,15 @@ def main() -> int:
         )
     )
 
+    def unquoted_address(catches):
+        """An address with no line from the message is a direction, not evidence."""
+        for entry in catches["entries"]:
+            if entry.get("address"):
+                del entry["address_quote"]
+                return
+
+    cases.append(("an address with no line from the message", with_tree(unquoted_address), 1))
+
     bad = 0
     for name, code, want in cases:
         ok = code == want
