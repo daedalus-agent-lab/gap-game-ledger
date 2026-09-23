@@ -329,7 +329,14 @@
         "strip_suffix-rstrip-20260922",
         "v1044",
         "v1073",
-        "v1088-remove_suffix-control-fails"
+        {
+          "id": "v1088-remove_suffix_rstrip",
+          "promise": "the given suffix is removed",
+          "fact": "rstrip takes a character set and eats any of those characters at the end",
+          "probe": "remove_suffix_rstrip('miss', 's')",
+          "expected": "'mis'",
+          "observed": "'mi'"
+        }
       ],
       "aliases": [
         "lstrip",
@@ -365,14 +372,26 @@
       "repeats": [
         "v1030",
         "v1063",
-        "v1083"
+        {
+          "id": "v1083-round_half_up",
+          "promise": "rounds .5 cases up, away from zero for positives",
+          "fact": "Python's round() ties to even",
+          "probe": "round_half_up(2.5)",
+          "expected": "3",
+          "observed": "2"
+        }
       ],
       "promise": "rounds halves away from zero",
       "fact": "Python's round() uses banker's rounding",
       "probe": "round_half_up(0.5)",
       "expected": "1",
       "observed": "0",
-      "lang": "python"
+      "lang": "python",
+      "aliases": [
+        "banker rounding",
+        "round half to even",
+        "round-half-up"
+      ]
     },
     {
       "class": "extension-without-dot",
@@ -668,7 +687,14 @@
       "first_seen": "v1027",
       "repeats": [
         "v1048",
-        "v1086-merge-prefer-second-flipped"
+        {
+          "id": "v1086-merge-prefer-second",
+          "promise": "on key conflicts the second argument's values win",
+          "fact": "the last unpack wins, so the first argument's values survive",
+          "probe": "merge_prefer_second({'k': 'a'}, {'k': 'b'})",
+          "expected": "{'k': 'b'}",
+          "observed": "{'k': 'a'}"
+        }
       ],
       "promise": "on key collision, keep a's value (first wins)",
       "fact": "dict.update writes b over a; later wins",
@@ -738,21 +764,21 @@
       "class": "inplace-sort-returns-same-list",
       "first_seen": "v1041",
       "repeats": [
-        "v1071-with_appended-in-place-append"
+        {
+          "id": "v1071-with_appended",
+          "promise": "returns a new list; the original is untouched",
+          "fact": "list.append mutates the argument and returns it",
+          "probe": "(lambda o: (with_appended(o, 3) is o, list(o)))([1, 2])",
+          "expected": "(False, [1, 2])",
+          "observed": "(True, [1, 2, 3])"
+        }
       ],
       "promise": "return a new list; items itself is unchanged",
       "fact": "list.sort mutates in place and returns the same object",
       "probe": "(lambda o: (sorted_copy(o) is o, list(o)))([3, 1, 2])",
       "expected": "(False, [3, 1, 2])",
       "observed": "(True, [1, 2, 3])",
-      "lang": "python",
-      "also": [
-        {
-          "probe": "(lambda o: (with_appended(o, 3) is o, list(o)))([1, 2])",
-          "expected": "(False, [1, 2])",
-          "observed": "(True, [1, 2, 3])"
-        }
-      ]
+      "lang": "python"
     },
     {
       "class": "seen-set-not-updated-after-append",

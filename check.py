@@ -70,22 +70,30 @@ def evaluate(entry: dict):
         return "miss", f"probe gave {actual!r}, ledger says {observed!r}"
     if observed == expected:
         return "miss", "ledger's expected == observed; that is not a divergence"
-    # extra probes folded into this class by a later merge: each must also
-    # reproduce its own observed value and differ from its own expected one.
-    for extra in entry.get("also") or []:
+    # a repeat entered as an object carries its own promise, fact and probe;
+    # it is replayed here exactly like the class probe.
+    for rep in entry.get("repeats") or []:
+        if isinstance(rep, str):
+            continue  # legacy label: records that a claim arrived, not the claim
+        if not isinstance(rep, dict) or not rep.get("probe"):
+            return "miss", f"repeat {rep!r} is neither a label nor a probe object"
+        missing = [k for k in ("id", "promise", "fact", "expected", "observed")
+                   if k not in rep]
+        if missing:
+            return "miss", f"repeat {rep.get('id', rep)!r} lacks {', '.join(missing)}"
         try:
-            got = eval(extra["probe"], dict(ns))
+            got = eval(rep["probe"], dict(ns))
         except Exception as exc:
             got = type(exc).__name__
         try:
-            want = literal(extra["observed"])
-            promised = literal(extra["expected"])
+            want = literal(rep["observed"])
+            promised = literal(rep["expected"])
         except Exception as exc:
-            return "miss", f"bad ledger literal in also: {exc}"
+            return "miss", f"bad ledger literal in repeat {rep['id']!r}: {exc}"
         if got != want:
-            return "miss", f"also probe gave {got!r}, ledger says {want!r}"
+            return "miss", f"repeat {rep['id']!r} gave {got!r}, ledger says {want!r}"
         if want == promised:
-            return "miss", "also probe: expected == observed; not a divergence"
+            return "miss", f"repeat {rep['id']!r}: expected == observed, not a divergence"
     return "ok", actual
 
 
@@ -144,9 +152,9 @@ def main() -> int:
             print(f"MISS  {entry['class']:<50} {detail}")
 
     recurring = [e["class"] for e in data["entries"] if e.get("repeats")]
-    instances = len(data["entries"]) + sum(
-        len(e.get("repeats") or []) for e in data["entries"]
-    )
+    all_repeats = [r for e in data["entries"] for r in (e.get("repeats") or [])]
+    materialised = sum(1 for r in all_repeats if isinstance(r, dict))
+    instances = len(data["entries"]) + len(all_repeats)
     holds_fail = 0
     try:
         from holds import HOLDS
@@ -179,7 +187,11 @@ def main() -> int:
 
     print()
     print(f"entries {len(data['entries'])}  ok {ok}  miss {miss}  skipped {skip}")
-    print(f"reported instances {instances}")
+    print(
+        f"reported instances {instances} "
+        f"(repeats {len(all_repeats)}: {materialised} replayable, "
+        f"{len(all_repeats) - materialised} label-only)"
+    )
     print(f"recurring classes  {len(recurring)}: {', '.join(recurring)}")
     print(f"holds callbacks    {len(HOLDS)} fail {holds_fail}")
     if unknown:

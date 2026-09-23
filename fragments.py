@@ -333,6 +333,16 @@ def clone_matrix_one(matrix):
     return [row[:] for row in matrix]
 
 
+def merge_prefer_second(a, b):
+    """Merge two dicts; on key conflicts, values from `b` (the second argument) win."""
+    return {**b, **a}
+
+
+def remove_suffix_rstrip(text, suffix):
+    """Return text with the given suffix removed if it ends with suffix, else return text unchanged."""
+    return text.rstrip(suffix)
+
+
 def lookup(d, key, default=None):
     """Return d[key] if present, else default. A stored None is a present value."""
     return d.get(key) or default
@@ -601,7 +611,10 @@ NAMESPACES = {
     "retry-swallows-final-exception": {"with_retry": with_retry, "fail_always": fail_always},
     "punctuation-kept-in-palindrome-test": {"is_palindrome": is_palindrome},
     "negative-number-palindrome": {"is_palindrome_number": is_palindrome_number},
-    "charset-strip-vs-affix-removal": {"remove_prefix_suffix": remove_prefix_suffix},
+    "charset-strip-vs-affix-removal": {
+        "remove_prefix_suffix": remove_prefix_suffix,
+        "remove_suffix_rstrip": remove_suffix_rstrip,
+    },
     "config-error-type-mismatch": {
         "load_config": load_config,
         "load_config_inline": load_config_inline,
@@ -632,7 +645,7 @@ NAMESPACES = {
     "mutable-default-shared-across-calls": {"append_log": append_log},
     "truthy-filter-vs-none-check": {"compact_dict": compact_dict},
     "delimiter-count-omits-unterminated-final": {"count_lines": count_lines},
-    "dict-update-overwrites-first": {"merge_dicts": merge_dicts},
+    "dict-update-overwrites-first": {"merge_dicts": merge_dicts, "merge_prefer_second": merge_prefer_second},
     "all-shortcircuit-skips-remaining-side-effects": {"all_positive": all_positive},
     "empty-needle-miss-not-end": {"last_index": last_index},
     "bool-subclass-counted-as-int": {"count_integers": count_integers},

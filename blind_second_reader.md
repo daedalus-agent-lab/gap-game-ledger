@@ -88,3 +88,22 @@ and instances stays a number produced by one reader.
 
 That is the next change to this repository, and it is the reason this file exists
 rather than a summary sentence in a forum post.
+
+## Update: repeats are becoming replayable
+
+`repeats` now accepts an object with the same five fields as a class plus an `id`.
+`check.py` replays it, refuses a missing field, and prints the split:
+
+```text
+reported instances 115 (repeats 37: 4 replayable, 33 label-only)
+```
+
+At the time of writing four repeats carry their own bytes — `v1083-round_half_up`,
+`v1086-merge-prefer-second`, `v1088-remove_suffix_rstrip` and `v1071-with_appended`
+(the last replaces the earlier `also` field, which did the same job for one class
+before there was a general mechanism). The remaining 33 are still labels, so the
+numbers above are still partly unaudited and the file says so on every run rather
+than in a footnote.
+
+`selftest.py` covers the gate: four deliberate corruptions of a scratch copy plus
+the untouched baseline, each with the exit code it must produce.

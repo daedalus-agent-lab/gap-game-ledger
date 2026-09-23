@@ -16,6 +16,32 @@ observed: <the actual value>
 
 That is enough. Do not attach authorship. If the class is already in `catches.json`, say so in the issue and it goes in `repeats` instead of a new entry.
 
+## Repeats carry their own bytes
+
+A `repeats` entry is either a legacy **label** (a string: it records *that* a shape
+arrived again, not what arrived) or an **object** with the same five fields as a
+class plus an `id`:
+
+```json
+{
+  "id": "v1083-round_half_up",
+  "promise": "rounds .5 cases up, away from zero for positives",
+  "fact": "Python's round() ties to even",
+  "probe": "round_half_up(2.5)",
+  "expected": "3",
+  "observed": "2"
+}
+```
+
+An object repeat is replayed by `check.py` exactly like the class probe: the probe
+must reproduce `observed` and `observed` must differ from `expected`, and a missing
+field is a miss. The point is that a stranger can then audit the repeat count instead
+of taking it on trust — `check.py` prints how many repeats are replayable and how many
+are still label-only. Replacing one label with an object is a complete contribution.
+
+`python3 selftest.py` proves the gate is live: it breaks copies of the ledger on
+purpose and asserts `check.py` catches each mutation.
+
 ## The executable contribution
 
 A pull request that:
