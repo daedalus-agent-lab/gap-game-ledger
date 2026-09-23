@@ -9,8 +9,22 @@
       "class": "clamp-no-range-validation",
       "first_seen": "v979",
       "repeats": [
-        "v991",
-        "v1021"
+        {
+          "id": "clamp-branch-swapped",
+          "promise": "clamped into [lo, hi]; works even when lo and hi are swapped",
+          "fact": "the branch order returns lo for a value below a larger low bound",
+          "probe": "clamp_branch_swapped(5, 10, 0)",
+          "expected": "5",
+          "observed": "10"
+        },
+        {
+          "id": "clamp-minmax",
+          "promise": "clamped into [lo, hi]; raises ValueError when low > high",
+          "fact": "min(max(...)) has no swapped-bound check and silently returns the high bound",
+          "probe": "clamp_minmax(5, 10, 0)",
+          "expected": "ValueError",
+          "observed": "0"
+        }
       ],
       "aliases": [
         "lo hi swapped",
@@ -27,7 +41,14 @@
       "class": "whitespace-only-tags-kept",
       "first_seen": "v970",
       "repeats": [
-        "v988"
+        {
+          "id": "parse_tags-strip-then-filter",
+          "promise": "whitespace-only tags are discarded",
+          "fact": "the filter runs on the raw tag, so a whitespace-only tag survives as an empty string",
+          "probe": "parse_tags_keep_ws_only(\"a,  ,b\")",
+          "expected": "[\"a\", \"b\"]",
+          "observed": "[\"a\", \"\", \"b\"]"
+        }
       ],
       "promise": "drops empty tags",
       "fact": "filtering split() output by truthiness keeps whitespace-only elements",
@@ -40,8 +61,25 @@
       "class": "remove-while-iterating-skips-neighbours",
       "first_seen": "v965",
       "repeats": [
-        "v982",
-        "remove_outliers-joi-20260922"
+        {
+          "id": "remove_outliers-inplace",
+          "promise": "every value above the limit is removed; the list is returned",
+          "fact": "removing from the list being iterated skips the element that slides into the freed index",
+          "probe": "remove_outliers_inplace([1, 10, 11, 2], 5)",
+          "expected": "[1, 2]",
+          "observed": "[1, 11, 2]",
+          "extra": {
+            "note": "mutates its argument"
+          }
+        },
+        {
+          "id": "remove_all-on-a-copy",
+          "promise": "a new list is returned with every occurrence removed; the input list is untouched",
+          "fact": "iterating the copy while removing from it skips consecutive matches",
+          "probe": "remove_all_joi([1, 2, 2, 3], 2)",
+          "expected": "[1, 3]",
+          "observed": "[1, 2, 3]"
+        }
       ],
       "aliases": [
         "mutate while iterating",
@@ -58,7 +96,14 @@
       "class": "dedupe-sorted-set-reorders",
       "first_seen": "v946",
       "repeats": [
-        "v973",
+        {
+          "id": "dedupe-sorted-set",
+          "promise": "duplicates removed, original order preserved",
+          "fact": "sorted(set(...)) rebuilds the sequence in value order instead",
+          "probe": "dedupe_sorted_set([3, 1, 2])",
+          "expected": "[3, 1, 2]",
+          "observed": "[1, 2, 3]"
+        },
         "v989",
         "v1026",
         "v1066",
@@ -80,7 +125,14 @@
       "first_seen": "v944",
       "repeats": [
         "v975",
-        "to_title_case-20260922"
+        {
+          "id": "to_title_case-rest-untouched",
+          "promise": "the first letter of each word is capitalised and the rest is left alone",
+          "fact": "str.title() lowercases the remainder of every word",
+          "probe": "to_title_case(\"hELLO\")",
+          "expected": "\"HELLO\"",
+          "observed": "\"Hello\""
+        }
       ],
       "aliases": [
         "str.title apostrophe",
@@ -229,7 +281,14 @@
       "class": "iterator-exhausted-twice",
       "first_seen": "v977",
       "repeats": [
-        "v1034",
+        {
+          "id": "as_iter-reusable",
+          "promise": "the wrapper can be consumed repeatedly, like a fresh copy each time",
+          "fact": "a generator expression is single-use; the second pass is empty",
+          "probe": "(lambda it: (list(it), list(it)))(as_iter_reusable([1, 2, 3]))",
+          "expected": "([1, 2, 3], [1, 2, 3])",
+          "observed": "([1, 2, 3], [])"
+        },
         "v1057"
       ],
       "promise": "returns both the sum and the count of the items",
@@ -325,7 +384,14 @@
       "first_seen": "v963",
       "repeats": [
         "v1005",
-        "strip_prefix-maxwell-20260922",
+        {
+          "id": "remove_prefix-lstrip",
+          "promise": "the prefix is removed once, if present",
+          "fact": "lstrip treats the prefix as a set of characters and strips any of them repeatedly",
+          "probe": "remove_prefix_lstrip(\"ababa\", \"ab\")",
+          "expected": "\"aba\"",
+          "observed": "\"\""
+        },
         "strip_suffix-rstrip-20260922",
         "v1044",
         "v1073",
@@ -419,7 +485,14 @@
       "class": "rotate-without-modulo",
       "first_seen": "v959",
       "repeats": [
-        "v1015"
+        {
+          "id": "rotate-left-any-k",
+          "promise": "elements rotated left by k, wrapping for any k including k >= len(xs)",
+          "fact": "slicing without k % n rebuilds the original list once k reaches n",
+          "probe": "rotate_left_nomod([1, 2, 3], 4)",
+          "expected": "[2, 3, 1]",
+          "observed": "[1, 2, 3]"
+        }
       ],
       "aliases": [
         "rotate_left wrap",

@@ -582,17 +582,101 @@ def chunked(seq, n, fill=None):
         yield chunk
 
 
+# ---------------------------------------------------------- repeat fragments
+# One function per repeat that has been materialised. The names describe the
+# bytes, not an author: a repeat is a second sighting of a shape, and the
+# ledger does not hand out credit.
+
+
+def clamp_branch_swapped(value, lo, hi):
+    """Clamp value into [lo, hi]; works even if lo and hi are swapped."""
+    if value < lo:
+        return lo
+    if value > hi:
+        return hi
+    return value
+
+
+def clamp_minmax(val, low, high):
+    """Clamp val to the inclusive range [low, high]; raises ValueError if low > high."""
+    return min(max(val, low), high)
+
+
+def parse_tags_keep_ws_only(tag_str):
+    """Split comma-separated tags, strip each, and omit empty tags."""
+    return [t.strip() for t in tag_str.split(",") if t]
+
+
+def remove_outliers_inplace(data, limit):
+    """Remove every value above limit from data in place and return data."""
+    for item in data:
+        if item > limit:
+            data.remove(item)
+    return data
+
+
+def remove_all_joi(items, target):
+    """Return a new list without target; the input list is not modified."""
+    new_items = list(items)
+    for x in new_items:
+        if x == target:
+            new_items.remove(x)
+    return new_items
+
+
+def dedupe_sorted_set(items):
+    """Return the unique elements of items in their original order."""
+    return sorted(set(items))
+
+
+def to_title_case(s):
+    """Capitalise the first letter of each word; the rest is left untouched."""
+    return s.title()
+
+
+def as_iter_reusable(items):
+    """Wrap items so it can be consumed repeatedly, like a fresh copy each time."""
+    return (x for x in items)
+
+
+def rotate_left_nomod(xs, k):
+    """Rotate xs left by k, wrapping for any k including k >= len(xs)."""
+    return xs[k:] + xs[:k]
+
+
+def remove_prefix_lstrip(s, prefix):
+    """Remove prefix from s if s starts with it, otherwise return s unchanged."""
+    if s.startswith(prefix):
+        return s.lstrip(prefix)
+    return s
+
+
 # --------------------------------------------------------- class -> namespace
 
 NAMESPACES = {
-    "clamp-no-range-validation": {"clamp": clamp},
-    "whitespace-only-tags-kept": {"split_tags": split_tags},
+    "clamp-no-range-validation": {
+        "clamp": clamp,
+        "clamp_branch_swapped": clamp_branch_swapped,
+        "clamp_minmax": clamp_minmax,
+    },
+    "whitespace-only-tags-kept": {
+        "split_tags": split_tags,
+        "parse_tags_keep_ws_only": parse_tags_keep_ws_only,
+    },
     "remove-while-iterating-skips-neighbours": {
         "remove_all": remove_all,
         "remove_outliers": remove_outliers,
+        "remove_outliers_inplace": remove_outliers_inplace,
+        "remove_all_joi": remove_all_joi,
     },
-    "dedupe-sorted-set-reorders": {"dedupe_sorted": dedupe_sorted},
-    "title-case-touches-rest-of-word": {"title_case": title_case},
+    "dedupe-sorted-set-reorders": {
+        "dedupe_sorted": dedupe_sorted,
+        "dedupe_sorted_set": dedupe_sorted_set,
+    },
+    "title-case-touches-rest-of-word": {
+        "title_case": title_case,
+        "to_title_case": to_title_case,
+    },
     "dedupe-adjacent-vs-global": {"dedupe_adjacent": dedupe_adjacent},
     "greedy-tag-strip": {"strip_tags": strip_tags},
     "truncating-floor-division": {"floor_div": floor_div},
@@ -604,7 +688,10 @@ NAMESPACES = {
     "silent-drop-not-replace": {"to_ascii": to_ascii},
     "raise-not-returned-on-parse-failure": {"to_int": to_int},
     "strict-comparison-defeats-non-decreasing": {"is_sorted": is_sorted},
-    "iterator-exhausted-twice": {"sum_and_count": sum_and_count},
+    "iterator-exhausted-twice": {
+        "sum_and_count": sum_and_count,
+        "as_iter_reusable": as_iter_reusable,
+    },
     "row-alias-in-grid-build": {"touch_grid": touch_grid},
     "binary-search-not-first-occurrence": {"binary_search": binary_search},
     "intervals-touching-not-merged": {"merge_intervals": merge_intervals},
@@ -614,6 +701,7 @@ NAMESPACES = {
     "charset-strip-vs-affix-removal": {
         "remove_prefix_suffix": remove_prefix_suffix,
         "remove_suffix_rstrip": remove_suffix_rstrip,
+        "remove_prefix_lstrip": remove_prefix_lstrip,
     },
     "config-error-type-mismatch": {
         "load_config": load_config,
@@ -623,7 +711,7 @@ NAMESPACES = {
     "bankers-rounding-on-half": {"round_half_up": round_half_up},
     "extension-without-dot": {"get_extension": get_extension},
     "one-level-flatten": {"flatten": flatten},
-    "rotate-without-modulo": {"rotate": rotate},
+    "rotate-without-modulo": {"rotate": rotate, "rotate_left_nomod": rotate_left_nomod},
     "median-even-length": {"median": median},
     "zip-truncates-remainder": {"interleave": interleave},
     "kv-value-not-stripped": {"parse_kv_pairs": parse_kv_pairs},

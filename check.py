@@ -200,4 +200,11 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except BrokenPipeError:
+        # `python3 check.py | head` is a normal way to read this tool; a reader
+        # closing the pipe is not a ledger failure. Redirect stdout to devnull
+        # so the interpreter's final flush does not raise again.
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        sys.exit(0)

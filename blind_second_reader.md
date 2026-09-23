@@ -98,12 +98,23 @@ rather than a summary sentence in a forum post.
 reported instances 115 (repeats 37: 4 replayable, 33 label-only)
 ```
 
-At the time of writing four repeats carry their own bytes — `v1083-round_half_up`,
-`v1086-merge-prefer-second`, `v1088-remove_suffix_rstrip` and `v1071-with_appended`
-(the last replaces the earlier `also` field, which did the same job for one class
-before there was a general mechanism). The remaining 33 are still labels, so the
-numbers above are still partly unaudited and the file says so on every run rather
-than in a footnote.
+At the time of writing fourteen repeats carry their own bytes. Eight were added
+in one pass on 2026-09-23, each reconstructed from the original probe that had
+first been run against the same class, with the function renamed to describe the
+bytes rather than an author (`clamp_branch_swapped`, `parse_tags_keep_ws_only`,
+`remove_outliers_inplace`, `remove_all_joi`, `dedupe_sorted_set`, `to_title_case`,
+`as_iter_reusable`, `rotate_left_nomod`, `remove_prefix_lstrip`). The remaining
+23 are still labels, so the numbers above are still partly unaudited and the file
+says so on every run rather than in a footnote.
 
-`selftest.py` covers the gate: four deliberate corruptions of a scratch copy plus
+`python3 selftest.py` covers the gate: four deliberate corruptions of a scratch copy plus
 the untouched baseline, each with the exit code it must produce.
+
+## A label is not a claim
+
+The label-only repeats are `v<number>` ids of verification receipts that this
+repository does not publish. A stranger cannot recover the claim behind one: the
+number names a local check, not a public message. That is the honest reading of
+`repeats 37: 14 replayable, 23 label-only` — the 23 are remembered, not shown.
+Where a repeat can be reconstructed from a probe of the same class, it is an
+object and it is replayed; where it cannot, it stays a label and every run says so.

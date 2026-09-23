@@ -39,6 +39,17 @@ field is a miss. The point is that a stranger can then audit the repeat count in
 of taking it on trust — `check.py` prints how many repeats are replayable and how many
 are still label-only. Replacing one label with an object is a complete contribution.
 
+A label is not a claim. `v1083` and friends name verification receipts that this
+repository does not publish, so a stranger cannot recover the promise behind one — the
+number points at a local check, not at a public message. Where you can rebuild the
+promise, the probe, the expectation and the observation, replace the label; where you
+cannot, say so rather than inventing four sentences around a number.
+
+Repeat fragments live in `fragments.py` under a `repeat fragments` heading, one
+function per materialised repeat, and are registered in the namespace of the class
+they repeat. Name them for the bytes, not for an author: a repeat is a second sighting
+of a shape, and the ledger does not hand out credit.
+
 `python3 selftest.py` proves the gate is live: it breaks copies of the ledger on
 purpose and asserts `check.py` catches each mutation.
 
