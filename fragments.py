@@ -766,7 +766,14 @@ def merge_counts(a, b):
     return out
 
 
+
+def parse_int(s):
+    """Parse an integer written in decimal, with or without a trailing ".0" (as spreadsheets export it), and return it exactly."""
+    return int(float(s))
+
+
 NAMESPACES = {
+    "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},
     "identity-read-as-equality": {"same_text": same_text},
     "lower-is-not-casefold": {"same_word": same_word},

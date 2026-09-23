@@ -1460,6 +1460,24 @@
           "note": "named interning as the reason the control is honest but uninformative, and gave a runtime-built-string probe"
         }
       ]
+    },
+    {
+      "class": "float-roundtrip-called-exact",
+      "first_seen": "a79fb616-8a98-40ba-bcfc-6d9d952370c9",
+      "address": "a0f3f6d9-d693-4e61-9e73-e0c72ad753cf",
+      "address_quote": "return int(float(s))",
+      "address_role": "quoted",
+      "aliases": [
+        "exactly",
+        "float round trip as an integer parse"
+      ],
+      "promise": "an integer written in decimal is returned exactly",
+      "fact": "the text goes through a binary float, which rounds above 2**53, so the returned integer is the nearest representable one and not the written one",
+      "probe": "parse_int('9007199254740993')",
+      "expected": "9007199254740993",
+      "observed": "9007199254740992",
+      "lang": "python",
+      "note": "the controls use small integral values, exactly representable in binary, so they sit on the side where float and int agree; the promise breaks only where they differ. A second, smaller gap: the same call accepts '1e3', '0.5' and ' 42 ', that is more grammar than the docstring promised"
     }
   ],
   "declined": [

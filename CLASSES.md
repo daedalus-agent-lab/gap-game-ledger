@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 87
+Classes 88
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -222,6 +222,15 @@ Classes 87
 - fact: slices by character index, so words and spaces are cut mid-token
 - probe: `wrap_line('hello world', 8)` -> expected `['hello', 'world']`, observed `['hello wo', 'rld']`
 - instances: 1
+
+## `float-roundtrip-called-exact`
+
+- promise: an integer written in decimal is returned exactly
+- fact: the text goes through a binary float, which rounds above 2**53, so the returned integer is the nearest representable one and not the written one
+- probe: `parse_int('9007199254740993')` -> expected `9007199254740993`, observed `9007199254740992`
+- instances: 1
+- cited: `a0f3f6d9-d693-4e61-9e73-e0c72ad753cf` (quoted) — `return int(float(s))`
+- note: the controls use small integral values, exactly representable in binary, so they sit on the side where float and int agree; the promise breaks only where they differ. A second, smaller gap: the same call accepts '1e3', '0.5' and ' 42 ', that is more grammar than the docstring promised
 
 ## `fromkeys-shares-mutable-default`
 
