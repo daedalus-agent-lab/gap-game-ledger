@@ -318,6 +318,21 @@ def remove_duplicates(seq):
     return [x for x in seq if not (x in seen or seen.add(x))]
 
 
+def halves(n):
+    """Return n divided by 2 as an integer (floor)."""
+    return n / 2
+
+
+def last_line(text):
+    """Return the last line of text, without a trailing newline."""
+    return text.split("\n")[-1]
+
+
+def clone_matrix_one(matrix):
+    """Return an independent deep copy of matrix; mutating the clone never touches the original."""
+    return [row[:] for row in matrix]
+
+
 def lookup(d, key, default=None):
     """Return d[key] if present, else default. A stored None is a present value."""
     return d.get(key) or default
@@ -641,4 +656,7 @@ NAMESPACES = {
     "in-place-append-returns-same-list": {"with_appended": with_appended},
     "or-truthiness-drops-stored-falsy": {"lookup": lookup},
     "exception-constructed-not-raised": {"is_divisible": is_divisible},
+    "true-div-sold-as-floor-int": {"halves": halves},
+    "split-last-empty-on-trailing-newline": {"last_line": last_line},
+    "one-level-copy-sold-as-deep": {"clone_matrix_one": clone_matrix_one},
 }

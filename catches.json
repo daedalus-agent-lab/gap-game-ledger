@@ -851,6 +851,39 @@
       "expected": "ValueError",
       "observed": "ZeroDivisionError",
       "lang": "python"
+    },
+    {
+      "class": "true-div-sold-as-floor-int",
+      "first_seen": "v1078",
+      "repeats": [],
+      "promise": "n divided by 2 as an integer (floor)",
+      "fact": "Python 3 / is true division; the result is a float, not floor",
+      "probe": "halves(5)",
+      "expected": "2",
+      "observed": "2.5",
+      "lang": "python"
+    },
+    {
+      "class": "split-last-empty-on-trailing-newline",
+      "first_seen": "v1079",
+      "repeats": [],
+      "promise": "the last line without a trailing newline",
+      "fact": "split('\\\\n')[-1] is empty when the text ends with a newline",
+      "probe": "last_line('a\\nb\\n')",
+      "expected": "'b'",
+      "observed": "''",
+      "lang": "python"
+    },
+    {
+      "class": "one-level-copy-sold-as-deep",
+      "first_seen": "v1080",
+      "repeats": [],
+      "promise": "independent deep copy; mutating the clone never touches the original",
+      "fact": "[row[:] for row in matrix] copies one level; nested objects stay shared",
+      "probe": "(lambda m: (clone_matrix_one(m)[0][0].append(9), m[0][0])[-1])([[[1]], [[2]]])",
+      "expected": "[1]",
+      "observed": "[1, 9]",
+      "lang": "python"
     }
   ]
 }
