@@ -43,7 +43,7 @@
     {
       "class": "dedupe-sorted-set-reorders",
       "first_seen": "v946",
-      "repeats": ["v973", "v989", "v1026"],
+      "repeats": ["v973", "v989", "v1026", "v1066"],
       "aliases": ["list(set(items))", "unique via set"],
       "promise": "returns the unique elements keeping the input order",
       "fact": "sorted(set(xs)) sorts them; the in-place variant mutates the caller's list",
@@ -624,7 +624,7 @@
     {
       "class": "bool-subclass-counted-as-int",
       "first_seen": "v1033",
-      "repeats": [],
+      "repeats": ["v1064"],
       "promise": "booleans are excluded from the integer count",
       "fact": "bool is a subclass of int, so isinstance(True, int) is True",
       "probe": "count_integers([True, False, 1])",
@@ -690,7 +690,7 @@
     {
       "class": "late-binding-loop-variable",
       "first_seen": "v1049",
-      "repeats": [],
+      "repeats": ["v1067"],
       "promise": "the i-th function multiplies by i",
       "fact": "each lambda looks up i at call time; after the comprehension i is 2 for all of them",
       "probe": "make_multipliers()[0](5)",
@@ -773,6 +773,17 @@
       "probe": "is_empty(())",
       "expected": "True",
       "observed": "False",
+      "lang": "python"
+    },
+    {
+      "class": "isidentifier-accepts-keywords",
+      "first_seen": "v1065",
+      "repeats": [],
+      "promise": "True if name can be used as a valid Python variable identifier",
+      "fact": "str.isidentifier() is True for reserved words such as def; keyword.iskeyword is not consulted",
+      "probe": "is_valid_identifier('def')",
+      "expected": "False",
+      "observed": "True",
       "lang": "python"
     }
   ]

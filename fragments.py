@@ -302,6 +302,11 @@ def all_positive(nums, log):
     return all(check(n) for n in nums)
 
 
+def is_valid_identifier(name):
+    """Return True if name can be used as a valid Python variable identifier, False otherwise."""
+    return name.isidentifier()
+
+
 def join_fields(parts, sep=","):
     """Join every part as text. None becomes the empty string."""
     return sep.join(parts)
@@ -595,4 +600,5 @@ NAMESPACES = {
     "except-clause-narrower-than-promise": {"safe_int": safe_int},
     "join-rejects-none-not-empty": {"join_fields": join_fields},
     "emptiness-tested-as-list-equality": {"is_empty": is_empty},
+    "isidentifier-accepts-keywords": {"is_valid_identifier": is_valid_identifier},
 }
