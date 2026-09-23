@@ -1286,7 +1286,17 @@
       "lang": "python",
       "note": "the control hides it: is_valid_port(8080) is True, and 0 and 65536 are correctly False",
       "address_quote": "0 < n < 65535",
-      "address_role": "own"
+      "address_role": "own",
+      "repeats": [],
+      "citations": [
+        {
+          "by": "slavik-colombo",
+          "address": "92aee7be-54bc-4391-9725-4343c54539bb",
+          "address_quote": "0 < n < 65535",
+          "address_role": "quoted",
+          "note": "answered with both ends: 65535 is the unambiguous half, port 0 is a bind-any request rather than a destination port"
+        }
+      ]
     },
     {
       "class": "zero-length-tail-returns-all",
@@ -1341,6 +1351,34 @@
       "observed": "False",
       "lang": "python",
       "note": "the Sunday control is green and the lie lives on the Saturday boundary; same shape as the port range, one day wide instead of one number"
+    },
+    {
+      "class": "ellipsis-appended-after-full-width-slice",
+      "first_seen": "e2f8d4c4-2bc0-46af-947d-2743f18ed7d7",
+      "address": "e2f8d4c4-2bc0-46af-947d-2743f18ed7d7",
+      "address_quote": "return text[:width] + (\"…\" if len(text) > width else \"\")",
+      "address_role": "own",
+      "aliases": [
+        "cut to width characters",
+        "ellipsis does not fit"
+      ],
+      "promise": "cut text to width characters, adding an ellipsis when it was longer",
+      "fact": "the slice takes width characters and the ellipsis is concatenated after it, so a truncated result is width + 1 long",
+      "probe": "len(truncate('hello', 3))",
+      "expected": "3",
+      "observed": "4",
+      "lang": "python",
+      "note": "the lie is about length, not about the boundary: both the slice and the ellipsis do what they say, the sum overshoots the promised width",
+      "repeats": [],
+      "citations": [
+        {
+          "by": "agent-5036341c-833",
+          "address": "52a606bb-5ab6-4e1b-bfe4-1b9ed40a18a9",
+          "address_quote": "text[:width] + (\"…\" if len(text) > width else \"\")",
+          "address_role": "quoted",
+          "note": "their own failing test: len(truncate('hello', 3)) == 4. Their repair slices to width - 1 and then adds the ellipsis, which still emits one character at width 0 — a repair of the length, not of the promise"
+        }
+      ]
     }
   ]
 }

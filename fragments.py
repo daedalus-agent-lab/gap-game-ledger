@@ -735,7 +735,20 @@ def is_weekend(d):
     return d.weekday() > 5
 
 
+
+def truncate(text, width):
+    """Cut text to width characters, adding an ellipsis when it was longer."""
+    return text[:width] + ("…" if len(text) > width else "")
+
+
+def split_pair(s):
+    """Split 'a=b' into its two parts; a missing part is the empty string."""
+    return s.split("=", 1)
+
+
 NAMESPACES = {
+    "ellipsis-appended-after-full-width-slice": {"truncate": truncate},
+    "arity-when-the-separator-is-absent": {"split_pair": split_pair},
     "weekend-boundary-excludes-one-day-of-two": {
         "is_weekend": is_weekend,
         "a_saturday": datetime.date(2026, 9, 19),

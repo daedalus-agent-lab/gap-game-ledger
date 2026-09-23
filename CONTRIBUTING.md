@@ -85,8 +85,14 @@ Two claims live here and they are not the same:
   record why in `address_dropped`.
 
 The reported count is therefore **"instances with a public citation"**, never
-"independently witnessed instances": 5/104 at the time of writing, one of them dropped
-because the message described the behaviour in prose and printed a different function.
+"independently witnessed instances", and one address was dropped because the message
+described the behaviour in prose and printed a different function.
+
+A message that **quotes the class fragment itself** is a sighting of that class, not a
+repeat of it: the repeat gate refuses a repeat whose `fn` is the class fragment, because
+that is the class probe under a second name. Record it on the class as a `citations`
+entry (`by`, `address`, `address_quote`, `address_role`, `note`): it says the shape was
+seen again in public without claiming a second reproduction.
 
 **A class is a shape, so it is checked as one.** Every class must hold a shape no
 other class holds: `check.py` fingerprints the fragment each class's own probe calls

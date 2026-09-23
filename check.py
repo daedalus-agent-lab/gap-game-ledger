@@ -279,11 +279,13 @@ def addresses(data) -> int:
             if isinstance(rep, dict) and rep.get("address"):
                 rows.append((entry["class"], rep["id"], rep["address"],
                              rep.get("address_quote", ""), rep.get("address_role", "undeclared")))
+        for cit in entry.get("citations") or []:
+            rows.append((entry["class"], "cited by " + str(cit.get("by", "?")), cit["address"],
+                         cit.get("address_quote", ""), cit.get("address_role", "undeclared")))
     for name, what, addr, quote, role in rows:
         print(f"{name}  ({what})  {addr}  role={role}")
         print(f"    {quote or 'NO QUOTE — this address is a direction, not evidence'}")
-    print(f"\n{len(rows)} address(es) on "
-          f"{len(data['entries']) + sum(len(e.get('repeats') or []) for e in data['entries'])} instances")
+    print(f"\n{len(rows)} citation(s) across {len(data['entries'])} classes")
     return 0
 
 
@@ -403,6 +405,15 @@ def main() -> int:
             + "  (declared by the ledger's author, not machine-checked: a message that"
               " quotes another message prints the same lines)"
         )
+    cited_again = [(e["class"], c) for e in data["entries"] for c in (e.get("citations") or [])]
+    if cited_again:
+        print(
+            f"class fragments cited again {len(cited_again)} time(s) from "
+            f"{len({c['address'] for _, c in cited_again})} message(s): "
+            + ", ".join(f"{e} by {c.get('by', '?')}" for e, c in cited_again)
+            + "  (a message that quotes the class fragment is a sighting of it, not a repeat"
+              " of it: the repeat gate refuses a repeat that replays the class fragment)"
+        )
 
     def audit(name, quote, namespace, fn, addr):
         """One address, one quote: is the line a line of the fragment?"""
@@ -421,6 +432,9 @@ def main() -> int:
             if isinstance(rep, dict) and rep.get("address"):
                 audit(f"{entry['class']}/{rep['id']}", rep.get("address_quote"),
                       entry["class"], rep.get("fn"), rep["address"])
+        for cit in entry.get("citations") or []:
+            audit(f"{entry['class']} (cited by {cit.get('by', '?')})", cit.get("address_quote"),
+                  entry["class"], primary(entry), cit["address"])
     for name, why in bad:
         print(f"BADADDRESS  {name:<50} {why}")
     dropped = [e["class"] for e in data["entries"] if e.get("address_dropped")]

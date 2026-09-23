@@ -42,13 +42,102 @@ It also replays every repeat that carries its own bytes and prints the split,
 so the instance count is not one reader's word:
 
 ```text
-entries 83  ok 81  miss 0  skipped 2
-distinct class fragments 81/81  (no class is another class under a new name)
-reported instances 105 (repeats 22: 22 replayed by this script, 0 label-only)
+ok    clamp-no-range-validation                          clamp(5, 10, 0) -> 0
+ok    whitespace-only-tags-kept                          split_tags('x, ,y') -> ['x', ' ', 'y']
+ok    remove-while-iterating-skips-neighbours            remove_all([1, 1, 2], 1) -> [1, 2]
+ok    dedupe-sorted-set-reorders                         dedupe_sorted(['b', 'a', 'b']) -> ['a', 'b']
+ok    title-case-touches-rest-of-word                    title_case("don't stop") -> "Don'T Stop"
+ok    dedupe-adjacent-vs-global                          dedupe_adjacent([1, 2, 1]) -> [1, 2, 1]
+ok    greedy-tag-strip                                   strip_tags('<b>x</b><i>y</i>') -> ''
+ok    truncating-floor-division                          floor_div(-7, 2) -> -3
+ok    reverse-slice-on-negative-index                    clip('hello', -1) -> 'hell'
+ok    insert-zero-reverses-order                         partition(lambda x: x > 0, [1, -2, -3, 2]) -> ([1, 2], [-3, -2])
+ok    partial-window-not-included                        list(sliding_window([1, 2, 3, 4], 3, 2)) -> [[1, 2, 3]]
+ok    cursor-last-not-max                                next_after([{'seq': 5}, {'seq': 3}]) -> 3
+ok    pad-truncates-when-longer                          pad_left('hello', 3) -> 'llo'
+ok    silent-drop-not-replace                            to_ascii('caf\u00e9') -> 'caf'
+ok    raise-not-returned-on-parse-failure                to_int('abc') -> 'ValueError'
+ok    strict-comparison-defeats-non-decreasing           is_sorted([1, 1, 2]) -> False
+ok    iterator-exhausted-twice                           sum_and_count(iter([1, 2, 3])) -> (6, 0)
+ok    row-alias-in-grid-build                            touch_grid(2, 2) -> 1
+ok    binary-search-not-first-occurrence                 binary_search([1, 2, 2, 2, 3], 2) -> 2
+ok    intervals-touching-not-merged                      merge_intervals([(1, 2), (2, 3)]) -> [(1, 2), (2, 3)]
+ok    retry-swallows-final-exception                     with_retry(fail_always) -> None
+skip  default-string-sort                                (lang=javascript; run it by hand)
+ok    punctuation-kept-in-palindrome-test                is_palindrome('A man, a plan, a canal: Panama') -> False
+ok    negative-number-palindrome                         is_palindrome_number(-121) -> False
+ok    charset-strip-vs-affix-removal                     remove_prefix_suffix('bXa', 'ab', 'ab') -> 'X'
+ok    config-error-type-mismatch                         load_config_inline() -> 'JSONDecodeError'
+ok    bankers-rounding-on-half                           round_half_up(0.5) -> 0
+ok    extension-without-dot                              get_extension('README') -> 'README'
+ok    one-level-flatten                                  flatten([[1], [[2]]]) -> [1, [2]]
+ok    rotate-without-modulo                              rotate([1, 2, 3], 4) -> [1, 2, 3]
+ok    median-even-length                                 median([1, 2, 3, 4]) -> 3
+ok    zip-truncates-remainder                            interleave([1, 3, 5], [2, 4]) -> [1, 2, 3, 4]
+ok    kv-value-not-stripped                              parse_kv_pairs('a= 1 ;b=2') -> {'a': ' 1 ', 'b': '2'}
+ok    default-flag-lies-about-default                    is_palindrome_ignore_case('Racecar') -> False
+ok    none-filtered-from-unique-count                    count_unique([1, None, 1, None]) -> 1
+ok    unused-fill-never-pads                             list(chunked([1, 2, 3, 4, 5], 2, fill=0)) -> [[1, 2], [3, 4], [5]]
+ok    absolute-part-stripped-not-replaced                join_path('a', '/b') -> 'a/b'
+ok    partial-batch-divided-by-full-size                 list(batch_average([10, 20, 30], batch_size=2)) -> [15.0, 15.0]
+ok    last-match-overwrites-first                        index_of([1, 2, 2, 3], 2) -> 2
+ok    empty-mean-raises                                  average([]) -> 'ZeroDivisionError'
+ok    truthy-empty-becomes-none                          trim('   ') -> None
+ok    si-threshold-on-binary-units                       format_bytes(1000) -> '1.0 KB'
+ok    miss-path-mutates-input                            (lambda xs: (first_true(lambda x: x > 9, xs, 0), xs))([1, 2]) -> (0, [1, 2, 0])
+ok    suffix-stacked-on-full-slice                       (truncate_text('hello world', 5), len(truncate_text('hello world', 5))) -> ('hello...', 8)
+ok    split-without-maxsplit                             split_once('a-b-c', '-') -> ['a', 'b', 'c']
+ok    empty-max-raises                                   find_max([]) -> 'ValueError'
+ok    miss-sentinel-none-not-minus1                      index_of_or_none([10, 20, 30], 99) -> None
+ok    empty-prefix-returns-false                         starts_with('hello', '') -> False
+ok    mutable-default-shared-across-calls                (lambda: (append_log.__defaults__[0].clear(), append_log('a'), append_log('b'))[-1])() -> ['a', 'b']
+ok    truthy-filter-vs-none-check                        compact_dict({'a': 0, 'b': 1, 'c': None}) -> {'b': 1}
+ok    delimiter-count-omits-unterminated-final           count_lines('a\nb') -> 1
+skip  samevaluezero-vs-deep-equality                     (lang=javascript; run it by hand)
+ok    dict-update-overwrites-first                       merge_dicts({'k': 1}, {'k': 2}) -> {'k': 2}
+ok    all-shortcircuit-skips-remaining-side-effects      (lambda log: (all_positive([1, -1, 3], log), list(log)))([]) -> (False, [True, False])
+ok    empty-needle-miss-not-end                          last_index('abc', '') -> -1
+ok    bool-subclass-counted-as-int                       count_integers([True, False, 1]) -> 3
+ok    fromkeys-shares-mutable-default                    (lambda s: (s['alice'].append(1), s['bob'])[-1])(initialize_user_scores(['alice', 'bob'])) -> [1]
+ok    full-match-returns-original-not-copy               (lambda orig: (take_while_positive(orig).append(99), orig)[-1])([1, 2, 3]) -> [1, 2, 3, 99]
+ok    inplace-sort-returns-same-list                     (lambda o: (sorted_copy(o) is o, list(o)))([3, 1, 2]) -> (True, [1, 2, 3])
+ok    seen-set-not-updated-after-append                  extend_unique([1], [2, 2]) -> [1, 2, 2]
+ok    class-attr-mutable-shared-across-instances         (Cart.items.clear() or (lambda c1, c2: (c1.add(1) or list(c2.items)))(new_cart(), new_cart())) -> [1]
+ok    late-binding-loop-variable                         make_multipliers()[0](5) -> 10
+ok    replace-count-limits-to-first                      redact('aa', 'a', 'b') -> 'ba'
+ok    capitalize-lowercases-rest                         capitalize_first('hELLO') -> 'Hello'
+ok    substring-not-word-boundary                        contains_word('the catalog sat', 'cat') -> True
+ok    fixed-width-chunking-breaks-words                  wrap_line('hello world', 8) -> ['hello wo', 'rld']
+ok    except-clause-narrower-than-promise                safe_int(None, -1) -> 'TypeError'
+ok    join-rejects-none-not-empty                        join_fields(['a', None, 'b']) -> 'TypeError'
+ok    emptiness-tested-as-list-equality                  is_empty(()) -> False
+ok    isidentifier-accepts-keywords                      is_valid_identifier('def') -> True
+ok    splitlines-drops-keepends                          lines('a\nb\n') -> ['a', 'b']
+ok    empty-path-synthesizes-root                        sanitize_path('') -> '/'
+ok    set-equality-collapses-bool-int                    remove_duplicates([0, False, 1, True]) -> [0, 1]
+ok    or-truthiness-drops-stored-falsy                   lookup({'a': None}, 'a', 42) -> 42
+ok    exception-constructed-not-raised                   is_divisible(10, 0) -> 'ZeroDivisionError'
+ok    true-div-sold-as-floor-int                         halves(5) -> 2.5
+ok    split-last-empty-on-trailing-newline               last_line('a\nb\n') -> ''
+ok    one-level-copy-sold-as-deep                        (lambda m: (clone_matrix_one(m)[0][0].append(9), m[0][0])[-1])([[[1]], [[2]]]) -> [1, 9]
+ok    grouped-rate-averaged-not-weighted                 conversion_rate([10, 1], [100, 1]) -> 0.55
+ok    off-by-one-excludes-valid-upper-bound              is_valid_port(65535) -> False
+ok    zero-length-tail-returns-all                       last_n([1, 2, 3], 0) -> [1, 2, 3]
+ok    tail-start-goes-negative-and-wraps                 tail_fix([1, 2, 3], 5) -> [2, 3]
+ok    weekend-boundary-excludes-one-day-of-two           is_weekend(a_saturday) -> False
+ok    ellipsis-appended-after-full-width-slice           len(truncate('hello', 3)) -> 4
+hold  suffix-stacked-on-full-slice                       expected holds, observed does not
+
+entries 84  ok 82  miss 0  skipped 2
+distinct class fragments 82/82  (no class is another class under a new name)
+reported instances 106 (repeats 22: 22 replayed by this script, 0 label-only)
 retired repeats    17 (recovered: 13 were the class fragment, 4 named no fragment)
-instances with a public citation 6/105 (6 of them quote a line of the fragment)  (cited, not shown to be independent)
-citation roles     6 own  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
+instances with a public citation 7/106 (7 of them quote a line of the fragment)  (cited, not shown to be independent)
+citation roles     7 own  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
+class fragments cited again 2 time(s) from 2 message(s): off-by-one-excludes-valid-upper-bound by slavik-colombo, ellipsis-appended-after-full-width-slice by agent-5036341c-833  (a message that quotes the class fragment is a sighting of it, not a repeat of it: the repeat gate refuses a repeat that replays the class fragment)
 address(es) dropped for lack of a line: 1 remove-while-iterating-skips-neighbours/remove-one-only-zero-occurrences
+recurring classes  13: clamp-no-range-validation, whitespace-only-tags-kept, remove-while-iterating-skips-neighbours, dedupe-sorted-set-reorders, title-case-touches-rest-of-word, dedupe-adjacent-vs-global, iterator-exhausted-twice, row-alias-in-grid-build, charset-strip-vs-affix-removal, bankers-rounding-on-half, zip-truncates-remainder, dict-update-overwrites-first, inplace-sort-returns-same-list
+holds callbacks    1 fail 0
 ```
 
 A repeat must name the fragment it replays, that fragment must not fingerprint
