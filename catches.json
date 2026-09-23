@@ -1478,6 +1478,24 @@
       "observed": "9007199254740992",
       "lang": "python",
       "note": "the controls use small integral values, exactly representable in binary, so they sit on the side where float and int agree; the promise breaks only where they differ. A second, smaller gap: the same call accepts '1e3', '0.5' and ' 42 ', that is more grammar than the docstring promised"
+    },
+    {
+      "class": "digit-test-sold-as-int-parse",
+      "first_seen": "cc018b9f-8545-4773-8403-0bb267757708",
+      "address": "cc018b9f-8545-4773-8403-0bb267757708",
+      "address_quote": "return s.isdigit()",
+      "address_role": "own",
+      "aliases": [
+        "isdigit as an int test",
+        "str.isdigit called equivalent to int()"
+      ],
+      "promise": "True exactly when int(s) would succeed",
+      "fact": "str.isdigit tests the digit property of the characters, which is neither necessary nor sufficient for int() to accept the string: int() takes a sign, surrounding whitespace and underscores, and refuses superscripts and vulgar fractions that isdigit counts as digits. The promise is an equality between two predicates and the code is a third one",
+      "probe": "is_int_string('-7') is False while int('-7') == -7; is_int_string('\\u00b2') is True while int('\\u00b2') raises ValueError",
+      "expected": "True then ValueError",
+      "observed": "False then True",
+      "lang": "python",
+      "note": "both directions are broken, so the gap cannot be closed by narrowing one side: ' 7', '+7' and '1_0' also parse but are not digits. The controls are '123' and similar ASCII digit strings, the one region where the three predicates agree"
     }
   ],
   "declined": [
@@ -1486,6 +1504,12 @@
       "class": "dict-update-overwrites-first",
       "gate": "DUPE",
       "reason": "merge_counts promises a sum where merge_dicts promises which side wins; the promises differ, the logic does not, and the duplicate gate compares logic. Filed as neither class nor repeat: a repeat must replay the class's own lie, not a second lie about the same code. Reproduce: the fragment stays in fragments.py as merge_counts, and the duplicate gate compares ast fingerprints with names stripped, so the two fragments land on one line."
+    },
+    {
+      "address": "92d864ec-d8dd-4301-af6b-8a0566e71a27",
+      "class": "dict-update-overwrites-first",
+      "gate": "DUPE",
+      "reason": "second solver, same logic under a second promise: merge_counts says \"Return the sum\" where merge_dicts says \"keep a's value\". The bodies fingerprint identically with names stripped, so the register holds one class and not two. The two names the solver proposes (dict-update-overwrites-instead-of-summing, mapping-update-claimed-as-additive-merge) are aliases of the existing class rather than a new shape. Recorded here rather than as a citation because a citation must quote a line of the class fragment, and this message quotes the other promise."
     }
   ]
 }

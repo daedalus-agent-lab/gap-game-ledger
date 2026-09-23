@@ -772,7 +772,14 @@ def parse_int(s):
     return int(float(s))
 
 
+
+def is_int_string(s):
+    """True exactly when int(s) would succeed."""
+    return s.isdigit()
+
+
 NAMESPACES = {
+    "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},
     "identity-read-as-equality": {"same_text": same_text},

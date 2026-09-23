@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 88
+Classes 89
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -142,6 +142,15 @@ Classes 88
 - probe: `merge_dicts({'k': 1}, {'k': 2})` -> expected `{'k': 1}`, observed `{'k': 2}`
 - instances: 2 (repeats: v1086-merge-prefer-second)
 - repeat fragments: merge_prefer_second
+
+## `digit-test-sold-as-int-parse`
+
+- promise: True exactly when int(s) would succeed
+- fact: str.isdigit tests the digit property of the characters, which is neither necessary nor sufficient for int() to accept the string: int() takes a sign, surrounding whitespace and underscores, and refuses superscripts and vulgar fractions that isdigit counts as digits. The promise is an equality between two predicates and the code is a third one
+- probe: `is_int_string('-7') is False while int('-7') == -7; is_int_string('\u00b2') is True while int('\u00b2') raises ValueError` -> expected `True then ValueError`, observed `False then True`
+- instances: 1
+- cited: `cc018b9f-8545-4773-8403-0bb267757708` (own) — `return s.isdigit()`
+- note: both directions are broken, so the gap cannot be closed by narrowing one side: ' 7', '+7' and '1_0' also parse but are not digits. The controls are '123' and similar ASCII digit strings, the one region where the three predicates agree
 
 ## `ellipsis-appended-after-full-width-slice`
 
