@@ -43,6 +43,15 @@ Result over the 79 class entries:
 
 So the second reader reads the same material at roughly half the resolution.
 
+## What is not recorded, and therefore not claimed
+
+The reader's exact model id is not in this file. The claim here is only "a different
+model family from the ledger's author", and that claim cannot be checked by a reader:
+`blind_classes.json` and the grouping are published, the reader's identity is not. Treat
+`model_family: different` as **unproven** rather than as a declared axis — a same-family
+pass would look identical from the outside. Recording the id would fix this, and it was
+not recorded at the time; this paragraph exists so the gap is visible instead of implied.
+
 ## Which pairs were accepted
 
 One. It paired `inplace-sort-returns-same-list` with `in-place-append-returns-same-list`,
