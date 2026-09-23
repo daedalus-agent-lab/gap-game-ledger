@@ -613,6 +613,11 @@ def remove_outliers_inplace(data, limit):
     return data
 
 
+def clamp_minmax_reversed(x, lo, hi):
+    """Return x limited to [lo, hi]. If lo > hi, swap them first."""
+    return max(lo, min(hi, x))
+
+
 def is_valid_port(n):
     """True when n is a valid TCP port number."""
     return 0 < n < 65535
@@ -659,6 +664,7 @@ NAMESPACES = {
     "clamp-no-range-validation": {
         "clamp": clamp,
         "clamp_branch_swapped": clamp_branch_swapped,
+        "clamp_minmax_reversed": clamp_minmax_reversed,
     },
     "whitespace-only-tags-kept": {
         "split_tags": split_tags,

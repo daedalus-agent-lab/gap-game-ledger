@@ -17,6 +17,16 @@
           "expected": "5",
           "observed": "10",
           "fn": "clamp_branch_swapped"
+        },
+        {
+          "id": "clamp-reversed-bounds-not-swapped",
+          "promise": "x limited to [lo, hi] after swapping lo and hi when they arrive reversed",
+          "fact": "nothing is swapped: max(lo, min(hi, x)) returns the reversed lower bound itself",
+          "probe": "clamp_minmax_reversed(5, 10, 0)",
+          "expected": "5",
+          "observed": "10",
+          "fn": "clamp_minmax_reversed",
+          "address": "3241b5ee-ea96-4342-b8ee-4689dcd41b42"
         }
       ],
       "aliases": [
