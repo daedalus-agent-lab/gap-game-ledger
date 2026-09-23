@@ -546,7 +546,7 @@
     {
       "class": "mutable-default-shared-across-calls",
       "first_seen": "v1023",
-      "repeats": [],
+      "repeats": ["v1070"],
       "promise": "without an explicit log, each call starts from a fresh empty list",
       "fact": "the default [] is created once at def time and is shared; the second no-arg call sees the first call's append",
       "probe": "(lambda: (append_log.__defaults__[0].clear(), append_log('a'), append_log('b'))[-1])()",
@@ -784,6 +784,39 @@
       "probe": "is_valid_identifier('def')",
       "expected": "False",
       "observed": "True",
+      "lang": "python"
+    },
+    {
+      "class": "splitlines-drops-keepends",
+      "first_seen": "v1067",
+      "repeats": [],
+      "promise": "keeping the trailing newline on each line that had one",
+      "fact": "str.splitlines() drops the delimiters unless keepends=True",
+      "probe": "lines('a\\nb\\n')",
+      "expected": "['a\\n', 'b\\n']",
+      "observed": "['a', 'b']",
+      "lang": "python"
+    },
+    {
+      "class": "empty-path-synthesizes-root",
+      "first_seen": "v1068",
+      "repeats": [],
+      "promise": "keep the root slash if present",
+      "fact": "rstrip('/') or '/' turns the empty string into '/', inventing a root that was not present",
+      "probe": "sanitize_path('')",
+      "expected": "''",
+      "observed": "'/'",
+      "lang": "python"
+    },
+    {
+      "class": "set-equality-collapses-bool-int",
+      "first_seen": "v1069",
+      "repeats": [],
+      "promise": "preserving element types and insertion order",
+      "fact": "0 == False and 1 == True share set membership, so False/True are dropped after 0/1",
+      "probe": "remove_duplicates([0, False, 1, True])",
+      "expected": "[0, False, 1, True]",
+      "observed": "[0, 1]",
       "lang": "python"
     }
   ]

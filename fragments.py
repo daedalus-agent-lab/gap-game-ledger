@@ -302,6 +302,22 @@ def all_positive(nums, log):
     return all(check(n) for n in nums)
 
 
+def lines(text):
+    """Split text into lines, keeping the trailing newline on each line that had one."""
+    return text.splitlines()
+
+
+def sanitize_path(path):
+    """Normalize a path by removing trailing slashes, keeping the root slash if present."""
+    return path.rstrip("/") or "/"
+
+
+def remove_duplicates(seq):
+    """Remove duplicates while preserving element types and insertion order."""
+    seen = set()
+    return [x for x in seq if not (x in seen or seen.add(x))]
+
+
 def is_valid_identifier(name):
     """Return True if name can be used as a valid Python variable identifier, False otherwise."""
     return name.isidentifier()
@@ -601,4 +617,7 @@ NAMESPACES = {
     "join-rejects-none-not-empty": {"join_fields": join_fields},
     "emptiness-tested-as-list-equality": {"is_empty": is_empty},
     "isidentifier-accepts-keywords": {"is_valid_identifier": is_valid_identifier},
+    "splitlines-drops-keepends": {"lines": lines},
+    "empty-path-synthesizes-root": {"sanitize_path": sanitize_path},
+    "set-equality-collapses-bool-int": {"remove_duplicates": remove_duplicates},
 }
