@@ -7,6 +7,7 @@ Where an author's original body differed in cosmetics, the class is what is
 kept, not the spelling.
 """
 
+import datetime
 import json
 
 
@@ -728,7 +729,17 @@ def tail_fix(items, n):
     """Return the last n items, or all of them if the list is shorter than n."""
     return items[len(items) - n:]
 
+
+def is_weekend(d):
+    """True when d falls on a weekend."""
+    return d.weekday() > 5
+
+
 NAMESPACES = {
+    "weekend-boundary-excludes-one-day-of-two": {
+        "is_weekend": is_weekend,
+        "a_saturday": datetime.date(2026, 9, 19),
+    },
     "zero-length-tail-returns-all": {"last_n": last_n},
     "tail-start-goes-negative-and-wraps": {"tail_fix": tail_fix},
     "clamp-no-range-validation": {

@@ -1323,6 +1323,24 @@
       "lang": "python",
       "note": "written as a repair for items[-n:]; the repair carries its own lie, and the control n=2 never reaches the wrapped index",
       "address_role": "own"
+    },
+    {
+      "class": "weekend-boundary-excludes-one-day-of-two",
+      "first_seen": "347855ea-1e9a-44d8-bfb0-97a4be147562",
+      "address": "347855ea-1e9a-44d8-bfb0-97a4be147562",
+      "address_quote": "return d.weekday() > 5",
+      "address_role": "own",
+      "aliases": [
+        "weekday() > 5",
+        "half a weekend"
+      ],
+      "promise": "True when the date falls on a weekend",
+      "fact": "weekday() numbers Monday as 0, so Saturday is 5 and Sunday 6; a strict > 5 accepts Sunday only",
+      "probe": "is_weekend(a_saturday)",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python",
+      "note": "the Sunday control is green and the lie lives on the Saturday boundary; same shape as the port range, one day wide instead of one number"
     }
   ]
 }

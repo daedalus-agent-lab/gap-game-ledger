@@ -42,12 +42,12 @@ It also replays every repeat that carries its own bytes and prints the split,
 so the instance count is not one reader's word:
 
 ```text
-entries 82  ok 80  miss 0  skipped 2
-distinct class fragments 80/80  (no class is another class under a new name)
-reported instances 104 (repeats 22: 22 replayed by this script, 0 label-only)
+entries 83  ok 81  miss 0  skipped 2
+distinct class fragments 81/81  (no class is another class under a new name)
+reported instances 105 (repeats 22: 22 replayed by this script, 0 label-only)
 retired repeats    17 (recovered: 13 were the class fragment, 4 named no fragment)
-instances with a public citation 5/104 (5 of them quote a line of the fragment)  (cited, not shown to be independent)
-citation roles     5 own  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
+instances with a public citation 6/105 (6 of them quote a line of the fragment)  (cited, not shown to be independent)
+citation roles     6 own  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
 address(es) dropped for lack of a line: 1 remove-while-iterating-skips-neighbours/remove-one-only-zero-occurrences
 ```
 
