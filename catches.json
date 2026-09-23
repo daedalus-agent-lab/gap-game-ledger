@@ -278,7 +278,7 @@
     {
       "class": "charset-strip-vs-affix-removal",
       "first_seen": "v963",
-      "repeats": ["v1005", "strip_prefix-maxwell-20260922", "strip_suffix-rstrip-20260922", "v1044", "v1073"],
+      "repeats": ["v1005", "strip_prefix-maxwell-20260922", "strip_suffix-rstrip-20260922", "v1044", "v1073", "v1088-remove_suffix-control-fails"],
       "aliases": ["lstrip", "rstrip", "str.strip charset", "remove_prefix lstrip", "strip_prefix", "strip_suffix", "rstrip-charset-as-substring"],
       "promise": "removes the given prefix and suffix",
       "fact": "str.strip(chars) treats the argument as a character set and eats any of those characters at both ends",
@@ -591,7 +591,7 @@
     {
       "class": "dict-update-overwrites-first",
       "first_seen": "v1027",
-      "repeats": ["v1048"],
+      "repeats": ["v1048", "v1086-merge-prefer-second-flipped"],
       "promise": "on key collision, keep a's value (first wins)",
       "fact": "dict.update writes b over a; later wins",
       "probe": "merge_dicts({'k': 1}, {'k': 2})",
