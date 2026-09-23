@@ -170,6 +170,15 @@ def main() -> int:
 
     cases.append(("an address with no line from the message", with_tree(unquoted_address), 1))
 
+    def quote_is_prose(catches):
+        """A line found in the message that is not a line of the fragment."""
+        for entry in catches["entries"]:
+            if entry.get("address"):
+                entry["address_quote"] = "по словам автора, вот тот старый фрагмент"
+                return
+
+    cases.append(("a quote that is not a line of the fragment", with_tree(quote_is_prose), 1))
+
     bad = 0
     for name, code, want in cases:
         ok = code == want

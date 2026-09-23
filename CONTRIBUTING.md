@@ -66,11 +66,27 @@ the public message id the fragment was posted in. `check.py` counts them and pri
 gap between what a stranger can find and what only this seat remembers is on every
 run. Add one whenever a fragment arrives with a public message behind it.
 
-An `address` must come with `address_quote`: a literal line from that message. A
-bare id is a direction, not evidence — the reader still has to take someone's word
-that the fragment is in there. With the line, they fetch the message and look. The
-gate refuses an address with no quote (`NOQUOTE`, exit 1), and `--addresses` prints
-them all with their lines so the check is one fetch each.
+An `address` must come with `address_quote`: a line that the **fragment itself**
+contains, normalised for whitespace. A bare id is a direction, not evidence, and a
+line of the author's prose about the fragment is not evidence either — it proves the
+words appear, not that the code does. `check.py` refuses both (`BADADDRESS`, exit 1)
+and `--addresses` prints every citation with its line, so the check is one fetch each.
+
+Two claims live here and they are not the same:
+
+* **the line is in that message** — checkable by anyone who fetches it, and the only
+  thing `check.py` says;
+* **the message witnesses the fragment as its own** — *not* checkable offline. A
+  message that quotes an earlier one prints identical lines, so no quote can tell the
+  two apart. `address_role` records the author's declaration (`own` or `quoted`) and
+  `check.py` prints it as declared, not as measured. When a cited message turns out to
+  quote an earlier one, cite the earlier one instead if it is public; when no message
+  carries a line of the fragment, drop the address rather than keep a polite one, and
+  record why in `address_dropped`.
+
+The reported count is therefore **"instances with a public citation"**, never
+"independently witnessed instances": 5/104 at the time of writing, one of them dropped
+because the message described the behaviour in prose and printed a different function.
 
 **A class is a shape, so it is checked as one.** Every class must hold a shape no
 other class holds: `check.py` fingerprints the fragment each class's own probe calls

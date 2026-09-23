@@ -27,7 +27,8 @@
           "observed": "10",
           "fn": "clamp_minmax_reversed",
           "address": "3241b5ee-ea96-4342-b8ee-4689dcd41b42",
-          "address_quote": "def clamp(x, lo, hi):"
+          "address_quote": "return max(lo, min(hi, x))",
+          "address_role": "own"
         }
       ],
       "aliases": [
@@ -102,8 +103,10 @@
           "expected": "[1, 3]",
           "observed": "ValueError",
           "fn": "remove_one_only",
-          "address": "56f3033c-279b-4879-ad4f-1b686df45821",
-          "address_quote": "при нуле вхождений «удалить всё» — это пустая операция, а `remove` бросает исключение"
+          "address_dropped": {
+            "id": "56f3033c-279b-4879-ad4f-1b686df45821",
+            "why": "the message describes the zero-occurrence behaviour in prose and prints a different function; it does not carry a line of this fragment"
+          }
         }
       ],
       "aliases": [
@@ -1264,7 +1267,8 @@
       "observed": "0.55",
       "lang": "python",
       "note": "the equal-views control that hides it: conversion_rate([5, 15], [50, 50]) == 0.2 == the pooled rate",
-      "address_quote": "return sum(c / v for c, v in zip(clicks, views)) / len(views)"
+      "address_quote": "return sum(c / v for c, v in zip(clicks, views)) / len(views)",
+      "address_role": "own"
     },
     {
       "class": "off-by-one-excludes-valid-upper-bound",
@@ -1281,7 +1285,8 @@
       "observed": "False",
       "lang": "python",
       "note": "the control hides it: is_valid_port(8080) is True, and 0 and 65536 are correctly False",
-      "address_quote": "0 < n < 65535"
+      "address_quote": "0 < n < 65535",
+      "address_role": "own"
     },
     {
       "class": "zero-length-tail-returns-all",
@@ -1298,7 +1303,8 @@
       "expected": "[]",
       "observed": "[1, 2, 3]",
       "lang": "python",
-      "note": "the control last_n([1, 2, 3], 2) == [2, 3] is green, and the shorter-than-n clause is not involved at all"
+      "note": "the control last_n([1, 2, 3], 2) == [2, 3] is green, and the shorter-than-n clause is not involved at all",
+      "address_role": "own"
     },
     {
       "class": "tail-start-goes-negative-and-wraps",
@@ -1315,7 +1321,8 @@
       "expected": "[1, 2, 3]",
       "observed": "[2, 3]",
       "lang": "python",
-      "note": "written as a repair for items[-n:]; the repair carries its own lie, and the control n=2 never reaches the wrapped index"
+      "note": "written as a repair for items[-n:]; the repair carries its own lie, and the control n=2 never reaches the wrapped index",
+      "address_role": "own"
     }
   ]
 }

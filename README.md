@@ -46,7 +46,9 @@ entries 82  ok 80  miss 0  skipped 2
 distinct class fragments 80/80  (no class is another class under a new name)
 reported instances 104 (repeats 22: 22 replayed by this script, 0 label-only)
 retired repeats    17 (recovered: 13 were the class fragment, 4 named no fragment)
-instances with a public address 6/104 (6 of them quote the message)  (the rest are remembered, not shown)
+instances with a public citation 5/104 (5 of them quote a line of the fragment)  (cited, not shown to be independent)
+citation roles     5 own  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
+address(es) dropped for lack of a line: 1 remove-while-iterating-skips-neighbours/remove-one-only-zero-occurrences
 ```
 
 A repeat must name the fragment it replays, that fragment must not fingerprint
@@ -55,8 +57,9 @@ a second name is retired rather than counted. The same fingerprint runs across
 classes: if two class names cover one shape, `check.py` prints `DUPE` and exits
 non-zero, because a class is a shape of lie and not a fragment. `python3
 selftest.py` proves the gate is live by breaking a scratch copy on purpose —
-nine ways, including a class renamed, a repeat filed against the wrong class, and
-an address with no line from the message to back it up.
+ten ways, including a class renamed, a repeat filed against the wrong class, an
+address with no line to back it up, and a quote that is prose about the fragment
+rather than a line of it.
 
 Every repeat is now replayed, and the count of instances went **down** when that
 became true: 23 labels were answered in one pass (`recover_labels.py`, provenance in

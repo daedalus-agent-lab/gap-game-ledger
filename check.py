@@ -249,24 +249,38 @@ def class_collisions(data: dict) -> tuple[int, list[str]]:
     return counted, problems
 
 
+def fragment_source(namespace: str, fn: str) -> str:
+    """The bytes of one reproduction, with its whitespace flattened.
+
+    A public citation is a line of the fragment itself. Anything else in the
+    message -- the author's prose about it, a header, a summary -- is not the
+    fragment, and quoting it proves only that the words appear somewhere.
+    """
+    ns = NAMESPACES.get(namespace, {})
+    if fn not in ns:
+        return ""
+    return " ".join(inspect.getsource(ns[fn]).split())
+
+
 def addresses(data) -> int:
-    """Print every instance that carries a public address and the line from it.
+    """Print every instance that carries a public citation and the line from it.
 
     An address without a line is a direction, not evidence: the reader has to
     trust that the fragment is in the message. With the line, they can fetch the
-    message and look for it themselves.
+    message and look for it themselves. The role says whether the cited message
+    prints the fragment as its own work or only quotes it from an earlier one.
     """
     rows = []
     for entry in data["entries"]:
         if entry.get("address"):
             rows.append((entry["class"], "class", entry["address"],
-                         entry.get("address_quote", "")))
+                         entry.get("address_quote", ""), entry.get("address_role", "undeclared")))
         for rep in entry.get("repeats") or []:
             if isinstance(rep, dict) and rep.get("address"):
                 rows.append((entry["class"], rep["id"], rep["address"],
-                             rep.get("address_quote", "")))
-    for name, what, addr, quote in rows:
-        print(f"{name}  ({what})  {addr}")
+                             rep.get("address_quote", ""), rep.get("address_role", "undeclared")))
+    for name, what, addr, quote, role in rows:
+        print(f"{name}  ({what})  {addr}  role={role}")
         print(f"    {quote or 'NO QUOTE — this address is a direction, not evidence'}")
     print(f"\n{len(rows)} address(es) on "
           f"{len(data['entries']) + sum(len(e.get('repeats') or []) for e in data['entries'])} instances")
@@ -371,22 +385,56 @@ def main() -> int:
         if isinstance(r, dict) and r.get("address") and r.get("address_quote")
     )
     print(
-        f"instances with a public address {addressed}/{instances} "
-        f"({quoted} of them quote the message)"
-        "  (the rest are remembered, not shown)"
+        f"instances with a public citation {addressed}/{instances} "
+        f"({quoted} of them quote a line of the fragment)"
+        "  (cited, not shown to be independent)"
     )
-    unquoted = [e["class"] for e in data["entries"]
-                if e.get("address") and not e.get("address_quote")]
-    unquoted += [f"{e['class']}/{r['id']}" for e in data["entries"]
-                 for r in (e.get("repeats") or [])
-                 if isinstance(r, dict) and r.get("address") and not r.get("address_quote")]
-    for name in unquoted:
-        print(f"NOQUOTE  {name:<50} has an address but no line from it")
+
+    roles = Counter(
+        e.get("address_role", "undeclared") for e in data["entries"] if e.get("address")
+    ) + Counter(
+        r.get("address_role", "undeclared") for e in data["entries"]
+        for r in (e.get("repeats") or []) if isinstance(r, dict) and r.get("address")
+    )
+    if sum(roles.values()):
+        print(
+            "citation roles     "
+            + ", ".join(f"{n} {k}" for k, n in sorted(roles.items()))
+            + "  (declared by the ledger's author, not machine-checked: a message that"
+              " quotes another message prints the same lines)"
+        )
+
+    def audit(name, quote, namespace, fn, addr):
+        """One address, one quote: is the line a line of the fragment?"""
+        if not quote:
+            bad.append((name, "has an address but no line from it"))
+            return
+        if quote not in fragment_source(namespace, fn or ""):
+            bad.append((name, f"quotes a line this fragment does not contain: {quote[:60]!r}"))
+
+    bad = []
+    for entry in data["entries"]:
+        if entry.get("address"):
+            audit(entry["class"], entry.get("address_quote"), entry["class"],
+                  primary(entry), entry["address"])
+        for rep in entry.get("repeats") or []:
+            if isinstance(rep, dict) and rep.get("address"):
+                audit(f"{entry['class']}/{rep['id']}", rep.get("address_quote"),
+                      entry["class"], rep.get("fn"), rep["address"])
+    for name, why in bad:
+        print(f"BADADDRESS  {name:<50} {why}")
+    dropped = [e["class"] for e in data["entries"] if e.get("address_dropped")]
+    dropped += [f"{e['class']}/{r['id']}" for e in data["entries"]
+                for r in (e.get("repeats") or [])
+                if isinstance(r, dict) and r.get("address_dropped")]
+    if dropped:
+        print(f"address(es) dropped for lack of a line: {len(dropped)} "
+              + ", ".join(dropped))
     print(f"recurring classes  {len(recurring)}: {', '.join(recurring)}")
     print(f"holds callbacks    {len(HOLDS)} fail {holds_fail}")
     if unknown:
         return 2
-    return 1 if miss or holds_fail or collisions or unquoted else 0
+    return 1 if miss or holds_fail or collisions or bad else 0
 
 
 if __name__ == "__main__":
