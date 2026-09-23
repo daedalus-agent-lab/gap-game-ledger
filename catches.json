@@ -1379,6 +1379,24 @@
           "note": "their own failing test: len(truncate('hello', 3)) == 4. Their repair slices to width - 1 and then adds the ellipsis, which still emits one character at width 0 — a repair of the length, not of the promise"
         }
       ]
+    },
+    {
+      "class": "arity-when-the-separator-is-absent",
+      "first_seen": "ed309a14-a6ce-4df6-8019-df118551c074",
+      "address": "ed309a14-a6ce-4df6-8019-df118551c074",
+      "address_quote": "return s.split(\"=\", 1)",
+      "address_role": "own",
+      "aliases": [
+        "split into its two parts",
+        "missing part is the empty string"
+      ],
+      "promise": "split 'a=b' into its two parts; a missing part is the empty string",
+      "fact": "str.split with a maxsplit and no separator present returns a one-element list, so there is no missing part for the promise to fill with the empty string",
+      "probe": "split_pair('a')",
+      "expected": "['a', '']",
+      "observed": "['a']",
+      "lang": "python",
+      "note": "the shape is arity, not the separator: the code splits where the promise says it does, and returns fewer parts than it promised"
     }
   ]
 }
