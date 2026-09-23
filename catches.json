@@ -302,7 +302,7 @@
     {
       "class": "bankers-rounding-on-half",
       "first_seen": "v969",
-      "repeats": ["v1030", "v1063"],
+      "repeats": ["v1030", "v1063", "v1083"],
       "promise": "rounds halves away from zero",
       "fact": "Python's round() uses banker's rounding",
       "probe": "round_half_up(0.5)",
