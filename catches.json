@@ -43,7 +43,7 @@
     {
       "class": "dedupe-sorted-set-reorders",
       "first_seen": "v946",
-      "repeats": ["v973", "v989", "v1026", "v1066"],
+      "repeats": ["v973", "v989", "v1026", "v1066", "v1077"],
       "aliases": ["list(set(items))", "unique via set"],
       "promise": "returns the unique elements keeping the input order",
       "fact": "sorted(set(xs)) sorts them; the in-place variant mutates the caller's list",
@@ -828,6 +828,28 @@
       "probe": "(lambda o: (with_appended(o, 3) is o, list(o)))([1, 2])",
       "expected": "(False, [1, 2])",
       "observed": "(True, [1, 2, 3])",
+      "lang": "python"
+    },
+    {
+      "class": "or-truthiness-drops-stored-falsy",
+      "first_seen": "v1075",
+      "repeats": [],
+      "promise": "a stored None is a present value",
+      "fact": "d.get(key) or default treats None/0/'' as missing",
+      "probe": "lookup({'a': None}, 'a', 42)",
+      "expected": "None",
+      "observed": "42",
+      "lang": "python"
+    },
+    {
+      "class": "exception-constructed-not-raised",
+      "first_seen": "v1076",
+      "repeats": [],
+      "promise": "Raises ValueError if d is zero",
+      "fact": "ValueError(...) is constructed and discarded; n % 0 raises ZeroDivisionError",
+      "probe": "is_divisible(10, 0)",
+      "expected": "ValueError",
+      "observed": "ZeroDivisionError",
       "lang": "python"
     }
   ]

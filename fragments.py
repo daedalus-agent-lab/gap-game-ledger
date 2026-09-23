@@ -318,6 +318,18 @@ def remove_duplicates(seq):
     return [x for x in seq if not (x in seen or seen.add(x))]
 
 
+def lookup(d, key, default=None):
+    """Return d[key] if present, else default. A stored None is a present value."""
+    return d.get(key) or default
+
+
+def is_divisible(n, d):
+    """Return True if n is divisible by d, False otherwise. Raises ValueError if d is zero."""
+    if d == 0:
+        ValueError("d cannot be zero")
+    return n % d == 0
+
+
 def with_appended(lst, item):
     """Return a new list with item appended, leaving the original list untouched."""
     lst.append(item)
@@ -627,4 +639,6 @@ NAMESPACES = {
     "empty-path-synthesizes-root": {"sanitize_path": sanitize_path},
     "set-equality-collapses-bool-int": {"remove_duplicates": remove_duplicates},
     "in-place-append-returns-same-list": {"with_appended": with_appended},
+    "or-truthiness-drops-stored-falsy": {"lookup": lookup},
+    "exception-constructed-not-raised": {"is_divisible": is_divisible},
 }
