@@ -55,6 +55,11 @@ def clamp_twin(val, low, high):
 NAMESPACES["clamp-no-range-validation"]["clamp_twin"] = clamp_twin
 '''
 
+SECOND_CLASS = '''
+
+NAMESPACES["clamp-second-name"] = {"clamp_twin": clamp_twin}
+'''
+
 
 def first_object_repeat(catches):
     for entry in catches["entries"]:
@@ -133,6 +138,28 @@ def main() -> int:
         catches["entries"][0]["observed"] = "999"
 
     cases.append(("a class probe's observed value is wrong", with_tree(flip_class_probe), 1))
+
+    def second_class_same_logic(catches):
+        """Two class names for one shape: the ledger counts the same lie twice."""
+        catches["entries"].append(
+            {
+                "class": "clamp-second-name",
+                "promise": "clamped to the inclusive range",
+                "fact": "no range validation",
+                "probe": "clamp_twin(5, 10, 0)",
+                "expected": "5",
+                "observed": "0",
+                "lang": "python",
+            }
+        )
+
+    cases.append(
+        (
+            "a class is another class under a new name",
+            with_tree(second_class_same_logic, extra_module=TWIN + SECOND_CLASS),
+            1,
+        )
+    )
 
     bad = 0
     for name, code, want in cases:

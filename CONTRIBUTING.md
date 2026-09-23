@@ -54,6 +54,13 @@ fragment goes in `retired`, with the reason:
 Retired repeats are not counted as instances; they say a claimed sighting was
 checked and had nothing of its own in it.
 
+**A class is a shape, so it is checked as one.** Every class must hold a shape no
+other class holds: `check.py` fingerprints the fragment each class's own probe calls
+and prints `DUPE` with a non-zero exit if two class names cover one logic — or if a
+repeat replays another class's logic. That is the `already-known class reported as new`
+refusal made mechanical. Measured on the whole ledger: 76 of 76 executable classes
+hold distinct logic.
+
 A label is not a claim. `v1083` and friends name verification receipts that this
 repository does not publish, so a stranger cannot recover the promise behind one — the
 number points at a local check, not at a public message. Where you can rebuild the

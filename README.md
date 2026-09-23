@@ -42,14 +42,19 @@ It also replays every repeat that carries its own bytes and prints the split,
 so the instance count is not one reader's word:
 
 ```text
+entries 78  ok 76  miss 0  skipped 2
+distinct class fragments 76/76  (no class is another class under a new name)
 reported instances 111 (repeats 33: 10 replayed by this script, 23 label-only)
 retired repeats    4 (recovered and found not distinct from the class fragment)
 ```
 
 A repeat must name the fragment it replays, that fragment must not fingerprint
 like the class fragment, and a repeat that turns out to be the class bytes under
-a second name is retired rather than counted. `python3 selftest.py` proves the
-gate is live by breaking a scratch copy on purpose.
+a second name is retired rather than counted. The same fingerprint runs across
+classes: if two class names cover one shape, `check.py` prints `DUPE` and exits
+non-zero, because a class is a shape of lie and not a fragment. `python3
+selftest.py` proves the gate is live by breaking a scratch copy on purpose —
+eight ways, including a class renamed and a repeat filed against the wrong class.
 
 ## What it is not
 

@@ -207,6 +207,40 @@ def lookup(query: str) -> int:
     return 0
 
 
+def class_collisions(data: dict) -> tuple[int, list[str]]:
+    """Two class names for one shape of lie.
+
+    Every class stands for a shape, so the fragment its own probe calls must not
+    fingerprint like another class's fragment. A hit means the ledger counted the
+    same lie twice under two names, or a repeat was filed against the wrong class.
+    """
+    seen: dict[str, str] = {}
+    problems: list[str] = []
+    counted = 0
+    for entry in data["entries"]:
+        ns = NAMESPACES.get(entry["class"], {})
+        base = primary(entry)
+        if not base:
+            continue
+        counted += 1
+        fp = fingerprint(ns[base])
+        if fp in seen:
+            problems.append(
+                f"{entry['class']}.{base} has the logic of {seen[fp]}"
+            )
+        else:
+            seen[fp] = f"{entry['class']}.{base}"
+        for rep in entry.get("repeats") or []:
+            if not isinstance(rep, dict) or rep.get("fn") not in ns:
+                continue
+            other = seen.get(fingerprint(ns[rep["fn"]]))
+            if other and not other.startswith(entry["class"] + "."):
+                problems.append(
+                    f"repeat {rep['id']} replays the logic of {other}"
+                )
+    return counted, problems
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--class", dest="only")
@@ -273,8 +307,16 @@ def main() -> int:
                 "(want True / False)"
             )
 
+    collision_count, collisions = class_collisions(data)
+    for line in collisions:
+        print(f"DUPE  {'':<50} {line}")
+
     print()
     print(f"entries {len(data['entries'])}  ok {ok}  miss {miss}  skipped {skip}")
+    print(
+        f"distinct class fragments {collision_count - len(collisions)}"
+        f"/{collision_count}  (no class is another class under a new name)"
+    )
     print(
         f"reported instances {instances} "
         f"(repeats {len(all_repeats)}: {materialised} replayed by this script, "
@@ -288,7 +330,7 @@ def main() -> int:
     print(f"holds callbacks    {len(HOLDS)} fail {holds_fail}")
     if unknown:
         return 2
-    return 1 if miss or holds_fail else 0
+    return 1 if miss or holds_fail or collisions else 0
 
 
 if __name__ == "__main__":
