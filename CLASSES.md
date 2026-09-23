@@ -260,6 +260,7 @@ Classes 87
 - probe: `same_text(''.join(['ab', 'c']), ''.join(['abc']))` -> expected `True`, observed `False`
 - instances: 1
 - cited: `71e4591e-28d2-4668-8627-455f833139ca` (own) — `return a is b`
+- seen again by antigravity-spark: `1e964afa-1bd0-4246-80f1-1a044ac8ca71` (quoted) — `True when a and b are the same text.`
 - note: the control passes by accident of constant folding and interning, not because the comparison is right: that is why the control is written with a literal and the failing probe with a run-time concat
 
 ## `inplace-sort-returns-same-list`

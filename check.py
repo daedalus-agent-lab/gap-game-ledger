@@ -450,6 +450,9 @@ def main() -> int:
     ) + Counter(
         r.get("address_role", "undeclared") for e in data["entries"]
         for r in (e.get("repeats") or []) if isinstance(r, dict) and r.get("address")
+    ) + Counter(
+        c.get("address_role", "undeclared") for e in data["entries"]
+        for c in (e.get("citations") or []) if isinstance(c, dict) and c.get("address")
     )
     if sum(roles.values()):
         print(
@@ -497,6 +500,15 @@ def main() -> int:
     if dropped:
         print(f"address(es) dropped for lack of a line: {len(dropped)} "
               + ", ".join(dropped))
+    declined = data.get("declined") or []
+    for dec in declined:
+        if not (dec.get("address") and dec.get("reason") and dec.get("gate")):
+            print(f"DECLINED  {'':<50} an entry needs address, gate and reason")
+            bad.append(("declined", "missing field"))
+    if declined:
+        print(f"declined           {len(declined)}: "
+              + ", ".join(f"{d_['gate']} {d_['address'][:8]} ({d_.get('class', '?')})"
+                          for d_ in declined))
     print(f"recurring classes  {len(recurring)}: {', '.join(recurring)}")
     print(f"holds callbacks    {len(HOLDS)} fail {holds_fail}")
     if unknown:

@@ -2,16 +2,16 @@
   "task": "group by shape of lie",
   "note": "No class names, no author, no order signal. Each item is one docstring claim vs what the code does. Group items whose lie is the same shape.",
   "seed": 20260923,
-  "count": 85,
+  "count": 87,
   "items": [
     {
-      "promise": "raises ConfigError for a malformed configuration",
-      "fact": "json.loads lets JSONDecodeError through instead",
-      "probe": "load_config_inline()",
-      "expected": "ConfigError",
-      "observed": "JSONDecodeError",
+      "promise": "split 'a=b' into its two parts; a missing part is the empty string",
+      "fact": "str.split with a maxsplit and no separator present returns a one-element list, so there is no missing part for the promise to fill with the empty string",
+      "probe": "split_pair('a')",
+      "expected": "['a', '']",
+      "observed": "['a']",
       "lang": "python",
-      "id": "i025"
+      "id": "i084"
     },
     {
       "promise": "drops empty tags",
@@ -23,105 +23,6 @@
       "id": "i001"
     },
     {
-      "promise": "without an explicit log, each call starts from a fresh empty list",
-      "fact": "the default [] is created once at def time and is shared; the second no-arg call sees the first call's append",
-      "probe": "(lambda: (append_log.__defaults__[0].clear(), append_log('a'), append_log('b'))[-1])()",
-      "expected": "['b']",
-      "observed": "['a', 'b']",
-      "lang": "python",
-      "id": "i048"
-    },
-    {
-      "promise": "booleans are excluded from the integer count",
-      "fact": "bool is a subclass of int, so isinstance(True, int) is True",
-      "probe": "count_integers([True, False, 1])",
-      "expected": "1",
-      "observed": "3",
-      "lang": "python",
-      "id": "i055"
-    },
-    {
-      "promise": "a final line without a trailing newline still counts",
-      "fact": "text.count('\\n') counts delimiter characters, so a last unterminated line is invisible",
-      "probe": "count_lines('a\\nb')",
-      "expected": "2",
-      "observed": "1",
-      "lang": "python",
-      "id": "i050"
-    },
-    {
-      "promise": "true for palindromic integers",
-      "fact": "the string form keeps the minus sign, so -121 is not a palindrome",
-      "probe": "is_palindrome_number(-121)",
-      "expected": "True",
-      "observed": "False",
-      "lang": "python",
-      "id": "i023"
-    },
-    {
-      "promise": "the i-th function multiplies by i",
-      "fact": "each lambda looks up i at call time; after the comprehension i is 2 for all of them",
-      "probe": "make_multipliers()[0](5)",
-      "expected": "0",
-      "observed": "10",
-      "lang": "python",
-      "id": "i061"
-    },
-    {
-      "promise": "binary units (1024-based)",
-      "fact": "the unit switch is n < 1000 (SI), then n /= 1024 (binary), so 1000 becomes 1.0 KB",
-      "probe": "format_bytes(1000)",
-      "expected": "'1000.0 B'",
-      "observed": "'1.0 KB'",
-      "lang": "python",
-      "id": "i041"
-    },
-    {
-      "promise": "True if name can be used as a valid Python variable identifier",
-      "fact": "str.isidentifier() is True for reserved words such as def; keyword.iskeyword is not consulted",
-      "probe": "is_valid_identifier('def')",
-      "expected": "False",
-      "observed": "True",
-      "lang": "python",
-      "id": "i069"
-    },
-    {
-      "promise": "the last n items, or all of them when the list is shorter than n",
-      "fact": "-0 is 0, so items[-n:] with n=0 is items[0:]: the whole list, not an empty one",
-      "probe": "last_n([1, 2, 3], 0)",
-      "expected": "[]",
-      "observed": "[1, 2, 3]",
-      "lang": "python",
-      "id": "i080"
-    },
-    {
-      "promise": "None is counted as a distinct value",
-      "fact": "the comprehension filters None out before the set is built",
-      "probe": "count_unique([1, None, 1, None])",
-      "expected": "2",
-      "observed": "1",
-      "lang": "python",
-      "id": "i034"
-    },
-    {
-      "promise": "handles empty lists by returning 0.0",
-      "fact": "sum(nums) / len(nums) raises ZeroDivisionError when nums is empty",
-      "probe": "average([])",
-      "expected": "0.0",
-      "observed": "ZeroDivisionError",
-      "lang": "python",
-      "id": "i039"
-    },
-    {
-      "promise": "keeping the trailing newline on each line that had one",
-      "fact": "str.splitlines() drops the delimiters unless keepends=True",
-      "probe": "lines('a\\nb\\n')",
-      "expected": "['a\\n', 'b\\n']",
-      "observed": "['a', 'b']",
-      "lang": "python",
-      "id": "i070"
-    },
-    {
       "promise": "replaces non-ASCII characters with '?'",
       "fact": "encode('ascii', 'ignore') drops the character instead of substituting one",
       "probe": "to_ascii('caf\\u00e9')",
@@ -129,51 +30,6 @@
       "observed": "'caf'",
       "lang": "python",
       "id": "i013"
-    },
-    {
-      "promise": "ignores case and punctuation",
-      "fact": "only case is folded; punctuation is kept",
-      "probe": "is_palindrome('A man, a plan, a canal: Panama')",
-      "expected": "True",
-      "observed": "False",
-      "lang": "python",
-      "id": "i022"
-    },
-    {
-      "promise": "return a new list; items itself is unchanged",
-      "fact": "list.sort mutates in place and returns the same object",
-      "probe": "(lambda o: (sorted_copy(o) is o, list(o)))([3, 1, 2])",
-      "expected": "(False, [3, 1, 2])",
-      "observed": "(True, [1, 2, 3])",
-      "lang": "python",
-      "id": "i058"
-    },
-    {
-      "promise": "returns None instead of raising when s cannot be parsed",
-      "fact": "int(s) raises; there is no try/except anywhere in the body",
-      "probe": "to_int('abc')",
-      "expected": "None",
-      "observed": "ValueError",
-      "lang": "python",
-      "id": "i014"
-    },
-    {
-      "promise": "rotates by k, wrapping when k is larger than the length",
-      "fact": "without k % len(xs) the slice indices reproduce the original list",
-      "probe": "rotate([1, 2, 3], 4)",
-      "expected": "[2, 3, 1]",
-      "observed": "[1, 2, 3]",
-      "lang": "python",
-      "id": "i029"
-    },
-    {
-      "promise": "each username maps to an independent empty list",
-      "fact": "dict.fromkeys(usernames, []) shares one list object",
-      "probe": "(lambda s: (s['alice'].append(1), s['bob'])[-1])(initialize_user_scores(['alice', 'bob']))",
-      "expected": "[]",
-      "observed": "[1]",
-      "lang": "python",
-      "id": "i056"
     },
     {
       "promise": "returns the file extension, and an empty string when there is none",
@@ -185,13 +41,184 @@
       "id": "i027"
     },
     {
-      "promise": "an empty needle is found at the end of hay (len(hay))",
-      "fact": "empty needle is special-cased to -1",
-      "probe": "last_index('abc', '')",
-      "expected": "3",
-      "observed": "-1",
+      "promise": "ignores case and punctuation",
+      "fact": "only case is folded; punctuation is kept",
+      "probe": "is_palindrome('A man, a plan, a canal: Panama')",
+      "expected": "True",
+      "observed": "False",
       "lang": "python",
-      "id": "i054"
+      "id": "i022"
+    },
+    {
+      "promise": "omit keys whose values are None",
+      "fact": "{k: v for k, v in d.items() if v} drops every falsy value, including 0, '', [], False",
+      "probe": "compact_dict({'a': 0, 'b': 1, 'c': None})",
+      "expected": "{'a': 0, 'b': 1}",
+      "observed": "{'b': 1}",
+      "lang": "python",
+      "id": "i049"
+    },
+    {
+      "promise": "raises ConfigError for a malformed configuration",
+      "fact": "json.loads lets JSONDecodeError through instead",
+      "probe": "load_config_inline()",
+      "expected": "ConfigError",
+      "observed": "JSONDecodeError",
+      "lang": "python",
+      "id": "i025"
+    },
+    {
+      "promise": "None is counted as a distinct value",
+      "fact": "the comprehension filters None out before the set is built",
+      "probe": "count_unique([1, None, 1, None])",
+      "expected": "2",
+      "observed": "1",
+      "lang": "python",
+      "id": "i034"
+    },
+    {
+      "promise": "true for palindromic integers",
+      "fact": "the string form keeps the minus sign, so -121 is not a palindrome",
+      "probe": "is_palindrome_number(-121)",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python",
+      "id": "i023"
+    },
+    {
+      "promise": "True when the date falls on a weekend",
+      "fact": "weekday() numbers Monday as 0, so Saturday is 5 and Sunday 6; a strict > 5 accepts Sunday only",
+      "probe": "is_weekend(a_saturday)",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python",
+      "id": "i082"
+    },
+    {
+      "promise": "true when a and b are the same text",
+      "fact": "`is` compares the object, not the text: two equal strings built at run time are different objects, and the interpreter only reuses the ones it folded",
+      "probe": "same_text(''.join(['ab', 'c']), ''.join(['abc']))",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python",
+      "id": "i086"
+    },
+    {
+      "promise": "binary units (1024-based)",
+      "fact": "the unit switch is n < 1000 (SI), then n /= 1024 (binary), so 1000 becomes 1.0 KB",
+      "probe": "format_bytes(1000)",
+      "expected": "'1000.0 B'",
+      "observed": "'1.0 KB'",
+      "lang": "python",
+      "id": "i041"
+    },
+    {
+      "promise": "the last n items, or all of them when the list is shorter than n",
+      "fact": "len(items) - n goes negative once n exceeds the length, and a negative slice start counts from the end",
+      "probe": "tail_fix([1, 2, 3], 5)",
+      "expected": "[1, 2, 3]",
+      "observed": "[2, 3]",
+      "lang": "python",
+      "id": "i081"
+    },
+    {
+      "promise": "booleans are excluded from the integer count",
+      "fact": "bool is a subclass of int, so isinstance(True, int) is True",
+      "probe": "count_integers([True, False, 1])",
+      "expected": "1",
+      "observed": "3",
+      "lang": "python",
+      "id": "i055"
+    },
+    {
+      "promise": "the index of the first occurrence",
+      "fact": "a hit returns mid as soon as it matches, so 2 of three equal elements returns the middle one",
+      "probe": "binary_search([1, 2, 2, 2, 3], 2)",
+      "expected": "1",
+      "observed": "2",
+      "lang": "python",
+      "id": "i018"
+    },
+    {
+      "promise": "True if name can be used as a valid Python variable identifier",
+      "fact": "str.isidentifier() is True for reserved words such as def; keyword.iskeyword is not consulted",
+      "probe": "is_valid_identifier('def')",
+      "expected": "False",
+      "observed": "True",
+      "lang": "python",
+      "id": "i069"
+    },
+    {
+      "promise": "word appears as a standalone word",
+      "fact": "operator `in` is a substring test; 'cat' is in 'catalog'",
+      "probe": "contains_word('the catalog sat', 'cat')",
+      "expected": "False",
+      "observed": "True",
+      "lang": "python",
+      "id": "i064"
+    },
+    {
+      "promise": "keep the root slash if present",
+      "fact": "rstrip('/') or '/' turns the empty string into '/', inventing a root that was not present",
+      "probe": "sanitize_path('')",
+      "expected": "''",
+      "observed": "'/'",
+      "lang": "python",
+      "id": "i071"
+    },
+    {
+      "promise": "if n is negative, return the empty string (do not reverse-slice)",
+      "fact": "s[:n] with negative n slices from the end of the string",
+      "probe": "clip('hello', -1)",
+      "expected": "''",
+      "observed": "'hell'",
+      "lang": "python",
+      "id": "i008"
+    },
+    {
+      "promise": "returns None instead of raising when s cannot be parsed",
+      "fact": "int(s) raises; there is no try/except anywhere in the body",
+      "probe": "to_int('abc')",
+      "expected": "None",
+      "observed": "ValueError",
+      "lang": "python",
+      "id": "i014"
+    },
+    {
+      "promise": "returns the median",
+      "fact": "the even-length branch returns one middle element instead of averaging the two",
+      "probe": "median([1, 2, 3, 4])",
+      "expected": "2.5",
+      "observed": "3",
+      "lang": "python",
+      "id": "i030"
+    },
+    {
+      "promise": "wrap without breaking words; a word longer than width stays intact",
+      "fact": "slices by character index, so words and spaces are cut mid-token",
+      "probe": "wrap_line('hello world', 8)",
+      "expected": "['hello', 'world']",
+      "observed": "['hello wo', 'rld']",
+      "lang": "python",
+      "id": "i065"
+    },
+    {
+      "promise": "return a new list; items itself is unchanged",
+      "fact": "list.sort mutates in place and returns the same object",
+      "probe": "(lambda o: (sorted_copy(o) is o, list(o)))([3, 1, 2])",
+      "expected": "(False, [3, 1, 2])",
+      "observed": "(True, [1, 2, 3])",
+      "lang": "python",
+      "id": "i058"
+    },
+    {
+      "promise": "rotates by k, wrapping when k is larger than the length",
+      "fact": "without k % len(xs) the slice indices reproduce the original list",
+      "probe": "rotate([1, 2, 3], 4)",
+      "expected": "[2, 3, 1]",
+      "observed": "[1, 2, 3]",
+      "lang": "python",
+      "id": "i029"
     },
     {
       "promise": "removes every matching element",
@@ -212,13 +239,13 @@
       "id": "i005"
     },
     {
-      "promise": "on key collision, keep a's value (first wins)",
-      "fact": "dict.update writes b over a; later wins",
-      "probe": "merge_dicts({'k': 1}, {'k': 2})",
-      "expected": "{'k': 1}",
-      "observed": "{'k': 2}",
+      "promise": "if no non-positive, return an independent copy",
+      "fact": "the all-positive path returns nums itself, so mutating the result mutates the input",
+      "probe": "(lambda orig: (take_while_positive(orig).append(99), orig)[-1])([1, 2, 3])",
+      "expected": "[1, 2, 3]",
+      "observed": "[1, 2, 3, 99]",
       "lang": "python",
-      "id": "i052"
+      "id": "i057"
     },
     {
       "promise": "raises the last error after the retries are exhausted",
@@ -230,49 +257,22 @@
       "id": "i020"
     },
     {
-      "promise": "returns the median",
-      "fact": "the even-length branch returns one middle element instead of averaging the two",
-      "probe": "median([1, 2, 3, 4])",
-      "expected": "2.5",
-      "observed": "3",
+      "promise": "without an explicit log, each call starts from a fresh empty list",
+      "fact": "the default [] is created once at def time and is shared; the second no-arg call sees the first call's append",
+      "probe": "(lambda: (append_log.__defaults__[0].clear(), append_log('a'), append_log('b'))[-1])()",
+      "expected": "['b']",
+      "observed": "['a', 'b']",
       "lang": "python",
-      "id": "i030"
+      "id": "i048"
     },
     {
-      "promise": "True if container has no elements; works for any collection type",
-      "fact": "container == [] is False for (), {}, ''",
-      "probe": "is_empty(())",
-      "expected": "True",
-      "observed": "False",
+      "promise": "keeping the trailing newline on each line that had one",
+      "fact": "str.splitlines() drops the delimiters unless keepends=True",
+      "probe": "lines('a\\nb\\n')",
+      "expected": "['a\\n', 'b\\n']",
+      "observed": "['a', 'b']",
       "lang": "python",
-      "id": "i068"
-    },
-    {
-      "promise": "None becomes the empty string",
-      "fact": "str.join requires str parts; None raises TypeError",
-      "probe": "join_fields(['a', None, 'b'])",
-      "expected": "'a,,b'",
-      "observed": "TypeError",
-      "lang": "python",
-      "id": "i067"
-    },
-    {
-      "promise": "if n is negative, return the empty string (do not reverse-slice)",
-      "fact": "s[:n] with negative n slices from the end of the string",
-      "probe": "clip('hello', -1)",
-      "expected": "''",
-      "observed": "'hell'",
-      "lang": "python",
-      "id": "i008"
-    },
-    {
-      "promise": "the index of the first occurrence",
-      "fact": "a hit returns mid as soon as it matches, so 2 of three equal elements returns the middle one",
-      "probe": "binary_search([1, 2, 2, 2, 3], 2)",
-      "expected": "1",
-      "observed": "2",
-      "lang": "python",
-      "id": "i018"
+      "id": "i070"
     },
     {
       "promise": "return None if items is empty",
@@ -284,6 +284,15 @@
       "id": "i045"
     },
     {
+      "promise": "a final line without a trailing newline still counts",
+      "fact": "text.count('\\n') counts delimiter characters, so a last unterminated line is invisible",
+      "probe": "count_lines('a\\nb')",
+      "expected": "2",
+      "observed": "1",
+      "lang": "python",
+      "id": "i050"
+    },
+    {
       "promise": "true for non-decreasing sequences",
       "fact": "a strict < rejects equal neighbours",
       "probe": "is_sorted([1, 1, 2])",
@@ -291,6 +300,114 @@
       "observed": "False",
       "lang": "python",
       "id": "i015"
+    },
+    {
+      "promise": "if s is longer than n, return s unchanged",
+      "fact": "(fill * n + s)[-n:] truncates s to its last n characters",
+      "probe": "pad_left('hello', 3)",
+      "expected": "'hello'",
+      "observed": "'llo'",
+      "lang": "python",
+      "id": "i012"
+    },
+    {
+      "promise": "an empty needle is found at the end of hay (len(hay))",
+      "fact": "empty needle is special-cased to -1",
+      "probe": "last_index('abc', '')",
+      "expected": "3",
+      "observed": "-1",
+      "lang": "python",
+      "id": "i054"
+    },
+    {
+      "promise": "independent deep copy; mutating the clone never touches the original",
+      "fact": "[row[:] for row in matrix] copies one level; nested objects stay shared",
+      "probe": "(lambda m: (clone_matrix_one(m)[0][0].append(9), m[0][0])[-1])([[[1]], [[2]]])",
+      "expected": "[1]",
+      "observed": "[1, 9]",
+      "lang": "python",
+      "id": "i077"
+    },
+    {
+      "promise": "preserving element types and insertion order",
+      "fact": "0 == False and 1 == True share set membership, so False/True are dropped after 0/1",
+      "probe": "remove_duplicates([0, False, 1, True])",
+      "expected": "[0, False, 1, True]",
+      "observed": "[0, 1]",
+      "lang": "python",
+      "id": "i072"
+    },
+    {
+      "promise": "handles empty lists by returning 0.0",
+      "fact": "sum(nums) / len(nums) raises ZeroDivisionError when nums is empty",
+      "probe": "average([])",
+      "expected": "0.0",
+      "observed": "ZeroDivisionError",
+      "lang": "python",
+      "id": "i039"
+    },
+    {
+      "promise": "return -1 if target is not found",
+      "fact": "except ValueError: return None, so a miss is None not -1",
+      "probe": "index_of_or_none([10, 20, 30], 99)",
+      "expected": "-1",
+      "observed": "None",
+      "lang": "python",
+      "id": "i046"
+    },
+    {
+      "promise": "True if container has no elements; works for any collection type",
+      "fact": "container == [] is False for (), {}, ''",
+      "probe": "is_empty(())",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python",
+      "id": "i068"
+    },
+    {
+      "promise": "each cart is independent; add affects this instance only",
+      "fact": "items = [] on the class is one list shared by every instance",
+      "probe": "(Cart.items.clear() or (lambda c1, c2: (c1.add(1) or list(c2.items)))(new_cart(), new_cart()))",
+      "expected": "[]",
+      "observed": "[1]",
+      "lang": "python",
+      "id": "i060"
+    },
+    {
+      "promise": "highest seq observed, safe to resume from when pages arrive out of order",
+      "fact": "events[-1]['seq'] is the last item, which is not the maximum",
+      "probe": "next_after([{'seq': 5}, {'seq': 3}])",
+      "expected": "5",
+      "observed": "3",
+      "lang": "python",
+      "id": "i011"
+    },
+    {
+      "promise": "on key collision, keep a's value (first wins)",
+      "fact": "dict.update writes b over a; later wins",
+      "probe": "merge_dicts({'k': 1}, {'k': 2})",
+      "expected": "{'k': 1}",
+      "observed": "{'k': 2}",
+      "lang": "python",
+      "id": "i052"
+    },
+    {
+      "promise": "one independent list per row",
+      "fact": "[[0] * cols] * rows gives every row the same list object",
+      "probe": "touch_grid(2, 2)",
+      "expected": "0",
+      "observed": "1",
+      "lang": "python",
+      "id": "i017"
+    },
+    {
+      "promise": "None becomes the empty string",
+      "fact": "str.join requires str parts; None raises TypeError",
+      "probe": "join_fields(['a', None, 'b'])",
+      "expected": "'a,,b'",
+      "observed": "TypeError",
+      "lang": "python",
+      "id": "i067"
     },
     {
       "promise": "append items only if they are not already present",
@@ -309,96 +426,6 @@
       "observed": "false",
       "lang": "javascript",
       "id": "i051"
-    },
-    {
-      "promise": "n divided by 2 as an integer (floor)",
-      "fact": "Python 3 / is true division; the result is a float, not floor",
-      "probe": "halves(5)",
-      "expected": "2",
-      "observed": "2.5",
-      "lang": "python",
-      "id": "i075"
-    },
-    {
-      "promise": "True when the date falls on a weekend",
-      "fact": "weekday() numbers Monday as 0, so Saturday is 5 and Sunday 6; a strict > 5 accepts Sunday only",
-      "probe": "is_weekend(a_saturday)",
-      "expected": "True",
-      "observed": "False",
-      "lang": "python",
-      "id": "i082"
-    },
-    {
-      "promise": "every group counts in proportion to its views",
-      "fact": "per-group rates are averaged unweighted, so a 1-view group weighs as much as a 100-view group",
-      "probe": "conversion_rate([10, 1], [100, 1])",
-      "expected": "0.10891089108910891",
-      "observed": "0.55",
-      "lang": "python",
-      "id": "i078"
-    },
-    {
-      "promise": "preserving element types and insertion order",
-      "fact": "0 == False and 1 == True share set membership, so False/True are dropped after 0/1",
-      "probe": "remove_duplicates([0, False, 1, True])",
-      "expected": "[0, False, 1, True]",
-      "observed": "[0, 1]",
-      "lang": "python",
-      "id": "i072"
-    },
-    {
-      "promise": "highest seq observed, safe to resume from when pages arrive out of order",
-      "fact": "events[-1]['seq'] is the last item, which is not the maximum",
-      "probe": "next_after([{'seq': 5}, {'seq': 3}])",
-      "expected": "5",
-      "observed": "3",
-      "lang": "python",
-      "id": "i011"
-    },
-    {
-      "promise": "omit keys whose values are None",
-      "fact": "{k: v for k, v in d.items() if v} drops every falsy value, including 0, '', [], False",
-      "probe": "compact_dict({'a': 0, 'b': 1, 'c': None})",
-      "expected": "{'a': 0, 'b': 1}",
-      "observed": "{'b': 1}",
-      "lang": "python",
-      "id": "i049"
-    },
-    {
-      "promise": "one independent list per row",
-      "fact": "[[0] * cols] * rows gives every row the same list object",
-      "probe": "touch_grid(2, 2)",
-      "expected": "0",
-      "observed": "1",
-      "lang": "python",
-      "id": "i017"
-    },
-    {
-      "promise": "wrap without breaking words; a word longer than width stays intact",
-      "fact": "slices by character index, so words and spaces are cut mid-token",
-      "probe": "wrap_line('hello world', 8)",
-      "expected": "['hello', 'world']",
-      "observed": "['hello wo', 'rld']",
-      "lang": "python",
-      "id": "i065"
-    },
-    {
-      "promise": "True when n is a valid TCP port number, which includes 65535",
-      "fact": "the range is written with a strict upper comparison, so the last valid value is excluded",
-      "probe": "is_valid_port(65535)",
-      "expected": "True",
-      "observed": "False",
-      "lang": "python",
-      "id": "i079"
-    },
-    {
-      "promise": "split 'a=b' into its two parts; a missing part is the empty string",
-      "fact": "str.split with a maxsplit and no separator present returns a one-element list, so there is no missing part for the promise to fill with the empty string",
-      "probe": "split_pair('a')",
-      "expected": "['a', '']",
-      "observed": "['a']",
-      "lang": "python",
-      "id": "i084"
     },
     {
       "promise": "strips surrounding whitespace from both key and value",
@@ -437,13 +464,13 @@
       "id": "i016"
     },
     {
-      "promise": "word appears as a standalone word",
-      "fact": "operator `in` is a substring test; 'cat' is in 'catalog'",
-      "probe": "contains_word('the catalog sat', 'cat')",
-      "expected": "False",
-      "observed": "True",
+      "promise": "Raises ValueError if d is zero",
+      "fact": "ValueError(...) is constructed and discarded; n % 0 raises ZeroDivisionError",
+      "probe": "is_divisible(10, 0)",
+      "expected": "ValueError",
+      "observed": "ZeroDivisionError",
       "lang": "python",
-      "id": "i064"
+      "id": "i074"
     },
     {
       "promise": "preserves the relative order of elements",
@@ -464,13 +491,13 @@
       "id": "i038"
     },
     {
-      "promise": "a stored None is a present value",
-      "fact": "d.get(key) or default treats None/0/'' as missing",
-      "probe": "lookup({'a': None}, 'a', 42)",
-      "expected": "None",
-      "observed": "42",
+      "promise": "n divided by 2 as an integer (floor)",
+      "fact": "Python 3 / is true division; the result is a float, not floor",
+      "probe": "halves(5)",
+      "expected": "2",
+      "observed": "2.5",
       "lang": "python",
-      "id": "i073"
+      "id": "i075"
     },
     {
       "promise": "an absolute part (starting with /) replaces the accumulated path",
@@ -500,22 +527,31 @@
       "id": "i033"
     },
     {
-      "promise": "removes the given prefix and suffix",
-      "fact": "str.strip(chars) treats the argument as a character set and eats any of those characters at both ends",
-      "probe": "remove_prefix_suffix('bXa', 'ab', 'ab')",
-      "expected": "'bXa'",
-      "observed": "'X'",
+      "promise": "the last n items, or all of them when the list is shorter than n",
+      "fact": "-0 is 0, so items[-n:] with n=0 is items[0:]: the whole list, not an empty one",
+      "probe": "last_n([1, 2, 3], 0)",
+      "expected": "[]",
+      "observed": "[1, 2, 3]",
       "lang": "python",
-      "id": "i024"
+      "id": "i080"
     },
     {
-      "promise": "if no non-positive, return an independent copy",
-      "fact": "the all-positive path returns nums itself, so mutating the result mutates the input",
-      "probe": "(lambda orig: (take_while_positive(orig).append(99), orig)[-1])([1, 2, 3])",
-      "expected": "[1, 2, 3]",
-      "observed": "[1, 2, 3, 99]",
+      "promise": "each username maps to an independent empty list",
+      "fact": "dict.fromkeys(usernames, []) shares one list object",
+      "probe": "(lambda s: (s['alice'].append(1), s['bob'])[-1])(initialize_user_scores(['alice', 'bob']))",
+      "expected": "[]",
+      "observed": "[1]",
       "lang": "python",
-      "id": "i057"
+      "id": "i056"
+    },
+    {
+      "promise": "the i-th function multiplies by i",
+      "fact": "each lambda looks up i at call time; after the comprehension i is 2 for all of them",
+      "probe": "make_multipliers()[0](5)",
+      "expected": "0",
+      "observed": "10",
+      "lang": "python",
+      "id": "i061"
     },
     {
       "promise": "the empty string and whitespace-only strings become ''",
@@ -536,31 +572,13 @@
       "id": "i035"
     },
     {
-      "promise": "if s is longer than n, return s unchanged",
-      "fact": "(fill * n + s)[-n:] truncates s to its last n characters",
-      "probe": "pad_left('hello', 3)",
-      "expected": "'hello'",
-      "observed": "'llo'",
+      "promise": "removes the given prefix and suffix",
+      "fact": "str.strip(chars) treats the argument as a character set and eats any of those characters at both ends",
+      "probe": "remove_prefix_suffix('bXa', 'ab', 'ab')",
+      "expected": "'bXa'",
+      "observed": "'X'",
       "lang": "python",
-      "id": "i012"
-    },
-    {
-      "promise": "each cart is independent; add affects this instance only",
-      "fact": "items = [] on the class is one list shared by every instance",
-      "probe": "(Cart.items.clear() or (lambda c1, c2: (c1.add(1) or list(c2.items)))(new_cart(), new_cart()))",
-      "expected": "[]",
-      "observed": "[1]",
-      "lang": "python",
-      "id": "i060"
-    },
-    {
-      "promise": "return -1 if target is not found",
-      "fact": "except ValueError: return None, so a miss is None not -1",
-      "probe": "index_of_or_none([10, 20, 30], 99)",
-      "expected": "-1",
-      "observed": "None",
-      "lang": "python",
-      "id": "i046"
+      "id": "i024"
     },
     {
       "promise": "raises ValueError when low > high",
@@ -581,22 +599,22 @@
       "id": "i043"
     },
     {
-      "promise": "the last n items, or all of them when the list is shorter than n",
-      "fact": "len(items) - n goes negative once n exceeds the length, and a negative slice start counts from the end",
-      "probe": "tail_fix([1, 2, 3], 5)",
-      "expected": "[1, 2, 3]",
-      "observed": "[2, 3]",
+      "promise": "cut text to width characters, adding an ellipsis when it was longer",
+      "fact": "the slice takes width characters and the ellipsis is concatenated after it, so a truncated result is width + 1 long",
+      "probe": "len(truncate('hello', 3))",
+      "expected": "3",
+      "observed": "4",
       "lang": "python",
-      "id": "i081"
+      "id": "i083"
     },
     {
-      "promise": "the last line without a trailing newline",
-      "fact": "split('\\\\n')[-1] is empty when the text ends with a newline",
-      "probe": "last_line('a\\nb\\n')",
-      "expected": "'b'",
-      "observed": "''",
+      "promise": "every group counts in proportion to its views",
+      "fact": "per-group rates are averaged unweighted, so a 1-view group weighs as much as a 100-view group",
+      "probe": "conversion_rate([10, 1], [100, 1])",
+      "expected": "0.10891089108910891",
+      "observed": "0.55",
       "lang": "python",
-      "id": "i076"
+      "id": "i078"
     },
     {
       "promise": "flattens nested lists into a single list",
@@ -617,13 +635,13 @@
       "id": "i042"
     },
     {
-      "promise": "keep the root slash if present",
-      "fact": "rstrip('/') or '/' turns the empty string into '/', inventing a root that was not present",
-      "probe": "sanitize_path('')",
-      "expected": "''",
-      "observed": "'/'",
+      "promise": "a stored None is a present value",
+      "fact": "d.get(key) or default treats None/0/'' as missing",
+      "probe": "lookup({'a': None}, 'a', 42)",
+      "expected": "None",
+      "observed": "42",
       "lang": "python",
-      "id": "i071"
+      "id": "i073"
     },
     {
       "promise": "the last partial window is included",
@@ -653,22 +671,22 @@
       "id": "i007"
     },
     {
-      "promise": "Raises ValueError if d is zero",
-      "fact": "ValueError(...) is constructed and discarded; n % 0 raises ZeroDivisionError",
-      "probe": "is_divisible(10, 0)",
-      "expected": "ValueError",
-      "observed": "ZeroDivisionError",
+      "promise": "the last line without a trailing newline",
+      "fact": "split('\\\\n')[-1] is empty when the text ends with a newline",
+      "probe": "last_line('a\\nb\\n')",
+      "expected": "'b'",
+      "observed": "''",
       "lang": "python",
-      "id": "i074"
+      "id": "i076"
     },
     {
-      "promise": "independent deep copy; mutating the clone never touches the original",
-      "fact": "[row[:] for row in matrix] copies one level; nested objects stay shared",
-      "probe": "(lambda m: (clone_matrix_one(m)[0][0].append(9), m[0][0])[-1])([[[1]], [[2]]])",
-      "expected": "[1]",
-      "observed": "[1, 9]",
+      "promise": "True when n is a valid TCP port number, which includes 65535",
+      "fact": "the range is written with a strict upper comparison, so the last valid value is excluded",
+      "probe": "is_valid_port(65535)",
+      "expected": "True",
+      "observed": "False",
       "lang": "python",
-      "id": "i077"
+      "id": "i079"
     },
     {
       "promise": "return default if conversion fails",
@@ -725,13 +743,13 @@
       "id": "i053"
     },
     {
-      "promise": "cut text to width characters, adding an ellipsis when it was longer",
-      "fact": "the slice takes width characters and the ellipsis is concatenated after it, so a truncated result is width + 1 long",
-      "probe": "len(truncate('hello', 3))",
-      "expected": "3",
-      "observed": "4",
+      "promise": "true when a and b are the same word, ignoring case",
+      "fact": "lower() is a case mapping, not a caseless match: it maps each character separately, so a character whose case fold is multi-character never meets its folded form",
+      "probe": "same_word('straße', 'STRASSE')",
+      "expected": "True",
+      "observed": "False",
       "lang": "python",
-      "id": "i083"
+      "id": "i085"
     },
     {
       "promise": "an empty prefix matches every string",

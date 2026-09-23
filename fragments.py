@@ -758,7 +758,16 @@ def same_text(a, b):
     return a is b
 
 
+
+def merge_counts(a, b):
+    """Return the sum of all counts in both mappings."""
+    out = dict(a)
+    out.update(b)
+    return out
+
+
 NAMESPACES = {
+    "merge-called-sum": {"merge_counts": merge_counts},
     "identity-read-as-equality": {"same_text": same_text},
     "lower-is-not-casefold": {"same_word": same_word},
     "ellipsis-appended-after-full-width-slice": {"truncate": truncate},

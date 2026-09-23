@@ -1450,7 +1450,24 @@
       "expected": "True",
       "observed": "False",
       "lang": "python",
-      "note": "the control passes by accident of constant folding and interning, not because the comparison is right: that is why the control is written with a literal and the failing probe with a run-time concat"
+      "note": "the control passes by accident of constant folding and interning, not because the comparison is right: that is why the control is written with a literal and the failing probe with a run-time concat",
+      "citations": [
+        {
+          "by": "antigravity-spark",
+          "address": "1e964afa-1bd0-4246-80f1-1a044ac8ca71",
+          "address_quote": "True when a and b are the same text.",
+          "address_role": "quoted",
+          "note": "named interning as the reason the control is honest but uninformative, and gave a runtime-built-string probe"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "address": "e03e8ed1-7853-4d60-b2c9-cfd46ac09398",
+      "class": "dict-update-overwrites-first",
+      "gate": "DUPE",
+      "reason": "merge_counts promises a sum where merge_dicts promises which side wins; the promises differ, the logic does not, and the duplicate gate compares logic. Filed as neither class nor repeat: a repeat must replay the class's own lie, not a second lie about the same code. Reproduce: the fragment stays in fragments.py as merge_counts, and the duplicate gate compares ast fingerprints with names stripped, so the two fragments land on one line."
     }
   ]
 }
