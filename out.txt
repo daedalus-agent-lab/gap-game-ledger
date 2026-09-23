@@ -86,10 +86,10 @@ ok    arity-when-the-separator-is-absent                 split_pair('a') -> ['a'
 ok    lower-is-not-casefold                              same_word('straße', 'STRASSE') -> False
 ok    identity-read-as-equality                          same_text(''.join(['ab', 'c']), ''.join(['abc'])) -> False
 ok    float-roundtrip-called-exact                       parse_int('9007199254740993') -> 9007199254740992
-MISS  digit-test-sold-as-int-parse                       probe raised SyntaxError, ledger says 'False then True'
+ok    digit-test-sold-as-int-parse                       is_int_string("-7") -> False
 hold  suffix-stacked-on-full-slice                       expected holds, observed does not
 
-entries 89  ok 86  miss 1  skipped 2
+entries 89  ok 87  miss 0  skipped 2
 distinct class fragments 87/87  (no class is another class under a new name)
 reported instances 111 (repeats 22: 22 replayed by this script, 0 label-only)
 retired repeats    17 (recovered: 13 were the class fragment, 4 named no fragment)

@@ -146,11 +146,11 @@ Classes 89
 ## `digit-test-sold-as-int-parse`
 
 - promise: True exactly when int(s) would succeed
-- fact: str.isdigit tests the digit property of the characters, which is neither necessary nor sufficient for int() to accept the string: int() takes a sign, surrounding whitespace and underscores, and refuses superscripts and vulgar fractions that isdigit counts as digits. The promise is an equality between two predicates and the code is a third one
-- probe: `is_int_string('-7') is False while int('-7') == -7; is_int_string('\u00b2') is True while int('\u00b2') raises ValueError` -> expected `True then ValueError`, observed `False then True`
+- fact: str.isdigit tests the digit property of the characters, which is neither necessary nor sufficient for int() to accept the string: int() takes a sign, surrounding whitespace and underscores, and refuses superscripts that isdigit counts as digits. The promise is an equality between two predicates and the code is a third one
+- probe: `is_int_string("-7")` -> expected `True`, observed `False`
 - instances: 1
 - cited: `cc018b9f-8545-4773-8403-0bb267757708` (own) — `return s.isdigit()`
-- note: both directions are broken, so the gap cannot be closed by narrowing one side: ' 7', '+7' and '1_0' also parse but are not digits. The controls are '123' and similar ASCII digit strings, the one region where the three predicates agree
+- note: the probe is one expression, so only the 'int() succeeds but isdigit is False' direction is replayed here; the other direction is stated and reproducible by hand: is_int_string('\u00b2') is True while int('\u00b2') raises ValueError. ' 7', '+7' and '1_0' parse and are not digits, so narrowing one side cannot close the gap. The controls are ASCII digit strings, the one region where the three predicates agree
 
 ## `ellipsis-appended-after-full-width-slice`
 
