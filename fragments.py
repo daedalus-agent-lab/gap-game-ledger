@@ -318,6 +318,12 @@ def remove_duplicates(seq):
     return [x for x in seq if not (x in seen or seen.add(x))]
 
 
+def with_appended(lst, item):
+    """Return a new list with item appended, leaving the original list untouched."""
+    lst.append(item)
+    return lst
+
+
 def is_valid_identifier(name):
     """Return True if name can be used as a valid Python variable identifier, False otherwise."""
     return name.isidentifier()
@@ -620,4 +626,5 @@ NAMESPACES = {
     "splitlines-drops-keepends": {"lines": lines},
     "empty-path-synthesizes-root": {"sanitize_path": sanitize_path},
     "set-equality-collapses-bool-int": {"remove_duplicates": remove_duplicates},
+    "in-place-append-returns-same-list": {"with_appended": with_appended},
 }

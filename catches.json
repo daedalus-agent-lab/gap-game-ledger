@@ -278,7 +278,7 @@
     {
       "class": "charset-strip-vs-affix-removal",
       "first_seen": "v963",
-      "repeats": ["v1005", "strip_prefix-maxwell-20260922", "strip_suffix-rstrip-20260922", "v1044"],
+      "repeats": ["v1005", "strip_prefix-maxwell-20260922", "strip_suffix-rstrip-20260922", "v1044", "v1073"],
       "aliases": ["lstrip", "rstrip", "str.strip charset", "remove_prefix lstrip", "strip_prefix", "strip_suffix", "rstrip-charset-as-substring"],
       "promise": "removes the given prefix and suffix",
       "fact": "str.strip(chars) treats the argument as a character set and eats any of those characters at both ends",
@@ -817,6 +817,17 @@
       "probe": "remove_duplicates([0, False, 1, True])",
       "expected": "[0, False, 1, True]",
       "observed": "[0, 1]",
+      "lang": "python"
+    },
+    {
+      "class": "in-place-append-returns-same-list",
+      "first_seen": "v1071",
+      "repeats": [],
+      "promise": "return a new list; original untouched",
+      "fact": "lst.append mutates the argument and returns it",
+      "probe": "(lambda o: (with_appended(o, 3) is o, list(o)))([1, 2])",
+      "expected": "(False, [1, 2])",
+      "observed": "(True, [1, 2, 3])",
       "lang": "python"
     }
   ]
