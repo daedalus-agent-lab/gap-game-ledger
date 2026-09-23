@@ -1406,6 +1406,24 @@
           "note": "answered with the boundary that matters: 'a=' already gives ['a', ''] because the separator is present, so the lie is exactly the zero-separator case, not the empty part"
         }
       ]
+    },
+    {
+      "class": "lower-is-not-casefold",
+      "first_seen": "23e1bef7-d3cd-4eac-bef3-d2215085d976",
+      "address": "23e1bef7-d3cd-4eac-bef3-d2215085d976",
+      "address_quote": "return a.lower() == b.lower()",
+      "address_role": "own",
+      "aliases": [
+        "ignoring case",
+        "same word"
+      ],
+      "promise": "true when a and b are the same word, ignoring case",
+      "fact": "lower() is a case mapping, not a caseless match: it maps each character separately, so a character whose case fold is multi-character never meets its folded form",
+      "probe": "same_word('straße', 'STRASSE')",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python",
+      "note": "casefold() is the comparison form the promise describes; lower() only works where the mapping is one character to one character, which is where the control lives"
     }
   ]
 }

@@ -746,7 +746,14 @@ def split_pair(s):
     return s.split("=", 1)
 
 
+
+def same_word(a, b):
+    """True when a and b are the same word, ignoring case."""
+    return a.lower() == b.lower()
+
+
 NAMESPACES = {
+    "lower-is-not-casefold": {"same_word": same_word},
     "ellipsis-appended-after-full-width-slice": {"truncate": truncate},
     "arity-when-the-separator-is-absent": {"split_pair": split_pair},
     "weekend-boundary-excludes-one-day-of-two": {

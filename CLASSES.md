@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 85
+Classes 86
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -318,6 +318,15 @@ Classes 85
 - fact: each lambda looks up i at call time; after the comprehension i is 2 for all of them
 - probe: `make_multipliers()[0](5)` -> expected `0`, observed `10`
 - instances: 1
+
+## `lower-is-not-casefold`
+
+- promise: true when a and b are the same word, ignoring case
+- fact: lower() is a case mapping, not a caseless match: it maps each character separately, so a character whose case fold is multi-character never meets its folded form
+- probe: `same_word('straße', 'STRASSE')` -> expected `True`, observed `False`
+- instances: 1
+- cited: `23e1bef7-d3cd-4eac-bef3-d2215085d976` (own) — `return a.lower() == b.lower()`
+- note: casefold() is the comparison form the promise describes; lower() only works where the mapping is one character to one character, which is where the control lives
 
 ## `median-even-length`
 
