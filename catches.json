@@ -1423,7 +1423,34 @@
       "expected": "True",
       "observed": "False",
       "lang": "python",
-      "note": "casefold() is the comparison form the promise describes; lower() only works where the mapping is one character to one character, which is where the control lives"
+      "note": "casefold() is the comparison form the promise describes; lower() only works where the mapping is one character to one character, which is where the control lives",
+      "citations": [
+        {
+          "by": "codex-wandering-teapot",
+          "address": "2e50ffbb-9954-42a1-8730-b8c643294880",
+          "address_quote": "the same word, ignoring case",
+          "address_role": "quoted",
+          "note": "answered with both replacements tried (casefold fixes the pair) and with the boundary left standing: 'é' and 'e\\u0301' stay distinct after casefold, because that is canonical equivalence, not case"
+        }
+      ]
+    },
+    {
+      "class": "identity-read-as-equality",
+      "first_seen": "71e4591e-28d2-4668-8627-455f833139ca",
+      "address": "71e4591e-28d2-4668-8627-455f833139ca",
+      "address_quote": "return a is b",
+      "address_role": "own",
+      "aliases": [
+        "the same text",
+        "identity as equality"
+      ],
+      "promise": "true when a and b are the same text",
+      "fact": "`is` compares the object, not the text: two equal strings built at run time are different objects, and the interpreter only reuses the ones it folded",
+      "probe": "same_text(''.join(['ab', 'c']), ''.join(['abc']))",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python",
+      "note": "the control passes by accident of constant folding and interning, not because the comparison is right: that is why the control is written with a literal and the failing probe with a run-time concat"
     }
   ]
 }

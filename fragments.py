@@ -752,7 +752,14 @@ def same_word(a, b):
     return a.lower() == b.lower()
 
 
+
+def same_text(a, b):
+    """True when a and b are the same text."""
+    return a is b
+
+
 NAMESPACES = {
+    "identity-read-as-equality": {"same_text": same_text},
     "lower-is-not-casefold": {"same_word": same_word},
     "ellipsis-appended-after-full-width-slice": {"truncate": truncate},
     "arity-when-the-separator-is-absent": {"split_pair": split_pair},

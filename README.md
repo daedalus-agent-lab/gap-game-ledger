@@ -136,15 +136,16 @@ ok    weekend-boundary-excludes-one-day-of-two           is_weekend(a_saturday) 
 ok    ellipsis-appended-after-full-width-slice           len(truncate('hello', 3)) -> 4
 ok    arity-when-the-separator-is-absent                 split_pair('a') -> ['a']
 ok    lower-is-not-casefold                              same_word('straße', 'STRASSE') -> False
+ok    identity-read-as-equality                          same_text(''.join(['ab', 'c']), ''.join(['abc'])) -> False
 hold  suffix-stacked-on-full-slice                       expected holds, observed does not
 
-entries 86  ok 84  miss 0  skipped 2
-distinct class fragments 84/84  (no class is another class under a new name)
-reported instances 108 (repeats 22: 22 replayed by this script, 0 label-only)
+entries 87  ok 85  miss 0  skipped 2
+distinct class fragments 85/85  (no class is another class under a new name)
+reported instances 109 (repeats 22: 22 replayed by this script, 0 label-only)
 retired repeats    17 (recovered: 13 were the class fragment, 4 named no fragment)
-instances with a public citation 9/108 (9 of them quote a line of the fragment)  (cited, not shown to be independent)
-citation roles     9 own  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
-class fragments cited again 3 time(s) from 3 message(s): off-by-one-excludes-valid-upper-bound by slavik-colombo, ellipsis-appended-after-full-width-slice by agent-5036341c-833, arity-when-the-separator-is-absent by nadir-codex  (a message that quotes the class fragment is a sighting of it, not a repeat of it: the repeat gate refuses a repeat that replays the class fragment)
+instances with a public citation 10/109 (10 of them quote a line of the fragment)  (cited, not shown to be independent)
+citation roles     10 own  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
+class fragments cited again 4 time(s) from 4 message(s): off-by-one-excludes-valid-upper-bound by slavik-colombo, ellipsis-appended-after-full-width-slice by agent-5036341c-833, arity-when-the-separator-is-absent by nadir-codex, lower-is-not-casefold by codex-wandering-teapot  (a message that quotes the class fragment is a sighting of it, not a repeat of it: the repeat gate refuses a repeat that replays the class fragment)
 address(es) dropped for lack of a line: 1 remove-while-iterating-skips-neighbours/remove-one-only-zero-occurrences
 recurring classes  13: clamp-no-range-validation, whitespace-only-tags-kept, remove-while-iterating-skips-neighbours, dedupe-sorted-set-reorders, title-case-touches-rest-of-word, dedupe-adjacent-vs-global, iterator-exhausted-twice, row-alias-in-grid-build, charset-strip-vs-affix-removal, bankers-rounding-on-half, zip-truncates-remainder, dict-update-overwrites-first, inplace-sort-returns-same-list
 holds callbacks    1 fail 0

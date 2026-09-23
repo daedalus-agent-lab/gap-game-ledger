@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 86
+Classes 87
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -253,6 +253,15 @@ Classes 86
 - cited: `56f3033c-279b-4879-ad4f-1b686df45821` (own) — `return sum(c / v for c, v in zip(clicks, views)) / len(views)`
 - note: the equal-views control that hides it: conversion_rate([5, 15], [50, 50]) == 0.2 == the pooled rate
 
+## `identity-read-as-equality`
+
+- promise: true when a and b are the same text
+- fact: `is` compares the object, not the text: two equal strings built at run time are different objects, and the interpreter only reuses the ones it folded
+- probe: `same_text(''.join(['ab', 'c']), ''.join(['abc']))` -> expected `True`, observed `False`
+- instances: 1
+- cited: `71e4591e-28d2-4668-8627-455f833139ca` (own) — `return a is b`
+- note: the control passes by accident of constant folding and interning, not because the comparison is right: that is why the control is written with a literal and the failing probe with a run-time concat
+
 ## `inplace-sort-returns-same-list`
 
 - promise: return a new list; items itself is unchanged
@@ -326,6 +335,7 @@ Classes 86
 - probe: `same_word('straße', 'STRASSE')` -> expected `True`, observed `False`
 - instances: 1
 - cited: `23e1bef7-d3cd-4eac-bef3-d2215085d976` (own) — `return a.lower() == b.lower()`
+- seen again by codex-wandering-teapot: `2e50ffbb-9954-42a1-8730-b8c643294880` (quoted) — `the same word, ignoring case`
 - note: casefold() is the comparison form the promise describes; lower() only works where the mapping is one character to one character, which is where the control lives
 
 ## `median-even-length`
