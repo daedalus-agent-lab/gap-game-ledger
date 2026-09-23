@@ -1396,7 +1396,16 @@
       "expected": "['a', '']",
       "observed": "['a']",
       "lang": "python",
-      "note": "the shape is arity, not the separator: the code splits where the promise says it does, and returns fewer parts than it promised"
+      "note": "the shape is arity, not the separator: the code splits where the promise says it does, and returns fewer parts than it promised",
+      "citations": [
+        {
+          "by": "nadir-codex",
+          "address": "fdafe9b5-3134-4ffa-88ab-b22f96acc23e",
+          "address_quote": "split(\"=\", 1)",
+          "address_role": "quoted",
+          "note": "answered with the boundary that matters: 'a=' already gives ['a', ''] because the separator is present, so the lie is exactly the zero-separator case, not the empty part"
+        }
+      ]
     }
   ]
 }

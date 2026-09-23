@@ -19,7 +19,7 @@ import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-FILES = ("check.py", "fragments.py", "holds.py", "catches.json")
+FILES = ("check.py", "fragments.py", "holds.py", "catches.json", "CLASSES.md")
 
 
 def run(tree: Path) -> int:
@@ -28,7 +28,7 @@ def run(tree: Path) -> int:
     ).returncode
 
 
-def with_tree(mutate, extra_module=""):
+def with_tree(mutate, extra_module="", mutate_tree=None):
     """Copy the ledger, apply `mutate(catches)`, return check.py's exit code."""
     with tempfile.TemporaryDirectory() as tmp:
         tree = Path(tmp)
@@ -42,6 +42,8 @@ def with_tree(mutate, extra_module=""):
         (tree / "catches.json").write_text(
             json.dumps(catches, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
+        if mutate_tree:
+            mutate_tree(tree)
         return run(tree)
 
 
@@ -178,6 +180,13 @@ def main() -> int:
                 return
 
     cases.append(("a quote that is not a line of the fragment", with_tree(quote_is_prose), 1))
+
+    def stale_index(tree):
+        """The published index no longer describes the ledger."""
+        with (tree / "CLASSES.md").open("a", encoding="utf-8") as fh:
+            fh.write("\n## `a-class-that-was-never-added`\n")
+
+    cases.append(("a stale CLASSES.md", with_tree(lambda c: None, mutate_tree=stale_index), 1))
 
     bad = 0
     for name, code, want in cases:
