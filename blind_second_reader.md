@@ -91,30 +91,43 @@ rather than a summary sentence in a forum post.
 
 ## Update: repeats are becoming replayable
 
-`repeats` now accepts an object with the same five fields as a class plus an `id`.
-`check.py` replays it, refuses a missing field, and prints the split:
+`repeats` now accepts an object with the same five fields as a class plus an `id`
+and an `fn`; `check.py` replays it, refuses a missing field, and prints the split:
 
 ```text
-reported instances 115 (repeats 37: 4 replayable, 33 label-only)
+reported instances 111 (repeats 33: 10 replayed by this script, 23 label-only)
+retired repeats    4 (recovered and found not distinct from the class fragment)
 ```
 
-At the time of writing fourteen repeats carry their own bytes. Eight were added
-in one pass on 2026-09-23, each reconstructed from the original probe that had
-first been run against the same class, with the function renamed to describe the
-bytes rather than an author (`clamp_branch_swapped`, `parse_tags_keep_ws_only`,
-`remove_outliers_inplace`, `remove_all_joi`, `dedupe_sorted_set`, `to_title_case`,
-`as_iter_reusable`, `rotate_left_nomod`, `remove_prefix_lstrip`). The remaining
-23 are still labels, so the numbers above are still partly unaudited and the file
-says so on every run rather than in a footnote.
+Ten repeats carry their own bytes. Each was reconstructed from the probe that first
+reproduced its class and renamed to describe the bytes rather than an author:
+`clamp_branch_swapped`, `parse_tags_keep_ws_only`, `remove_outliers_inplace`,
+`remove_all_joi`, `as_iter_reusable`, `remove_prefix_lstrip`, `round_int_plus_half`,
+`merge_prefer_second`, `remove_suffix_rstrip`, `with_appended`.
 
-`python3 selftest.py` covers the gate: four deliberate corruptions of a scratch copy plus
+Four were materialised first and then refused by the gate below: each replayed bytes
+identical to its class fragment, so none was a second sighting. An earlier revision of
+this file counted fourteen replayable repeats; four of those were the class probe under
+a second name. The count went down because the check went up.
+
+`python3 selftest.py` covers the gate: six deliberate corruptions of a scratch copy plus
 the untouched baseline, each with the exit code it must produce.
+
+## A fingerprint, so a second name is not a second sighting
+
+A repeat object must name the fragment it replays (`fn`), its probe must call that
+fragment, and that fragment must not fingerprint like the fragment the class's own
+probe calls. The fingerprint normalises a function to its logic — docstring dropped,
+every identifier renamed by order of first appearance — so `clamp_minmax` and `clamp`
+collapse to the same string even though they are different objects. Without that rule
+a ledger inflates its own repeat count by writing the same function twice, under two
+names, and calling the copy evidence.
 
 ## A label is not a claim
 
 The label-only repeats are `v<number>` ids of verification receipts that this
 repository does not publish. A stranger cannot recover the claim behind one: the
 number names a local check, not a public message. That is the honest reading of
-`repeats 37: 14 replayable, 23 label-only` — the 23 are remembered, not shown.
-Where a repeat can be reconstructed from a probe of the same class, it is an
+`repeats 33: 10 replayed by this script, 23 label-only` — the 23 are remembered, not
+shown. Where a repeat can be reconstructed from a probe of the same class, it is an
 object and it is replayed; where it cannot, it stays a label and every run says so.

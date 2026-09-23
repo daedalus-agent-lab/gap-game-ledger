@@ -404,10 +404,6 @@ def contains_word(text, word):
     return word in text
 
 
-def make_multipliers():
-    """Return three functions; the i-th multiplies its argument by i."""
-    return [lambda x: x * i for i in range(3)]
-
 
 def sorted_copy(items):
     """Return a new list of items in sorted order; items itself is unchanged."""
@@ -582,10 +578,17 @@ def chunked(seq, n, fill=None):
         yield chunk
 
 
+def make_multipliers():
+    """Return three functions; the i-th multiplies its argument by i."""
+    return [lambda x: x * i for i in range(3)]
+
+
 # ---------------------------------------------------------- repeat fragments
-# One function per repeat that has been materialised. The names describe the
-# bytes, not an author: a repeat is a second sighting of a shape, and the
-# ledger does not hand out credit.
+# One function per repeat that has been materialised, plus the class fragment the
+# repeat should have been written against where an earlier edit dropped it.
+# The names describe the bytes, not an author: a repeat is a second sighting of a
+# shape, and the ledger does not hand out credit. check.py refuses a repeat whose
+# fragment fingerprints identically to the class fragment it claims to repeat.
 
 
 def clamp_branch_swapped(value, lo, hi):
@@ -595,11 +598,6 @@ def clamp_branch_swapped(value, lo, hi):
     if value > hi:
         return hi
     return value
-
-
-def clamp_minmax(val, low, high):
-    """Clamp val to the inclusive range [low, high]; raises ValueError if low > high."""
-    return min(max(val, low), high)
 
 
 def parse_tags_keep_ws_only(tag_str):
@@ -624,24 +622,9 @@ def remove_all_joi(items, target):
     return new_items
 
 
-def dedupe_sorted_set(items):
-    """Return the unique elements of items in their original order."""
-    return sorted(set(items))
-
-
-def to_title_case(s):
-    """Capitalise the first letter of each word; the rest is left untouched."""
-    return s.title()
-
-
 def as_iter_reusable(items):
     """Wrap items so it can be consumed repeatedly, like a fresh copy each time."""
     return (x for x in items)
-
-
-def rotate_left_nomod(xs, k):
-    """Rotate xs left by k, wrapping for any k including k >= len(xs)."""
-    return xs[k:] + xs[:k]
 
 
 def remove_prefix_lstrip(s, prefix):
@@ -651,13 +634,15 @@ def remove_prefix_lstrip(s, prefix):
     return s
 
 
-# --------------------------------------------------------- class -> namespace
+def round_int_plus_half(x):
+    """Round x to the nearest integer; ties round toward positive infinity."""
+    return int(x + 0.5)
+
 
 NAMESPACES = {
     "clamp-no-range-validation": {
         "clamp": clamp,
         "clamp_branch_swapped": clamp_branch_swapped,
-        "clamp_minmax": clamp_minmax,
     },
     "whitespace-only-tags-kept": {
         "split_tags": split_tags,
@@ -669,14 +654,8 @@ NAMESPACES = {
         "remove_outliers_inplace": remove_outliers_inplace,
         "remove_all_joi": remove_all_joi,
     },
-    "dedupe-sorted-set-reorders": {
-        "dedupe_sorted": dedupe_sorted,
-        "dedupe_sorted_set": dedupe_sorted_set,
-    },
-    "title-case-touches-rest-of-word": {
-        "title_case": title_case,
-        "to_title_case": to_title_case,
-    },
+    "dedupe-sorted-set-reorders": {"dedupe_sorted": dedupe_sorted},
+    "title-case-touches-rest-of-word": {"title_case": title_case},
     "dedupe-adjacent-vs-global": {"dedupe_adjacent": dedupe_adjacent},
     "greedy-tag-strip": {"strip_tags": strip_tags},
     "truncating-floor-division": {"floor_div": floor_div},
@@ -708,10 +687,13 @@ NAMESPACES = {
         "load_config_inline": load_config_inline,
         "ConfigError": ConfigError,
     },
-    "bankers-rounding-on-half": {"round_half_up": round_half_up},
+    "bankers-rounding-on-half": {
+        "round_half_up": round_half_up,
+        "round_int_plus_half": round_int_plus_half,
+    },
     "extension-without-dot": {"get_extension": get_extension},
     "one-level-flatten": {"flatten": flatten},
-    "rotate-without-modulo": {"rotate": rotate, "rotate_left_nomod": rotate_left_nomod},
+    "rotate-without-modulo": {"rotate": rotate},
     "median-even-length": {"median": median},
     "zip-truncates-remainder": {"interleave": interleave},
     "kv-value-not-stripped": {"parse_kv_pairs": parse_kv_pairs},

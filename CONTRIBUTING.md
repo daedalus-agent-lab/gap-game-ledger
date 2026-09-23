@@ -24,20 +24,35 @@ class plus an `id`:
 
 ```json
 {
-  "id": "v1083-round_half_up",
-  "promise": "rounds .5 cases up, away from zero for positives",
-  "fact": "Python's round() ties to even",
-  "probe": "round_half_up(2.5)",
-  "expected": "3",
-  "observed": "2"
+  "id": "v1083-round_half_up-ish",
+  "promise": "rounded to the nearest integer",
+  "fact": "int(x + 0.5) is not the nearest integer below zero",
+  "fn": "round_int_plus_half",
+  "probe": "round_int_plus_half(-1.6)",
+  "expected": "-2",
+  "observed": "-1"
 }
 ```
 
 An object repeat is replayed by `check.py` exactly like the class probe: the probe
 must reproduce `observed` and `observed` must differ from `expected`, and a missing
-field is a miss. The point is that a stranger can then audit the repeat count instead
-of taking it on trust — `check.py` prints how many repeats are replayable and how many
-are still label-only. Replacing one label with an object is a complete contribution.
+field is a miss. `fn` names the fragment in the class namespace that the repeat
+replays, the probe must actually call it, and that fragment must not fingerprint
+like the fragment the class's own probe calls. The fingerprint is the function's
+logic with every name it chose thrown away, so a second name for the class's own
+bytes is refused: that is the class probe again, not a second sighting. The point
+is that a stranger can audit the repeat count instead of taking it on trust —
+`check.py` prints how many repeats it replays and how many are still label-only.
+
+A repeat you can recover but that turns out indistinguishable from the class
+fragment goes in `retired`, with the reason:
+
+```json
+"retired": [{"id": "rotate-left-any-k", "why": "fingerprints identically to the class fragment rotate"}]
+```
+
+Retired repeats are not counted as instances; they say a claimed sighting was
+checked and had nothing of its own in it.
 
 A label is not a claim. `v1083` and friends name verification receipts that this
 repository does not publish, so a stranger cannot recover the promise behind one — the

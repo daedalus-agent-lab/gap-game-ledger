@@ -22,6 +22,8 @@ its class is not new.
 """
 
 import argparse
+import ast
+import inspect
 import json
 import os
 import sys
@@ -41,6 +43,70 @@ def load() -> dict:
 
 def literal(text: str):
     return eval(text, {})  # ledger literals only
+
+
+BUILTINS = {
+    "abs", "all", "any", "bool", "dict", "enumerate", "float", "int", "isinstance",
+    "len", "list", "max", "min", "next", "print", "range", "reversed", "round",
+    "set", "sorted", "str", "sum", "tuple", "type", "zip",
+}
+
+
+class _Normalise(ast.NodeTransformer):
+    """Rename every identifier that is not a builtin, by order of first appearance."""
+
+    def __init__(self):
+        self.seen = {}
+
+    def _rename(self, name: str) -> str:
+        if name in BUILTINS or name.startswith("__"):
+            return name
+        if name not in self.seen:
+            self.seen[name] = f"v{len(self.seen)}"
+        return self.seen[name]
+
+    def visit_Name(self, node):
+        node.id = self._rename(node.id)
+        return node
+
+    def visit_arg(self, node):
+        node.arg = self._rename(node.arg)
+        return node
+
+    def visit_FunctionDef(self, node):
+        node.name = self._rename(node.name)
+        self.generic_visit(node)
+        return node
+
+
+def fingerprint(fn) -> str:
+    """The logic of a function with the names it chose thrown away.
+
+    Two functions with the same fingerprint do the same thing; a repeat whose
+    fragment fingerprints identically to the class fragment is the class probe
+    again, not a second sighting.
+    """
+    tree = ast.parse(inspect.getsource(fn).lstrip())
+    node = tree.body[0]
+    if (
+        node.body
+        and isinstance(node.body[0], ast.Expr)
+        and isinstance(node.body[0].value, ast.Constant)
+        and isinstance(node.body[0].value.value, str)
+    ):
+        node.body = node.body[1:]
+    _Normalise().visit(node)
+    return ast.dump(node)
+
+
+def primary(entry: dict) -> str | None:
+    """The fragment the entry's own probe calls: the class's bytes."""
+    ns = NAMESPACES.get(entry["class"], {})
+    probe = entry.get("probe", "")
+    for name in ns:
+        if name in probe:
+            return name
+    return None
 
 
 def evaluate(entry: dict):
@@ -77,10 +143,28 @@ def evaluate(entry: dict):
             continue  # legacy label: records that a claim arrived, not the claim
         if not isinstance(rep, dict) or not rep.get("probe"):
             return "miss", f"repeat {rep!r} is neither a label nor a probe object"
-        missing = [k for k in ("id", "promise", "fact", "expected", "observed")
-                   if k not in rep]
+        missing = [k for k in ("id", "promise", "fact", "probe", "expected",
+                               "observed", "fn") if k not in rep]
         if missing:
             return "miss", f"repeat {rep.get('id', rep)!r} lacks {', '.join(missing)}"
+        fn_name = rep["fn"]
+        if fn_name not in ns:
+            return "miss", f"repeat {rep['id']!r} names {fn_name!r}, not in the class"
+        if fn_name not in rep["probe"]:
+            return "miss", (
+                f"repeat {rep['id']!r} names {fn_name!r} but its probe never calls it"
+            )
+        base = primary(entry)
+        if base and fn_name == base:
+            return "miss", (
+                f"repeat {rep['id']!r} replays {base}, the class fragment itself: "
+                "that is the class probe, not a second sighting"
+            )
+        if base and fingerprint(ns[base]) == fingerprint(ns[fn_name]):
+            return "miss", (
+                f"repeat {rep['id']!r}: {fn_name} fingerprints like {base}; "
+                "that is the class probe again, not a second sighting"
+            )
         try:
             got = eval(rep["probe"], dict(ns))
         except Exception as exc:
@@ -94,6 +178,9 @@ def evaluate(entry: dict):
             return "miss", f"repeat {rep['id']!r} gave {got!r}, ledger says {want!r}"
         if want == promised:
             return "miss", f"repeat {rep['id']!r}: expected == observed, not a divergence"
+    for gone in entry.get("retired") or []:
+        if not isinstance(gone, dict) or not gone.get("id") or not gone.get("why"):
+            return "miss", f"retired entry {gone!r} needs an id and a why"
     return "ok", actual
 
 
@@ -154,6 +241,7 @@ def main() -> int:
     recurring = [e["class"] for e in data["entries"] if e.get("repeats")]
     all_repeats = [r for e in data["entries"] for r in (e.get("repeats") or [])]
     materialised = sum(1 for r in all_repeats if isinstance(r, dict))
+    retired = [g for e in data["entries"] for g in (e.get("retired") or [])]
     instances = len(data["entries"]) + len(all_repeats)
     holds_fail = 0
     try:
@@ -189,8 +277,12 @@ def main() -> int:
     print(f"entries {len(data['entries'])}  ok {ok}  miss {miss}  skipped {skip}")
     print(
         f"reported instances {instances} "
-        f"(repeats {len(all_repeats)}: {materialised} replayable, "
+        f"(repeats {len(all_repeats)}: {materialised} replayed by this script, "
         f"{len(all_repeats) - materialised} label-only)"
+    )
+    print(
+        f"retired repeats    {len(retired)} "
+        "(recovered and found not distinct from the class fragment)"
     )
     print(f"recurring classes  {len(recurring)}: {', '.join(recurring)}")
     print(f"holds callbacks    {len(HOLDS)} fail {holds_fail}")

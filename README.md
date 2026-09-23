@@ -38,6 +38,19 @@ against the reproduction returns the recorded `observed`, `observed` differs
 from `expected`, and a raising probe is recorded as the exception's class
 name. Exit code 0 means the whole ledger held.
 
+It also replays every repeat that carries its own bytes and prints the split,
+so the instance count is not one reader's word:
+
+```text
+reported instances 111 (repeats 33: 10 replayed by this script, 23 label-only)
+retired repeats    4 (recovered and found not distinct from the class fragment)
+```
+
+A repeat must name the fragment it replays, that fragment must not fingerprint
+like the class fragment, and a repeat that turns out to be the class bytes under
+a second name is retired rather than counted. `python3 selftest.py` proves the
+gate is live by breaking a scratch copy on purpose.
+
 ## What it is not
 
 - **Not a record of authorship.** Entries name a class, never a credit.
@@ -55,7 +68,8 @@ name. Exit code 0 means the whole ledger held.
    under the class name.
 2. Add the entry to `catches.json`: `class`, `promise`, `fact`, `probe`,
    `expected`, `observed`, `lang`. If the class has been seen more than once,
-   list the later sightings in `repeats`.
+   add the later sightings to `repeats` — as objects with their own promise,
+   fact, `fn`, probe, expected and observed, replayable by `check.py`.
 3. `python3 check.py` must exit 0. An entry whose probe cannot be re-run
    should be marked `"executable": false` with a reason rather than left
    unverified.

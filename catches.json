@@ -15,15 +15,8 @@
           "fact": "the branch order returns lo for a value below a larger low bound",
           "probe": "clamp_branch_swapped(5, 10, 0)",
           "expected": "5",
-          "observed": "10"
-        },
-        {
-          "id": "clamp-minmax",
-          "promise": "clamped into [lo, hi]; raises ValueError when low > high",
-          "fact": "min(max(...)) has no swapped-bound check and silently returns the high bound",
-          "probe": "clamp_minmax(5, 10, 0)",
-          "expected": "ValueError",
-          "observed": "0"
+          "observed": "10",
+          "fn": "clamp_branch_swapped"
         }
       ],
       "aliases": [
@@ -35,7 +28,13 @@
       "probe": "clamp(5, 10, 0)",
       "expected": "None",
       "observed": "0",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "clamp-minmax",
+          "why": "fingerprints identically to the class fragment clamp: the same min(max(...)) with the same argument order"
+        }
+      ]
     },
     {
       "class": "whitespace-only-tags-kept",
@@ -47,7 +46,8 @@
           "fact": "the filter runs on the raw tag, so a whitespace-only tag survives as an empty string",
           "probe": "parse_tags_keep_ws_only(\"a,  ,b\")",
           "expected": "[\"a\", \"b\"]",
-          "observed": "[\"a\", \"\", \"b\"]"
+          "observed": "[\"a\", \"\", \"b\"]",
+          "fn": "parse_tags_keep_ws_only"
         }
       ],
       "promise": "drops empty tags",
@@ -70,7 +70,8 @@
           "observed": "[1, 11, 2]",
           "extra": {
             "note": "mutates its argument"
-          }
+          },
+          "fn": "remove_outliers_inplace"
         },
         {
           "id": "remove_all-on-a-copy",
@@ -78,7 +79,8 @@
           "fact": "iterating the copy while removing from it skips consecutive matches",
           "probe": "remove_all_joi([1, 2, 2, 3], 2)",
           "expected": "[1, 3]",
-          "observed": "[1, 2, 3]"
+          "observed": "[1, 2, 3]",
+          "fn": "remove_all_joi"
         }
       ],
       "aliases": [
@@ -96,14 +98,6 @@
       "class": "dedupe-sorted-set-reorders",
       "first_seen": "v946",
       "repeats": [
-        {
-          "id": "dedupe-sorted-set",
-          "promise": "duplicates removed, original order preserved",
-          "fact": "sorted(set(...)) rebuilds the sequence in value order instead",
-          "probe": "dedupe_sorted_set([3, 1, 2])",
-          "expected": "[3, 1, 2]",
-          "observed": "[1, 2, 3]"
-        },
         "v989",
         "v1026",
         "v1066",
@@ -118,21 +112,19 @@
       "probe": "dedupe_sorted(['b', 'a', 'b'])",
       "expected": "['b', 'a']",
       "observed": "['a', 'b']",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "dedupe-sorted-set",
+          "why": "fingerprints identically to the class fragment dedupe_sorted"
+        }
+      ]
     },
     {
       "class": "title-case-touches-rest-of-word",
       "first_seen": "v944",
       "repeats": [
-        "v975",
-        {
-          "id": "to_title_case-rest-untouched",
-          "promise": "the first letter of each word is capitalised and the rest is left alone",
-          "fact": "str.title() lowercases the remainder of every word",
-          "probe": "to_title_case(\"hELLO\")",
-          "expected": "\"HELLO\"",
-          "observed": "\"Hello\""
-        }
+        "v975"
       ],
       "aliases": [
         "str.title apostrophe",
@@ -144,7 +136,13 @@
       "probe": "title_case(\"don't stop\")",
       "expected": "\"Don't Stop\"",
       "observed": "\"Don'T Stop\"",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "to_title_case-rest-untouched",
+          "why": "fingerprints identically to the class fragment title_case"
+        }
+      ]
     },
     {
       "class": "dedupe-adjacent-vs-global",
@@ -287,7 +285,8 @@
           "fact": "a generator expression is single-use; the second pass is empty",
           "probe": "(lambda it: (list(it), list(it)))(as_iter_reusable([1, 2, 3]))",
           "expected": "([1, 2, 3], [1, 2, 3])",
-          "observed": "([1, 2, 3], [])"
+          "observed": "([1, 2, 3], [])",
+          "fn": "as_iter_reusable"
         },
         "v1057"
       ],
@@ -390,7 +389,8 @@
           "fact": "lstrip treats the prefix as a set of characters and strips any of them repeatedly",
           "probe": "remove_prefix_lstrip(\"ababa\", \"ab\")",
           "expected": "\"aba\"",
-          "observed": "\"\""
+          "observed": "\"\"",
+          "fn": "remove_prefix_lstrip"
         },
         "strip_suffix-rstrip-20260922",
         "v1044",
@@ -401,7 +401,8 @@
           "fact": "rstrip takes a character set and eats any of those characters at the end",
           "probe": "remove_suffix_rstrip('miss', 's')",
           "expected": "'mis'",
-          "observed": "'mi'"
+          "observed": "'mi'",
+          "fn": "remove_suffix_rstrip"
         }
       ],
       "aliases": [
@@ -440,11 +441,12 @@
         "v1063",
         {
           "id": "v1083-round_half_up",
-          "promise": "rounds .5 cases up, away from zero for positives",
-          "fact": "Python's round() ties to even",
-          "probe": "round_half_up(2.5)",
-          "expected": "3",
-          "observed": "2"
+          "promise": "rounded to the nearest integer",
+          "fact": "int(x + 0.5) is not the nearest integer below zero",
+          "probe": "round_int_plus_half(-1.6)",
+          "expected": "-2",
+          "observed": "-1",
+          "fn": "round_int_plus_half"
         }
       ],
       "promise": "rounds halves away from zero",
@@ -484,16 +486,7 @@
     {
       "class": "rotate-without-modulo",
       "first_seen": "v959",
-      "repeats": [
-        {
-          "id": "rotate-left-any-k",
-          "promise": "elements rotated left by k, wrapping for any k including k >= len(xs)",
-          "fact": "slicing without k % n rebuilds the original list once k reaches n",
-          "probe": "rotate_left_nomod([1, 2, 3], 4)",
-          "expected": "[2, 3, 1]",
-          "observed": "[1, 2, 3]"
-        }
-      ],
+      "repeats": [],
       "aliases": [
         "rotate_left wrap",
         "k larger than len"
@@ -503,7 +496,13 @@
       "probe": "rotate([1, 2, 3], 4)",
       "expected": "[2, 3, 1]",
       "observed": "[1, 2, 3]",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "rotate-left-any-k",
+          "why": "fingerprints identically to the class fragment rotate"
+        }
+      ]
     },
     {
       "class": "median-even-length",
@@ -766,7 +765,8 @@
           "fact": "the last unpack wins, so the first argument's values survive",
           "probe": "merge_prefer_second({'k': 'a'}, {'k': 'b'})",
           "expected": "{'k': 'b'}",
-          "observed": "{'k': 'a'}"
+          "observed": "{'k': 'a'}",
+          "fn": "merge_prefer_second"
         }
       ],
       "promise": "on key collision, keep a's value (first wins)",
@@ -843,7 +843,8 @@
           "fact": "list.append mutates the argument and returns it",
           "probe": "(lambda o: (with_appended(o, 3) is o, list(o)))([1, 2])",
           "expected": "(False, [1, 2])",
-          "observed": "(True, [1, 2, 3])"
+          "observed": "(True, [1, 2, 3])",
+          "fn": "with_appended"
         }
       ],
       "promise": "return a new list; items itself is unchanged",

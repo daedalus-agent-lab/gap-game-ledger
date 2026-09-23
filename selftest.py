@@ -28,18 +28,32 @@ def run(tree: Path) -> int:
     ).returncode
 
 
-def with_tree(mutate):
+def with_tree(mutate, extra_module=""):
     """Copy the ledger, apply `mutate(catches)`, return check.py's exit code."""
     with tempfile.TemporaryDirectory() as tmp:
         tree = Path(tmp)
         for name in FILES:
             shutil.copy(HERE / name, tree / name)
+        if extra_module:
+            with (tree / "fragments.py").open("a", encoding="utf-8") as fh:
+                fh.write(extra_module)
         catches = json.loads((tree / "catches.json").read_text(encoding="utf-8"))
         mutate(catches)
         (tree / "catches.json").write_text(
             json.dumps(catches, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
         return run(tree)
+
+
+TWIN = '''
+
+def clamp_twin(val, low, high):
+    """A second name for the class clamp, with the same logic."""
+    return min(max(val, low), high)
+
+
+NAMESPACES["clamp-no-range-validation"]["clamp_twin"] = clamp_twin
+'''
 
 
 def first_object_repeat(catches):
@@ -72,6 +86,48 @@ def main() -> int:
         del rep["promise"]
 
     cases.append(("a repeat is missing a field", with_tree(drop_field), 1))
+
+    def same_as_class(catches):
+        """Point a repeat at the class fragment itself: same bytes, no sighting."""
+        import re
+
+        for entry in catches["entries"]:
+            for rep in entry.get("repeats") or []:
+                if not isinstance(rep, dict) or not rep.get("fn"):
+                    continue
+                name = re.findall(r"[A-Za-z_]\w*", entry["probe"])[0]
+                rep["fn"] = name
+                rep["probe"] = entry["probe"]
+                rep["expected"] = "5"
+                rep["observed"] = entry["observed"]
+                return
+
+    cases.append(("a repeat points at the class fragment", with_tree(same_as_class), 1))
+
+    def same_logic_other_name(catches):
+        """A repeat whose fragment differs in name but not in logic.
+
+        The twin is appended to the copied fragments.py, so the class gets a
+        second name for its own bytes; the gate must refuse it.
+        """
+        for entry in catches["entries"]:
+            if entry["class"] != "clamp-no-range-validation":
+                continue
+            for rep in entry.get("repeats") or []:
+                if isinstance(rep, dict):
+                    rep["fn"] = "clamp_twin"
+                    rep["probe"] = "clamp_twin(5, 10, 0)"
+                    rep["expected"] = "5"
+                    rep["observed"] = "0"
+                    return
+
+    cases.append(
+        (
+            "a repeat whose fragment is the class logic",
+            with_tree(same_logic_other_name, extra_module=TWIN),
+            1,
+        )
+    )
 
     def flip_class_probe(catches):
         catches["entries"][0]["observed"] = "999"
