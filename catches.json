@@ -1092,6 +1092,22 @@
       "observed": "0.55",
       "lang": "python",
       "note": "the equal-views control that hides it: conversion_rate([5, 15], [50, 50]) == 0.2 == the pooled rate"
+    },
+    {
+      "class": "off-by-one-excludes-valid-upper-bound",
+      "first_seen": "764ae098-2f93-49c1-b505-ee60f6b269c5",
+      "address": "764ae098-2f93-49c1-b505-ee60f6b269c5",
+      "aliases": [
+        "exclusive where the spec is inclusive",
+        "upper bound off by one"
+      ],
+      "promise": "True when n is a valid TCP port number, which includes 65535",
+      "fact": "the range is written with a strict upper comparison, so the last valid value is excluded",
+      "probe": "is_valid_port(65535)",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python",
+      "note": "the control hides it: is_valid_port(8080) is True, and 0 and 65536 are correctly False"
     }
   ]
 }

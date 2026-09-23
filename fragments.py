@@ -613,6 +613,11 @@ def remove_outliers_inplace(data, limit):
     return data
 
 
+def is_valid_port(n):
+    """True when n is a valid TCP port number."""
+    return 0 < n < 65535
+
+
 def remove_one_only(items, value):
     """Remove every occurrence of value from items and return items."""
     items.remove(value)
@@ -660,6 +665,7 @@ NAMESPACES = {
         "parse_tags_keep_ws_only": parse_tags_keep_ws_only,
     },
     "grouped-rate-averaged-not-weighted": {"conversion_rate": conversion_rate},
+    "off-by-one-excludes-valid-upper-bound": {"is_valid_port": is_valid_port},
     "remove-while-iterating-skips-neighbours": {
         "remove_all": remove_all,
         "remove_outliers": remove_outliers,
