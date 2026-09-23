@@ -42,11 +42,11 @@ It also replays every repeat that carries its own bytes and prints the split,
 so the instance count is not one reader's word:
 
 ```text
-entries 78  ok 76  miss 0  skipped 2
-distinct class fragments 76/76  (no class is another class under a new name)
-reported instances 111 (repeats 33: 10 replayed by this script, 23 label-only)
-retired repeats    4 (recovered and found not distinct from the class fragment)
-instances with a public address 2/113  (the rest are remembered, not shown)
+entries 80  ok 78  miss 0  skipped 2
+distinct class fragments 78/78  (no class is another class under a new name)
+reported instances 102 (repeats 22: 22 replayed by this script, 0 label-only)
+retired repeats    17 (recovered: 13 were the class fragment, 4 named no fragment)
+instances with a public address 4/102  (the rest are remembered, not shown)
 ```
 
 A repeat must name the fragment it replays, that fragment must not fingerprint
@@ -56,6 +56,12 @@ classes: if two class names cover one shape, `check.py` prints `DUPE` and exits
 non-zero, because a class is a shape of lie and not a fragment. `python3
 selftest.py` proves the gate is live by breaking a scratch copy on purpose —
 eight ways, including a class renamed and a repeat filed against the wrong class.
+
+Every repeat is now replayed, and the count of instances went **down** when that
+became true: 23 labels were answered in one pass (`recover_labels.py`, provenance in
+`label_recovery.json`) — ten had bytes of their own and became replayable repeats,
+thirteen turned out to name the class fragment again, and four had never named a
+fragment at all but a green run of this ledger. The instance count is 102, not 115.
 
 ## What it is not
 

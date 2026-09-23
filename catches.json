@@ -42,7 +42,8 @@
       "retired": [
         {
           "id": "clamp-minmax",
-          "why": "fingerprints identically to the class fragment clamp: the same min(max(...)) with the same argument order"
+          "why": "fingerprints identically to the class fragment clamp: the same min(max(...)) with the same argument order",
+          "kind": "class-fragment"
         }
       ]
     },
@@ -119,10 +120,26 @@
       "class": "dedupe-sorted-set-reorders",
       "first_seen": "v946",
       "repeats": [
-        "v989",
-        "v1026",
-        "v1066",
-        "v1077"
+        {
+          "id": "dedupe_sorted_rec",
+          "promise": "the sorted list comes back deduplicated and the original is untouched",
+          "fact": "the deletion is done on the caller's list, which is returned as the same object",
+          "probe": "dedupe_sorted_rec([1, 1, 2])",
+          "expected": "[1, 1, 2]",
+          "observed": "[1, 2]",
+          "fn": "dedupe_sorted_rec",
+          "recovered": "v989"
+        },
+        {
+          "id": "unique_rec",
+          "promise": "the values in the order they first appear",
+          "fact": "list(set(...)) has no insertion order to preserve",
+          "probe": "unique_rec([0, 2, 1])",
+          "expected": "[0, 2, 1]",
+          "observed": "[0, 1, 2]",
+          "fn": "unique_rec",
+          "recovered": "v1026"
+        }
       ],
       "aliases": [
         "list(set(items))",
@@ -137,7 +154,18 @@
       "retired": [
         {
           "id": "dedupe-sorted-set",
-          "why": "fingerprints identically to the class fragment dedupe_sorted"
+          "why": "fingerprints identically to the class fragment dedupe_sorted",
+          "kind": "class-fragment"
+        },
+        {
+          "id": "v1066",
+          "kind": "not-a-fragment",
+          "why": "the receipt records a run of this ledger, not a fragment: it names no shape of its own and cannot be replayed"
+        },
+        {
+          "id": "v1077",
+          "kind": "not-a-fragment",
+          "why": "the receipt records a run of this ledger, not a fragment: it names no shape of its own and cannot be replayed"
         }
       ]
     },
@@ -145,7 +173,16 @@
       "class": "title-case-touches-rest-of-word",
       "first_seen": "v944",
       "repeats": [
-        "v975"
+        {
+          "id": "title_case_rec",
+          "promise": "the rest of the word keeps its case",
+          "fact": "str.title touches the rest of the word",
+          "probe": "title_case_rec(\"don't stop\")",
+          "expected": "\"Don't Stop\"",
+          "observed": "\"Don'T Stop\"",
+          "fn": "title_case_rec",
+          "recovered": "v975"
+        }
       ],
       "aliases": [
         "str.title apostrophe",
@@ -161,7 +198,8 @@
       "retired": [
         {
           "id": "to_title_case-rest-untouched",
-          "why": "fingerprints identically to the class fragment title_case"
+          "why": "fingerprints identically to the class fragment title_case",
+          "kind": "class-fragment"
         }
       ]
     },
@@ -169,7 +207,16 @@
       "class": "dedupe-adjacent-vs-global",
       "first_seen": "v950",
       "repeats": [
-        "v960"
+        {
+          "id": "dedupe_adjacent_rec",
+          "promise": "removes duplicate values, keeping the first occurrence of each",
+          "fact": "adjacent-only comparison leaves non-adjacent duplicates in place",
+          "probe": "dedupe_adjacent_rec([1, 2, 1])",
+          "expected": "[1, 2]",
+          "observed": "[1, 2, 1]",
+          "fn": "dedupe_adjacent_rec",
+          "recovered": "v960"
+        }
       ],
       "promise": "equal elements anywhere in the list are collapsed to one",
       "fact": "only consecutive equal elements are removed",
@@ -203,9 +250,7 @@
     {
       "class": "reverse-slice-on-negative-index",
       "first_seen": "v996",
-      "repeats": [
-        "v1022"
-      ],
+      "repeats": [],
       "aliases": [
         "take n negative",
         "clip negative"
@@ -215,7 +260,14 @@
       "probe": "clip('hello', -1)",
       "expected": "''",
       "observed": "'hell'",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "v1022",
+          "why": "recovered from v1022: the fragment fingerprints identically to reverse-slice-on-negative-index's class fragment, so the label counted a check of that fragment and not a second sighting",
+          "kind": "class-fragment"
+        }
+      ]
     },
     {
       "class": "insert-zero-reverses-order",
@@ -286,15 +338,20 @@
     {
       "class": "strict-comparison-defeats-non-decreasing",
       "first_seen": "v976",
-      "repeats": [
-        "is_nondecreasing-20260922"
-      ],
+      "repeats": [],
       "promise": "true for non-decreasing sequences",
       "fact": "a strict < rejects equal neighbours",
       "probe": "is_sorted([1, 1, 2])",
       "expected": "True",
       "observed": "False",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "is_nondecreasing-20260922",
+          "why": "recovered from is_nondecreasing-20260922: the fragment fingerprints identically to strict-comparison-defeats-non-decreasing's class fragment, so the label counted a check of that fragment and not a second sighting",
+          "kind": "class-fragment"
+        }
+      ]
     },
     {
       "class": "iterator-exhausted-twice",
@@ -309,7 +366,16 @@
           "observed": "([1, 2, 3], [])",
           "fn": "as_iter_reusable"
         },
-        "v1057"
+        {
+          "id": "min_max_rec",
+          "promise": "the minimum and maximum of any iterable of numbers",
+          "fact": "the first traversal exhausts the iterator",
+          "probe": "min_max_rec(iter([3, 1, 2]))",
+          "expected": "(1, 3)",
+          "observed": "ValueError",
+          "fn": "min_max_rec",
+          "recovered": "v1057"
+        }
       ],
       "promise": "returns both the sum and the count of the items",
       "fact": "the second pass over an exhausted iterator yields zero",
@@ -322,15 +388,30 @@
       "class": "row-alias-in-grid-build",
       "first_seen": "v978",
       "repeats": [
-        "v1037",
-        "v1062"
+        {
+          "id": "clone_matrix_rec",
+          "promise": "each row is independent of the original",
+          "fact": "a one-level copy aliases its rows",
+          "probe": "(lambda m: (clone_matrix_rec(m)[0].append(99), m[0])[-1])([[1, 2]])",
+          "expected": "[1, 2]",
+          "observed": "[1, 2, 99]",
+          "fn": "clone_matrix_rec",
+          "recovered": "v1037"
+        }
       ],
       "promise": "one independent list per row",
       "fact": "[[0] * cols] * rows gives every row the same list object",
       "probe": "touch_grid(2, 2)",
       "expected": "0",
       "observed": "1",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "v1062",
+          "why": "recovered from v1062: the fragment fingerprints identically to one-level-copy-sold-as-deep's class fragment, so the label counted a check of that fragment and not a second sighting",
+          "kind": "class-fragment"
+        }
+      ]
     },
     {
       "class": "binary-search-not-first-occurrence",
@@ -403,7 +484,6 @@
       "class": "charset-strip-vs-affix-removal",
       "first_seen": "v963",
       "repeats": [
-        "v1005",
         {
           "id": "remove_prefix-lstrip",
           "promise": "the prefix is removed once, if present",
@@ -413,9 +493,6 @@
           "observed": "\"\"",
           "fn": "remove_prefix_lstrip"
         },
-        "strip_suffix-rstrip-20260922",
-        "v1044",
-        "v1073",
         {
           "id": "v1088-remove_suffix_rstrip",
           "promise": "the given suffix is removed",
@@ -424,6 +501,26 @@
           "expected": "'mis'",
           "observed": "'mi'",
           "fn": "remove_suffix_rstrip"
+        },
+        {
+          "id": "strip_prefix_rec",
+          "promise": "the prefix is removed as it stands when the text starts with it",
+          "fact": "lstrip treats its argument as a character set",
+          "probe": "strip_prefix_rec('https://hats.com', 'https://')",
+          "expected": "'hats.com'",
+          "observed": "'ats.com'",
+          "fn": "strip_prefix_rec",
+          "recovered": "v1073"
+        },
+        {
+          "id": "remove_prefix_suffix_rec",
+          "promise": "the exact substring is removed from both ends when present",
+          "fact": "strip treats its argument as a character set",
+          "probe": "remove_prefix_suffix_rec('abXba', 'ab')",
+          "expected": "'Xba'",
+          "observed": "'X'",
+          "fn": "remove_prefix_suffix_rec",
+          "recovered": "strip_suffix-rstrip-20260922"
         }
       ],
       "aliases": [
@@ -440,7 +537,19 @@
       "probe": "remove_prefix_suffix('bXa', 'ab', 'ab')",
       "expected": "'bXa'",
       "observed": "'X'",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "v1005",
+          "why": "recovered from v1005: the fragment fingerprints identically to charset-strip-vs-affix-removal's class fragment, so the label counted a check of that fragment and not a second sighting",
+          "kind": "class-fragment"
+        },
+        {
+          "id": "v1044",
+          "kind": "not-a-fragment",
+          "why": "the receipt records a run of this ledger, not a fragment: it names no shape of its own and cannot be replayed"
+        }
+      ]
     },
     {
       "class": "config-error-type-mismatch",
@@ -458,8 +567,6 @@
       "class": "bankers-rounding-on-half",
       "first_seen": "v969",
       "repeats": [
-        "v1030",
-        "v1063",
         {
           "id": "v1083-round_half_up",
           "promise": "rounded to the nearest integer",
@@ -468,6 +575,16 @@
           "expected": "-2",
           "observed": "-1",
           "fn": "round_int_plus_half"
+        },
+        {
+          "id": "round_price_rec",
+          "promise": "rounded to the cent, half away from zero",
+          "fact": "binary floating point puts 2.675 below the halfway point",
+          "probe": "round_price_rec(2.675)",
+          "expected": "2.68",
+          "observed": "2.67",
+          "fn": "round_price_rec",
+          "recovered": "v1030"
         }
       ],
       "promise": "rounds halves away from zero",
@@ -480,6 +597,13 @@
         "banker rounding",
         "round half to even",
         "round-half-up"
+      ],
+      "retired": [
+        {
+          "id": "v1063",
+          "why": "recovered from v1063: the fragment fingerprints identically to bankers-rounding-on-half's class fragment, so the label counted a check of that fragment and not a second sighting",
+          "kind": "class-fragment"
+        }
       ]
     },
     {
@@ -521,7 +645,8 @@
       "retired": [
         {
           "id": "rotate-left-any-k",
-          "why": "fingerprints identically to the class fragment rotate"
+          "why": "fingerprints identically to the class fragment rotate",
+          "kind": "class-fragment"
         }
       ]
     },
@@ -540,7 +665,16 @@
       "class": "zip-truncates-remainder",
       "first_seen": "v1000",
       "repeats": [
-        "v1036"
+        {
+          "id": "pairs_rec",
+          "promise": "a leftover last item becomes a group of one",
+          "fact": "zip truncates the leftover",
+          "probe": "pairs_rec([1, 2, 3])",
+          "expected": "[(1, 2), (3,)]",
+          "observed": "[(1, 2)]",
+          "fn": "pairs_rec",
+          "recovered": "v1036"
+        }
       ],
       "promise": "remaining elements from the longer sequence are appended",
       "fact": "zip(a, b) stops at the shorter sequence; the remainder is dropped",
@@ -696,15 +830,20 @@
     {
       "class": "empty-max-raises",
       "first_seen": "v1018",
-      "repeats": [
-        "v1027-find_max"
-      ],
+      "repeats": [],
       "promise": "return None if items is empty",
       "fact": "max(items) raises ValueError on an empty sequence; there is no empty guard",
       "probe": "find_max([])",
       "expected": "None",
       "observed": "ValueError",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "v1027-find_max",
+          "why": "recovered from v1027-find_max: the fragment fingerprints identically to empty-max-raises's class fragment, so the label counted a check of that fragment and not a second sighting",
+          "kind": "class-fragment"
+        }
+      ]
     },
     {
       "class": "miss-sentinel-none-not-minus1",
@@ -731,15 +870,20 @@
     {
       "class": "mutable-default-shared-across-calls",
       "first_seen": "v1023",
-      "repeats": [
-        "v1070"
-      ],
+      "repeats": [],
       "promise": "without an explicit log, each call starts from a fresh empty list",
       "fact": "the default [] is created once at def time and is shared; the second no-arg call sees the first call's append",
       "probe": "(lambda: (append_log.__defaults__[0].clear(), append_log('a'), append_log('b'))[-1])()",
       "expected": "['b']",
       "observed": "['a', 'b']",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "v1070",
+          "kind": "not-a-fragment",
+          "why": "the receipt records a run of this ledger, not a fragment: it names no shape of its own and cannot be replayed"
+        }
+      ]
     },
     {
       "class": "truthy-filter-vs-none-check",
@@ -779,7 +923,6 @@
       "class": "dict-update-overwrites-first",
       "first_seen": "v1027",
       "repeats": [
-        "v1048",
         {
           "id": "v1086-merge-prefer-second",
           "promise": "on key conflicts the second argument's values win",
@@ -795,7 +938,14 @@
       "probe": "merge_dicts({'k': 1}, {'k': 2})",
       "expected": "{'k': 1}",
       "observed": "{'k': 2}",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "v1048",
+          "why": "recovered from v1048: the fragment fingerprints identically to dict-update-overwrites-first's class fragment, so the label counted a check of that fragment and not a second sighting",
+          "kind": "class-fragment"
+        }
+      ]
     },
     {
       "class": "all-shortcircuit-skips-remaining-side-effects",
@@ -822,15 +972,20 @@
     {
       "class": "bool-subclass-counted-as-int",
       "first_seen": "v1033",
-      "repeats": [
-        "v1064"
-      ],
+      "repeats": [],
       "promise": "booleans are excluded from the integer count",
       "fact": "bool is a subclass of int, so isinstance(True, int) is True",
       "probe": "count_integers([True, False, 1])",
       "expected": "1",
       "observed": "3",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "v1064",
+          "why": "recovered from v1064: the fragment fingerprints identically to bool-subclass-counted-as-int's class fragment, so the label counted a check of that fragment and not a second sighting",
+          "kind": "class-fragment"
+        }
+      ]
     },
     {
       "class": "fromkeys-shares-mutable-default",
@@ -900,15 +1055,20 @@
     {
       "class": "late-binding-loop-variable",
       "first_seen": "v1049",
-      "repeats": [
-        "v1067"
-      ],
+      "repeats": [],
       "promise": "the i-th function multiplies by i",
       "fact": "each lambda looks up i at call time; after the comprehension i is 2 for all of them",
       "probe": "make_multipliers()[0](5)",
       "expected": "0",
       "observed": "10",
-      "lang": "python"
+      "lang": "python",
+      "retired": [
+        {
+          "id": "v1067",
+          "why": "recovered from v1067: the fragment fingerprints identically to splitlines-drops-keepends's class fragment, so the label counted a check of that fragment and not a second sighting",
+          "kind": "class-fragment"
+        }
+      ]
     },
     {
       "class": "replace-count-limits-to-first",

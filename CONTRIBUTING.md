@@ -49,11 +49,16 @@ A repeat you can recover but that turns out indistinguishable from the class
 fragment goes in `retired`, with the reason:
 
 ```json
-"retired": [{"id": "rotate-left-any-k", "why": "fingerprints identically to the class fragment rotate"}]
+"retired": [{"id": "rotate-left-any-k", "kind": "class-fragment",
+             "why": "fingerprints identically to the class fragment rotate"}]
 ```
 
 Retired repeats are not counted as instances; they say a claimed sighting was
-checked and had nothing of its own in it.
+checked and had nothing of its own in it. A retirement carries a `kind`:
+`class-fragment` (the bytes were the class's own, under a second name) or
+`not-a-fragment` (the receipt named a run of the ledger, not a shape at all).
+`check.py` prints the two counts separately, because they mean different things —
+one is a class sighting that was already counted, the other was never a sighting.
 
 **Address the instance, or say you cannot.** A class or a repeat may carry `address`:
 the public message id the fragment was posted in. `check.py` counts them and prints
@@ -68,11 +73,17 @@ repeat replays another class's logic. That is the `already-known class reported 
 refusal made mechanical. Measured on the whole ledger: 76 of 76 executable classes
 hold distinct logic.
 
-A label is not a claim. `v1083` and friends name verification receipts that this
-repository does not publish, so a stranger cannot recover the promise behind one — the
-number points at a local check, not at a public message. Where you can rebuild the
-promise, the probe, the expectation and the observation, replace the label; where you
-cannot, say so rather than inventing four sentences around a number.
+A label is a question, not an instance. `v1083` and friends name verification receipts
+that this repository does not publish, so a stranger cannot recover the promise behind
+one. That is a reason to answer it locally, not to leave it standing: `recover_labels.py`
+loads the labels whose source files are still on hand, replays each probe, and asks the
+same fingerprint question `check.py` asks. Every label comes out as one of four things —
+`OBJECT` (a second sighting with bytes of its own: it becomes a repeat), `CLASS` (the
+class fragment again: it is retired with that reason), `MOVE` (the fragment is another
+class's own bytes, so the label was filed under the wrong class) or `RUN` (the receipt
+named a ledger run, not a fragment). `--write` applies the verdicts; provenance goes to
+`label_recovery.json` in the repository so the mapping is public even though the receipts
+are not. Measured 2026-09-23: 23 labels in, 10 objects, 13 retirements, 0 labels left.
 
 Repeat fragments live in `fragments.py` under a `repeat fragments` heading, one
 function per materialised repeat, and are registered in the namespace of the class

@@ -660,6 +660,64 @@ def round_int_plus_half(x):
     return int(x + 0.5)
 
 
+
+# --- recovered: labels whose bytes were still on hand (see recover_labels.py)
+
+def dedupe_adjacent_rec(items):
+    """Remove all duplicate elements, keeping only the first occurrence
+    of each value."""
+    result = []
+    for i, x in enumerate(items):
+        if i == 0 or x != items[i - 1]:
+            result.append(x)
+    return result
+
+def title_case_rec(s: str) -> str:
+    """Capitalize the first letter of every word.
+    The rest of each word's letters are left untouched."""
+    return s.title()
+
+def dedupe_sorted_rec(items):
+    """Remove consecutive duplicate values from a sorted list and return
+    the result, without modifying the original list."""
+    i = 0
+    while i < len(items) - 1:
+        if items[i] == items[i + 1]:
+            del items[i + 1]
+        else:
+            i += 1
+    return items
+
+def unique_rec(items):
+    """Return a new list with duplicates removed, preserving original order."""
+    return list(set(items))
+
+def round_price_rec(x):
+    """Round x to 2 decimal places, exact to the cent."""
+    return round(x, 2)
+
+def pairs_rec(items):
+    """Return consecutive pairs. A leftover last item becomes a one-element group."""
+    return list(zip(items[::2], items[1::2]))
+
+def clone_matrix_rec(matrix):
+    """Return an independent copy of matrix; mutating a row in the copy never affects the original."""
+    return [row for row in matrix]
+
+def min_max_rec(items):
+    """Returns the minimum and maximum values from any iterable of numbers."""
+    return min(items), max(items)
+
+def strip_prefix_rec(text: str, prefix: str) -> str:
+    """Remove prefix from text if text starts with prefix, else return text unchanged."""
+    if text.startswith(prefix):
+        return text.lstrip(prefix)
+    return text
+
+def remove_prefix_suffix_rec(s, chars):
+    """Remove the substring `chars` from the start and end of s, if present."""
+    return s.strip(chars)
+
 NAMESPACES = {
     "clamp-no-range-validation": {
         "clamp": clamp,
@@ -679,9 +737,9 @@ NAMESPACES = {
         "remove_all_joi": remove_all_joi,
         "remove_one_only": remove_one_only,
     },
-    "dedupe-sorted-set-reorders": {"dedupe_sorted": dedupe_sorted},
-    "title-case-touches-rest-of-word": {"title_case": title_case},
-    "dedupe-adjacent-vs-global": {"dedupe_adjacent": dedupe_adjacent},
+    "dedupe-sorted-set-reorders": {"unique_rec": unique_rec, "dedupe_sorted_rec": dedupe_sorted_rec, "dedupe_sorted": dedupe_sorted},
+    "title-case-touches-rest-of-word": {"title_case_rec": title_case_rec, "title_case": title_case},
+    "dedupe-adjacent-vs-global": {"dedupe_adjacent_rec": dedupe_adjacent_rec, "dedupe_adjacent": dedupe_adjacent},
     "greedy-tag-strip": {"strip_tags": strip_tags},
     "truncating-floor-division": {"floor_div": floor_div},
     "reverse-slice-on-negative-index": {"clip": clip, "take": take},
@@ -692,17 +750,17 @@ NAMESPACES = {
     "silent-drop-not-replace": {"to_ascii": to_ascii},
     "raise-not-returned-on-parse-failure": {"to_int": to_int},
     "strict-comparison-defeats-non-decreasing": {"is_sorted": is_sorted},
-    "iterator-exhausted-twice": {
+    "iterator-exhausted-twice": {"min_max_rec": min_max_rec, 
         "sum_and_count": sum_and_count,
         "as_iter_reusable": as_iter_reusable,
     },
-    "row-alias-in-grid-build": {"touch_grid": touch_grid},
+    "row-alias-in-grid-build": {"clone_matrix_rec": clone_matrix_rec, "touch_grid": touch_grid},
     "binary-search-not-first-occurrence": {"binary_search": binary_search},
     "intervals-touching-not-merged": {"merge_intervals": merge_intervals},
     "retry-swallows-final-exception": {"with_retry": with_retry, "fail_always": fail_always},
     "punctuation-kept-in-palindrome-test": {"is_palindrome": is_palindrome},
     "negative-number-palindrome": {"is_palindrome_number": is_palindrome_number},
-    "charset-strip-vs-affix-removal": {
+    "charset-strip-vs-affix-removal": {"remove_prefix_suffix_rec": remove_prefix_suffix_rec, "strip_prefix_rec": strip_prefix_rec, 
         "remove_prefix_suffix": remove_prefix_suffix,
         "remove_suffix_rstrip": remove_suffix_rstrip,
         "remove_prefix_lstrip": remove_prefix_lstrip,
@@ -712,7 +770,7 @@ NAMESPACES = {
         "load_config_inline": load_config_inline,
         "ConfigError": ConfigError,
     },
-    "bankers-rounding-on-half": {
+    "bankers-rounding-on-half": {"round_price_rec": round_price_rec, 
         "round_half_up": round_half_up,
         "round_int_plus_half": round_int_plus_half,
     },
@@ -720,7 +778,7 @@ NAMESPACES = {
     "one-level-flatten": {"flatten": flatten},
     "rotate-without-modulo": {"rotate": rotate},
     "median-even-length": {"median": median},
-    "zip-truncates-remainder": {"interleave": interleave},
+    "zip-truncates-remainder": {"pairs_rec": pairs_rec, "interleave": interleave},
     "kv-value-not-stripped": {"parse_kv_pairs": parse_kv_pairs},
     "default-flag-lies-about-default": {"is_palindrome_ignore_case": is_palindrome_ignore_case},
     "none-filtered-from-unique-count": {"count_unique": count_unique},

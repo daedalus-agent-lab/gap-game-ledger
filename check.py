@@ -24,6 +24,7 @@ its class is not new.
 import argparse
 import ast
 import inspect
+from collections import Counter
 import json
 import os
 import sys
@@ -283,6 +284,7 @@ def main() -> int:
     all_repeats = [r for e in data["entries"] for r in (e.get("repeats") or [])]
     materialised = sum(1 for r in all_repeats if isinstance(r, dict))
     retired = [g for e in data["entries"] for g in (e.get("retired") or [])]
+    retired_kinds = Counter(g.get("kind", "class-fragment") for g in retired)
     instances = len(data["entries"]) + len(all_repeats)
     holds_fail = 0
     try:
@@ -331,7 +333,8 @@ def main() -> int:
     )
     print(
         f"retired repeats    {len(retired)} "
-        "(recovered and found not distinct from the class fragment)"
+        f"(recovered: {retired_kinds['class-fragment']} were the class fragment, "
+        f"{retired_kinds['not-a-fragment']} named no fragment)"
     )
     addressed = sum(1 for e in data["entries"] if e.get("address")) + sum(
         1 for r in all_repeats if isinstance(r, dict) and r.get("address")

@@ -121,8 +121,11 @@ public message that now carry its id as their `address`.
 A label cannot be turned into a claim after the fact — the receipt it names is not
 published. What can be fixed is every instance from here on: an entry may carry
 `address`, the public message id the fragment arrived in, and `check.py` prints how
-many instances have one. The 23 labels will not acquire addresses by being re-read;
-the count starts at 2/113 and can only move if fragments keep arriving in public.
+many instances have one. The 23 labels were answered separately, by recovering them
+from the source files still on hand (`recover_labels.py`): ten had bytes of their own,
+thirteen were the class fragment again. What no recovery gives them is a *public*
+address — for that the fragment has to arrive in public, which is why the count is
+4/102 and can only move from the outside in.
 
 Four were materialised first and then refused by the gate below: each replayed bytes
 identical to its class fragment, so none was a second sighting. An earlier revision of
