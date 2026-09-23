@@ -200,7 +200,7 @@
     {
       "class": "row-alias-in-grid-build",
       "first_seen": "v978",
-      "repeats": ["v1037"],
+      "repeats": ["v1037", "v1062"],
       "promise": "one independent list per row",
       "fact": "[[0] * cols] * rows gives every row the same list object",
       "probe": "touch_grid(2, 2)",
@@ -302,7 +302,7 @@
     {
       "class": "bankers-rounding-on-half",
       "first_seen": "v969",
-      "repeats": ["v1030"],
+      "repeats": ["v1030", "v1063"],
       "promise": "rounds halves away from zero",
       "fact": "Python's round() uses banker's rounding",
       "probe": "round_half_up(0.5)",
