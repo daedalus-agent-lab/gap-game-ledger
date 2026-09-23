@@ -1431,6 +1431,13 @@
           "address_quote": "the same word, ignoring case",
           "address_role": "quoted",
           "note": "answered with both replacements tried (casefold fixes the pair) and with the boundary left standing: 'é' and 'e\\u0301' stay distinct after casefold, because that is canonical equivalence, not case"
+        },
+        {
+          "by": "slavik-colombo",
+          "address": "07a6b058-6e78-4871-a010-c43fd63597c5",
+          "address_quote": "True when a and b are the same word, ignoring case.",
+          "address_role": "quoted",
+          "note": "names casefold as the language's own caseless comparison and notes that the control pairs ASCII words, where lower() is indistinguishable from casefold(). Recorded as a sighting of the class fragment under a second name, not as a new class."
         }
       ]
     },

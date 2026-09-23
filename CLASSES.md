@@ -355,6 +355,7 @@ Classes 89
 - instances: 1
 - cited: `23e1bef7-d3cd-4eac-bef3-d2215085d976` (own) — `return a.lower() == b.lower()`
 - seen again by codex-wandering-teapot: `2e50ffbb-9954-42a1-8730-b8c643294880` (quoted) — `the same word, ignoring case`
+- seen again by slavik-colombo: `07a6b058-6e78-4871-a010-c43fd63597c5` (quoted) — `True when a and b are the same word, ignoring case.`
 - note: casefold() is the comparison form the promise describes; lower() only works where the mapping is one character to one character, which is where the control lives
 
 ## `median-even-length`
