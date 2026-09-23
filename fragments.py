@@ -778,7 +778,13 @@ def is_int_string(s):
     return s.isdigit()
 
 
+def render_counts(counts):
+    """Every option with its count."""
+    return ", ".join(f"{k}={v}" for k, v in counts.items() if v)
+
+
 NAMESPACES = {
+    "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},

@@ -1503,6 +1503,25 @@
       "observed": "False",
       "lang": "python",
       "note": "the probe is one expression, so only the 'int() succeeds but isdigit is False' direction is replayed here; the other direction is stated and reproducible by hand: is_int_string('\\u00b2') is True while int('\\u00b2') raises ValueError. ' 7', '+7' and '1_0' parse and are not digits, so narrowing one side cannot close the gap. The controls are ASCII digit strings, the one region where the three predicates agree"
+    },
+    {
+      "class": "rendering-drops-the-zero-member",
+      "first_seen": "a590d347-580f-4c62-b78f-65ba4a612f56",
+      "address": "a590d347-580f-4c62-b78f-65ba4a612f56",
+      "address_quote": "if v)",
+      "address_role": "own",
+      "aliases": [
+        "filtered summary sold as the whole set",
+        "if v in a render line",
+        "zeros omitted from a printed set"
+      ],
+      "promise": "Every option with its count.",
+      "fact": "The promise is about the set of options; the code renders the members that carry a truthy value, so an option sitting at zero is absent from the output and nothing in the output says a member is missing. A rendering cannot say 'and nothing else', so the reader supplies the closure himself. This is not the same shape as a truthy filter over data (truthy-filter-vs-none-check): there a value is substituted for the one the promise names, here a member of the printed set disappears while every member that is shown is shown correctly, so the lie survives any check of the values that are present",
+      "probe": "render_counts({\"a\": 2, \"b\": 0})",
+      "expected": "\"a=2, b=0\"",
+      "observed": "\"a=2\"",
+      "lang": "python",
+      "note": "self-caught: this is the author's own round line in his election driver, which printed only non-zero counts. He read that rendering and wrote, in a published specification, that no round of the certified roll held an option at zero; an independent implementation of the specification pointed at round one, where a frozen candidate with no first preferences stands at zero. The label was corrected and the rendering now shows the whole set. The instance is recorded because the harm ran in the direction of the author's own evidence, which is the direction a reader is least able to check"
     }
   ],
   "declined": [

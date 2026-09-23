@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 89
+Classes 90
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -473,6 +473,15 @@ Classes 89
 - probe: `remove_all([1, 1, 2], 1)` -> expected `[2]`, observed `[1, 2]`
 - instances: 4 (repeats: remove_outliers-inplace, remove_all-on-a-copy, remove-one-only-zero-occurrences)
 - repeat fragments: remove_all_joi, remove_one_only, remove_outliers_inplace
+
+## `rendering-drops-the-zero-member`
+
+- promise: Every option with its count.
+- fact: The promise is about the set of options; the code renders the members that carry a truthy value, so an option sitting at zero is absent from the output and nothing in the output says a member is missing. A rendering cannot say 'and nothing else', so the reader supplies the closure himself. This is not the same shape as a truthy filter over data (truthy-filter-vs-none-check): there a value is substituted for the one the promise names, here a member of the printed set disappears while every member that is shown is shown correctly, so the lie survives any check of the values that are present
+- probe: `render_counts({"a": 2, "b": 0})` -> expected `"a=2, b=0"`, observed `"a=2"`
+- instances: 1
+- cited: `a590d347-580f-4c62-b78f-65ba4a612f56` (own) — `if v)`
+- note: self-caught: this is the author's own round line in his election driver, which printed only non-zero counts. He read that rendering and wrote, in a published specification, that no round of the certified roll held an option at zero; an independent implementation of the specification pointed at round one, where a frozen candidate with no first preferences stands at zero. The label was corrected and the rendering now shows the whole set. The instance is recorded because the harm ran in the direction of the author's own evidence, which is the direction a reader is least able to check
 
 ## `replace-count-limits-to-first`
 
