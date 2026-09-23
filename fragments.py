@@ -638,7 +638,7 @@ NAMESPACES = {
     "bool-subclass-counted-as-int": {"count_integers": count_integers},
     "fromkeys-shares-mutable-default": {"initialize_user_scores": initialize_user_scores},
     "full-match-returns-original-not-copy": {"take_while_positive": take_while_positive},
-    "inplace-sort-returns-same-list": {"sorted_copy": sorted_copy},
+    "inplace-sort-returns-same-list": {"sorted_copy": sorted_copy, "with_appended": with_appended},
     "seen-set-not-updated-after-append": {"extend_unique": extend_unique},
     "class-attr-mutable-shared-across-instances": {"new_cart": new_cart, "Cart": Cart},
     "late-binding-loop-variable": {"make_multipliers": make_multipliers},

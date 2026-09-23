@@ -1,0 +1,314 @@
+{
+  "task": "group by shape of lie",
+  "note": "Blind grouping: produced from blind_classes.json only. Ordered by shape (root cause), largest groups first, singletons last.",
+  "read_only_blind_file": true,
+  "groups": [
+    {
+      "label": "one mutable object behind two names",
+      "ids": ["i017", "i048", "i056", "i060", "i078"],
+      "why": "A container is built once and referenced from two owners (a shared row list, one list for every dict key, a class attribute, a def-time default, a one-level copy), so a mutation through one name is visible through the other."
+    },
+    {
+      "label": "documented error branch missing; the underlying call's exception escapes",
+      "ids": ["i014", "i025", "i039", "i045", "i066", "i067", "i075"],
+      "why": "The docstring names what happens on the bad input (None, a default, a project exception) and the code has no branch that achieves it, so the built-in raises its own ValueError/TypeError/JSONDecodeError/ZeroDivisionError instead."
+    },
+    {
+      "label": "truthiness stands in for the documented presence test",
+      "ids": ["i001", "i034", "i040", "i049", "i074"],
+      "why": "A filter or `x or default` uses Python truthiness where the doc promises a None/emptiness test, so 0, '', [], False and None are all conflated."
+    },
+    {
+      "label": "caller's own object mutated or handed back as the result",
+      "ids": ["i042", "i057", "i058", "i073"],
+      "why": "The docstring promises a new independent object and the code mutates the argument in place and/or returns the same object it was given."
+    },
+    {
+      "label": "predicate built from a weaker primitive than the claim",
+      "ids": ["i051", "i064", "i068", "i069"],
+      "why": "The test used is strictly weaker than the documented relation - substring for word, reference identity for content equality, equality to one empty type for emptiness, syntax check without the reserved-word check."
+    },
+    {
+      "label": "last, partial or unterminated piece of the sequence mishandled",
+      "ids": ["i010", "i031", "i035", "i037"],
+      "why": "The loop bound or divisor is derived from the nominal size instead of handling the tail, so a final partial window, chunk, batch or the remainder of a zip is dropped or mis-averaged."
+    },
+    {
+      "label": "documented failure never happens; a silently wrong value is returned",
+      "ids": ["i000", "i020", "i046"],
+      "why": "The docstring promises a raise (or a specific sentinel) on failure and the code returns an ordinary value instead, so the caller sees success."
+    },
+    {
+      "label": "output order is not the documented order",
+      "ids": ["i003", "i009", "i021"],
+      "why": "The docstring claims a specific output order (input order preserved, ascending numeric) and the container/insertion/comparator used imposes a different one."
+    },
+    {
+      "label": "newline/line-terminator model differs from the claim",
+      "ids": ["i050", "i070", "i077"],
+      "why": "Lines are counted or split with a delimiter primitive whose treatment of the final terminator contradicts the docstring's model (a final unterminated line counts, keepends, a trailing newline makes no empty last line)."
+    },
+    {
+      "label": "str.strip used as affix removal (argument is a character set)",
+      "ids": ["i024", "i036", "i071"],
+      "why": "The code calls strip/rstrip to remove a prefix, suffix or leading slash, but those arguments are character sets, so any of those characters is eaten at either end."
+    },
+    {
+      "label": "strict inequality where the documented rule is inclusive",
+      "ids": ["i015", "i019"],
+      "why": "A strict < guards a comparison whose documented meaning includes the equal/touching case, so equal neighbours and touching intervals are treated as outside."
+    },
+    {
+      "label": "search returns a match, not the documented first match",
+      "ids": ["i018", "i038"],
+      "why": "The loop reports whichever occurrence it happened to hit (the midpoint, or the last one because it never breaks) while the docstring promises the index of the first occurrence."
+    },
+    {
+      "label": "implementation assumes its input is already ordered or grouped",
+      "ids": ["i005", "i011"],
+      "why": "Both rely on the sequence arriving in order - one takes the last element as the maximum, the other removes only adjacent equal elements - and the docstring claims the general unsorted case."
+    },
+    {
+      "label": "loop bookkeeping goes stale when the structure changes during the pass",
+      "ids": ["i002", "i059"],
+      "why": "The state the loop tests against (the shifting index, the once-built seen set) is not updated as elements are removed or appended, so elements in the batch are skipped or duplicated."
+    },
+    {
+      "label": "state computed once by a lazy/consuming/eager-short-circuit construct",
+      "ids": ["i016", "i053"],
+      "why": "The docstring assumes a full pass over the data, but the iterator is single-use and all() stops at the first failure, so the second pass and the later records never happen."
+    },
+    {
+      "label": "a documented length bound applied to only one part of the result",
+      "ids": ["i012", "i043"],
+      "why": "The bound in the docstring covers the whole result, while the slice (of n, or of max_len) is applied to the payload alone, so a longer input is truncated or the suffix pushes the result past the bound."
+    },
+    {
+      "label": "string method's count/limit argument not what the docstring says",
+      "ids": ["i044", "i062"],
+      "why": "str.split and str.replace are called without the maxsplit/count that the docstring's 'first occurrence only' or 'every occurrence' requires, so the operation runs over the wrong number of matches."
+    },
+    {
+      "label": "true division used where floor division was documented",
+      "ids": ["i007", "i076"],
+      "why": "The code divides with / (or int(a / b)), which yields a float or truncates toward zero, while the docstring describes floor semantics that // gives."
+    },
+    {
+      "label": "bool/int interchangeability defeats the type test",
+      "ids": ["i055", "i072"],
+      "why": "Because bool is a subclass of int and 0 == False, an isinstance test counts booleans and set membership collapses 0/False and 1/True, which the docstring assumes are distinct values."
+    },
+    {
+      "label": "only half of a two-part normalisation performed",
+      "ids": ["i022", "i032"],
+      "why": "The docstring promises two normalisations (case and punctuation, key and value) and the code applies exactly one of them, leaving the promised-ignored part in place."
+    },
+    {
+      "label": "capitalise/title built-in also lowercases the rest",
+      "ids": ["i004", "i063"],
+      "why": "The docstring promises that only the first letter changes, but the built-in used (title, capitalize) lowercases every following character - and title also splits on apostrophes."
+    },
+    {
+      "label": "empty argument special-cased to the opposite of the docstring",
+      "ids": ["i047", "i054"],
+      "why": "An explicit `if not needle/prefix` branch returns -1 or False for the empty string, exactly inverting the documented result (found at the end, matches everything)."
+    },
+    {
+      "label": "out-of-range argument not normalised although the docstring names it",
+      "ids": ["i008", "i029"],
+      "why": "The docstring spells out the case where the argument exceeds the data (negative n, k larger than the list) and the code feeds it straight into a slice, so the documented wrapping/empty result never happens."
+    },
+    {
+      "label": "greedy regex spans from the first to the last delimiter",
+      "ids": ["i006"],
+      "why": "A single unbounded quantifier makes the pattern eat everything between the first '<' and the last '>', deleting content along with the tags."
+    },
+    {
+      "label": "wrong library mode discards data instead of substituting",
+      "ids": ["i013"],
+      "why": "encode('ascii', 'ignore') drops the offending character where the docstring promises a replacement character."
+    },
+    {
+      "label": "a representation detail of the input leaks into the predicate",
+      "ids": ["i023"],
+      "why": "The sign kept by the string form makes a negative number fail a palindromic test the docstring claims it passes."
+    },
+    {
+      "label": "numeric tie rule of the primitive differs from the documented rule",
+      "ids": ["i026"],
+      "why": "round() resolves exact halves to even while the docstring promises halves away from zero."
+    },
+    {
+      "label": "no-match branch yields the input itself",
+      "ids": ["i027"],
+      "why": "With no dot to split on, the last field is the whole basename, so the missing case returns the input instead of the documented empty string."
+    },
+    {
+      "label": "one nesting level handled where the docstring claims arbitrary depth",
+      "ids": ["i028"],
+      "why": "The comprehension removes exactly one level of nesting, so deeper lists survive the flatten."
+    },
+    {
+      "label": "one branch of a standard algorithm diverges from its definition",
+      "ids": ["i030"],
+      "why": "The even-length branch of the median returns a middle element instead of the mean of the two middle elements."
+    },
+    {
+      "label": "advertised default is actually the opt-in flag",
+      "ids": ["i033"],
+      "why": "The parameter that implements the documented default behaviour defaults to False, so the docstring's default behaviour requires an explicit opt-in."
+    },
+    {
+      "label": "unit threshold and unit divisor disagree",
+      "ids": ["i041"],
+      "why": "The code switches unit at 1000 (SI) while dividing by 1024 (binary), so the value printed for the boundary input follows neither system the docstring claims."
+    },
+    {
+      "label": "collision precedence opposite to the docstring",
+      "ids": ["i052"],
+      "why": "The docstring says the first mapping wins and dict.update lets the later one overwrite it."
+    },
+    {
+      "label": "closure binds the loop variable at call time",
+      "ids": ["i061"],
+      "why": "Every lambda looks up i when it is called, so all of them see the final value instead of the value from their own iteration."
+    },
+    {
+      "label": "fixed index slicing instead of the documented token boundary",
+      "ids": ["i065"],
+      "why": "The text is cut at a character index rather than at the word boundary the docstring promises, so words and spaces are split mid-token."
+    }
+  ],
+  "merges": [
+    ["i017", "i048"],
+    ["i017", "i056"],
+    ["i017", "i060"],
+    ["i017", "i078"],
+    ["i048", "i056"],
+    ["i048", "i060"],
+    ["i048", "i078"],
+    ["i056", "i060"],
+    ["i056", "i078"],
+    ["i060", "i078"],
+    ["i014", "i025"],
+    ["i014", "i039"],
+    ["i014", "i045"],
+    ["i014", "i066"],
+    ["i014", "i067"],
+    ["i014", "i075"],
+    ["i025", "i039"],
+    ["i025", "i045"],
+    ["i025", "i066"],
+    ["i025", "i067"],
+    ["i025", "i075"],
+    ["i039", "i045"],
+    ["i039", "i066"],
+    ["i039", "i067"],
+    ["i039", "i075"],
+    ["i045", "i066"],
+    ["i045", "i067"],
+    ["i045", "i075"],
+    ["i066", "i067"],
+    ["i066", "i075"],
+    ["i067", "i075"],
+    ["i001", "i034"],
+    ["i001", "i040"],
+    ["i001", "i049"],
+    ["i001", "i074"],
+    ["i034", "i040"],
+    ["i034", "i049"],
+    ["i034", "i074"],
+    ["i040", "i049"],
+    ["i040", "i074"],
+    ["i049", "i074"],
+    ["i042", "i057"],
+    ["i042", "i058"],
+    ["i042", "i073"],
+    ["i057", "i058"],
+    ["i057", "i073"],
+    ["i058", "i073"],
+    ["i051", "i064"],
+    ["i051", "i068"],
+    ["i051", "i069"],
+    ["i064", "i068"],
+    ["i064", "i069"],
+    ["i068", "i069"],
+    ["i010", "i031"],
+    ["i010", "i035"],
+    ["i010", "i037"],
+    ["i031", "i035"],
+    ["i031", "i037"],
+    ["i035", "i037"],
+    ["i000", "i020"],
+    ["i000", "i046"],
+    ["i020", "i046"],
+    ["i003", "i009"],
+    ["i003", "i021"],
+    ["i009", "i021"],
+    ["i050", "i070"],
+    ["i050", "i077"],
+    ["i070", "i077"],
+    ["i024", "i036"],
+    ["i024", "i071"],
+    ["i036", "i071"],
+    ["i015", "i019"],
+    ["i018", "i038"],
+    ["i005", "i011"],
+    ["i002", "i059"],
+    ["i016", "i053"],
+    ["i012", "i043"],
+    ["i044", "i062"],
+    ["i007", "i076"],
+    ["i055", "i072"],
+    ["i022", "i032"],
+    ["i004", "i063"],
+    ["i047", "i054"],
+    ["i008", "i029"]
+  ],
+  "unclear": [
+    {
+      "ids": ["i078", "i028"],
+      "why": "i078 is a copy that is one level too shallow and i028 is a flatten that handles one level of nesting; I put i078 with the shared-object group because its probe demonstrates two names on one object, but the depth reading would pair it with i028."
+    },
+    {
+      "ids": ["i057", "i017"],
+      "why": "The aliasing split (mutating the caller's own object vs. one object shared among owners) is a judgement call; i057 returns the argument itself, which could belong to either."
+    },
+    {
+      "ids": ["i046", "i014"],
+      "why": "Both are failures of the documented return/raise protocol: I separated 'the library's exception escapes' from 'a wrong value is returned silently', but a single probe template could catch both."
+    },
+    {
+      "ids": ["i037", "i043"],
+      "why": "i037 divides a last partial batch by the nominal size and i043 applies a length bound to one component; both are 'the limit is computed from the wrong quantity', so either grouping is defensible."
+    },
+    {
+      "ids": ["i003", "i059"],
+      "why": "Both are about claims of uniqueness, but i003's root cause is order destroyed by set()+sort while i059's is a seen-set built once; I could not decide whether the author sees one shape or two."
+    },
+    {
+      "ids": ["i021", "i051"],
+      "why": "The two JavaScript items could be one class ('a JS built-in default is not the documented semantics'), but i021 sits in my ordering group and i051 in the weaker-predicate group."
+    },
+    {
+      "ids": ["i033", "i035"],
+      "why": "i033's implementing flag defaults to False and i035's fill parameter is never read; both are 'the advertised parameter does not do what the docstring says', but i035 is read more naturally as the last-chunk case."
+    },
+    {
+      "ids": ["i023", "i022"],
+      "why": "i023's sign is kept where the palindromic rule should ignore it and i022's punctuation is kept where the docstring says it is ignored; that is the same normalisation complaint, but i023's docstring never names the sign."
+    },
+    {
+      "ids": ["i027", "i046"],
+      "why": "Both return a wrong value in the not-found case (the input itself, None instead of -1); one is a string-slicing accident and the other an except-clause choice."
+    },
+    {
+      "ids": ["i008", "i047"],
+      "why": "Both are documented handling of a degenerate argument (out-of-range, empty) that the code implements as its opposite; the mechanisms differ (slice semantics vs an explicit early return)."
+    },
+    {
+      "ids": ["i016", "i002"],
+      "why": "Exhausting an iterator and mutating a list during iteration are both 'the pass does not see the elements it should', but one is library laziness and the other an index shift, so I kept them apart."
+    }
+  ]
+}

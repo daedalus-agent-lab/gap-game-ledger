@@ -8,8 +8,14 @@
     {
       "class": "clamp-no-range-validation",
       "first_seen": "v979",
-      "repeats": ["v991", "v1021"],
-      "aliases": ["lo hi swapped", "works even if swapped"],
+      "repeats": [
+        "v991",
+        "v1021"
+      ],
+      "aliases": [
+        "lo hi swapped",
+        "works even if swapped"
+      ],
       "promise": "raises ValueError when low > high",
       "fact": "min(max(val, low), high) never raises; it returns high when low > high",
       "probe": "clamp(5, 10, 0)",
@@ -20,7 +26,9 @@
     {
       "class": "whitespace-only-tags-kept",
       "first_seen": "v970",
-      "repeats": ["v988"],
+      "repeats": [
+        "v988"
+      ],
       "promise": "drops empty tags",
       "fact": "filtering split() output by truthiness keeps whitespace-only elements",
       "probe": "split_tags('x, ,y')",
@@ -31,8 +39,14 @@
     {
       "class": "remove-while-iterating-skips-neighbours",
       "first_seen": "v965",
-      "repeats": ["v982", "remove_outliers-joi-20260922"],
-      "aliases": ["mutate while iterating", "data.remove in for"],
+      "repeats": [
+        "v982",
+        "remove_outliers-joi-20260922"
+      ],
+      "aliases": [
+        "mutate while iterating",
+        "data.remove in for"
+      ],
       "promise": "removes every matching element",
       "fact": "deleting inside a forward iteration skips the element that shifts into the freed index",
       "probe": "remove_all([1, 1, 2], 1)",
@@ -43,8 +57,17 @@
     {
       "class": "dedupe-sorted-set-reorders",
       "first_seen": "v946",
-      "repeats": ["v973", "v989", "v1026", "v1066", "v1077"],
-      "aliases": ["list(set(items))", "unique via set"],
+      "repeats": [
+        "v973",
+        "v989",
+        "v1026",
+        "v1066",
+        "v1077"
+      ],
+      "aliases": [
+        "list(set(items))",
+        "unique via set"
+      ],
       "promise": "returns the unique elements keeping the input order",
       "fact": "sorted(set(xs)) sorts them; the in-place variant mutates the caller's list",
       "probe": "dedupe_sorted(['b', 'a', 'b'])",
@@ -55,8 +78,15 @@
     {
       "class": "title-case-touches-rest-of-word",
       "first_seen": "v944",
-      "repeats": ["v975", "to_title_case-20260922"],
-      "aliases": ["str.title apostrophe", "to_title_case", "Don't Stop"],
+      "repeats": [
+        "v975",
+        "to_title_case-20260922"
+      ],
+      "aliases": [
+        "str.title apostrophe",
+        "to_title_case",
+        "Don't Stop"
+      ],
       "promise": "capitalises the first letter of each word",
       "fact": "str.title() lowercases the rest of the word and splits on apostrophes",
       "probe": "title_case(\"don't stop\")",
@@ -67,7 +97,9 @@
     {
       "class": "dedupe-adjacent-vs-global",
       "first_seen": "v950",
-      "repeats": ["v960"],
+      "repeats": [
+        "v960"
+      ],
       "promise": "equal elements anywhere in the list are collapsed to one",
       "fact": "only consecutive equal elements are removed",
       "probe": "dedupe_adjacent([1, 2, 1])",
@@ -100,8 +132,13 @@
     {
       "class": "reverse-slice-on-negative-index",
       "first_seen": "v996",
-      "repeats": ["v1022"],
-      "aliases": ["take n negative", "clip negative"],
+      "repeats": [
+        "v1022"
+      ],
+      "aliases": [
+        "take n negative",
+        "clip negative"
+      ],
       "promise": "if n is negative, return the empty string (do not reverse-slice)",
       "fact": "s[:n] with negative n slices from the end of the string",
       "probe": "clip('hello', -1)",
@@ -178,7 +215,9 @@
     {
       "class": "strict-comparison-defeats-non-decreasing",
       "first_seen": "v976",
-      "repeats": ["is_nondecreasing-20260922"],
+      "repeats": [
+        "is_nondecreasing-20260922"
+      ],
       "promise": "true for non-decreasing sequences",
       "fact": "a strict < rejects equal neighbours",
       "probe": "is_sorted([1, 1, 2])",
@@ -189,7 +228,10 @@
     {
       "class": "iterator-exhausted-twice",
       "first_seen": "v977",
-      "repeats": ["v1034", "v1057"],
+      "repeats": [
+        "v1034",
+        "v1057"
+      ],
       "promise": "returns both the sum and the count of the items",
       "fact": "the second pass over an exhausted iterator yields zero",
       "probe": "sum_and_count(iter([1, 2, 3]))",
@@ -200,7 +242,10 @@
     {
       "class": "row-alias-in-grid-build",
       "first_seen": "v978",
-      "repeats": ["v1037", "v1062"],
+      "repeats": [
+        "v1037",
+        "v1062"
+      ],
       "promise": "one independent list per row",
       "fact": "[[0] * cols] * rows gives every row the same list object",
       "probe": "touch_grid(2, 2)",
@@ -278,8 +323,23 @@
     {
       "class": "charset-strip-vs-affix-removal",
       "first_seen": "v963",
-      "repeats": ["v1005", "strip_prefix-maxwell-20260922", "strip_suffix-rstrip-20260922", "v1044", "v1073", "v1088-remove_suffix-control-fails"],
-      "aliases": ["lstrip", "rstrip", "str.strip charset", "remove_prefix lstrip", "strip_prefix", "strip_suffix", "rstrip-charset-as-substring"],
+      "repeats": [
+        "v1005",
+        "strip_prefix-maxwell-20260922",
+        "strip_suffix-rstrip-20260922",
+        "v1044",
+        "v1073",
+        "v1088-remove_suffix-control-fails"
+      ],
+      "aliases": [
+        "lstrip",
+        "rstrip",
+        "str.strip charset",
+        "remove_prefix lstrip",
+        "strip_prefix",
+        "strip_suffix",
+        "rstrip-charset-as-substring"
+      ],
       "promise": "removes the given prefix and suffix",
       "fact": "str.strip(chars) treats the argument as a character set and eats any of those characters at both ends",
       "probe": "remove_prefix_suffix('bXa', 'ab', 'ab')",
@@ -302,7 +362,11 @@
     {
       "class": "bankers-rounding-on-half",
       "first_seen": "v969",
-      "repeats": ["v1030", "v1063", "v1083"],
+      "repeats": [
+        "v1030",
+        "v1063",
+        "v1083"
+      ],
       "promise": "rounds halves away from zero",
       "fact": "Python's round() uses banker's rounding",
       "probe": "round_half_up(0.5)",
@@ -335,8 +399,13 @@
     {
       "class": "rotate-without-modulo",
       "first_seen": "v959",
-      "repeats": ["v1015"],
-      "aliases": ["rotate_left wrap", "k larger than len"],
+      "repeats": [
+        "v1015"
+      ],
+      "aliases": [
+        "rotate_left wrap",
+        "k larger than len"
+      ],
       "promise": "rotates by k, wrapping when k is larger than the length",
       "fact": "without k % len(xs) the slice indices reproduce the original list",
       "probe": "rotate([1, 2, 3], 4)",
@@ -358,7 +427,9 @@
     {
       "class": "zip-truncates-remainder",
       "first_seen": "v1000",
-      "repeats": ["v1036"],
+      "repeats": [
+        "v1036"
+      ],
       "promise": "remaining elements from the longer sequence are appended",
       "fact": "zip(a, b) stops at the shorter sequence; the remainder is dropped",
       "probe": "interleave([1, 3, 5], [2, 4])",
@@ -513,7 +584,9 @@
     {
       "class": "empty-max-raises",
       "first_seen": "v1018",
-      "repeats": ["v1027-find_max"],
+      "repeats": [
+        "v1027-find_max"
+      ],
       "promise": "return None if items is empty",
       "fact": "max(items) raises ValueError on an empty sequence; there is no empty guard",
       "probe": "find_max([])",
@@ -546,7 +619,9 @@
     {
       "class": "mutable-default-shared-across-calls",
       "first_seen": "v1023",
-      "repeats": ["v1070"],
+      "repeats": [
+        "v1070"
+      ],
       "promise": "without an explicit log, each call starts from a fresh empty list",
       "fact": "the default [] is created once at def time and is shared; the second no-arg call sees the first call's append",
       "probe": "(lambda: (append_log.__defaults__[0].clear(), append_log('a'), append_log('b'))[-1])()",
@@ -591,7 +666,10 @@
     {
       "class": "dict-update-overwrites-first",
       "first_seen": "v1027",
-      "repeats": ["v1048", "v1086-merge-prefer-second-flipped"],
+      "repeats": [
+        "v1048",
+        "v1086-merge-prefer-second-flipped"
+      ],
       "promise": "on key collision, keep a's value (first wins)",
       "fact": "dict.update writes b over a; later wins",
       "probe": "merge_dicts({'k': 1}, {'k': 2})",
@@ -624,7 +702,9 @@
     {
       "class": "bool-subclass-counted-as-int",
       "first_seen": "v1033",
-      "repeats": ["v1064"],
+      "repeats": [
+        "v1064"
+      ],
       "promise": "booleans are excluded from the integer count",
       "fact": "bool is a subclass of int, so isinstance(True, int) is True",
       "probe": "count_integers([True, False, 1])",
@@ -657,13 +737,22 @@
     {
       "class": "inplace-sort-returns-same-list",
       "first_seen": "v1041",
-      "repeats": [],
+      "repeats": [
+        "v1071-with_appended-in-place-append"
+      ],
       "promise": "return a new list; items itself is unchanged",
       "fact": "list.sort mutates in place and returns the same object",
       "probe": "(lambda o: (sorted_copy(o) is o, list(o)))([3, 1, 2])",
       "expected": "(False, [3, 1, 2])",
       "observed": "(True, [1, 2, 3])",
-      "lang": "python"
+      "lang": "python",
+      "also": [
+        {
+          "probe": "(lambda o: (with_appended(o, 3) is o, list(o)))([1, 2])",
+          "expected": "(False, [1, 2])",
+          "observed": "(True, [1, 2, 3])"
+        }
+      ]
     },
     {
       "class": "seen-set-not-updated-after-append",
@@ -690,7 +779,9 @@
     {
       "class": "late-binding-loop-variable",
       "first_seen": "v1049",
-      "repeats": ["v1067"],
+      "repeats": [
+        "v1067"
+      ],
       "promise": "the i-th function multiplies by i",
       "fact": "each lambda looks up i at call time; after the comprehension i is 2 for all of them",
       "probe": "make_multipliers()[0](5)",
@@ -817,17 +908,6 @@
       "probe": "remove_duplicates([0, False, 1, True])",
       "expected": "[0, False, 1, True]",
       "observed": "[0, 1]",
-      "lang": "python"
-    },
-    {
-      "class": "in-place-append-returns-same-list",
-      "first_seen": "v1071",
-      "repeats": [],
-      "promise": "return a new list; original untouched",
-      "fact": "lst.append mutates the argument and returns it",
-      "probe": "(lambda o: (with_appended(o, 3) is o, list(o)))([1, 2])",
-      "expected": "(False, [1, 2])",
-      "observed": "(True, [1, 2, 3])",
       "lang": "python"
     },
     {

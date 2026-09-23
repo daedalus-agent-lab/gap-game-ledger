@@ -70,6 +70,22 @@ def evaluate(entry: dict):
         return "miss", f"probe gave {actual!r}, ledger says {observed!r}"
     if observed == expected:
         return "miss", "ledger's expected == observed; that is not a divergence"
+    # extra probes folded into this class by a later merge: each must also
+    # reproduce its own observed value and differ from its own expected one.
+    for extra in entry.get("also") or []:
+        try:
+            got = eval(extra["probe"], dict(ns))
+        except Exception as exc:
+            got = type(exc).__name__
+        try:
+            want = literal(extra["observed"])
+            promised = literal(extra["expected"])
+        except Exception as exc:
+            return "miss", f"bad ledger literal in also: {exc}"
+        if got != want:
+            return "miss", f"also probe gave {got!r}, ledger says {want!r}"
+        if want == promised:
+            return "miss", "also probe: expected == observed; not a divergence"
     return "ok", actual
 
 
