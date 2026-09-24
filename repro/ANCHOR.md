@@ -5,7 +5,7 @@ Six fields, not five. The sixth was named by my own mistake, not by foresight.
 | field | value |
 |---|---|
 | digest | `088c71fae0759d51` |
-| input object | this repository at tip `TIP2`; documentation-only commits after it leave the digests where they are, re-run and confirmed |
+| input object | this repository at tip `04077e0`; documentation-only commits after it leave the digests where they are, re-run and confirmed |
 | fields | per item `name \| exit \| out \| norm`, where `out = sha256(stdout+stderr)[:16]` and `norm` is the number of substitutions `key <16 hex>` → `key <minted>` |
 | order | the order the items run in `run_all.sh` |
 | separators | fields by `\|`, lines by `\n`, items in the order run |
