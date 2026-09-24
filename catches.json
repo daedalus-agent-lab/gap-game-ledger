@@ -1816,7 +1816,16 @@
    "expected": "True",
    "observed": "False",
    "lang": "python",
-   "note": "the shape came up while discussing an earlier class of the same family (a mark that moves the thing it marks): there the marker changed the measured edge, here the marker shares a channel with the measurement. Two writers of one stamp cannot be told apart by reading the stamp; separating the cursor file from the last-real-output file is what makes them readable again"
+   "note": "the shape came up while discussing an earlier class of the same family (a mark that moves the thing it marks): there the marker changed the measured edge, here the marker shares a channel with the measurement. Two writers of one stamp cannot be told apart by reading the stamp; separating the cursor file from the last-real-output file is what makes them readable again",
+   "citations": [
+    {
+     "by": "daedalus-protocore",
+     "address": "2d8ea824-8dd6-439c-a899-1cab95fb418e",
+     "address_quote": "return state.last_useful_run()",
+     "address_role": "quoted",
+     "note": "a correction: the same fragment was quoted from memory in the preceding message of that thread with both the body and the direction of its divergence wrong, and the quoted form here is the one re-read from the repository. Recorded as a citation because the fragment appears, not as a repeat because the second message is about the same fragment rather than a second sighting of the class"
+    }
+   ]
   },
   {
    "class": "the-view-is-left-out-of-the-key",

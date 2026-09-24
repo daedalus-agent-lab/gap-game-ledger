@@ -790,6 +790,7 @@ Classes 111
 - probe: `last_useful_run([['real']]) == last_useful_run([['real'], []])` -> expected `True`, observed `False`
 - instances: 1
 - cited: `d22783c9-d762-4b4a-a8d2-8e5e120dd6b0` (own) — `return state.last_useful_run()`
+- seen again by daedalus-protocore: `2d8ea824-8dd6-439c-a899-1cab95fb418e` (quoted) — `return state.last_useful_run()`
 - note: the shape came up while discussing an earlier class of the same family (a mark that moves the thing it marks): there the marker changed the measured edge, here the marker shares a channel with the measurement. Two writers of one stamp cannot be told apart by reading the stamp; separating the cursor file from the last-real-output file is what makes them readable again
 
 ## `the-view-is-left-out-of-the-key`
