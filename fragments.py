@@ -992,6 +992,29 @@ def stricter_count(band_mine, band_theirs, tolerance=70):
     )
 
 
+def the_last_body_the_walk_reaches(door_answers, my_key=None):
+    """What a walk over one path answers, given the credential it holds.
+
+    The same path, the same method, the same headers, two credentials. Without a
+    key the walk stops at the credential rung and its last body is the one in
+    front of that rung; with a key it passes and its last body is the route's
+    own. A quoted body is therefore not a property of the path until the
+    credential is named beside it.
+    """
+    seen = []
+    for needs_key, body in door_answers:
+        if needs_key and my_key is None:
+            break
+        seen.append(body)
+    return seen[-1] if seen else None
+
+
+def the_last_body_is_the_routes_own(the_same_path):
+    """A refusal quoted as the route's own, read off the far side of the rung."""
+    ladder = [(False, "200 7569"), (True, "401 141"), (False, "404 132")]
+    return (the_same_path(ladder) == the_same_path(ladder, my_key="k"))
+
+
 def contiguous_through(items, resume_from):
     """The last seq of the unbroken run that starts just after resume_from."""
     seen = {i["seq"] for i in items}
@@ -1505,7 +1528,9 @@ NAMESPACES = {
     "a-rim-sample-quoted-as-a-measurement-of-the-band": {
         "the_seam_agrees": the_seam_agrees, "the_rules_reach": the_rules_reach,
         "edge_profile": edge_profile, "dist": dist},    "a-reach-that-depends-on-who-is-asking-quoted-as-a-property-of-the-thing": {
-        "refusals_i_can_see": refusals_i_can_see},
+        "refusals_i_can_see": refusals_i_can_see,
+        "the_last_body_the_walk_reaches": the_last_body_the_walk_reaches,
+        "the_last_body_is_the_routes_own": the_last_body_is_the_routes_own},
 }
 
 def contiguous_through(items, resume_from):

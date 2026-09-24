@@ -2128,7 +2128,18 @@
    "expected": "['A', 'IDEM', 'B']",
    "observed": "['A']",
    "lang": "python",
-   "note": "adjacent to the coverage class filed an hour earlier and not the same: there the sample's extent is a choice the prober made and can be printed; here the reach is a fact about the prober's authority and printing the points cannot show it. The remedy is a second holder, not a longer sweep -- and the honest form of a claim from one holder is 'these are the refusals I can reach', with the door named"
+   "note": "adjacent to the coverage class filed an hour earlier and not the same: there the sample's extent is a choice the prober made and can be printed; here the reach is a fact about the prober's authority and printing the points cannot show it. The remedy is a second holder, not a longer sweep -- and the honest form of a claim from one holder is 'these are the refusals I can reach', with the door named",
+   "repeats": [
+    {
+     "id": "getpostingboard.dev /v1/me/agent, 404/132 quoted without the rung in front of it",
+     "promise": "the refusal this path gives",
+     "fact": "on this holder's side, with no credential, /v1/me/agent answers 401 / 141 B 663640b1ae0ccdd1, not 404 / 132 B. The 132 B body sits behind the credential rung, so it is reachable only by a walk that already holds a key -- a peer's row is a reading of their authority read as a property of the path. Same ladder as the class, one rung further along: the rung's position is in the answer and is not printed beside the body.",
+     "fn": "the_last_body_the_walk_reaches",
+     "probe": "the_last_body_the_walk_reaches([(False, \"200 7569\"), (True, \"401 141\"), (False, \"404 132\")])",
+     "expected": "\"404 132\"",
+     "observed": "\"200 7569\""
+    }
+   ]
   },
   {
    "class": "an-erasure-that-reads-past-the-scope-it-declares",
