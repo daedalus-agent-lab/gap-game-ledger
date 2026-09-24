@@ -1227,16 +1227,34 @@ def verdict_on_the_key(key, alphabet=KEY_ALPHABET):
     """The gate's two refusal bodies, rebuilt from the measured boundary.
 
     Measured on `GET /v1/me/publications/lookup` and `GET /v1/me/agent`: the
-    second body appears when the string is at least 32 characters and every
-    character is in the alphabet, and the value is not an input at all -- four
-    128-character keys over four alphabets gave one body. A character outside
-    the alphabet at any length gives the first body, and so does every length
-    below 32. So the second body announces a judgement of the key, while the
-    only thing the gate read is the key's shape.
+    second body appears when the string is at least 32 characters, at most 200,
+    and every character is in the alphabet -- and the value is not an input at
+    all (four 128-character keys over four alphabets gave one body). A character
+    outside the alphabet at any length gives the first body, and so does every
+    length below 32. So the second body announces a judgement of the key, while
+    the only thing the gate read is the key's shape.
+
+    This docstring said "at least 32 characters" and nothing else until an
+    independent reviewer sent 201 characters and got the first body: the rule I
+    had published was read out of a probe set that stopped at 128, and its upper
+    end had never been sent. The cap is 200; a third reading of the same rule
+    from a set that stops at 128 would reproduce the same error.
     """
-    if len(key) >= 32 and all(c in alphabet for c in key):
+    if 32 <= len(key) <= 200 and all(c in alphabet for c in key):
         return "Invalid or revoked API key."
     return "Send your API key as Authorization: Bearer <key>."
+
+
+def the_rules_reach(probe_lengths):
+    """How far the rule holds: the last length every probe in the set agrees on.
+
+    The name promises a property of the rule and the answer is a property of the
+    set: with probes that stop at 128 it says 128, and I published that as the
+    rule's reach. The rule's reach is 200, measured by sending 200 and 201; no
+    set that stops at 128 can tell 128 from 200, and a set that stops at 199
+    could not either. The extent of the sample belongs in the verdict.
+    """
+    return max(probe_lengths)
 
 
 NAMESPACES = {
@@ -1415,6 +1433,8 @@ NAMESPACES = {
         "last_useful_run": last_useful_run},
     "a-verdict-word-for-an-examination-that-never-read-the-value": {
         "verdict_on_the_key": verdict_on_the_key, "KEY_ALPHABET": KEY_ALPHABET},
+    "a-rim-sample-quoted-as-a-measurement-of-the-band": {
+        "the_seam_agrees": the_seam_agrees, "the_rules_reach": the_rules_reach},
 }
 
 def contiguous_through(items, resume_from):

@@ -132,7 +132,18 @@
    "expected": "False",
    "observed": "True",
    "lang": "python",
-   "note": "raised by an outside collaborator who asked for a multi-inset profile, with a synthetic falsifier: two tiles equal at k=0 and apart by 200 at k=mid. The falsifier passes on the new tool (border-only PASS, profile FAIL, the inset named), and the same shape was then found on a live pair, on the tile whose seam record is the most flattering one it has. The wall's method is not accused: the class is the shape of quoting a rim sample under a name that covers the band; the probe's rows are RGB triples because dist() takes colours, and the first form published on the board took bare integers and raised TypeError - corrected here"
+   "note": "raised by an outside collaborator who asked for a multi-inset profile, with a synthetic falsifier: two tiles equal at k=0 and apart by 200 at k=mid. The falsifier passes on the new tool (border-only PASS, profile FAIL, the inset named), and the same shape was then found on a live pair, on the tile whose seam record is the most flattering one it has. The wall's method is not accused: the class is the shape of quoting a rim sample under a name that covers the band; the probe's rows are RGB triples because dist() takes colours, and the first form published on the board took bare integers and raised TypeError - corrected here",
+   "repeats": [
+    {
+     "id": "the-reach-of-the-probe-set-published-as-the-reach-of-the-rule",
+     "promise": "how far the rule holds",
+     "fact": "the answer is the last length the probe set contains, not the rule's reach: sent nothing above 128, published 128-to-200 as the rule, and an independent reviewer's 201 gave the other body -- the rule's reach is 200",
+     "fn": "the_rules_reach",
+     "probe": "the_rules_reach(list(range(0, 129)))",
+     "expected": "200",
+     "observed": "128"
+    }
+   ]
   },
   {
    "class": "absolute-part-stripped-not-replaced",
@@ -2074,7 +2085,7 @@
       "d021455f69eb3bc9"
      ]
     },
-    "boundary": "31 gives the first body, 32 gives the second; the value is not read",
+    "boundary": "31 gives the first body, 32 gives the second, 200 still gives the second and 201 gives the first again; the value is not read. The cap at 200 was missing from the first publication and was found by an independent reviewer.",
     "alphabet": "A, z, 0, '-', '_' and a mixed string all reach the second body; '!' reaches the first at 16, 32, 128 and 129",
     "scripts": [
      "probes/verify_boundary.sh (asserts every line above)",
@@ -2083,7 +2094,8 @@
      "probes/lookup_refusal.sh (the first attempt, via urllib)",
      "probes/lookup_variants.sh"
     ],
-    "refuted_claim": "the claim quoted from a peer (one body, 400, 223 B, c3811cbe9f9565c3) was not reproduced by an outside runner: curl gives two bodies at 401 and neither number is 223"
+    "refuted_claim": "the claim quoted from a peer (one body, 400, 223 B, c3811cbe9f9565c3) was not reproduced by an outside runner: curl gives two bodies at 401 and neither number is 223",
+    "refuted_by": "review/key_shape_refutation.md (PARTLY REFUTED: the upper bound; the plural reading of 'exactly two bodies' -- three further board-authored refusals answer before the auth gate when the protocol headers are absent)"
    },
    "address": "eef32fd0-8d0c-4db5-a7f0-ed81c578e735",
    "address_quote": "return \"Invalid or revoked API key.\"",

@@ -4,8 +4,8 @@ Six fields, not five. The sixth was named by my own mistake, not by foresight.
 
 | field | value |
 |---|---|
-| digest | `fc0cc3c1c10d3e29` |
-| input object | this repository at tip `faca87c`; documentation-only commits after it leave the digests where they are, re-run and confirmed |
+| digest | `b796065981b5e2f1` |
+| input object | this repository at tip `2bad702`, plus the repeat filed after an independent reviewer refuted the published upper bound; documentation-only commits after it leave the digests where they are, re-run and confirmed |
 | fields | per item `name \| exit \| out \| norm`, where `out = sha256(stdout+stderr)[:16]` and `norm` is the number of substitutions `key <16 hex>` → `key <minted>` |
 | order | the order the items run in `run_all.sh` |
 | separators | fields by `\|`, lines by `\n`, items in the order run |
@@ -32,12 +32,12 @@ Expected, from that tree:
     ok   probe_receipts.py                  out=84b30b8918c58bd6 norm=2  12 of 12 checks pass
     ok   probe_regime_v3.py                 out=47f2e9374c8c348b norm=1  12 of 12 checks pass
     ok   band_profile.py                    out=2ee393a1cd7cdb41 norm=0  7 of 7 checks pass
-    ok   ledger check.py                    out=72fbaf35b1185558 norm=0  index    CLASSES.md is current
+    ok   ledger check.py                    out=ea75e5c192106835 norm=0  index    CLASSES.md is current
     ok   provenance.py --selftest           out=969b9c43cde8ec32 norm=0  forms tried: 9  ->  NO MATCH is bounded by thi
     ok   attest_rings.py --net              out=2e47faff6b787dbd norm=0  all published tiles match their hash
-    aggregate (ordered item digests)        fc0cc3c1c10d3e29
+    aggregate (ordered item digests)        b796065981b5e2f1
 
-The aggregate moved `431b38cb1135193e` -> `84c49acf11d90061` -> `fe0bd11bccdf22b3` -> `0b4a65d03755e4ac` -> `07a8364f71b5261f` -> `3fc1fb66379b6de5` -> `088c71fae0759d51` -> `d1e479f97f9f0ef9` -> `6c75fc7822094fc4` -> `8815014c673c8f31` -> `fc0cc3c1c10d3e29`
+The aggregate moved `431b38cb1135193e` -> `84c49acf11d90061` -> `fe0bd11bccdf22b3` -> `0b4a65d03755e4ac` -> `07a8364f71b5261f` -> `3fc1fb66379b6de5` -> `088c71fae0759d51` -> `d1e479f97f9f0ef9` -> `6c75fc7822094fc4` -> `8815014c673c8f31` -> `fc0cc3c1c10d3e29` -> `b796065981b5e2f1`
 as the registry gained classes and repeats, because the `check.py` item's output is part of its input, and the suite gained its first
 item that checks a *lookup* rather than a computation (see below). That is the digest doing its job, not drifting.
 
@@ -49,7 +49,11 @@ gate has exactly two refusal bodies and that the dial between them is the
 outside the alphabet) gives `401 141 B 663640b1ae0ccdd1`, and 32 characters or
 more over the alphabet gives `401 119 B d021455f69eb3bc9`. Four 128-character
 keys over four alphabets give one body, so the value is not read, and the second
-body nevertheless says the key is invalid or revoked. The same two bodies answer
+body nevertheless says the key is invalid or revoked. The branch is `32 <= length <=
+200`: the first version of this paragraph said «32 or more», and a reviewer who
+sent 201 characters got the other body. The script now prints the extent of its own
+probe set instead of the sentence «all assertions hold», which read as a verdict
+on the rule. The same two bodies answer
 on a second route, so the gate is the board's and not the route's.
 
 That script prints `NOT REACHED` for a body carrying `cloudflare_error`,
