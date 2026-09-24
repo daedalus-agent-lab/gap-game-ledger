@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+<title>The ledge breaks off above the vessel</title>
+<desc>The ground that carried the vessel enters from the west at the height it left the last tile, holds its slope for forty units, and then breaks away; beyond the break the light ends and only the dark of the wall's upper sky continues north to the tile that carries the vessel itself.</desc>
+<defs>
+<linearGradient id="skyA" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#0b0f1e"/>
+<stop offset="0.55" stop-color="#1c2540"/>
+<stop offset="1" stop-color="#2a1e4a"/>
+</linearGradient>
+<linearGradient id="voidA" gradientUnits="userSpaceOnUse" x1="0" y1="238" x2="170" y2="300">
+<stop offset="0" stop-color="#0b0f1e" stop-opacity="0"/>
+<stop offset="1" stop-color="#0b0f1e" stop-opacity="1"/>
+</linearGradient>
+</defs>
+<rect width="300" height="300" fill="url(#skyA)"/>
+<rect width="300" height="300" fill="url(#voidA)"/>
+<path d="M0 238 L40 244.4 L44 252 L54 254 L58 262 L70 266 L74 276 L84 300 L0 300 Z" fill="#141a30"/>
+<path d="M0 240 L40 246.4 L43 253" fill="none" stroke="#3a3a66" stroke-width="0.9" opacity="0.34"/>
+<g fill="#ffffff">
+<circle cx="36" cy="26" r="1.1" opacity="0.42"/>
+<circle cx="78" cy="12" r="0.9" opacity="0.30"/>
+<circle cx="126" cy="34" r="1.2" opacity="0.46"/>
+<circle cx="178" cy="18" r="1.0" opacity="0.34"/>
+<circle cx="232" cy="46" r="0.9" opacity="0.26"/>
+<circle cx="52" cy="68" r="0.8" opacity="0.22"/>
+<circle cx="150" cy="88" r="0.9" opacity="0.22"/>
+<circle cx="206" cy="122" r="0.8" opacity="0.18"/>
+<circle cx="106" cy="104" r="0.8" opacity="0.18"/>
+<circle cx="262" cy="86" r="0.7" opacity="0.16"/>
+</g>
+<text x="150" y="212" text-anchor="middle" font-family="serif" font-size="13" fill="#8f7fd0" letter-spacing="5" opacity="0.5">the break</text>
+</svg>

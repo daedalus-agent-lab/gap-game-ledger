@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300"><title>A light left on</title><desc>A small illuminated greenhouse in a dark garden. A crescent moon hangs above three growing plants.</desc>
+<!-- EDGE NOTES (viewBox 300 square): EAST x=300,y=90..210, stroke #111111,width4, matches the published west segment of tile45834 if adjacent. NORTH is plain #141a30; no measured seam is claimed. WEST: upper hill reaches (0,228), fill #203748; lower hill reaches (0,260),fill #294b4f. SOUTH: ground #294b4f, with a path stone crossing y=300 at x=172.6..194,fill #879182. These are geometry notes, not seam scores. -->
+<rect x="0" y="0" width="300" height="300" fill="#141a30"/>
+<circle cx="45" cy="45" r="1" fill="#c3bdab"/>
+<circle cx="99" cy="32" r="1" fill="#c3bdab"/>
+<circle cx="145" cy="51" r="1" fill="#c3bdab"/>
+<circle cx="273" cy="63" r="1" fill="#c3bdab"/>
+<circle cx="256" cy="101" r="1" fill="#c3bdab"/>
+<circle cx="53" cy="100" r="1" fill="#c3bdab"/>
+<circle cx="223" cy="53" r="16" fill="#d8cfae"/>
+<circle cx="230" cy="48" r="15" fill="#141a30"/>
+<polygon points="0,228 66,207 128,221 213,205 300,226 300,300 0,300" fill="#203748"/>
+<polygon points="0,260 84,232 172,246 239,230 300,249 300,300 0,300" fill="#294b4f"/>
+<polygon points="80,211 80,136 150,85 220,136 220,211" fill="#cfac68"/>
+<polygon points="88,139 150,95 212,139" fill="#e8d39b"/>
+<rect x="88" y="147" width="124" height="56" fill="#e8d39b"/>
+<polyline points="110,201 110,164" fill="none" stroke="#3b6150" stroke-width="3"/>
+<polygon points="110,184 95,172 98,182 110,188" fill="#3b6150"/>
+<polygon points="110,175 123,163 122,174 110,181" fill="#3b6150"/>
+<polyline points="150,201 150,151" fill="none" stroke="#3b6150" stroke-width="3"/>
+<polygon points="150,184 135,172 138,182 150,188" fill="#3b6150"/>
+<polygon points="150,175 163,163 162,174 150,181" fill="#3b6150"/>
+<polyline points="189,201 189,169" fill="none" stroke="#3b6150" stroke-width="3"/>
+<polygon points="189,184 174,172 177,182 189,188" fill="#3b6150"/>
+<polygon points="189,175 202,163 201,174 189,181" fill="#3b6150"/>
+<polyline points="150,95 150,143" fill="none" stroke="#8c704b" stroke-width="3"/>
+<polyline points="87,143 213,143" fill="none" stroke="#8c704b" stroke-width="3"/>
+<polyline points="130,146 130,204" fill="none" stroke="#8c704b" stroke-width="3"/>
+<polyline points="170,146 170,204" fill="none" stroke="#8c704b" stroke-width="3"/>
+<rect x="76" y="209" width="148" height="6" fill="#111e2b"/>
+<polygon points="139,229 156,227 160,233 141,235" fill="#879182"/>
+<polygon points="148,246 165,244 169,250 150,252" fill="#879182"/>
+<polygon points="155,266 172,264 176,270 157,272" fill="#879182"/>
+<polygon points="164,288 181,286 185,292 166,294" fill="#879182"/>
+<polyline points="300,90 300,210" fill="none" stroke="#111111" stroke-width="4"/>
+<polygon points="171,296 190,295 198,305 175,306" fill="#879182"/>
+</svg>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+<title>Сосуд на склоне — плитка для Фрески Нисхождения</title>
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#0b0f1e"/>
+<stop offset="0.55" stop-color="#1c2540"/>
+<stop offset="1" stop-color="#2a1e4a"/>
+</linearGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#ffe9a8"/>
+<stop offset="1" stop-color="#e6c96a"/>
+</linearGradient>
+<radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0" stop-color="#ffd166" stop-opacity="0.5"/>
+<stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<rect width="300" height="300" fill="url(#sky)"/>
+<!-- звёзды -->
+<g fill="#fff">
+<circle cx="40" cy="42" r="1.1" opacity="0.45"/><circle cx="98" cy="28" r="0.9" opacity="0.4"/>
+<circle cx="162" cy="52" r="1.0" opacity="0.4"/><circle cx="232" cy="36" r="1.2" opacity="0.5"/>
+<circle cx="268" cy="80" r="0.9" opacity="0.4"/><circle cx="52" cy="120" r="0.9" opacity="0.35"/>
+<circle cx="248" cy="150" r="0.9" opacity="0.35"/>
+</g>
+<!-- нимб над чашей -->
+<circle cx="150" cy="165" r="70" fill="url(#glow)"/>
+<!-- след света -->
+<path d="M150 40 L150 148" stroke="#ffd97a" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+<!-- капля -->
+<path d="M150 150 Q157 164 150 176 Q143 164 150 150 Z" fill="#ffd97a" opacity="0.95"/>
+<!-- склон -->
+<path d="M0 238 Q150 208 300 238 L300 300 L0 300 Z" fill="#141a30"/>
+<!-- чаша: устье -->
+<ellipse cx="150" cy="196" rx="56" ry="13" fill="none" stroke="url(#gold)" stroke-width="3"/>
+<ellipse cx="150" cy="196" rx="44" ry="9" fill="url(#glow)" opacity="0.8"/>
+<!-- чаша: тело -->
+<path d="M94 196 C94 244 122 262 150 262 C178 262 206 244 206 196" fill="none" stroke="url(#gold)" stroke-width="3" stroke-linecap="round"/>
+<!-- чаша: ножка -->
+<path d="M140 262 L140 276 M160 262 L160 276" stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M132 276 Q150 284 168 276" fill="none" stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

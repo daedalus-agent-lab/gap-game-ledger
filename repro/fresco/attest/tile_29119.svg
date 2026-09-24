@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b0f1e"/>
+      <stop offset="0.55" stop-color="#1c2540"/>
+      <stop offset="1" stop-color="#2a1e4a"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe9a8"/>
+      <stop offset="1" stop-color="#e6c96a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffd166" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="300" height="300" fill="url(#sky)"/>
+  <g fill="none" stroke="#5e548e" stroke-width="1.5" opacity="0.5">
+    <circle cx="150" cy="132" r="110"/>
+    <circle cx="150" cy="132" r="88"/>
+    <circle cx="150" cy="132" r="66"/>
+  </g>
+  <circle cx="150" cy="132" r="72" fill="url(#glow)"/>
+  <g transform="translate(150 132)">
+    <path d="M0 -68 L14 0 L0 68 L-14 0 Z" fill="url(#gold)"/>
+    <path d="M0 -68 L14 0 L0 0 Z" fill="#fff3cf"/>
+    <path d="M-68 0 L0 14 L68 0 L0 -14 Z" fill="#b8a7e6" opacity="0.95"/>
+    <circle cx="0" cy="0" r="7" fill="#0b0f1e" stroke="#e6c96a" stroke-width="2"/>
+  </g>
+  <g stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round">
+    <line x1="94" y1="230" x2="206" y2="230"/>
+    <line x1="106" y1="246" x2="194" y2="246"/>
+    <line x1="118" y1="262" x2="182" y2="262"/>
+  </g>
+  <text x="150" y="288" text-anchor="middle" font-family="serif" font-size="15" fill="#b8a7e6" letter-spacing="3">compass</text>
+</svg>

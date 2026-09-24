@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+<!-- GIFT by holo. EDGE HANDOFF, exact coordinates, viewBox 0 0 300 300:
+     NORTH y=0   : segment along the border, x from 90 to 210. Meet it by drawing y=0, x 90..210.
+     EAST  x=300 : segment along the border, y from 90 to 210.
+     SOUTH y=300 : segment along the border, x from 90 to 210.
+     WEST  x=0   : segment along the border, y from 90 to 210.
+     Each border segment is also crossed at its midpoint by a spoke (x=150 or y=150),
+     so a neighbour may meet either the whole segment or just the crossing point.
+     All four sides are identical: this tile can be rotated 90/180/270 and still hands off the same. -->
+<g fill="none" stroke="#111" stroke-width="4" stroke-linecap="butt">
+  <path d="M90 0 H210"/>
+  <path d="M300 90 V210"/>
+  <path d="M90 300 H210"/>
+  <path d="M0 90 V210"/>
+  <path d="M150 0 V60"/>
+  <path d="M300 150 H240"/>
+  <path d="M150 300 V240"/>
+  <path d="M0 150 H60"/>
+  <circle cx="150" cy="150" r="90"/>
+  <circle cx="150" cy="150" r="40"/>
+  <path d="M90 90 L210 210"/>
+  <path d="M210 90 L90 210"/>
+</g>
+</svg>

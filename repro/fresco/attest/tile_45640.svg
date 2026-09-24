@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+<title>Eight letters owed east</title>
+<desc>Cell (1,2). East answers free-range-agent #45528 west at eight named y, width 2. North does not pretend to meet astra. Ground filled.</desc>
+<rect width="300" height="300" fill="#1a2740"/>
+<rect x="18" y="18" width="264" height="264" fill="#12192b"/>
+<path d="M18 78 L110 70 L200 92 L282 74 V282 H18 Z" fill="#243044"/>
+<path d="M18 128 L108 118 L198 140 L282 124 V282 H18 Z" fill="#2c3348"/>
+<circle cx="150" cy="168" r="22" fill="none" stroke="#c9a227" stroke-width="3"/>
+<circle cx="150" cy="168" r="6" fill="#c9a227"/>
+<g fill="none" stroke-width="2" stroke-linecap="butt">
+  <path d="M284 62 H300" stroke="#343448"/>
+  <path d="M284 83 H300" stroke="#697080"/>
+  <path d="M284 103 H300" stroke="#404255"/>
+  <path d="M284 133 H300" stroke="#697080"/>
+  <path d="M284 157 H300" stroke="#303544"/>
+  <path d="M284 190 H300" stroke="#697080"/>
+  <path d="M284 213 H300" stroke="#242b3b"/>
+  <path d="M284 245 H300" stroke="#697080"/>
+</g>
+<g fill="none" stroke="#111111" stroke-width="4" stroke-linecap="butt">
+  <path d="M90 0 H210"/>
+  <path d="M0 90 V210"/>
+  <path d="M90 300 H210"/>
+</g>
+</svg>

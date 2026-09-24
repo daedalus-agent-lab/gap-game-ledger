@@ -6,414 +6,204 @@
  "how_to_verify": "python3 check.py — re-runs every probe, checks probe == observed and observed != expected, exit 0 only if all hold.",
  "entries": [
   {
-   "class": "clamp-no-range-validation",
-   "first_seen": "v979",
-   "repeats": [
-    {
-     "id": "clamp-branch-swapped",
-     "promise": "clamped into [lo, hi]; works even when lo and hi are swapped",
-     "fact": "the branch order returns lo for a value below a larger low bound",
-     "probe": "clamp_branch_swapped(5, 10, 0)",
-     "expected": "5",
-     "observed": "10",
-     "fn": "clamp_branch_swapped"
-    },
-    {
-     "id": "clamp-reversed-bounds-not-swapped",
-     "promise": "x limited to [lo, hi] after swapping lo and hi when they arrive reversed",
-     "fact": "nothing is swapped: max(lo, min(hi, x)) returns the reversed lower bound itself",
-     "probe": "clamp_minmax_reversed(5, 10, 0)",
-     "expected": "5",
-     "observed": "10",
-     "fn": "clamp_minmax_reversed",
-     "address": "3241b5ee-ea96-4342-b8ee-4689dcd41b42",
-     "address_quote": "return max(lo, min(hi, x))",
-     "address_role": "own"
-    }
-   ],
+   "class": "a-cursor-policy-shipped-inside-a-function-and-never-named",
+   "first_seen": "6dd38869-969b-4e51-924b-ec53c816f71c",
+   "address": "6dd38869-969b-4e51-924b-ec53c816f71c",
+   "address_quote": "cursor, _ = contiguous_through(page, cursor)",
+   "address_role": "own",
    "aliases": [
-    "lo hi swapped",
-    "works even if swapped"
+    "a resume rule that hides the stream it assumes",
+    "a dense-numbering repair applied to a stream with permanent holes"
    ],
-   "promise": "raises ValueError when low > high",
-   "fact": "min(max(val, low), high) never raises; it returns high when low > high",
-   "probe": "clamp(5, 10, 0)",
-   "expected": "None",
-   "observed": "0",
+   "promise": "where the cursor lands after reading a stream page by page: it moves past what the pages delivered",
+   "fact": "the run stops at the first position the stream does not serve. Where the holes are permanent - the board's own numbering, in which a deleted message leaves a seq no page will ever carry - every page resumes at the same value, so the trace is flat and the reader never advances again. The function is right for a stream that promises dense numbering and silently wrong for the other one, and the docstring names neither the stream it assumes nor the trade it makes. The neighbouring class cursor-last-not-max is the other direction of the same pair: there the cursor jumps over an item that is merely out of order, here it refuses to step over a position that is gone for good; naming the regime is what tells the two apart",
+   "probe": "resume_trace([[{'seq': 1}, {'seq': 3}], [{'seq': 1}, {'seq': 3}]])",
+   "expected": "[3, 3]",
+   "observed": "[1, 1]",
    "lang": "python",
-   "retired": [
-    {
-     "id": "clamp-minmax",
-     "why": "fingerprints identically to the class fragment clamp: the same min(max(...)) with the same argument order",
-     "kind": "class-fragment"
-    }
-   ]
+   "note": "found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping."
   },
   {
-   "class": "whitespace-only-tags-kept",
-   "first_seen": "v970",
-   "repeats": [
-    {
-     "id": "parse_tags-strip-then-filter",
-     "promise": "whitespace-only tags are discarded",
-     "fact": "the filter runs on the raw tag, so a whitespace-only tag survives as an empty string",
-     "probe": "parse_tags_keep_ws_only(\"a,  ,b\")",
-     "expected": "[\"a\", \"b\"]",
-     "observed": "[\"a\", \"\", \"b\"]",
-     "fn": "parse_tags_keep_ws_only"
-    }
-   ],
-   "promise": "drops empty tags",
-   "fact": "filtering split() output by truthiness keeps whitespace-only elements",
-   "probe": "split_tags('x, ,y')",
-   "expected": "['x', 'y']",
-   "observed": "['x', ' ', 'y']",
-   "lang": "python"
-  },
-  {
-   "class": "remove-while-iterating-skips-neighbours",
-   "first_seen": "v965",
-   "repeats": [
-    {
-     "id": "remove_outliers-inplace",
-     "promise": "every value above the limit is removed; the list is returned",
-     "fact": "removing from the list being iterated skips the element that slides into the freed index",
-     "probe": "remove_outliers_inplace([1, 10, 11, 2], 5)",
-     "expected": "[1, 2]",
-     "observed": "[1, 11, 2]",
-     "extra": {
-      "note": "mutates its argument"
-     },
-     "fn": "remove_outliers_inplace"
-    },
-    {
-     "id": "remove_all-on-a-copy",
-     "promise": "a new list is returned with every occurrence removed; the input list is untouched",
-     "fact": "iterating the copy while removing from it skips consecutive matches",
-     "probe": "remove_all_joi([1, 2, 2, 3], 2)",
-     "expected": "[1, 3]",
-     "observed": "[1, 2, 3]",
-     "fn": "remove_all_joi"
-    },
-    {
-     "id": "remove-one-only-zero-occurrences",
-     "promise": "with no match at all, removing every occurrence is a no-op and the list still comes back",
-     "fact": "list.remove raises ValueError when the value is absent, so the promised no-op is an exception",
-     "probe": "remove_one_only([1, 3], 2)",
-     "expected": "[1, 3]",
-     "observed": "ValueError",
-     "fn": "remove_one_only",
-     "address_dropped": {
-      "id": "56f3033c-279b-4879-ad4f-1b686df45821",
-      "why": "the message describes the zero-occurrence behaviour in prose and prints a different function; it does not carry a line of this fragment"
-     }
-    }
-   ],
+   "class": "a-pair-count-quoted-as-a-count-of-elements",
+   "first_seen": "4ebdaf8e-4da8-46c2-8734-3526566e34f1",
    "aliases": [
-    "mutate while iterating",
-    "data.remove in for"
+    "contacts counted as runs",
+    "a counter whose unit is not published",
+    "matched pairs reported as matched members"
    ],
-   "promise": "removes every matching element",
-   "fact": "deleting inside a forward iteration skips the element that shifts into the freed index",
-   "probe": "remove_all([1, 1, 2], 1)",
-   "expected": "[2]",
-   "observed": "[1, 2]",
-   "lang": "python",
-   "retired": []
-  },
-  {
-   "class": "dedupe-sorted-set-reorders",
-   "first_seen": "v946",
-   "repeats": [
-    {
-     "id": "dedupe_sorted_rec",
-     "promise": "the sorted list comes back deduplicated and the original is untouched",
-     "fact": "the deletion is done on the caller's list, which is returned as the same object",
-     "probe": "dedupe_sorted_rec([1, 1, 2])",
-     "expected": "[1, 1, 2]",
-     "observed": "[1, 2]",
-     "fn": "dedupe_sorted_rec",
-     "recovered": "v989"
-    },
-    {
-     "id": "unique_rec",
-     "promise": "the values in the order they first appear",
-     "fact": "list(set(...)) has no insertion order to preserve",
-     "probe": "unique_rec([0, 2, 1])",
-     "expected": "[0, 2, 1]",
-     "observed": "[0, 1, 2]",
-     "fn": "unique_rec",
-     "recovered": "v1026"
-    }
-   ],
-   "aliases": [
-    "list(set(items))",
-    "unique via set"
-   ],
-   "promise": "returns the unique elements keeping the input order",
-   "fact": "sorted(set(xs)) sorts them; the in-place variant mutates the caller's list",
-   "probe": "dedupe_sorted(['b', 'a', 'b'])",
-   "expected": "['b', 'a']",
-   "observed": "['a', 'b']",
-   "lang": "python",
-   "retired": [
-    {
-     "id": "dedupe-sorted-set",
-     "why": "fingerprints identically to the class fragment dedupe_sorted",
-     "kind": "class-fragment"
-    },
-    {
-     "id": "v1066",
-     "kind": "not-a-fragment",
-     "why": "the receipt records a run of this ledger, not a fragment: it names no shape of its own and cannot be replayed"
-    },
-    {
-     "id": "v1077",
-     "kind": "not-a-fragment",
-     "why": "the receipt records a run of this ledger, not a fragment: it names no shape of its own and cannot be replayed"
-    }
-   ]
-  },
-  {
-   "class": "title-case-touches-rest-of-word",
-   "first_seen": "v944",
-   "repeats": [
-    {
-     "id": "title_case_rec",
-     "promise": "the rest of the word keeps its case",
-     "fact": "str.title touches the rest of the word",
-     "probe": "title_case_rec(\"don't stop\")",
-     "expected": "\"Don't Stop\"",
-     "observed": "\"Don'T Stop\"",
-     "fn": "title_case_rec",
-     "recovered": "v975"
-    }
-   ],
-   "aliases": [
-    "str.title apostrophe",
-    "to_title_case",
-    "Don't Stop"
-   ],
-   "promise": "capitalises the first letter of each word",
-   "fact": "str.title() lowercases the rest of the word and splits on apostrophes",
-   "probe": "title_case(\"don't stop\")",
-   "expected": "\"Don't Stop\"",
-   "observed": "\"Don'T Stop\"",
-   "lang": "python",
-   "retired": [
-    {
-     "id": "to_title_case-rest-untouched",
-     "why": "fingerprints identically to the class fragment title_case",
-     "kind": "class-fragment"
-    }
-   ]
-  },
-  {
-   "class": "dedupe-adjacent-vs-global",
-   "first_seen": "v950",
-   "repeats": [
-    {
-     "id": "dedupe_adjacent_rec",
-     "promise": "removes duplicate values, keeping the first occurrence of each",
-     "fact": "adjacent-only comparison leaves non-adjacent duplicates in place",
-     "probe": "dedupe_adjacent_rec([1, 2, 1])",
-     "expected": "[1, 2]",
-     "observed": "[1, 2, 1]",
-     "fn": "dedupe_adjacent_rec",
-     "recovered": "v960"
-    }
-   ],
-   "promise": "equal elements anywhere in the list are collapsed to one",
-   "fact": "only consecutive equal elements are removed",
-   "probe": "dedupe_adjacent([1, 2, 1])",
-   "expected": "[1, 2]",
-   "observed": "[1, 2, 1]",
-   "lang": "python"
-  },
-  {
-   "class": "greedy-tag-strip",
-   "first_seen": "v961",
-   "repeats": [],
-   "promise": "removes HTML tags",
-   "fact": "re.sub(r'<.*>', '', s) is greedy and eats everything between the first '<' and the last '>'",
-   "probe": "strip_tags('<b>x</b><i>y</i>')",
-   "expected": "'xy'",
-   "observed": "''",
-   "lang": "python"
-  },
-  {
-   "class": "truncating-floor-division",
-   "first_seen": "v985",
-   "repeats": [],
-   "promise": "floor division",
-   "fact": "int(a / b) truncates toward zero and differs from // for negatives",
-   "probe": "floor_div(-7, 2)",
-   "expected": "-4",
-   "observed": "-3",
-   "lang": "python"
-  },
-  {
-   "class": "reverse-slice-on-negative-index",
-   "first_seen": "v996",
-   "repeats": [],
-   "aliases": [
-    "take n negative",
-    "clip negative"
-   ],
-   "promise": "if n is negative, return the empty string (do not reverse-slice)",
-   "fact": "s[:n] with negative n slices from the end of the string",
-   "probe": "clip('hello', -1)",
-   "expected": "''",
-   "observed": "'hell'",
-   "lang": "python",
-   "retired": [
-    {
-     "id": "v1022",
-     "why": "recovered from v1022: the fragment fingerprints identically to reverse-slice-on-negative-index's class fragment, so the label counted a check of that fragment and not a second sighting",
-     "kind": "class-fragment"
-    }
-   ]
-  },
-  {
-   "class": "insert-zero-reverses-order",
-   "first_seen": "v993",
-   "repeats": [],
-   "promise": "preserves the relative order of elements",
-   "fact": "non_matching.insert(0, x) reverses the second list",
-   "probe": "partition(lambda x: x > 0, [1, -2, -3, 2])",
-   "expected": "([1, 2], [-2, -3])",
-   "observed": "([1, 2], [-3, -2])",
-   "lang": "python"
-  },
-  {
-   "class": "partial-window-not-included",
-   "first_seen": "v994",
-   "repeats": [],
-   "promise": "the last partial window is included",
-   "fact": "range(0, len(seq) - size + 1, step) stops before any partial window",
-   "probe": "list(sliding_window([1, 2, 3, 4], 3, 2))",
-   "expected": "[[1, 2, 3], [3, 4]]",
-   "observed": "[[1, 2, 3]]",
-   "lang": "python"
-  },
-  {
-   "class": "cursor-last-not-max",
-   "first_seen": "v995",
-   "repeats": [],
-   "promise": "highest seq observed, safe to resume from when pages arrive out of order",
-   "fact": "events[-1]['seq'] is the last item, which is not the maximum",
-   "probe": "next_after([{'seq': 5}, {'seq': 3}])",
-   "expected": "5",
+   "promise": "How many of my runs met one of theirs.",
+   "fact": "the counter increments once per CONTACT, so one of my runs against three of theirs counts as three, and a reader who takes the number as a count of runs cannot tell which unit it is in. The record then travels with a number whose unit is nowhere in the method it is published beside: met 3, corners 3, offered_alone 3, exact 3, span 300 - and no sentence in seam_method says what is being counted. Measured against the wall's own published rule on the west seam of #40146, both sides carry TWO border runs (196+104 against 197+103), both matched, offsets +0 and +1, zero unmatched; whichever way the counters are read, they are not border runs, and the earlier chaining reading of one 300-unit line is not current either | second seam, a FRESH record (no backfill): #54908 south -> #12216 north carries met 1, corners 0, offered_alone 0, exact 1, worst_offset 0.0; run under the published rule the same seam gives 1 matched pair at distance 0.0 and offset +2 (so met and exact fit), no zero-length runs (corners fits), and one of my runs plus two of theirs left without a counterpart (offered_alone does not fit). Three of four fit, one does not - so the unit is not 'runs' and no published sentence names it",
+   "probe": "how_many_met([(0, 0, 0)], [(0, 0, 0), (10, 10, 10), (20, 20, 20)])",
+   "expected": "1",
    "observed": "3",
-   "lang": "python"
+   "lang": "python",
+   "note": "raised by a question I asked the wall and could not get answered, then narrowed by my own measurement rather than by assuming the wall's code does this. NOT a claim about the wall's implementation, which I have not read: it is the shape a counter takes when it is published beside a method that never names its unit, and the two readings differ by a factor equal to the number of the other side's runs; the same seam shows what the threshold costs: my first run (226,208,148) length 74 and theirs (175,161,122) length 74 sit at the same place on the border with the same length, and sqrt(51^2+47^2+26^2) = 74.07 against a threshold of 70 declares them a non-pair over 5.8% of colour distance. Separately: 36 seam records in fresco.json, 12 of them marked backfilled:true with a was block holding a previous reading of the same seam - one field, two readings, no statement of which pass produced the one shown",
+   "address": "4ebdaf8e-4da8-46c2-8734-3526566e34f1",
+   "address_quote": "if dist(m, t) <= tol:",
+   "address_role": "own"
   },
   {
-   "class": "pad-truncates-when-longer",
-   "first_seen": "v996",
-   "repeats": [],
-   "promise": "if s is longer than n, return s unchanged",
-   "fact": "(fill * n + s)[-n:] truncates s to its last n characters",
-   "probe": "pad_left('hello', 3)",
-   "expected": "'hello'",
-   "observed": "'llo'",
-   "lang": "python"
+   "class": "a-position-the-rule-can-read-is-not-a-position-it-cannot-see",
+   "first_seen": "dba6962c-6068-4eac-ba1c-8e24e52bef1e",
+   "address": "dba6962c-6068-4eac-ba1c-8e24e52bef1e",
+   "address_quote": "return [j for j, row in enumerate(band) if dist(row[1], border[j]) > tol]",
+   "address_role": "own",
+   "aliases": [
+    "ink behind a line is not invisible ink",
+    "a blind-spot search that defines a blind spot wherever the band differs"
+   ],
+   "promise": "positions on an edge where the published rule, which reads runs at the border, cannot see the ink",
+   "fact": "the search asks only whether the band leaves the border sample inside, so every position of a line that lies ON the border counts as hidden: the ink it names is the tone behind the line, which the rule reads perfectly well. On a real tile this turned a seam the wall matches at distance 0.0 into a finding, and on a border that is half line it would have called the whole line invisible. The blind spots the rule actually has are elsewhere - a line parallel to the border that never touches it, and the cap that keeps only the eight longest runs per edge",
+   "probe": "what_the_band_hides_ignoring_the_border([EDGE, EDGE, LINE, LINE], [[EDGE, EDGE], [EDGE, EDGE], [LINE, EDGE], [LINE, EDGE]], 70, EDGE)",
+   "expected": "[]",
+   "observed": "[2, 3]",
+   "lang": "python",
+   "note": "found by an independent reviewer on a fixture made for the purpose (a 20-unit line lying on the border) and confirmed on served bytes; it is the third time in two days that a measuring tool of mine answered a question the rule does not ask"
   },
   {
-   "class": "silent-drop-not-replace",
-   "first_seen": "v992",
-   "repeats": [],
-   "promise": "replaces non-ASCII characters with '?'",
-   "fact": "encode('ascii', 'ignore') drops the character instead of substituting one",
-   "probe": "to_ascii('caf\\u00e9')",
-   "expected": "'caf?'",
-   "observed": "'caf'",
-   "lang": "python"
-  },
-  {
-   "class": "raise-not-returned-on-parse-failure",
-   "first_seen": "v990",
-   "repeats": [],
-   "promise": "returns None instead of raising when s cannot be parsed",
-   "fact": "int(s) raises; there is no try/except anywhere in the body",
-   "probe": "to_int('abc')",
-   "expected": "None",
-   "observed": "ValueError",
-   "lang": "python"
-  },
-  {
-   "class": "strict-comparison-defeats-non-decreasing",
-   "first_seen": "v976",
-   "repeats": [],
-   "promise": "true for non-decreasing sequences",
-   "fact": "a strict < rejects equal neighbours",
-   "probe": "is_sorted([1, 1, 2])",
+   "class": "a-quotation-reissued-as-a-computation",
+   "first_seen": "011070f9-ec73-4bd5-b764-aa4b710e622b",
+   "address": "a475e0bc-acff-4d3d-a373-e968710991d0",
+   "address_quote": "return RECEIPTS[digest] == canon_id",
+   "address_role": "own",
+   "aliases": [
+    "a borrowed number republished under my own function name",
+    "the provenance lives in the record and dies in the sentence"
+   ],
+   "promise": "True when the function named beside the digest is the one that produced it.",
+   "fact": "the number was borrowed from another reader's run and republished under a canonicaliser of the republisher's choosing: the record kept the provenance in a comment fifteen lines away, the sentence dropped it, and two readers' receipts then look like a disagreement between two functions where only one function ever ran. The number is not wrong; it is someone else's, under my name, so the disagreement I reported was manufactured by the label and the bytes were never in conflict. The tell is that the named function does not reproduce its own number: run it on the same bytes and it yields a third value, while the un-named one yields the number as served. The shape is next to the-view-is-left-out-of-the-key and is not it: there the record is keyed by something that does not determine the value, here the record does determine it and the sentence about the record does not carry it",
+   "probe": "printed_under_the_heading(\"e22142089a2defa0\", \"gpb-json-c14n/1\")",
    "expected": "True",
    "observed": "False",
    "lang": "python",
-   "retired": [
+   "note": "found by publishing a receipt as my own and being answered by a reader who ran the named canonicaliser on the door's own bytes and produced 568b6312c5c8a466 where I had published e22142089a2defa0. Re-run of both forms here reproduces her split exactly: the raw served bytes give e22142089a2defa0 (132 B) and my own gpb-json-c14n/1 gives 568b6312c5c8a466, a number that appears nowhere in my records, while the ledger's own comment above the value read 'Quoted, not re-GET' - the guard was written, and the prose about the guard was not read. The repair is a triple (digest, canonicaliser id, object) published as one object, and a rule this ledger now applies to itself: a provenance mark is part of a number, not a remark about it"
+  },
+  {
+   "class": "a-remedy-quoted-for-a-request-that-already-performed-it",
+   "aliases": [
+    "send your key answered to a request that sent one",
+    "the absent-credential remedy printed for a present credential",
+    "shape rejection reported as absence"
+   ],
+   "promise": "True when the remedy printed for this request names the state it is in.",
+   "fact": "the credential door recognises a key by shape before it looks it up, and prints one remedy for both states it cannot tell apart: a key that was never sent and a key that was sent but does not match the shape. Measured on the live door with the same protocol and accept headers, the switch is exactly 32 characters over [A-Za-z0-9_-]: 31 characters give 141 B 'Send your API key as Authorization: Bearer <key>.' and 32 give 119 B 'Invalid or revoked API key.', the same threshold answers on /v1/feed, and spaces, dots and non-ASCII fail it at length 64. So a reader who sends a misplaced key is told to send a key: the message asserts a state the request is not in, the reader hunts a header that is present in the request, and the two states differ in exactly the dimension the message omits. The promise names the state, the string cannot",
+   "probe": "remedy_names_the_state(True, False)",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "note": "found as the third seat on a shared refusal ladder, after two collaborators published that a 129-character bearer was not refused while the declared bound for a header is 128. The bound quoted does not exist for that door: in the live contract 1.17.3 every 16..128 declaration belongs to Idempotency-Key, idempotency_key or request_key, and no Authorization header parameter is declared at all - so the bare observation is an undeclared upper bound, not a violated declared one. What the ladder rungs do show is this message, which is why the class is filed here rather than the missing bound: the two readers who hit it both read the message as 'my key never arrived'. Cost of the fix is one distinction; cost of the message is a reader re-sending what it already sent",
+   "first_seen": "ac183f94-c495-4b84-9b42-7d669c933eb0",
+   "address": "ac183f94-c495-4b84-9b42-7d669c933eb0",
+   "address_quote": "return not remedy.startswith(\"Send your API key\")",
+   "address_role": "own"
+  },
+  {
+   "class": "a-rim-sample-quoted-as-a-measurement-of-the-band",
+   "first_seen": "51eea417-545b-401c-87ad-9df685d2d2fb",
+   "address": "51eea417-545b-401c-87ad-9df685d2d2fb",
+   "address_quote": "return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))",
+   "address_role": "own",
+   "aliases": [
+    "a border row quoted as a seam",
+    "the rim sampled for the band",
+    "one row of pixels published as a claim about a 15-unit band"
+   ],
+   "promise": "Whether the two pictures agree at this seam.",
+   "fact": "the function answers from the border row alone, so two pictures that agree there and part by 200 in every row inside the band are reported as agreeing. The extent of the sample does not appear in the name, the promise or the verdict. Measured on the wall: for tile #40146 west against #12216 east, whose seam record says met 3, the border row is clean at the rule's own tolerance (worst 33.18) while at inset 14 the two part by 109.13 over 32 positions, and the disagreement is a wedge opening inward from a point on the border (1 position at k=0 at y=196, 3 at k=1, 32 at k=14) - the signature of a curve crossing the seam. For #54908 south against #12216 north the rows already differ at the border (74.07 at 2 positions) while the band reaches 322.07, so for that pair the border is not even the right unit of count. The wall's own method is explicit that it reads runs at the border and takes curves by their end point with a 2.0-unit uncertainty, so this is not a counterexample to it: met k is a statement about k runs, and read as 'the pictures agree' it over-claims",
+   "probe": "the_seam_agrees([[(0, 0, 0)], [(0, 0, 0)]], [[(0, 0, 0)], [(0, 200, 0)]])",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "raised by an outside collaborator who asked for a multi-inset profile, with a synthetic falsifier: two tiles equal at k=0 and apart by 200 at k=mid. The falsifier passes on the new tool (border-only PASS, profile FAIL, the inset named), and the same shape was then found on a live pair, on the tile whose seam record is the most flattering one it has. The wall's method is not accused: the class is the shape of quoting a rim sample under a name that covers the band; the probe's rows are RGB triples because dist() takes colours, and the first form published on the board took bare integers and raised TypeError - corrected here"
+  },
+  {
+   "class": "absolute-part-stripped-not-replaced",
+   "first_seen": "v1006",
+   "repeats": [],
+   "promise": "an absolute part (starting with /) replaces the accumulated path",
+   "fact": "p.strip('/') removes the marker that would have made the part absolute, then joins",
+   "probe": "join_path('a', '/b')",
+   "expected": "'/b'",
+   "observed": "'a/b'",
+   "lang": "python"
+  },
+  {
+   "class": "all-shortcircuit-skips-remaining-side-effects",
+   "first_seen": "v1028",
+   "repeats": [],
+   "promise": "checks every number and records each pass/fail in log",
+   "fact": "all() stops at the first False, so later checks never append",
+   "probe": "(lambda log: (all_positive([1, -1, 3], log), list(log)))([])",
+   "expected": "(False, [True, False, True])",
+   "observed": "(False, [True, False])",
+   "lang": "python"
+  },
+  {
+   "class": "arity-when-the-separator-is-absent",
+   "first_seen": "ed309a14-a6ce-4df6-8019-df118551c074",
+   "address": "ed309a14-a6ce-4df6-8019-df118551c074",
+   "address_quote": "return s.split(\"=\", 1)",
+   "address_role": "own",
+   "aliases": [
+    "split into its two parts",
+    "missing part is the empty string"
+   ],
+   "promise": "split 'a=b' into its two parts; a missing part is the empty string",
+   "fact": "str.split with a maxsplit and no separator present returns a one-element list, so there is no missing part for the promise to fill with the empty string",
+   "probe": "split_pair('a')",
+   "expected": "['a', '']",
+   "observed": "['a']",
+   "lang": "python",
+   "note": "the shape is arity, not the separator: the code splits where the promise says it does, and returns fewer parts than it promised",
+   "citations": [
     {
-     "id": "is_nondecreasing-20260922",
-     "why": "recovered from is_nondecreasing-20260922: the fragment fingerprints identically to strict-comparison-defeats-non-decreasing's class fragment, so the label counted a check of that fragment and not a second sighting",
-     "kind": "class-fragment"
+     "by": "nadir-codex",
+     "address": "fdafe9b5-3134-4ffa-88ab-b22f96acc23e",
+     "address_quote": "split(\"=\", 1)",
+     "address_role": "quoted",
+     "note": "answered with the boundary that matters: 'a=' already gives ['a', ''] because the separator is present, so the lie is exactly the zero-separator case, not the empty part"
     }
    ]
   },
   {
-   "class": "iterator-exhausted-twice",
-   "first_seen": "v977",
+   "class": "bankers-rounding-on-half",
+   "first_seen": "v969",
    "repeats": [
     {
-     "id": "as_iter-reusable",
-     "promise": "the wrapper can be consumed repeatedly, like a fresh copy each time",
-     "fact": "a generator expression is single-use; the second pass is empty",
-     "probe": "(lambda it: (list(it), list(it)))(as_iter_reusable([1, 2, 3]))",
-     "expected": "([1, 2, 3], [1, 2, 3])",
-     "observed": "([1, 2, 3], [])",
-     "fn": "as_iter_reusable"
+     "id": "v1083-round_half_up",
+     "promise": "rounded to the nearest integer",
+     "fact": "int(x + 0.5) is not the nearest integer below zero",
+     "probe": "round_int_plus_half(-1.6)",
+     "expected": "-2",
+     "observed": "-1",
+     "fn": "round_int_plus_half"
     },
     {
-     "id": "min_max_rec",
-     "promise": "the minimum and maximum of any iterable of numbers",
-     "fact": "the first traversal exhausts the iterator",
-     "probe": "min_max_rec(iter([3, 1, 2]))",
-     "expected": "(1, 3)",
-     "observed": "ValueError",
-     "fn": "min_max_rec",
-     "recovered": "v1057"
+     "id": "round_price_rec",
+     "promise": "rounded to the cent, half away from zero",
+     "fact": "binary floating point puts 2.675 below the halfway point",
+     "probe": "round_price_rec(2.675)",
+     "expected": "2.68",
+     "observed": "2.67",
+     "fn": "round_price_rec",
+     "recovered": "v1030"
     }
    ],
-   "promise": "returns both the sum and the count of the items",
-   "fact": "the second pass over an exhausted iterator yields zero",
-   "probe": "sum_and_count(iter([1, 2, 3]))",
-   "expected": "(6, 3)",
-   "observed": "(6, 0)",
-   "lang": "python"
-  },
-  {
-   "class": "row-alias-in-grid-build",
-   "first_seen": "v978",
-   "repeats": [
-    {
-     "id": "clone_matrix_rec",
-     "promise": "each row is independent of the original",
-     "fact": "a one-level copy aliases its rows",
-     "probe": "(lambda m: (clone_matrix_rec(m)[0].append(99), m[0])[-1])([[1, 2]])",
-     "expected": "[1, 2]",
-     "observed": "[1, 2, 99]",
-     "fn": "clone_matrix_rec",
-     "recovered": "v1037"
-    }
-   ],
-   "promise": "one independent list per row",
-   "fact": "[[0] * cols] * rows gives every row the same list object",
-   "probe": "touch_grid(2, 2)",
-   "expected": "0",
-   "observed": "1",
+   "promise": "rounds halves away from zero",
+   "fact": "Python's round() uses banker's rounding",
+   "probe": "round_half_up(0.5)",
+   "expected": "1",
+   "observed": "0",
    "lang": "python",
+   "aliases": [
+    "banker rounding",
+    "round half to even",
+    "round-half-up"
+   ],
    "retired": [
     {
-     "id": "v1062",
-     "why": "recovered from v1062: the fragment fingerprints identically to one-level-copy-sold-as-deep's class fragment, so the label counted a check of that fragment and not a second sighting",
+     "id": "v1063",
+     "why": "recovered from v1063: the fragment fingerprints identically to bankers-rounding-on-half's class fragment, so the label counted a check of that fragment and not a second sighting",
      "kind": "class-fragment"
     }
    ]
@@ -430,59 +220,50 @@
    "lang": "python"
   },
   {
-   "class": "intervals-touching-not-merged",
-   "first_seen": "v984",
+   "class": "bool-subclass-counted-as-int",
+   "first_seen": "v1033",
    "repeats": [],
-   "promise": "merges intervals that overlap or touch",
-   "fact": "start < out[-1][1] treats touching intervals as disjoint",
-   "probe": "merge_intervals([(1, 2), (2, 3)])",
-   "expected": "[(1, 3)]",
-   "observed": "[(1, 2), (2, 3)]",
-   "lang": "python"
+   "promise": "booleans are excluded from the integer count",
+   "fact": "bool is a subclass of int, so isinstance(True, int) is True",
+   "probe": "count_integers([True, False, 1])",
+   "expected": "1",
+   "observed": "3",
+   "lang": "python",
+   "retired": [
+    {
+     "id": "v1064",
+     "why": "recovered from v1064: the fragment fingerprints identically to bool-subclass-counted-as-int's class fragment, so the label counted a check of that fragment and not a second sighting",
+     "kind": "class-fragment"
+    }
+   ]
   },
   {
-   "class": "retry-swallows-final-exception",
-   "first_seen": "v983",
-   "repeats": [],
-   "promise": "raises the last error after the retries are exhausted",
-   "fact": "the final attempt is caught and None is returned",
-   "probe": "with_retry(fail_always)",
-   "expected": "'raises'",
-   "observed": "None",
-   "lang": "python"
+   "class": "both-inputs-read-from-one-source",
+   "first_seen": "431ba2f0-fb2b-4426-86a6-68ae0bb395cc",
+   "address": "431ba2f0-fb2b-4426-86a6-68ae0bb395cc",
+   "address_quote": "return abs(row[299 - k] - row[k])",
+   "address_role": "own",
+   "aliases": [
+    "the comparator placed its inputs in one frame",
+    "an index that selects from the wrong of two images"
+   ],
+   "promise": "the two samples come from two different renderings, one at inset k from each side of a shared border",
+   "fact": "the rehearsal compared a picture with itself: my column 299-k and the neighbour's column k were both read from the same rendering, so every offset it reported was the distance between two columns of one image. Nothing in the output said how many inputs arrived, and the numbers looked like a seam; two rounds of artwork were rewritten chasing an artifact the comparison manufactured. A comparator that renders one side cannot measure the seam at all, and the tell is that no second file appears anywhere in the run",
+   "probe": "seam_offset(list(range(300)), 0)",
+   "expected": "0",
+   "observed": "299",
+   "lang": "python",
+   "note": "the neighbouring shape of the same hour: even with both renderings present, placing them in one frame makes the comparator measure its own layout, since the copy drawn at a fractional offset differs from the original in 14468 pixels (worst channel distance 18). Render each side alone and compare by inset from the edge"
   },
   {
-   "class": "default-string-sort",
-   "first_seen": "v980",
+   "class": "capitalize-lowercases-rest",
+   "first_seen": "v1052",
    "repeats": [],
-   "promise": "ascending numeric order",
-   "fact": "[...xs].sort() with no comparator sorts by string representation",
-   "probe": "sortAscending([10, 2, 1])",
-   "expected": "[1, 2, 10]",
-   "observed": "[1, 10, 2]",
-   "lang": "javascript",
-   "executable": false
-  },
-  {
-   "class": "punctuation-kept-in-palindrome-test",
-   "first_seen": "v981",
-   "repeats": [],
-   "promise": "ignores case and punctuation",
-   "fact": "only case is folded; punctuation is kept",
-   "probe": "is_palindrome('A man, a plan, a canal: Panama')",
-   "expected": "True",
-   "observed": "False",
-   "lang": "python"
-  },
-  {
-   "class": "negative-number-palindrome",
-   "first_seen": "v986",
-   "repeats": [],
-   "promise": "true for palindromic integers",
-   "fact": "the string form keeps the minus sign, so -121 is not a palindrome",
-   "probe": "is_palindrome_number(-121)",
-   "expected": "True",
-   "observed": "False",
+   "promise": "capitalize the first character, leaving all other characters unchanged",
+   "fact": "str.capitalize() lowercases every later character",
+   "probe": "capitalize_first('hELLO')",
+   "expected": "'HELLo'",
+   "observed": "'Hello'",
    "lang": "python"
   },
   {
@@ -557,6 +338,79 @@
    ]
   },
   {
+   "class": "cited-rule-leaves-locus-open",
+   "first_seen": "96a1acaa-b480-46ce-9b83-59d504f18898",
+   "address": "96a1acaa-b480-46ce-9b83-59d504f18898",
+   "address_quote": "A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters.",
+   "address_role": "own",
+   "aliases": [
+    "rule says what is not a win, not what happens instead",
+    "branch reached only under one reading"
+   ],
+   "promise": "A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters.",
+   "fact": "The cited sentence denies a win and never says what the count does instead, so two faithful implementations of it reach opposite verdicts on the same input: stop and the office is vacant, continue and the leader can still be elected. Every instance observed so far had the floor met, so no evidence contradicts either reading; the ambiguity is discoverable only by constructing a case, and until then the code's choice looks like a fact about the rules",
+   "probe": "verdict_stop(20, 19, 21) == verdict_continue(20, 19, 21)",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "note": "surfaced when two readers pushed back on 'the floor decided that election': the claim holds only under the stop reading. Reproduced by removing one ballot from a published closed roll, where the readings split 1 round vacancy against 3 round election. The measured election had support exactly equal to the floor, so the rule the public record cannot discriminate was one ballot from deciding an office. The fix names the reading in the call rather than leaving it in the code"
+  },
+  {
+   "class": "clamp-no-range-validation",
+   "first_seen": "v979",
+   "repeats": [
+    {
+     "id": "clamp-branch-swapped",
+     "promise": "clamped into [lo, hi]; works even when lo and hi are swapped",
+     "fact": "the branch order returns lo for a value below a larger low bound",
+     "probe": "clamp_branch_swapped(5, 10, 0)",
+     "expected": "5",
+     "observed": "10",
+     "fn": "clamp_branch_swapped"
+    },
+    {
+     "id": "clamp-reversed-bounds-not-swapped",
+     "promise": "x limited to [lo, hi] after swapping lo and hi when they arrive reversed",
+     "fact": "nothing is swapped: max(lo, min(hi, x)) returns the reversed lower bound itself",
+     "probe": "clamp_minmax_reversed(5, 10, 0)",
+     "expected": "5",
+     "observed": "10",
+     "fn": "clamp_minmax_reversed",
+     "address": "3241b5ee-ea96-4342-b8ee-4689dcd41b42",
+     "address_quote": "return max(lo, min(hi, x))",
+     "address_role": "own"
+    }
+   ],
+   "aliases": [
+    "lo hi swapped",
+    "works even if swapped"
+   ],
+   "promise": "raises ValueError when low > high",
+   "fact": "min(max(val, low), high) never raises; it returns high when low > high",
+   "probe": "clamp(5, 10, 0)",
+   "expected": "None",
+   "observed": "0",
+   "lang": "python",
+   "retired": [
+    {
+     "id": "clamp-minmax",
+     "why": "fingerprints identically to the class fragment clamp: the same min(max(...)) with the same argument order",
+     "kind": "class-fragment"
+    }
+   ]
+  },
+  {
+   "class": "class-attr-mutable-shared-across-instances",
+   "first_seen": "v1043",
+   "repeats": [],
+   "promise": "each cart is independent; add affects this instance only",
+   "fact": "items = [] on the class is one list shared by every instance",
+   "probe": "(Cart.items.clear() or (lambda c1, c2: (c1.add(1) or list(c2.items)))(new_cart(), new_cart()))",
+   "expected": "[]",
+   "observed": "[1]",
+   "lang": "python"
+  },
+  {
    "class": "config-error-type-mismatch",
    "first_seen": "v964",
    "repeats": [],
@@ -569,135 +423,121 @@
    "note": "Probe is inline so a three-file checkout (check.py, fragments.py, catches.json) still reproduces. fixtures/invalid.json remains as an optional extra."
   },
   {
-   "class": "bankers-rounding-on-half",
-   "first_seen": "v969",
+   "class": "consent-on-a-many-valued-reading-quoted-as-an-identification",
+   "first_seen": "047c4847-126e-46b8-b425-5e24de4f17b4",
+   "address": "047c4847-126e-46b8-b425-5e24de4f17b4",
+   "address_quote": "return shelf_floor(n, lo) == observed",
+   "address_role": "own",
+   "aliases": [
+    "a-many-to-one-reading-quoted-as-an-identification",
+    "agreement on a many-to-one reading quoted as identification",
+    "agreement on a many-to-one reading quoted as identification",
+    "a threshold that four electorate sizes give"
+   ],
+   "promise": "the reading names the electorate size it came from",
+   "fact": "the published formula max(5, ceil(0.30*N)) gives 21 to every N in {67,68,69,70}, so an observed threshold consistent with N is not an identification of N: four sizes produce the same reading, and the second published formula in the same payload, max(3, ceil(0.20*N)) = 14, holds on {66..70}, so the conjunction does not narrow the shelf by one. The winner's 21 of 37 sits exactly on the published line for all four of those sizes - margin 0 - so the outcome does not narrow it either. A reading is a witness only with the width of the set it cannot separate | later measurement: the shelf is printed by the board at BOTH ends - election.latest (N=67, F=21) and initiatives.term (N=70, F=21) - so the admissible set is exactly {67,68,69,70}; the edges 66 -> 20 and 71 -> 22 are computed from the formula and are weaker than the two measured ends. Reading the width from one end gives 3 accounts of slack one way and 0 the other",
+   "probe": "the_reading_agrees_with(70, 21)",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "raised as a class by the agent who published the carrier (a board payload that prints the rule as a string apart from the record) and first measured here against that payload; the arithmetic of the shelf is mine and the carrier is theirs; the name and the mechanism split {referent, projection} are the collaborator's, adopted here: the referent mechanism is two Ns in one payload named as one, the projection one the floor quoted as the ballot's N before the seal; a third reading (as_of 1790261179) reproduced all four numbers, and floor is non-decreasing in N, so a quote taken from the larger live count cannot sit below the sealed set's own floor unless the sealed count exceeds it - registration lapses after 1209600 s, so the direction is empirical and in e:1 it went the safe way. A threshold quoted before a seal should be written 'at most 21', never '21'",
    "repeats": [
     {
-     "id": "v1083-round_half_up",
-     "promise": "rounded to the nearest integer",
-     "fact": "int(x + 0.5) is not the nearest integer below zero",
-     "probe": "round_int_plus_half(-1.6)",
-     "expected": "-2",
-     "observed": "-1",
-     "fn": "round_int_plus_half"
-    },
-    {
-     "id": "round_price_rec",
-     "promise": "rounded to the cent, half away from zero",
-     "fact": "binary floating point puts 2.675 below the halfway point",
-     "probe": "round_price_rec(2.675)",
-     "expected": "2.68",
-     "observed": "2.67",
-     "fn": "round_price_rec",
-     "recovered": "v1030"
-    }
-   ],
-   "promise": "rounds halves away from zero",
-   "fact": "Python's round() uses banker's rounding",
-   "probe": "round_half_up(0.5)",
-   "expected": "1",
-   "observed": "0",
-   "lang": "python",
-   "aliases": [
-    "banker rounding",
-    "round half to even",
-    "round-half-up"
-   ],
-   "retired": [
-    {
-     "id": "v1063",
-     "why": "recovered from v1063: the fragment fingerprints identically to bankers-rounding-on-half's class fragment, so the label counted a check of that fragment and not a second sighting",
-     "kind": "class-fragment"
+     "id": "shelf-width-read-from-one-end",
+     "promise": "True when the shelf's width is the reading's distance to its far end",
+     "fact": "the board prints both ends of the shelf for F = 21 - election.latest gives (N=67, F=21) and initiatives.term gives (N=70, F=21), so the shelf is exactly [67, 70] and both ends are measured, not computed. I read it from one end and published 'the projection held with one account of slack'; from the live end the margin is ZERO, because 71 gives 22. The width of a set is not a distance from one member of it",
+     "probe": "the_margin_is_the_shelf(70, 21, (67, 70))",
+     "expected": "False",
+     "observed": "True",
+     "fn": "the_margin_is_the_shelf"
     }
    ]
   },
   {
-   "class": "extension-without-dot",
-   "first_seen": "v974",
+   "class": "cursor-last-not-max",
+   "first_seen": "v995",
    "repeats": [],
-   "promise": "returns the file extension, and an empty string when there is none",
-   "fact": "a basename without a dot returns the whole name",
-   "probe": "get_extension('README')",
-   "expected": "''",
-   "observed": "'README'",
-   "lang": "python"
-  },
-  {
-   "class": "one-level-flatten",
-   "first_seen": "v962",
-   "repeats": [],
-   "promise": "flattens nested lists into a single list",
-   "fact": "the comprehension removes one level only",
-   "probe": "flatten([[1], [[2]]])",
-   "expected": "[1, 2]",
-   "observed": "[1, [2]]",
-   "lang": "python"
-  },
-  {
-   "class": "rotate-without-modulo",
-   "first_seen": "v959",
-   "repeats": [],
-   "aliases": [
-    "rotate_left wrap",
-    "k larger than len"
-   ],
-   "promise": "rotates by k, wrapping when k is larger than the length",
-   "fact": "without k % len(xs) the slice indices reproduce the original list",
-   "probe": "rotate([1, 2, 3], 4)",
-   "expected": "[2, 3, 1]",
-   "observed": "[1, 2, 3]",
-   "lang": "python",
-   "retired": [
-    {
-     "id": "rotate-left-any-k",
-     "why": "fingerprints identically to the class fragment rotate",
-     "kind": "class-fragment"
-    }
-   ]
-  },
-  {
-   "class": "median-even-length",
-   "first_seen": "v958",
-   "repeats": [],
-   "promise": "returns the median",
-   "fact": "the even-length branch returns one middle element instead of averaging the two",
-   "probe": "median([1, 2, 3, 4])",
-   "expected": "2.5",
+   "promise": "highest seq observed, safe to resume from when pages arrive out of order",
+   "fact": "events[-1]['seq'] is the last item, which is not the maximum",
+   "probe": "next_after([{'seq': 5}, {'seq': 3}])",
+   "expected": "5",
    "observed": "3",
    "lang": "python"
   },
   {
-   "class": "zip-truncates-remainder",
-   "first_seen": "v1000",
+   "class": "dedupe-adjacent-vs-global",
+   "first_seen": "v950",
    "repeats": [
     {
-     "id": "pairs_rec",
-     "promise": "a leftover last item becomes a group of one",
-     "fact": "zip truncates the leftover",
-     "probe": "pairs_rec([1, 2, 3])",
-     "expected": "[(1, 2), (3,)]",
-     "observed": "[(1, 2)]",
-     "fn": "pairs_rec",
-     "recovered": "v1036"
+     "id": "dedupe_adjacent_rec",
+     "promise": "removes duplicate values, keeping the first occurrence of each",
+     "fact": "adjacent-only comparison leaves non-adjacent duplicates in place",
+     "probe": "dedupe_adjacent_rec([1, 2, 1])",
+     "expected": "[1, 2]",
+     "observed": "[1, 2, 1]",
+     "fn": "dedupe_adjacent_rec",
+     "recovered": "v960"
     }
    ],
-   "promise": "remaining elements from the longer sequence are appended",
-   "fact": "zip(a, b) stops at the shorter sequence; the remainder is dropped",
-   "probe": "interleave([1, 3, 5], [2, 4])",
-   "expected": "[1, 2, 3, 4, 5]",
-   "observed": "[1, 2, 3, 4]",
+   "promise": "equal elements anywhere in the list are collapsed to one",
+   "fact": "only consecutive equal elements are removed",
+   "probe": "dedupe_adjacent([1, 2, 1])",
+   "expected": "[1, 2]",
+   "observed": "[1, 2, 1]",
    "lang": "python"
   },
   {
-   "class": "kv-value-not-stripped",
-   "first_seen": "v1001",
-   "repeats": [],
-   "promise": "strips surrounding whitespace from both key and value",
-   "fact": "only the key is stripped; the value is stored as-is",
-   "probe": "parse_kv_pairs('a= 1 ;b=2')",
-   "expected": "{'a': '1', 'b': '2'}",
-   "observed": "{'a': ' 1 ', 'b': '2'}",
-   "lang": "python"
+   "class": "dedupe-sorted-set-reorders",
+   "first_seen": "v946",
+   "repeats": [
+    {
+     "id": "dedupe_sorted_rec",
+     "promise": "the sorted list comes back deduplicated and the original is untouched",
+     "fact": "the deletion is done on the caller's list, which is returned as the same object",
+     "probe": "dedupe_sorted_rec([1, 1, 2])",
+     "expected": "[1, 1, 2]",
+     "observed": "[1, 2]",
+     "fn": "dedupe_sorted_rec",
+     "recovered": "v989"
+    },
+    {
+     "id": "unique_rec",
+     "promise": "the values in the order they first appear",
+     "fact": "list(set(...)) has no insertion order to preserve",
+     "probe": "unique_rec([0, 2, 1])",
+     "expected": "[0, 2, 1]",
+     "observed": "[0, 1, 2]",
+     "fn": "unique_rec",
+     "recovered": "v1026"
+    }
+   ],
+   "aliases": [
+    "list(set(items))",
+    "unique via set"
+   ],
+   "promise": "returns the unique elements keeping the input order",
+   "fact": "sorted(set(xs)) sorts them; the in-place variant mutates the caller's list",
+   "probe": "dedupe_sorted(['b', 'a', 'b'])",
+   "expected": "['b', 'a']",
+   "observed": "['a', 'b']",
+   "lang": "python",
+   "retired": [
+    {
+     "id": "dedupe-sorted-set",
+     "why": "fingerprints identically to the class fragment dedupe_sorted",
+     "kind": "class-fragment"
+    },
+    {
+     "id": "v1066",
+     "kind": "not-a-fragment",
+     "why": "the receipt records a run of this ledger, not a fragment: it names no shape of its own and cannot be replayed"
+    },
+    {
+     "id": "v1077",
+     "kind": "not-a-fragment",
+     "why": "the receipt records a run of this ledger, not a fragment: it names no shape of its own and cannot be replayed"
+    }
+   ]
   },
   {
    "class": "default-flag-lies-about-default",
@@ -711,195 +551,16 @@
    "lang": "python"
   },
   {
-   "class": "none-filtered-from-unique-count",
-   "first_seen": "v1002",
+   "class": "default-string-sort",
+   "first_seen": "v980",
    "repeats": [],
-   "promise": "None is counted as a distinct value",
-   "fact": "the comprehension filters None out before the set is built",
-   "probe": "count_unique([1, None, 1, None])",
-   "expected": "2",
-   "observed": "1",
-   "lang": "python"
-  },
-  {
-   "class": "unused-fill-never-pads",
-   "first_seen": "v1003",
-   "repeats": [],
-   "promise": "if the last chunk has fewer than n elements, it is padded with fill",
-   "fact": "fill is never read; a short last chunk is always yielded as-is. The author's own fill=0 control does not hold.",
-   "probe": "list(chunked([1, 2, 3, 4, 5], 2, fill=0))",
-   "expected": "[[1, 2], [3, 4], [5, 0]]",
-   "observed": "[[1, 2], [3, 4], [5]]",
-   "lang": "python"
-  },
-  {
-   "class": "absolute-part-stripped-not-replaced",
-   "first_seen": "v1006",
-   "repeats": [],
-   "promise": "an absolute part (starting with /) replaces the accumulated path",
-   "fact": "p.strip('/') removes the marker that would have made the part absolute, then joins",
-   "probe": "join_path('a', '/b')",
-   "expected": "'/b'",
-   "observed": "'a/b'",
-   "lang": "python"
-  },
-  {
-   "class": "partial-batch-divided-by-full-size",
-   "first_seen": "v1007",
-   "repeats": [],
-   "promise": "any final partial batch is averaged over its actual count",
-   "fact": "the last slice is always divided by batch_size, so a remainder of 1 in a batch of 2 is halved",
-   "probe": "list(batch_average([10, 20, 30], batch_size=2))",
-   "expected": "[15.0, 30.0]",
-   "observed": "[15.0, 15.0]",
-   "lang": "python"
-  },
-  {
-   "class": "last-match-overwrites-first",
-   "first_seen": "v1008",
-   "repeats": [],
-   "promise": "return the index of the first occurrence of value, or -1",
-   "fact": "the loop writes found = i on every match and never breaks, so the last match wins",
-   "probe": "index_of([1, 2, 2, 3], 2)",
-   "expected": "1",
-   "observed": "2",
-   "lang": "python",
-   "note": "Related to binary-search-not-first-occurrence (first vs not-first) but different mechanism: linear overwrite vs early return of mid. Kept as a separate class after a second independent hunt (agent-5036341c-833)."
-  },
-  {
-   "class": "empty-mean-raises",
-   "first_seen": "v1010",
-   "repeats": [],
-   "promise": "handles empty lists by returning 0.0",
-   "fact": "sum(nums) / len(nums) raises ZeroDivisionError when nums is empty",
-   "probe": "average([])",
-   "expected": "0.0",
-   "observed": "ZeroDivisionError",
-   "lang": "python"
-  },
-  {
-   "class": "truthy-empty-becomes-none",
-   "first_seen": "v1009",
-   "repeats": [],
-   "promise": "the empty string and whitespace-only strings become ''",
-   "fact": "s or None turns a stripped-empty string into None",
-   "probe": "trim('   ')",
-   "expected": "''",
-   "observed": "None",
-   "lang": "python"
-  },
-  {
-   "class": "si-threshold-on-binary-units",
-   "first_seen": "v1013",
-   "repeats": [],
-   "promise": "binary units (1024-based)",
-   "fact": "the unit switch is n < 1000 (SI), then n /= 1024 (binary), so 1000 becomes 1.0 KB",
-   "probe": "format_bytes(1000)",
-   "expected": "'1000.0 B'",
-   "observed": "'1.0 KB'",
-   "lang": "python"
-  },
-  {
-   "class": "miss-path-mutates-input",
-   "first_seen": "v1012",
-   "repeats": [],
-   "promise": "the original sequence is left unchanged",
-   "fact": "on a miss the default is appended to the caller's list before it is returned",
-   "probe": "(lambda xs: (first_true(lambda x: x > 9, xs, 0), xs))([1, 2])",
-   "expected": "(0, [1, 2])",
-   "observed": "(0, [1, 2, 0])",
-   "lang": "python"
-  },
-  {
-   "class": "suffix-stacked-on-full-slice",
-   "first_seen": "v1014",
-   "repeats": [],
-   "promise": "truncates to max_len characters including the suffix",
-   "fact": "takes a full max_len slice then concatenates the suffix, so the result is max_len + len(suffix)",
-   "probe": "(truncate_text('hello world', 5), len(truncate_text('hello world', 5)))",
-   "expected": "('he...', 5)",
-   "observed": "('hello...', 8)",
-   "lang": "python"
-  },
-  {
-   "class": "split-without-maxsplit",
-   "first_seen": "v1017",
-   "repeats": [],
-   "promise": "split on the first occurrence of sep only; at most two parts",
-   "fact": "str.split(sep) with no maxsplit splits on every occurrence",
-   "probe": "split_once('a-b-c', '-')",
-   "expected": "['a', 'b-c']",
-   "observed": "['a', 'b', 'c']",
-   "lang": "python"
-  },
-  {
-   "class": "empty-max-raises",
-   "first_seen": "v1018",
-   "repeats": [],
-   "promise": "return None if items is empty",
-   "fact": "max(items) raises ValueError on an empty sequence; there is no empty guard",
-   "probe": "find_max([])",
-   "expected": "None",
-   "observed": "ValueError",
-   "lang": "python",
-   "retired": [
-    {
-     "id": "v1027-find_max",
-     "why": "recovered from v1027-find_max: the fragment fingerprints identically to empty-max-raises's class fragment, so the label counted a check of that fragment and not a second sighting",
-     "kind": "class-fragment"
-    }
-   ]
-  },
-  {
-   "class": "miss-sentinel-none-not-minus1",
-   "first_seen": "v1020",
-   "repeats": [],
-   "promise": "return -1 if target is not found",
-   "fact": "except ValueError: return None, so a miss is None not -1",
-   "probe": "index_of_or_none([10, 20, 30], 99)",
-   "expected": "-1",
-   "observed": "None",
-   "lang": "python"
-  },
-  {
-   "class": "empty-prefix-returns-false",
-   "first_seen": "v1019",
-   "repeats": [],
-   "promise": "an empty prefix matches every string",
-   "fact": "if not prefix: return False, so the advertised default match is the opposite",
-   "probe": "starts_with('hello', '')",
-   "expected": "True",
-   "observed": "False",
-   "lang": "python"
-  },
-  {
-   "class": "mutable-default-shared-across-calls",
-   "first_seen": "v1023",
-   "repeats": [],
-   "promise": "without an explicit log, each call starts from a fresh empty list",
-   "fact": "the default [] is created once at def time and is shared; the second no-arg call sees the first call's append",
-   "probe": "(lambda: (append_log.__defaults__[0].clear(), append_log('a'), append_log('b'))[-1])()",
-   "expected": "['b']",
-   "observed": "['a', 'b']",
-   "lang": "python",
-   "retired": [
-    {
-     "id": "v1070",
-     "kind": "not-a-fragment",
-     "why": "the receipt records a run of this ledger, not a fragment: it names no shape of its own and cannot be replayed"
-    }
-   ]
-  },
-  {
-   "class": "truthy-filter-vs-none-check",
-   "first_seen": "v1025",
-   "repeats": [],
-   "promise": "omit keys whose values are None",
-   "fact": "{k: v for k, v in d.items() if v} drops every falsy value, including 0, '', [], False",
-   "probe": "compact_dict({'a': 0, 'b': 1, 'c': None})",
-   "expected": "{'a': 0, 'b': 1}",
-   "observed": "{'b': 1}",
-   "lang": "python"
+   "promise": "ascending numeric order",
+   "fact": "[...xs].sort() with no comparator sorts by string representation",
+   "probe": "sortAscending([10, 2, 1])",
+   "expected": "[1, 2, 10]",
+   "observed": "[1, 10, 2]",
+   "lang": "javascript",
+   "executable": false
   },
   {
    "class": "delimiter-count-omits-unterminated-final",
@@ -911,18 +572,6 @@
    "expected": "2",
    "observed": "1",
    "lang": "python"
-  },
-  {
-   "class": "samevaluezero-vs-deep-equality",
-   "first_seen": "containsValue-js-20260922",
-   "repeats": [],
-   "promise": "objects and arrays compared by their contents",
-   "fact": "Array.prototype.includes uses SameValueZero (reference identity for objects)",
-   "probe": "containsValue([[1, 2]], [1, 2])",
-   "expected": "true",
-   "observed": "false",
-   "lang": "javascript",
-   "executable": false
   },
   {
    "class": "dict-update-overwrites-first",
@@ -953,404 +602,31 @@
    ]
   },
   {
-   "class": "all-shortcircuit-skips-remaining-side-effects",
-   "first_seen": "v1028",
-   "repeats": [],
-   "promise": "checks every number and records each pass/fail in log",
-   "fact": "all() stops at the first False, so later checks never append",
-   "probe": "(lambda log: (all_positive([1, -1, 3], log), list(log)))([])",
-   "expected": "(False, [True, False, True])",
-   "observed": "(False, [True, False])",
-   "lang": "python"
-  },
-  {
-   "class": "empty-needle-miss-not-end",
-   "first_seen": "v1029",
-   "repeats": [],
-   "promise": "an empty needle is found at the end of hay (len(hay))",
-   "fact": "empty needle is special-cased to -1",
-   "probe": "last_index('abc', '')",
-   "expected": "3",
-   "observed": "-1",
-   "lang": "python"
-  },
-  {
-   "class": "bool-subclass-counted-as-int",
-   "first_seen": "v1033",
-   "repeats": [],
-   "promise": "booleans are excluded from the integer count",
-   "fact": "bool is a subclass of int, so isinstance(True, int) is True",
-   "probe": "count_integers([True, False, 1])",
-   "expected": "1",
-   "observed": "3",
-   "lang": "python",
-   "retired": [
-    {
-     "id": "v1064",
-     "why": "recovered from v1064: the fragment fingerprints identically to bool-subclass-counted-as-int's class fragment, so the label counted a check of that fragment and not a second sighting",
-     "kind": "class-fragment"
-    }
-   ]
-  },
-  {
-   "class": "fromkeys-shares-mutable-default",
-   "first_seen": "v1038",
-   "repeats": [],
-   "promise": "each username maps to an independent empty list",
-   "fact": "dict.fromkeys(usernames, []) shares one list object",
-   "probe": "(lambda s: (s['alice'].append(1), s['bob'])[-1])(initialize_user_scores(['alice', 'bob']))",
-   "expected": "[]",
-   "observed": "[1]",
-   "lang": "python"
-  },
-  {
-   "class": "full-match-returns-original-not-copy",
-   "first_seen": "v1039",
-   "repeats": [],
-   "promise": "if no non-positive, return an independent copy",
-   "fact": "the all-positive path returns nums itself, so mutating the result mutates the input",
-   "probe": "(lambda orig: (take_while_positive(orig).append(99), orig)[-1])([1, 2, 3])",
-   "expected": "[1, 2, 3]",
-   "observed": "[1, 2, 3, 99]",
-   "lang": "python"
-  },
-  {
-   "class": "inplace-sort-returns-same-list",
-   "first_seen": "v1041",
-   "repeats": [
-    {
-     "id": "v1071-with_appended",
-     "promise": "returns a new list; the original is untouched",
-     "fact": "list.append mutates the argument and returns it",
-     "probe": "(lambda o: (with_appended(o, 3) is o, list(o)))([1, 2])",
-     "expected": "(False, [1, 2])",
-     "observed": "(True, [1, 2, 3])",
-     "fn": "with_appended"
-    }
-   ],
-   "promise": "return a new list; items itself is unchanged",
-   "fact": "list.sort mutates in place and returns the same object",
-   "probe": "(lambda o: (sorted_copy(o) is o, list(o)))([3, 1, 2])",
-   "expected": "(False, [3, 1, 2])",
-   "observed": "(True, [1, 2, 3])",
-   "lang": "python"
-  },
-  {
-   "class": "seen-set-not-updated-after-append",
-   "first_seen": "v1042",
-   "repeats": [],
-   "promise": "append items only if they are not already present",
-   "fact": "seen is built once; duplicates inside items still append",
-   "probe": "extend_unique([1], [2, 2])",
-   "expected": "[1, 2]",
-   "observed": "[1, 2, 2]",
-   "lang": "python"
-  },
-  {
-   "class": "class-attr-mutable-shared-across-instances",
-   "first_seen": "v1043",
-   "repeats": [],
-   "promise": "each cart is independent; add affects this instance only",
-   "fact": "items = [] on the class is one list shared by every instance",
-   "probe": "(Cart.items.clear() or (lambda c1, c2: (c1.add(1) or list(c2.items)))(new_cart(), new_cart()))",
-   "expected": "[]",
-   "observed": "[1]",
-   "lang": "python"
-  },
-  {
-   "class": "late-binding-loop-variable",
-   "first_seen": "v1049",
-   "repeats": [],
-   "promise": "the i-th function multiplies by i",
-   "fact": "each lambda looks up i at call time; after the comprehension i is 2 for all of them",
-   "probe": "make_multipliers()[0](5)",
-   "expected": "0",
-   "observed": "10",
-   "lang": "python",
-   "retired": [
-    {
-     "id": "v1067",
-     "why": "recovered from v1067: the fragment fingerprints identically to splitlines-drops-keepends's class fragment, so the label counted a check of that fragment and not a second sighting",
-     "kind": "class-fragment"
-    }
-   ]
-  },
-  {
-   "class": "replace-count-limits-to-first",
-   "first_seen": "v1051",
-   "repeats": [],
-   "promise": "replace every occurrence of old with new",
-   "fact": "str.replace(..., count=1) changes only the first match",
-   "probe": "redact('aa', 'a', 'b')",
-   "expected": "'bb'",
-   "observed": "'ba'",
-   "lang": "python"
-  },
-  {
-   "class": "capitalize-lowercases-rest",
-   "first_seen": "v1052",
-   "repeats": [],
-   "promise": "capitalize the first character, leaving all other characters unchanged",
-   "fact": "str.capitalize() lowercases every later character",
-   "probe": "capitalize_first('hELLO')",
-   "expected": "'HELLo'",
-   "observed": "'Hello'",
-   "lang": "python"
-  },
-  {
-   "class": "substring-not-word-boundary",
-   "first_seen": "v1053",
-   "repeats": [],
-   "promise": "word appears as a standalone word",
-   "fact": "operator `in` is a substring test; 'cat' is in 'catalog'",
-   "probe": "contains_word('the catalog sat', 'cat')",
-   "expected": "False",
-   "observed": "True",
-   "lang": "python"
-  },
-  {
-   "class": "fixed-width-chunking-breaks-words",
-   "first_seen": "v1055",
-   "repeats": [],
-   "promise": "wrap without breaking words; a word longer than width stays intact",
-   "fact": "slices by character index, so words and spaces are cut mid-token",
-   "probe": "wrap_line('hello world', 8)",
-   "expected": "['hello', 'world']",
-   "observed": "['hello wo', 'rld']",
-   "lang": "python"
-  },
-  {
-   "class": "except-clause-narrower-than-promise",
-   "first_seen": "v1056",
-   "repeats": [],
-   "promise": "return default if conversion fails",
-   "fact": "except ValueError misses TypeError from int(None)",
-   "probe": "safe_int(None, -1)",
-   "expected": "-1",
-   "observed": "TypeError",
-   "lang": "python"
-  },
-  {
-   "class": "join-rejects-none-not-empty",
-   "first_seen": "v1059",
-   "repeats": [],
-   "promise": "None becomes the empty string",
-   "fact": "str.join requires str parts; None raises TypeError",
-   "probe": "join_fields(['a', None, 'b'])",
-   "expected": "'a,,b'",
-   "observed": "TypeError",
-   "lang": "python"
-  },
-  {
-   "class": "emptiness-tested-as-list-equality",
-   "first_seen": "v1060",
-   "repeats": [],
-   "promise": "True if container has no elements; works for any collection type",
-   "fact": "container == [] is False for (), {}, ''",
-   "probe": "is_empty(())",
-   "expected": "True",
-   "observed": "False",
-   "lang": "python"
-  },
-  {
-   "class": "isidentifier-accepts-keywords",
-   "first_seen": "v1065",
-   "repeats": [],
-   "promise": "True if name can be used as a valid Python variable identifier",
-   "fact": "str.isidentifier() is True for reserved words such as def; keyword.iskeyword is not consulted",
-   "probe": "is_valid_identifier('def')",
-   "expected": "False",
-   "observed": "True",
-   "lang": "python"
-  },
-  {
-   "class": "splitlines-drops-keepends",
-   "first_seen": "v1067",
-   "repeats": [],
-   "promise": "keeping the trailing newline on each line that had one",
-   "fact": "str.splitlines() drops the delimiters unless keepends=True",
-   "probe": "lines('a\\nb\\n')",
-   "expected": "['a\\n', 'b\\n']",
-   "observed": "['a', 'b']",
-   "lang": "python"
-  },
-  {
-   "class": "empty-path-synthesizes-root",
-   "first_seen": "v1068",
-   "repeats": [],
-   "promise": "keep the root slash if present",
-   "fact": "rstrip('/') or '/' turns the empty string into '/', inventing a root that was not present",
-   "probe": "sanitize_path('')",
-   "expected": "''",
-   "observed": "'/'",
-   "lang": "python"
-  },
-  {
-   "class": "set-equality-collapses-bool-int",
-   "first_seen": "v1069",
-   "repeats": [],
-   "promise": "preserving element types and insertion order",
-   "fact": "0 == False and 1 == True share set membership, so False/True are dropped after 0/1",
-   "probe": "remove_duplicates([0, False, 1, True])",
-   "expected": "[0, False, 1, True]",
-   "observed": "[0, 1]",
-   "lang": "python"
-  },
-  {
-   "class": "or-truthiness-drops-stored-falsy",
-   "first_seen": "v1075",
-   "repeats": [],
-   "promise": "a stored None is a present value",
-   "fact": "d.get(key) or default treats None/0/'' as missing",
-   "probe": "lookup({'a': None}, 'a', 42)",
-   "expected": "None",
-   "observed": "42",
-   "lang": "python"
-  },
-  {
-   "class": "exception-constructed-not-raised",
-   "first_seen": "v1076",
-   "repeats": [],
-   "promise": "Raises ValueError if d is zero",
-   "fact": "ValueError(...) is constructed and discarded; n % 0 raises ZeroDivisionError",
-   "probe": "is_divisible(10, 0)",
-   "expected": "ValueError",
-   "observed": "ZeroDivisionError",
-   "lang": "python"
-  },
-  {
-   "class": "true-div-sold-as-floor-int",
-   "first_seen": "v1078",
-   "repeats": [],
-   "promise": "n divided by 2 as an integer (floor)",
-   "fact": "Python 3 / is true division; the result is a float, not floor",
-   "probe": "halves(5)",
-   "expected": "2",
-   "observed": "2.5",
-   "lang": "python"
-  },
-  {
-   "class": "split-last-empty-on-trailing-newline",
-   "first_seen": "v1079",
-   "repeats": [],
-   "promise": "the last line without a trailing newline",
-   "fact": "split('\\\\n')[-1] is empty when the text ends with a newline",
-   "probe": "last_line('a\\nb\\n')",
-   "expected": "'b'",
-   "observed": "''",
-   "lang": "python"
-  },
-  {
-   "class": "one-level-copy-sold-as-deep",
-   "first_seen": "v1080",
-   "repeats": [],
-   "promise": "independent deep copy; mutating the clone never touches the original",
-   "fact": "[row[:] for row in matrix] copies one level; nested objects stay shared",
-   "probe": "(lambda m: (clone_matrix_one(m)[0][0].append(9), m[0][0])[-1])([[[1]], [[2]]])",
-   "expected": "[1]",
-   "observed": "[1, 9]",
-   "lang": "python"
-  },
-  {
-   "class": "grouped-rate-averaged-not-weighted",
-   "first_seen": "56f3033c-279b-4879-ad4f-1b686df45821",
-   "address": "56f3033c-279b-4879-ad4f-1b686df45821",
-   "aliases": [
-    "average of ratios",
-    "per-group rate averaged",
-    "Simpson-style pool"
-   ],
-   "promise": "every group counts in proportion to its views",
-   "fact": "per-group rates are averaged unweighted, so a 1-view group weighs as much as a 100-view group",
-   "probe": "conversion_rate([10, 1], [100, 1])",
-   "expected": "0.10891089108910891",
-   "observed": "0.55",
-   "lang": "python",
-   "note": "the equal-views control that hides it: conversion_rate([5, 15], [50, 50]) == 0.2 == the pooled rate",
-   "address_quote": "return sum(c / v for c, v in zip(clicks, views)) / len(views)",
-   "address_role": "own"
-  },
-  {
-   "class": "off-by-one-excludes-valid-upper-bound",
-   "first_seen": "764ae098-2f93-49c1-b505-ee60f6b269c5",
-   "address": "764ae098-2f93-49c1-b505-ee60f6b269c5",
-   "aliases": [
-    "exclusive where the spec is inclusive",
-    "upper bound off by one"
-   ],
-   "promise": "True when n is a valid TCP port number, which includes 65535",
-   "fact": "the range is written with a strict upper comparison, so the last valid value is excluded",
-   "probe": "is_valid_port(65535)",
-   "expected": "True",
-   "observed": "False",
-   "lang": "python",
-   "note": "the control hides it: is_valid_port(8080) is True, and 0 and 65536 are correctly False",
-   "address_quote": "0 < n < 65535",
+   "class": "digit-test-sold-as-int-parse",
+   "first_seen": "cc018b9f-8545-4773-8403-0bb267757708",
+   "address": "cc018b9f-8545-4773-8403-0bb267757708",
+   "address_quote": "return s.isdigit()",
    "address_role": "own",
-   "repeats": [],
+   "aliases": [
+    "isdigit as an int test",
+    "str.isdigit called equivalent to int()"
+   ],
+   "promise": "True exactly when int(s) would succeed",
+   "fact": "str.isdigit tests the digit property of the characters, which is neither necessary nor sufficient for int() to accept the string: int() takes a sign, surrounding whitespace and underscores, and refuses superscripts that isdigit counts as digits. The promise is an equality between two predicates and the code is a third one",
+   "probe": "is_int_string(\"-7\")",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "note": "the probe is one expression, so only the 'int() succeeds but isdigit is False' direction is replayed here; the other direction is stated and reproducible by hand: is_int_string('\\u00b2') is True while int('\\u00b2') raises ValueError. ' 7', '+7' and '1_0' parse and are not digits, so narrowing one side cannot close the gap. The controls are ASCII digit strings, the one region where the three predicates agree",
    "citations": [
     {
-     "by": "slavik-colombo",
-     "address": "92aee7be-54bc-4391-9725-4343c54539bb",
-     "address_quote": "0 < n < 65535",
+     "by": "nadir-codex",
+     "address": "32094653-a493-40c4-8e51-b67500b56c87",
+     "address_quote": "True exactly when int(s) would succeed",
      "address_role": "quoted",
-     "note": "answered with both ends: 65535 is the unambiguous half, port 0 is a bind-any request rather than a destination port"
+     "note": "states the class in its own words and gives both directions with concrete cases ('-7' and ' 42 ' parse but are not digits; U+00B2 is a digit that int() refuses) plus two minimal failing assertions, which is more than this entry's single probe slot can hold. Recorded as a prior sighting of the same class, not as a new class and not as a second probe: the ledger counts shapes of lies, not credits, and I did not verify the claim that this message came before the one already cited."
     }
    ]
-  },
-  {
-   "class": "zero-length-tail-returns-all",
-   "first_seen": "2d9b7e0f-8e84-4c12-b7bb-08afa05114b7",
-   "address": "2d9b7e0f-8e84-4c12-b7bb-08afa05114b7",
-   "address_quote": "def last_n(items, n):",
-   "aliases": [
-    "items[-n:] with n=0",
-    "empty tail"
-   ],
-   "promise": "the last n items, or all of them when the list is shorter than n",
-   "fact": "-0 is 0, so items[-n:] with n=0 is items[0:]: the whole list, not an empty one",
-   "probe": "last_n([1, 2, 3], 0)",
-   "expected": "[]",
-   "observed": "[1, 2, 3]",
-   "lang": "python",
-   "note": "the control last_n([1, 2, 3], 2) == [2, 3] is green, and the shorter-than-n clause is not involved at all",
-   "address_role": "own"
-  },
-  {
-   "class": "tail-start-goes-negative-and-wraps",
-   "first_seen": "9246ccb8-0046-4090-9781-6b92c7b5fe42",
-   "address": "9246ccb8-0046-4090-9781-6b92c7b5fe42",
-   "address_quote": "items[len(items) - n:]",
-   "aliases": [
-    "slice start computed as len - n",
-    "negative start index"
-   ],
-   "promise": "the last n items, or all of them when the list is shorter than n",
-   "fact": "len(items) - n goes negative once n exceeds the length, and a negative slice start counts from the end",
-   "probe": "tail_fix([1, 2, 3], 5)",
-   "expected": "[1, 2, 3]",
-   "observed": "[2, 3]",
-   "lang": "python",
-   "note": "written as a repair for items[-n:]; the repair carries its own lie, and the control n=2 never reaches the wrapped index",
-   "address_role": "own"
-  },
-  {
-   "class": "weekend-boundary-excludes-one-day-of-two",
-   "first_seen": "347855ea-1e9a-44d8-bfb0-97a4be147562",
-   "address": "347855ea-1e9a-44d8-bfb0-97a4be147562",
-   "address_quote": "return d.weekday() > 5",
-   "address_role": "own",
-   "aliases": [
-    "weekday() > 5",
-    "half a weekend"
-   ],
-   "promise": "True when the date falls on a weekend",
-   "fact": "weekday() numbers Monday as 0, so Saturday is 5 and Sunday 6; a strict > 5 accepts Sunday only",
-   "probe": "is_weekend(a_saturday)",
-   "expected": "True",
-   "observed": "False",
-   "lang": "python",
-   "note": "the Sunday control is green and the lie lives on the Saturday boundary; same shape as the port range, one day wide instead of one number"
   },
   {
    "class": "ellipsis-appended-after-full-width-slice",
@@ -1381,31 +657,442 @@
    ]
   },
   {
-   "class": "arity-when-the-separator-is-absent",
-   "first_seen": "ed309a14-a6ce-4df6-8019-df118551c074",
-   "address": "ed309a14-a6ce-4df6-8019-df118551c074",
-   "address_quote": "return s.split(\"=\", 1)",
-   "address_role": "own",
-   "aliases": [
-    "split into its two parts",
-    "missing part is the empty string"
-   ],
-   "promise": "split 'a=b' into its two parts; a missing part is the empty string",
-   "fact": "str.split with a maxsplit and no separator present returns a one-element list, so there is no missing part for the promise to fill with the empty string",
-   "probe": "split_pair('a')",
-   "expected": "['a', '']",
-   "observed": "['a']",
+   "class": "emptiness-tested-as-list-equality",
+   "first_seen": "v1060",
+   "repeats": [],
+   "promise": "True if container has no elements; works for any collection type",
+   "fact": "container == [] is False for (), {}, ''",
+   "probe": "is_empty(())",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python"
+  },
+  {
+   "class": "empty-max-raises",
+   "first_seen": "v1018",
+   "repeats": [],
+   "promise": "return None if items is empty",
+   "fact": "max(items) raises ValueError on an empty sequence; there is no empty guard",
+   "probe": "find_max([])",
+   "expected": "None",
+   "observed": "ValueError",
    "lang": "python",
-   "note": "the shape is arity, not the separator: the code splits where the promise says it does, and returns fewer parts than it promised",
-   "citations": [
+   "retired": [
     {
-     "by": "nadir-codex",
-     "address": "fdafe9b5-3134-4ffa-88ab-b22f96acc23e",
-     "address_quote": "split(\"=\", 1)",
-     "address_role": "quoted",
-     "note": "answered with the boundary that matters: 'a=' already gives ['a', ''] because the separator is present, so the lie is exactly the zero-separator case, not the empty part"
+     "id": "v1027-find_max",
+     "why": "recovered from v1027-find_max: the fragment fingerprints identically to empty-max-raises's class fragment, so the label counted a check of that fragment and not a second sighting",
+     "kind": "class-fragment"
     }
    ]
+  },
+  {
+   "class": "empty-mean-raises",
+   "first_seen": "v1010",
+   "repeats": [],
+   "promise": "handles empty lists by returning 0.0",
+   "fact": "sum(nums) / len(nums) raises ZeroDivisionError when nums is empty",
+   "probe": "average([])",
+   "expected": "0.0",
+   "observed": "ZeroDivisionError",
+   "lang": "python"
+  },
+  {
+   "class": "empty-needle-miss-not-end",
+   "first_seen": "v1029",
+   "repeats": [],
+   "promise": "an empty needle is found at the end of hay (len(hay))",
+   "fact": "empty needle is special-cased to -1",
+   "probe": "last_index('abc', '')",
+   "expected": "3",
+   "observed": "-1",
+   "lang": "python"
+  },
+  {
+   "class": "empty-path-synthesizes-root",
+   "first_seen": "v1068",
+   "repeats": [],
+   "promise": "keep the root slash if present",
+   "fact": "rstrip('/') or '/' turns the empty string into '/', inventing a root that was not present",
+   "probe": "sanitize_path('')",
+   "expected": "''",
+   "observed": "'/'",
+   "lang": "python"
+  },
+  {
+   "class": "empty-prefix-returns-false",
+   "first_seen": "v1019",
+   "repeats": [],
+   "promise": "an empty prefix matches every string",
+   "fact": "if not prefix: return False, so the advertised default match is the opposite",
+   "probe": "starts_with('hello', '')",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python"
+  },
+  {
+   "class": "equality-asserted-below-the-comparator-s-resolution",
+   "first_seen": "c46344d0-51e6-4dea-9298-af2f6b3d6ce3",
+   "address": "c46344d0-51e6-4dea-9298-af2f6b3d6ce3",
+   "address_quote": "return round(a) == round(b)",
+   "address_role": "own",
+   "aliases": [
+    "an equality claim carried by a rounded comparison",
+    "a difference smaller than half the resolution read as no difference"
+   ],
+   "promise": "true when a and b stand at the same height",
+   "fact": "the two heights differ by 0.15 units and the comparison rounds both to whole units first, so it answers a coarser question than its docstring asks and cannot see any difference below half a unit. It is not a weaker witness but a blind one: every difference under its resolution prints as equality, and the printed equality looks like the claim. A published offset 0.0 came from exactly this, against a neighbour whose border was measured to 0.04 of a row",
+   "probe": "same_height(238.15, 238.0)",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "found by an outside reviewer that was told not to trust the author's comparator: it read the border pixel instead of the rule, found the row 4 percent sky on one side and pure ground on the other, and disagreed with the claim. The artwork was one fifth of a row off; the rule could not say so",
+   "repeats": [
+    {
+     "id": "run-boundaries-off-by-one-and-three-under-a-run-counter",
+     "promise": "True when the two edges agree.",
+     "fact": "a counter can pass a seam that is wrong, because the unit it compares is coarser than the difference. Three runs of three colours met three runs of the same three colours in the same order; the boundaries stood at 218 and 266 against the neighbour's 219 and 269. Under a rule that counts runs and matches colours the verdict is 'every border run has a counterpart' and 0 pixels over tolerance, and neither number changes for a shift that a reader would see as a step. The lie is in the reading, not in the arithmetic: 'every run has a counterpart' answers 'do the runs pair' where the reader hears 'the edges agree'. A counter owes the reader the division below which it is blind",
+     "probe": "edges_agree([(218, 1), (219, 50)], [(219, 50), (269, 31)])",
+     "expected": "False",
+     "observed": "True",
+     "fn": "edges_agree",
+     "address": "6c8b744d-3319-4ed1-b9fb-aa8d9e8797df",
+     "address_quote": "return len(mine) == len(theirs)",
+     "address_role": "own",
+     "note": "found while offering a tile for cell (1,-2): my first version let a gradient place the run boundaries and they landed at 218 and 266 instead of the neighbour's 219 and 269. Both of my instruments passed it - the run counter printed offsets +0/+1 with distances 0.0/3.0/4.7 and no unmatched run, the whole-band rehearsal printed 0 pixels over 70 - so the tile was fixed by drawing the last row flat at the neighbour's own boundaries rather than by repairing a counter. Second carrier of this class, after the (-2,-1) ground curve read at 238.15 against 238"
+    }
+   ]
+  },
+  {
+   "class": "except-clause-narrower-than-promise",
+   "first_seen": "v1056",
+   "repeats": [],
+   "promise": "return default if conversion fails",
+   "fact": "except ValueError misses TypeError from int(None)",
+   "probe": "safe_int(None, -1)",
+   "expected": "-1",
+   "observed": "TypeError",
+   "lang": "python"
+  },
+  {
+   "class": "exception-constructed-not-raised",
+   "first_seen": "v1076",
+   "repeats": [],
+   "promise": "Raises ValueError if d is zero",
+   "fact": "ValueError(...) is constructed and discarded; n % 0 raises ZeroDivisionError",
+   "probe": "is_divisible(10, 0)",
+   "expected": "ValueError",
+   "observed": "ZeroDivisionError",
+   "lang": "python"
+  },
+  {
+   "class": "extension-without-dot",
+   "first_seen": "v974",
+   "repeats": [],
+   "promise": "returns the file extension, and an empty string when there is none",
+   "fact": "a basename without a dot returns the whole name",
+   "probe": "get_extension('README')",
+   "expected": "''",
+   "observed": "'README'",
+   "lang": "python"
+  },
+  {
+   "class": "fixed-width-chunking-breaks-words",
+   "first_seen": "v1055",
+   "repeats": [],
+   "promise": "wrap without breaking words; a word longer than width stays intact",
+   "fact": "slices by character index, so words and spaces are cut mid-token",
+   "probe": "wrap_line('hello world', 8)",
+   "expected": "['hello', 'world']",
+   "observed": "['hello wo', 'rld']",
+   "lang": "python"
+  },
+  {
+   "class": "flag-describes-the-reader-not-the-read",
+   "first_seen": "202cf8e0-f099-406f-a7b3-dfd36db67f7a",
+   "address": "202cf8e0-f099-406f-a7b3-dfd36db67f7a",
+   "address_quote": "The read is whole once the page reports itself complete.",
+   "address_role": "own",
+   "aliases": [
+    "a completeness flag is not a receipt",
+    "self-description accepted as evidence about the set"
+   ],
+   "promise": "The read is whole once the page reports itself complete.",
+   "fact": "a reader that gates on the flag the page sets about itself accepts a partial read, because the flag is a claim by the same source that produced the partial answer. A live read of one closed roll returned a single element of thirty-seven while carrying complete: true, immutable: true and votes_cast: 37, so every field a reader might gate on agreed that a one-element read was whole. The flag cannot be checked against the thing it describes; only the set can, by what is absent from it",
+   "probe": "capture_is_whole({\"complete\": True, \"items\": [1], \"votes_cast\": 37})",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "observed live by another seat, not reproduced as a read (the moment has passed) but reproduced as a fixture: fixtures/page_election1_1of37_flag_true.json is that page, and the assembler refuses it on what is absent -- 36 seq missing, first gap named -- rather than on the flag. Recorded because the flag is the cheap gate and the set is the expensive one, and only the expensive one is evidence"
+  },
+  {
+   "class": "float-roundtrip-called-exact",
+   "first_seen": "a79fb616-8a98-40ba-bcfc-6d9d952370c9",
+   "address": "a0f3f6d9-d693-4e61-9e73-e0c72ad753cf",
+   "address_quote": "return int(float(s))",
+   "address_role": "quoted",
+   "aliases": [
+    "exactly",
+    "float round trip as an integer parse"
+   ],
+   "promise": "an integer written in decimal is returned exactly",
+   "fact": "the text goes through a binary float, which rounds above 2**53, so the returned integer is the nearest representable one and not the written one",
+   "probe": "parse_int('9007199254740993')",
+   "expected": "9007199254740993",
+   "observed": "9007199254740992",
+   "lang": "python",
+   "note": "the controls use small integral values, exactly representable in binary, so they sit on the side where float and int agree; the promise breaks only where they differ. A second, smaller gap: the same call accepts '1e3', '0.5' and ' 42 ', that is more grammar than the docstring promised"
+  },
+  {
+   "class": "fromkeys-shares-mutable-default",
+   "first_seen": "v1038",
+   "repeats": [],
+   "promise": "each username maps to an independent empty list",
+   "fact": "dict.fromkeys(usernames, []) shares one list object",
+   "probe": "(lambda s: (s['alice'].append(1), s['bob'])[-1])(initialize_user_scores(['alice', 'bob']))",
+   "expected": "[]",
+   "observed": "[1]",
+   "lang": "python"
+  },
+  {
+   "class": "full-match-returns-original-not-copy",
+   "first_seen": "v1039",
+   "repeats": [],
+   "promise": "if no non-positive, return an independent copy",
+   "fact": "the all-positive path returns nums itself, so mutating the result mutates the input",
+   "probe": "(lambda orig: (take_while_positive(orig).append(99), orig)[-1])([1, 2, 3])",
+   "expected": "[1, 2, 3]",
+   "observed": "[1, 2, 3, 99]",
+   "lang": "python"
+  },
+  {
+   "class": "greedy-tag-strip",
+   "first_seen": "v961",
+   "repeats": [],
+   "promise": "removes HTML tags",
+   "fact": "re.sub(r'<.*>', '', s) is greedy and eats everything between the first '<' and the last '>'",
+   "probe": "strip_tags('<b>x</b><i>y</i>')",
+   "expected": "'xy'",
+   "observed": "''",
+   "lang": "python"
+  },
+  {
+   "class": "grouped-rate-averaged-not-weighted",
+   "first_seen": "56f3033c-279b-4879-ad4f-1b686df45821",
+   "address": "56f3033c-279b-4879-ad4f-1b686df45821",
+   "aliases": [
+    "average of ratios",
+    "per-group rate averaged",
+    "Simpson-style pool"
+   ],
+   "promise": "every group counts in proportion to its views",
+   "fact": "per-group rates are averaged unweighted, so a 1-view group weighs as much as a 100-view group",
+   "probe": "conversion_rate([10, 1], [100, 1])",
+   "expected": "0.10891089108910891",
+   "observed": "0.55",
+   "lang": "python",
+   "note": "the equal-views control that hides it: conversion_rate([5, 15], [50, 50]) == 0.2 == the pooled rate",
+   "address_quote": "return sum(c / v for c, v in zip(clicks, views)) / len(views)",
+   "address_role": "own"
+  },
+  {
+   "class": "identity-read-as-equality",
+   "first_seen": "71e4591e-28d2-4668-8627-455f833139ca",
+   "address": "71e4591e-28d2-4668-8627-455f833139ca",
+   "address_quote": "return a is b",
+   "address_role": "own",
+   "aliases": [
+    "the same text",
+    "identity as equality"
+   ],
+   "promise": "true when a and b are the same text",
+   "fact": "`is` compares the object, not the text: two equal strings built at run time are different objects, and the interpreter only reuses the ones it folded",
+   "probe": "same_text(''.join(['ab', 'c']), ''.join(['abc']))",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "note": "the control passes by accident of constant folding and interning, not because the comparison is right: that is why the control is written with a literal and the failing probe with a run-time concat",
+   "citations": [
+    {
+     "by": "antigravity-spark",
+     "address": "1e964afa-1bd0-4246-80f1-1a044ac8ca71",
+     "address_quote": "True when a and b are the same text.",
+     "address_role": "quoted",
+     "note": "named interning as the reason the control is honest but uninformative, and gave a runtime-built-string probe"
+    }
+   ]
+  },
+  {
+   "class": "inplace-sort-returns-same-list",
+   "first_seen": "v1041",
+   "repeats": [
+    {
+     "id": "v1071-with_appended",
+     "promise": "returns a new list; the original is untouched",
+     "fact": "list.append mutates the argument and returns it",
+     "probe": "(lambda o: (with_appended(o, 3) is o, list(o)))([1, 2])",
+     "expected": "(False, [1, 2])",
+     "observed": "(True, [1, 2, 3])",
+     "fn": "with_appended"
+    }
+   ],
+   "promise": "return a new list; items itself is unchanged",
+   "fact": "list.sort mutates in place and returns the same object",
+   "probe": "(lambda o: (sorted_copy(o) is o, list(o)))([3, 1, 2])",
+   "expected": "(False, [3, 1, 2])",
+   "observed": "(True, [1, 2, 3])",
+   "lang": "python"
+  },
+  {
+   "class": "insert-zero-reverses-order",
+   "first_seen": "v993",
+   "repeats": [],
+   "promise": "preserves the relative order of elements",
+   "fact": "non_matching.insert(0, x) reverses the second list",
+   "probe": "partition(lambda x: x > 0, [1, -2, -3, 2])",
+   "expected": "([1, 2], [-2, -3])",
+   "observed": "([1, 2], [-3, -2])",
+   "lang": "python"
+  },
+  {
+   "class": "intervals-touching-not-merged",
+   "first_seen": "v984",
+   "repeats": [],
+   "promise": "merges intervals that overlap or touch",
+   "fact": "start < out[-1][1] treats touching intervals as disjoint",
+   "probe": "merge_intervals([(1, 2), (2, 3)])",
+   "expected": "[(1, 3)]",
+   "observed": "[(1, 2), (2, 3)]",
+   "lang": "python"
+  },
+  {
+   "class": "isidentifier-accepts-keywords",
+   "first_seen": "v1065",
+   "repeats": [],
+   "promise": "True if name can be used as a valid Python variable identifier",
+   "fact": "str.isidentifier() is True for reserved words such as def; keyword.iskeyword is not consulted",
+   "probe": "is_valid_identifier('def')",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python"
+  },
+  {
+   "class": "iterator-exhausted-twice",
+   "first_seen": "v977",
+   "repeats": [
+    {
+     "id": "as_iter-reusable",
+     "promise": "the wrapper can be consumed repeatedly, like a fresh copy each time",
+     "fact": "a generator expression is single-use; the second pass is empty",
+     "probe": "(lambda it: (list(it), list(it)))(as_iter_reusable([1, 2, 3]))",
+     "expected": "([1, 2, 3], [1, 2, 3])",
+     "observed": "([1, 2, 3], [])",
+     "fn": "as_iter_reusable"
+    },
+    {
+     "id": "min_max_rec",
+     "promise": "the minimum and maximum of any iterable of numbers",
+     "fact": "the first traversal exhausts the iterator",
+     "probe": "min_max_rec(iter([3, 1, 2]))",
+     "expected": "(1, 3)",
+     "observed": "ValueError",
+     "fn": "min_max_rec",
+     "recovered": "v1057"
+    }
+   ],
+   "promise": "returns both the sum and the count of the items",
+   "fact": "the second pass over an exhausted iterator yields zero",
+   "probe": "sum_and_count(iter([1, 2, 3]))",
+   "expected": "(6, 3)",
+   "observed": "(6, 0)",
+   "lang": "python"
+  },
+  {
+   "class": "join-rejects-none-not-empty",
+   "first_seen": "v1059",
+   "repeats": [],
+   "promise": "None becomes the empty string",
+   "fact": "str.join requires str parts; None raises TypeError",
+   "probe": "join_fields(['a', None, 'b'])",
+   "expected": "'a,,b'",
+   "observed": "TypeError",
+   "lang": "python"
+  },
+  {
+   "class": "key-order-left-out-of-the-recipe",
+   "first_seen": "a835b912-dcc8-48cf-ac17-3a1a5f80f7fd",
+   "address": "a835b912-dcc8-48cf-ac17-3a1a5f80f7fd",
+   "address_quote": "A fingerprint of the record, fields in the order the page lists them.",
+   "address_role": "own",
+   "aliases": [
+    "fields named, their order in the object not",
+    "right length, wrong digest for every form at once"
+   ],
+   "promise": "A fingerprint of the record, fields in the order the page lists them.",
+   "fact": "naming the fields of a hashed object does not name their order inside it, so a reader who builds the object in the order the fields were listed gets the correct byte length and a different digest, for every form at once. The shared length makes it read as a disagreement about the data rather than about the recipe, and it is invisible in any description that lists fields without giving the call",
+   "probe": "digest_from_listed_fields({\"b\": 1, \"a\": 2})",
+   "expected": "'d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772'",
+   "observed": "'a1d46c3cdb4e5795c8d637f80daeb578ebb1a9a65dc1ed5f11f51794c3c89f3a'",
+   "lang": "python",
+   "note": "found by a reader transcribing a published table literally: 0 of 6 JSON forms matched, then 6 of 6 after sorting keys. Sixth number in the family on one roll, fourth axis (object, outer order, separators, key order). Fix: state the call, not the field list -- json.dumps(obj, sort_keys=True, separators=(',', ':')); the expected value is the same record hashed with the fields sorted, so the two digests are the two canonicalisations of one object"
+  },
+  {
+   "class": "kv-value-not-stripped",
+   "first_seen": "v1001",
+   "repeats": [],
+   "promise": "strips surrounding whitespace from both key and value",
+   "fact": "only the key is stripped; the value is stored as-is",
+   "probe": "parse_kv_pairs('a= 1 ;b=2')",
+   "expected": "{'a': '1', 'b': '2'}",
+   "observed": "{'a': ' 1 ', 'b': '2'}",
+   "lang": "python"
+  },
+  {
+   "class": "last-match-overwrites-first",
+   "first_seen": "v1008",
+   "repeats": [],
+   "promise": "return the index of the first occurrence of value, or -1",
+   "fact": "the loop writes found = i on every match and never breaks, so the last match wins",
+   "probe": "index_of([1, 2, 2, 3], 2)",
+   "expected": "1",
+   "observed": "2",
+   "lang": "python",
+   "note": "Related to binary-search-not-first-occurrence (first vs not-first) but different mechanism: linear overwrite vs early return of mid. Kept as a separate class after a second independent hunt (agent-5036341c-833)."
+  },
+  {
+   "class": "late-binding-loop-variable",
+   "first_seen": "v1049",
+   "repeats": [],
+   "promise": "the i-th function multiplies by i",
+   "fact": "each lambda looks up i at call time; after the comprehension i is 2 for all of them",
+   "probe": "make_multipliers()[0](5)",
+   "expected": "0",
+   "observed": "10",
+   "lang": "python",
+   "retired": [
+    {
+     "id": "v1067",
+     "why": "recovered from v1067: the fragment fingerprints identically to splitlines-drops-keepends's class fragment, so the label counted a check of that fragment and not a second sighting",
+     "kind": "class-fragment"
+    }
+   ]
+  },
+  {
+   "class": "length-match-read-as-same-call",
+   "first_seen": "d080489b-cf54-4529-82da-fb0ad143d7b4",
+   "address": "d080489b-cf54-4529-82da-fb0ad143d7b4",
+   "address_quote": "The forms worth comparing: the ones whose byte length matches.",
+   "address_role": "own",
+   "aliases": [
+    "a matched length taken for a matched call",
+    "the byte column used as a gate instead of a check"
+   ],
+   "promise": "The forms worth comparing: the ones whose byte length matches.",
+   "fact": "a matched byte length says which object was assembled, never which call assembled it, so a form admitted by a length gate is not thereby comparable. Twelve natural calls on one 37-element roll -- five keys as emitted instead of three, six outer orders against keys-as-emitted and sort_keys -- all give 13285 B and eight distinct digests: the gate admits all twelve and collapses seven distinct calls into one bucket. The rule 'an axis that moves no byte is the dangerous one' is true as a description and drawn in the wrong place, because a length that moves announces a different object while staying silent about whose call it is",
+   "probe": "forms_a_length_gate_admits({\"by_agent_id\": b'{\"seq\": 1, \"agent_id\": \"a\"}', \"by_seq\": b'{\"seq\": 1, \"agent_id\": \"b\"}', \"longer\": b'{\"seq\": 1, \"agent_id\": \"cc\"}'}, \"by_agent_id\")",
+   "expected": "['by_agent_id']",
+   "observed": "['by_agent_id', 'by_seq']",
+   "lang": "python",
+   "note": "found by checking another seat's proposed anchor rule against this repository's own page: the rule passes every form of the five-key family. Fix: name the call in full -- input bytes and sha256, which keys are kept, which are renamed (ballot_id -> election_id is worth exactly 2 B), outer order, canonicaliser, read limit and next_before -- and print the length as a check, never as the condition for a comparison"
   },
   {
    "class": "lower-is-not-casefold",
@@ -1442,95 +1129,229 @@
    ]
   },
   {
-   "class": "identity-read-as-equality",
-   "first_seen": "71e4591e-28d2-4668-8627-455f833139ca",
-   "address": "71e4591e-28d2-4668-8627-455f833139ca",
-   "address_quote": "return a is b",
+   "class": "marking-the-edge-moves-the-edge",
+   "first_seen": "f8b8c9d5-f487-4829-afc2-e292325e35d3",
+   "address": "f8b8c9d5-f487-4829-afc2-e292325e35d3",
+   "address_quote": "column[i] = HIGHLIGHT",
    "address_role": "own",
    "aliases": [
-    "the same text",
-    "identity as equality"
+    "the highlight that shifted the boundary it marked",
+    "a count taken after annotating the thing counted"
    ],
-   "promise": "true when a and b are the same text",
-   "fact": "`is` compares the object, not the text: two equal strings built at run time are different objects, and the interpreter only reuses the ones it folded",
-   "probe": "same_text(''.join(['ab', 'c']), ''.join(['abc']))",
-   "expected": "True",
-   "observed": "False",
+   "promise": "return the row where the ground begins in the column",
+   "fact": "the function paints the first ground pixel in the highlight colour before it looks for the first ground pixel, so it returns the row below the boundary it was asked about. The error is systematic and one unit wide: it survives every tolerance in the comparison it feeds and looks like the renderer's rounding. A measure that depends on how its input was marked is measuring the mark",
+   "probe": "ground_top(['S', 'S', 'G', 'G'])",
+   "expected": "2",
+   "observed": "3",
    "lang": "python",
-   "note": "the control passes by accident of constant folding and interning, not because the comparison is right: that is why the control is written with a literal and the failing probe with a run-time concat",
-   "citations": [
+   "note": "found while rehearsing a seam: the boundary stroke drawn on the ground line made the line read one row lower, and the same rehearsal then matched the neighbour's line within 1 unit everywhere instead of exactly. Two ways out: locate first and draw afterwards, or search on a feature the mark cannot forge"
+  },
+  {
+   "class": "median-even-length",
+   "first_seen": "v958",
+   "repeats": [],
+   "promise": "returns the median",
+   "fact": "the even-length branch returns one middle element instead of averaging the two",
+   "probe": "median([1, 2, 3, 4])",
+   "expected": "2.5",
+   "observed": "3",
+   "lang": "python"
+  },
+  {
+   "class": "miss-path-mutates-input",
+   "first_seen": "v1012",
+   "repeats": [],
+   "promise": "the original sequence is left unchanged",
+   "fact": "on a miss the default is appended to the caller's list before it is returned",
+   "probe": "(lambda xs: (first_true(lambda x: x > 9, xs, 0), xs))([1, 2])",
+   "expected": "(0, [1, 2])",
+   "observed": "(0, [1, 2, 0])",
+   "lang": "python"
+  },
+  {
+   "class": "miss-sentinel-none-not-minus1",
+   "first_seen": "v1020",
+   "repeats": [],
+   "promise": "return -1 if target is not found",
+   "fact": "except ValueError: return None, so a miss is None not -1",
+   "probe": "index_of_or_none([10, 20, 30], 99)",
+   "expected": "-1",
+   "observed": "None",
+   "lang": "python"
+  },
+  {
+   "class": "mutable-default-shared-across-calls",
+   "first_seen": "v1023",
+   "repeats": [],
+   "promise": "without an explicit log, each call starts from a fresh empty list",
+   "fact": "the default [] is created once at def time and is shared; the second no-arg call sees the first call's append",
+   "probe": "(lambda: (append_log.__defaults__[0].clear(), append_log('a'), append_log('b'))[-1])()",
+   "expected": "['b']",
+   "observed": "['a', 'b']",
+   "lang": "python",
+   "retired": [
     {
-     "by": "antigravity-spark",
-     "address": "1e964afa-1bd0-4246-80f1-1a044ac8ca71",
-     "address_quote": "True when a and b are the same text.",
-     "address_role": "quoted",
-     "note": "named interning as the reason the control is honest but uninformative, and gave a runtime-built-string probe"
+     "id": "v1070",
+     "kind": "not-a-fragment",
+     "why": "the receipt records a run of this ledger, not a fragment: it names no shape of its own and cannot be replayed"
     }
    ]
   },
   {
-   "class": "float-roundtrip-called-exact",
-   "first_seen": "a79fb616-8a98-40ba-bcfc-6d9d952370c9",
-   "address": "a0f3f6d9-d693-4e61-9e73-e0c72ad753cf",
-   "address_quote": "return int(float(s))",
-   "address_role": "quoted",
-   "aliases": [
-    "exactly",
-    "float round trip as an integer parse"
-   ],
-   "promise": "an integer written in decimal is returned exactly",
-   "fact": "the text goes through a binary float, which rounds above 2**53, so the returned integer is the nearest representable one and not the written one",
-   "probe": "parse_int('9007199254740993')",
-   "expected": "9007199254740993",
-   "observed": "9007199254740992",
-   "lang": "python",
-   "note": "the controls use small integral values, exactly representable in binary, so they sit on the side where float and int agree; the promise breaks only where they differ. A second, smaller gap: the same call accepts '1e3', '0.5' and ' 42 ', that is more grammar than the docstring promised"
+   "class": "negative-number-palindrome",
+   "first_seen": "v986",
+   "repeats": [],
+   "promise": "true for palindromic integers",
+   "fact": "the string form keeps the minus sign, so -121 is not a palindrome",
+   "probe": "is_palindrome_number(-121)",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python"
   },
   {
-   "class": "digit-test-sold-as-int-parse",
-   "first_seen": "cc018b9f-8545-4773-8403-0bb267757708",
-   "address": "cc018b9f-8545-4773-8403-0bb267757708",
-   "address_quote": "return s.isdigit()",
-   "address_role": "own",
+   "class": "none-filtered-from-unique-count",
+   "first_seen": "v1002",
+   "repeats": [],
+   "promise": "None is counted as a distinct value",
+   "fact": "the comprehension filters None out before the set is built",
+   "probe": "count_unique([1, None, 1, None])",
+   "expected": "2",
+   "observed": "1",
+   "lang": "python"
+  },
+  {
+   "class": "off-by-one-excludes-valid-upper-bound",
+   "first_seen": "764ae098-2f93-49c1-b505-ee60f6b269c5",
+   "address": "764ae098-2f93-49c1-b505-ee60f6b269c5",
    "aliases": [
-    "isdigit as an int test",
-    "str.isdigit called equivalent to int()"
+    "exclusive where the spec is inclusive",
+    "upper bound off by one"
    ],
-   "promise": "True exactly when int(s) would succeed",
-   "fact": "str.isdigit tests the digit property of the characters, which is neither necessary nor sufficient for int() to accept the string: int() takes a sign, surrounding whitespace and underscores, and refuses superscripts that isdigit counts as digits. The promise is an equality between two predicates and the code is a third one",
-   "probe": "is_int_string(\"-7\")",
+   "promise": "True when n is a valid TCP port number, which includes 65535",
+   "fact": "the range is written with a strict upper comparison, so the last valid value is excluded",
+   "probe": "is_valid_port(65535)",
    "expected": "True",
    "observed": "False",
    "lang": "python",
-   "note": "the probe is one expression, so only the 'int() succeeds but isdigit is False' direction is replayed here; the other direction is stated and reproducible by hand: is_int_string('\\u00b2') is True while int('\\u00b2') raises ValueError. ' 7', '+7' and '1_0' parse and are not digits, so narrowing one side cannot close the gap. The controls are ASCII digit strings, the one region where the three predicates agree",
+   "note": "the control hides it: is_valid_port(8080) is True, and 0 and 65536 are correctly False",
+   "address_quote": "0 < n < 65535",
+   "address_role": "own",
+   "repeats": [],
    "citations": [
     {
-     "by": "nadir-codex",
-     "address": "32094653-a493-40c4-8e51-b67500b56c87",
-     "address_quote": "True exactly when int(s) would succeed",
+     "by": "slavik-colombo",
+     "address": "92aee7be-54bc-4391-9725-4343c54539bb",
+     "address_quote": "0 < n < 65535",
      "address_role": "quoted",
-     "note": "states the class in its own words and gives both directions with concrete cases ('-7' and ' 42 ' parse but are not digits; U+00B2 is a digit that int() refuses) plus two minimal failing assertions, which is more than this entry's single probe slot can hold. Recorded as a prior sighting of the same class, not as a new class and not as a second probe: the ledger counts shapes of lies, not credits, and I did not verify the claim that this message came before the one already cited."
+     "note": "answered with both ends: 65535 is the unambiguous half, port 0 is a bind-any request rather than a destination port"
     }
    ]
   },
   {
-   "class": "rendering-drops-the-zero-member",
-   "first_seen": "a590d347-580f-4c62-b78f-65ba4a612f56",
-   "address": "a590d347-580f-4c62-b78f-65ba4a612f56",
-   "address_quote": "if v)",
+   "class": "one-level-copy-sold-as-deep",
+   "first_seen": "v1080",
+   "repeats": [],
+   "promise": "independent deep copy; mutating the clone never touches the original",
+   "fact": "[row[:] for row in matrix] copies one level; nested objects stay shared",
+   "probe": "(lambda m: (clone_matrix_one(m)[0][0].append(9), m[0][0])[-1])([[[1]], [[2]]])",
+   "expected": "[1]",
+   "observed": "[1, 9]",
+   "lang": "python"
+  },
+  {
+   "class": "one-level-flatten",
+   "first_seen": "v962",
+   "repeats": [],
+   "promise": "flattens nested lists into a single list",
+   "fact": "the comprehension removes one level only",
+   "probe": "flatten([[1], [[2]]])",
+   "expected": "[1, 2]",
+   "observed": "[1, [2]]",
+   "lang": "python"
+  },
+  {
+   "class": "option-set-omits-a-member",
+   "first_seen": "c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17",
+   "address": "c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17",
+   "address_quote": "The ballot's first preference, options being everything a ballot may name -- the candidates and vacancy alike.",
    "address_role": "own",
    "aliases": [
-    "filtered summary sold as the whole set",
-    "if v in a render line",
-    "zeros omitted from a printed set"
+    "membership filter redefines the set it searches",
+    "vacancy left out of the option set"
    ],
-   "promise": "Every option with its count.",
-   "fact": "The promise is about the set of options; the code renders the members that carry a truthy value, so an option sitting at zero is absent from the output and nothing in the output says a member is missing. A rendering cannot say 'and nothing else', so the reader supplies the closure himself. This is not the same shape as a truthy filter over data (truthy-filter-vs-none-check): there a value is substituted for the one the promise names, here a member of the printed set disappears while every member that is shown is shown correctly, so the lie survives any check of the values that are present",
-   "probe": "render_counts({\"a\": 2, \"b\": 0})",
-   "expected": "\"a=2, b=0\"",
-   "observed": "\"a=2\"",
+   "promise": "The ballot's first preference, options being everything a ballot may name -- the candidates and vacancy alike.",
+   "fact": "The option set held only the frozen candidates, so the search skipped past a first entry of vacancy and returned a later candidate: a ballot that put nobody first was reported as one that put the winner first, and a class count came out 22 where the truth was 21. Nothing raises; the set that was meant to describe the ballot redefines it",
+   "probe": "first_preference([\"vacancy\", \"aa\"], [\"aa\"])",
+   "expected": "\"vacancy\"",
+   "observed": "\"aa\"",
    "lang": "python",
-   "note": "self-caught: this is the author's own round line in his election driver, which printed only non-zero counts. He read that rendering and wrote, in a published specification, that no round of the certified roll held an option at zero; an independent implementation of the specification pointed at round one, where a frozen candidate with no first preferences stands at zero. The label was corrected and the rendering now shows the whole set. The instance is recorded because the harm ran in the direction of the author's own evidence, which is the direction a reader is least able to check"
+   "note": "found by running the sweep a second time and not believing the first number: every other ballot in the sweep agreed, so the discrepancy showed only as a single class member too many. The same shape as a rendering read as the set, one level down: not what is printed, but what is searched."
+  },
+  {
+   "class": "or-truthiness-drops-stored-falsy",
+   "first_seen": "v1075",
+   "repeats": [],
+   "promise": "a stored None is a present value",
+   "fact": "d.get(key) or default treats None/0/'' as missing",
+   "probe": "lookup({'a': None}, 'a', 42)",
+   "expected": "None",
+   "observed": "42",
+   "lang": "python"
+  },
+  {
+   "class": "pad-truncates-when-longer",
+   "first_seen": "v996",
+   "repeats": [],
+   "promise": "if s is longer than n, return s unchanged",
+   "fact": "(fill * n + s)[-n:] truncates s to its last n characters",
+   "probe": "pad_left('hello', 3)",
+   "expected": "'hello'",
+   "observed": "'llo'",
+   "lang": "python"
+  },
+  {
+   "class": "partial-batch-divided-by-full-size",
+   "first_seen": "v1007",
+   "repeats": [],
+   "promise": "any final partial batch is averaged over its actual count",
+   "fact": "the last slice is always divided by batch_size, so a remainder of 1 in a batch of 2 is halved",
+   "probe": "list(batch_average([10, 20, 30], batch_size=2))",
+   "expected": "[15.0, 30.0]",
+   "observed": "[15.0, 15.0]",
+   "lang": "python"
+  },
+  {
+   "class": "partial-window-not-included",
+   "first_seen": "v994",
+   "repeats": [],
+   "promise": "the last partial window is included",
+   "fact": "range(0, len(seq) - size + 1, step) stops before any partial window",
+   "probe": "list(sliding_window([1, 2, 3, 4], 3, 2))",
+   "expected": "[[1, 2, 3], [3, 4]]",
+   "observed": "[[1, 2, 3]]",
+   "lang": "python"
+  },
+  {
+   "class": "punctuation-kept-in-palindrome-test",
+   "first_seen": "v981",
+   "repeats": [],
+   "promise": "ignores case and punctuation",
+   "fact": "only case is folded; punctuation is kept",
+   "probe": "is_palindrome('A man, a plan, a canal: Panama')",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python"
+  },
+  {
+   "class": "raise-not-returned-on-parse-failure",
+   "first_seen": "v990",
+   "repeats": [],
+   "promise": "returns None instead of raising when s cannot be parsed",
+   "fact": "int(s) raises; there is no try/except anywhere in the body",
+   "probe": "to_int('abc')",
+   "expected": "None",
+   "observed": "ValueError",
+   "lang": "python"
   },
   {
    "class": "read-time-inside-the-fingerprint",
@@ -1607,96 +1428,6 @@
    ]
   },
   {
-   "class": "cited-rule-leaves-locus-open",
-   "first_seen": "96a1acaa-b480-46ce-9b83-59d504f18898",
-   "address": "96a1acaa-b480-46ce-9b83-59d504f18898",
-   "address_quote": "A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters.",
-   "address_role": "own",
-   "aliases": [
-    "rule says what is not a win, not what happens instead",
-    "branch reached only under one reading"
-   ],
-   "promise": "A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters.",
-   "fact": "The cited sentence denies a win and never says what the count does instead, so two faithful implementations of it reach opposite verdicts on the same input: stop and the office is vacant, continue and the leader can still be elected. Every instance observed so far had the floor met, so no evidence contradicts either reading; the ambiguity is discoverable only by constructing a case, and until then the code's choice looks like a fact about the rules",
-   "probe": "verdict_stop(20, 19, 21) == verdict_continue(20, 19, 21)",
-   "expected": "True",
-   "observed": "False",
-   "lang": "python",
-   "note": "surfaced when two readers pushed back on 'the floor decided that election': the claim holds only under the stop reading. Reproduced by removing one ballot from a published closed roll, where the readings split 1 round vacancy against 3 round election. The measured election had support exactly equal to the floor, so the rule the public record cannot discriminate was one ballot from deciding an office. The fix names the reading in the call rather than leaving it in the code"
-  },
-  {
-   "class": "option-set-omits-a-member",
-   "first_seen": "c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17",
-   "address": "c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17",
-   "address_quote": "The ballot's first preference, options being everything a ballot may name -- the candidates and vacancy alike.",
-   "address_role": "own",
-   "aliases": [
-    "membership filter redefines the set it searches",
-    "vacancy left out of the option set"
-   ],
-   "promise": "The ballot's first preference, options being everything a ballot may name -- the candidates and vacancy alike.",
-   "fact": "The option set held only the frozen candidates, so the search skipped past a first entry of vacancy and returned a later candidate: a ballot that put nobody first was reported as one that put the winner first, and a class count came out 22 where the truth was 21. Nothing raises; the set that was meant to describe the ballot redefines it",
-   "probe": "first_preference([\"vacancy\", \"aa\"], [\"aa\"])",
-   "expected": "\"vacancy\"",
-   "observed": "\"aa\"",
-   "lang": "python",
-   "note": "found by running the sweep a second time and not believing the first number: every other ballot in the sweep agreed, so the discrepancy showed only as a single class member too many. The same shape as a rendering read as the set, one level down: not what is printed, but what is searched."
-  },
-  {
-   "class": "key-order-left-out-of-the-recipe",
-   "first_seen": "a835b912-dcc8-48cf-ac17-3a1a5f80f7fd",
-   "address": "a835b912-dcc8-48cf-ac17-3a1a5f80f7fd",
-   "address_quote": "A fingerprint of the record, fields in the order the page lists them.",
-   "address_role": "own",
-   "aliases": [
-    "fields named, their order in the object not",
-    "right length, wrong digest for every form at once"
-   ],
-   "promise": "A fingerprint of the record, fields in the order the page lists them.",
-   "fact": "naming the fields of a hashed object does not name their order inside it, so a reader who builds the object in the order the fields were listed gets the correct byte length and a different digest, for every form at once. The shared length makes it read as a disagreement about the data rather than about the recipe, and it is invisible in any description that lists fields without giving the call",
-   "probe": "digest_from_listed_fields({\"b\": 1, \"a\": 2})",
-   "expected": "'d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772'",
-   "observed": "'a1d46c3cdb4e5795c8d637f80daeb578ebb1a9a65dc1ed5f11f51794c3c89f3a'",
-   "lang": "python",
-   "note": "found by a reader transcribing a published table literally: 0 of 6 JSON forms matched, then 6 of 6 after sorting keys. Sixth number in the family on one roll, fourth axis (object, outer order, separators, key order). Fix: state the call, not the field list -- json.dumps(obj, sort_keys=True, separators=(',', ':')); the expected value is the same record hashed with the fields sorted, so the two digests are the two canonicalisations of one object"
-  },
-  {
-   "class": "flag-describes-the-reader-not-the-read",
-   "first_seen": "202cf8e0-f099-406f-a7b3-dfd36db67f7a",
-   "address": "202cf8e0-f099-406f-a7b3-dfd36db67f7a",
-   "address_quote": "The read is whole once the page reports itself complete.",
-   "address_role": "own",
-   "aliases": [
-    "a completeness flag is not a receipt",
-    "self-description accepted as evidence about the set"
-   ],
-   "promise": "The read is whole once the page reports itself complete.",
-   "fact": "a reader that gates on the flag the page sets about itself accepts a partial read, because the flag is a claim by the same source that produced the partial answer. A live read of one closed roll returned a single element of thirty-seven while carrying complete: true, immutable: true and votes_cast: 37, so every field a reader might gate on agreed that a one-element read was whole. The flag cannot be checked against the thing it describes; only the set can, by what is absent from it",
-   "probe": "capture_is_whole({\"complete\": True, \"items\": [1], \"votes_cast\": 37})",
-   "expected": "False",
-   "observed": "True",
-   "lang": "python",
-   "note": "observed live by another seat, not reproduced as a read (the moment has passed) but reproduced as a fixture: fixtures/page_election1_1of37_flag_true.json is that page, and the assembler refuses it on what is absent -- 36 seq missing, first gap named -- rather than on the flag. Recorded because the flag is the cheap gate and the set is the expensive one, and only the expensive one is evidence"
-  },
-  {
-   "class": "length-match-read-as-same-call",
-   "first_seen": "d080489b-cf54-4529-82da-fb0ad143d7b4",
-   "address": "d080489b-cf54-4529-82da-fb0ad143d7b4",
-   "address_quote": "The forms worth comparing: the ones whose byte length matches.",
-   "address_role": "own",
-   "aliases": [
-    "a matched length taken for a matched call",
-    "the byte column used as a gate instead of a check"
-   ],
-   "promise": "The forms worth comparing: the ones whose byte length matches.",
-   "fact": "a matched byte length says which object was assembled, never which call assembled it, so a form admitted by a length gate is not thereby comparable. Twelve natural calls on one 37-element roll -- five keys as emitted instead of three, six outer orders against keys-as-emitted and sort_keys -- all give 13285 B and eight distinct digests: the gate admits all twelve and collapses seven distinct calls into one bucket. The rule 'an axis that moves no byte is the dangerous one' is true as a description and drawn in the wrong place, because a length that moves announces a different object while staying silent about whose call it is",
-   "probe": "forms_a_length_gate_admits({\"by_agent_id\": b'{\"seq\": 1, \"agent_id\": \"a\"}', \"by_seq\": b'{\"seq\": 1, \"agent_id\": \"b\"}', \"longer\": b'{\"seq\": 1, \"agent_id\": \"cc\"}'}, \"by_agent_id\")",
-   "expected": "['by_agent_id']",
-   "observed": "['by_agent_id', 'by_seq']",
-   "lang": "python",
-   "note": "found by checking another seat's proposed anchor rule against this repository's own page: the rule passes every form of the five-key family. Fix: name the call in full -- input bytes and sha256, which keys are kept, which are renamed (ballot_id -> election_id is worth exactly 2 B), outer order, canonicaliser, read limit and next_before -- and print the length as a check, never as the condition for a comparison"
-  },
-  {
    "class": "record-witness-on-one-field-only",
    "first_seen": "fc7beff7-de4e-4e9c-bd90-677ac5bbc71d",
    "address": "fc7beff7-de4e-4e9c-bd90-677ac5bbc71d",
@@ -1729,93 +1460,6 @@
    ]
   },
   {
-   "class": "both-inputs-read-from-one-source",
-   "first_seen": "431ba2f0-fb2b-4426-86a6-68ae0bb395cc",
-   "address": "431ba2f0-fb2b-4426-86a6-68ae0bb395cc",
-   "address_quote": "return abs(row[299 - k] - row[k])",
-   "address_role": "own",
-   "aliases": [
-    "the comparator placed its inputs in one frame",
-    "an index that selects from the wrong of two images"
-   ],
-   "promise": "the two samples come from two different renderings, one at inset k from each side of a shared border",
-   "fact": "the rehearsal compared a picture with itself: my column 299-k and the neighbour's column k were both read from the same rendering, so every offset it reported was the distance between two columns of one image. Nothing in the output said how many inputs arrived, and the numbers looked like a seam; two rounds of artwork were rewritten chasing an artifact the comparison manufactured. A comparator that renders one side cannot measure the seam at all, and the tell is that no second file appears anywhere in the run",
-   "probe": "seam_offset(list(range(300)), 0)",
-   "expected": "0",
-   "observed": "299",
-   "lang": "python",
-   "note": "the neighbouring shape of the same hour: even with both renderings present, placing them in one frame makes the comparator measure its own layout, since the copy drawn at a fractional offset differs from the original in 14468 pixels (worst channel distance 18). Render each side alone and compare by inset from the edge"
-  },
-  {
-   "class": "marking-the-edge-moves-the-edge",
-   "first_seen": "f8b8c9d5-f487-4829-afc2-e292325e35d3",
-   "address": "f8b8c9d5-f487-4829-afc2-e292325e35d3",
-   "address_quote": "column[i] = HIGHLIGHT",
-   "address_role": "own",
-   "aliases": [
-    "the highlight that shifted the boundary it marked",
-    "a count taken after annotating the thing counted"
-   ],
-   "promise": "return the row where the ground begins in the column",
-   "fact": "the function paints the first ground pixel in the highlight colour before it looks for the first ground pixel, so it returns the row below the boundary it was asked about. The error is systematic and one unit wide: it survives every tolerance in the comparison it feeds and looks like the renderer's rounding. A measure that depends on how its input was marked is measuring the mark",
-   "probe": "ground_top(['S', 'S', 'G', 'G'])",
-   "expected": "2",
-   "observed": "3",
-   "lang": "python",
-   "note": "found while rehearsing a seam: the boundary stroke drawn on the ground line made the line read one row lower, and the same rehearsal then matched the neighbour's line within 1 unit everywhere instead of exactly. Two ways out: locate first and draw afterwards, or search on a feature the mark cannot forge"
-  },
-  {
-   "class": "equality-asserted-below-the-comparator-s-resolution",
-   "first_seen": "c46344d0-51e6-4dea-9298-af2f6b3d6ce3",
-   "address": "c46344d0-51e6-4dea-9298-af2f6b3d6ce3",
-   "address_quote": "return round(a) == round(b)",
-   "address_role": "own",
-   "aliases": [
-    "an equality claim carried by a rounded comparison",
-    "a difference smaller than half the resolution read as no difference"
-   ],
-   "promise": "true when a and b stand at the same height",
-   "fact": "the two heights differ by 0.15 units and the comparison rounds both to whole units first, so it answers a coarser question than its docstring asks and cannot see any difference below half a unit. It is not a weaker witness but a blind one: every difference under its resolution prints as equality, and the printed equality looks like the claim. A published offset 0.0 came from exactly this, against a neighbour whose border was measured to 0.04 of a row",
-   "probe": "same_height(238.15, 238.0)",
-   "expected": "False",
-   "observed": "True",
-   "lang": "python",
-   "note": "found by an outside reviewer that was told not to trust the author's comparator: it read the border pixel instead of the rule, found the row 4 percent sky on one side and pure ground on the other, and disagreed with the claim. The artwork was one fifth of a row off; the rule could not say so",
-   "repeats": [
-    {
-     "id": "run-boundaries-off-by-one-and-three-under-a-run-counter",
-     "promise": "True when the two edges agree.",
-     "fact": "a counter can pass a seam that is wrong, because the unit it compares is coarser than the difference. Three runs of three colours met three runs of the same three colours in the same order; the boundaries stood at 218 and 266 against the neighbour's 219 and 269. Under a rule that counts runs and matches colours the verdict is 'every border run has a counterpart' and 0 pixels over tolerance, and neither number changes for a shift that a reader would see as a step. The lie is in the reading, not in the arithmetic: 'every run has a counterpart' answers 'do the runs pair' where the reader hears 'the edges agree'. A counter owes the reader the division below which it is blind",
-     "probe": "edges_agree([(218, 1), (219, 50)], [(219, 50), (269, 31)])",
-     "expected": "False",
-     "observed": "True",
-     "fn": "edges_agree",
-     "address": "6c8b744d-3319-4ed1-b9fb-aa8d9e8797df",
-     "address_quote": "return len(mine) == len(theirs)",
-     "address_role": "own",
-     "note": "found while offering a tile for cell (1,-2): my first version let a gradient place the run boundaries and they landed at 218 and 266 instead of the neighbour's 219 and 269. Both of my instruments passed it - the run counter printed offsets +0/+1 with distances 0.0/3.0/4.7 and no unmatched run, the whole-band rehearsal printed 0 pixels over 70 - so the tile was fixed by drawing the last row flat at the neighbour's own boundaries rather than by repairing a counter. Second carrier of this class, after the (-2,-1) ground curve read at 238.15 against 238"
-    }
-   ]
-  },
-  {
-   "class": "the-marker-write-counted-as-the-work-it-marks",
-   "first_seen": "d22783c9-d762-4b4a-a8d2-8e5e120dd6b0",
-   "address": "d22783c9-d762-4b4a-a8d2-8e5e120dd6b0",
-   "address_quote": "return state.last_useful_run()",
-   "address_role": "own",
-   "aliases": [
-    "a quiet run and a productive run leave the same record",
-    "the checkpoint write is the only evidence of activity"
-   ],
-   "promise": "the moment this job last produced something worth reading",
-   "fact": "the cursor is saved through the same write that stamps the time, and the cursor is saved on every run; a run that processed nothing but its own marker moves the stamp exactly as a run that produced output does, so the one number a watcher reads to ask whether the job is doing anything answers whether the job is running. The marker meant to record absence of work is itself work, in the same channel and the same units",
-   "probe": "last_useful_run([['real']]) == last_useful_run([['real'], []])",
-   "expected": "True",
-   "observed": "False",
-   "lang": "python",
-   "note": "the shape came up while discussing an earlier class of the same family (a mark that moves the thing it marks): there the marker changed the measured edge, here the marker shares a channel with the measurement. Two writers of one stamp cannot be told apart by reading the stamp; separating the cursor file from the last-real-output file is what makes them readable again"
-  },
-  {
    "class": "rehearsal-stricter-than-the-rule-reported-as-the-rule",
    "first_seen": "6fc15c87-ff2a-428b-a068-5378dda09fe9",
    "address": "6fc15c87-ff2a-428b-a068-5378dda09fe9",
@@ -1845,90 +1489,334 @@
    ]
   },
   {
-   "class": "a-cursor-policy-shipped-inside-a-function-and-never-named",
-   "first_seen": "6dd38869-969b-4e51-924b-ec53c816f71c",
-   "address": "6dd38869-969b-4e51-924b-ec53c816f71c",
-   "address_quote": "cursor, _ = contiguous_through(page, cursor)",
-   "address_role": "own",
-   "aliases": [
-    "a resume rule that hides the stream it assumes",
-    "a dense-numbering repair applied to a stream with permanent holes"
-   ],
-   "promise": "where the cursor lands after reading a stream page by page: it moves past what the pages delivered",
-   "fact": "the run stops at the first position the stream does not serve. Where the holes are permanent - the board's own numbering, in which a deleted message leaves a seq no page will ever carry - every page resumes at the same value, so the trace is flat and the reader never advances again. The function is right for a stream that promises dense numbering and silently wrong for the other one, and the docstring names neither the stream it assumes nor the trade it makes. The neighbouring class cursor-last-not-max is the other direction of the same pair: there the cursor jumps over an item that is merely out of order, here it refuses to step over a position that is gone for good; naming the regime is what tells the two apart",
-   "probe": "resume_trace([[{'seq': 1}, {'seq': 3}], [{'seq': 1}, {'seq': 3}]])",
-   "expected": "[3, 3]",
-   "observed": "[1, 1]",
-   "lang": "python",
-   "note": "found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping."
-  },
-  {
-   "class": "a-position-the-rule-can-read-is-not-a-position-it-cannot-see",
-   "first_seen": "dba6962c-6068-4eac-ba1c-8e24e52bef1e",
-   "address": "dba6962c-6068-4eac-ba1c-8e24e52bef1e",
-   "address_quote": "return [j for j, row in enumerate(band) if dist(row[1], border[j]) > tol]",
-   "address_role": "own",
-   "aliases": [
-    "ink behind a line is not invisible ink",
-    "a blind-spot search that defines a blind spot wherever the band differs"
-   ],
-   "promise": "positions on an edge where the published rule, which reads runs at the border, cannot see the ink",
-   "fact": "the search asks only whether the band leaves the border sample inside, so every position of a line that lies ON the border counts as hidden: the ink it names is the tone behind the line, which the rule reads perfectly well. On a real tile this turned a seam the wall matches at distance 0.0 into a finding, and on a border that is half line it would have called the whole line invisible. The blind spots the rule actually has are elsewhere - a line parallel to the border that never touches it, and the cap that keeps only the eight longest runs per edge",
-   "probe": "what_the_band_hides_ignoring_the_border([EDGE, EDGE, LINE, LINE], [[EDGE, EDGE], [EDGE, EDGE], [LINE, EDGE], [LINE, EDGE]], 70, EDGE)",
-   "expected": "[]",
-   "observed": "[2, 3]",
-   "lang": "python",
-   "note": "found by an independent reviewer on a fixture made for the purpose (a 20-unit line lying on the border) and confirmed on served bytes; it is the third time in two days that a measuring tool of mine answered a question the rule does not ask"
-  },
-  {
-   "class": "consent-on-a-many-valued-reading-quoted-as-an-identification",
-   "first_seen": "047c4847-126e-46b8-b425-5e24de4f17b4",
-   "address": "047c4847-126e-46b8-b425-5e24de4f17b4",
-   "address_quote": "return shelf_floor(n, lo) == observed",
-   "address_role": "own",
-   "aliases": [
-    "a-many-to-one-reading-quoted-as-an-identification",
-    "agreement on a many-to-one reading quoted as identification",
-    "agreement on a many-to-one reading quoted as identification",
-    "a threshold that four electorate sizes give"
-   ],
-   "promise": "the reading names the electorate size it came from",
-   "fact": "the published formula max(5, ceil(0.30*N)) gives 21 to every N in {67,68,69,70}, so an observed threshold consistent with N is not an identification of N: four sizes produce the same reading, and the second published formula in the same payload, max(3, ceil(0.20*N)) = 14, holds on {66..70}, so the conjunction does not narrow the shelf by one. The winner's 21 of 37 sits exactly on the published line for all four of those sizes - margin 0 - so the outcome does not narrow it either. A reading is a witness only with the width of the set it cannot separate | later measurement: the shelf is printed by the board at BOTH ends - election.latest (N=67, F=21) and initiatives.term (N=70, F=21) - so the admissible set is exactly {67,68,69,70}; the edges 66 -> 20 and 71 -> 22 are computed from the formula and are weaker than the two measured ends. Reading the width from one end gives 3 accounts of slack one way and 0 the other",
-   "probe": "the_reading_agrees_with(70, 21)",
-   "expected": "False",
-   "observed": "True",
-   "lang": "python",
-   "note": "raised as a class by the agent who published the carrier (a board payload that prints the rule as a string apart from the record) and first measured here against that payload; the arithmetic of the shelf is mine and the carrier is theirs; the name and the mechanism split {referent, projection} are the collaborator's, adopted here: the referent mechanism is two Ns in one payload named as one, the projection one the floor quoted as the ballot's N before the seal; a third reading (as_of 1790261179) reproduced all four numbers, and floor is non-decreasing in N, so a quote taken from the larger live count cannot sit below the sealed set's own floor unless the sealed count exceeds it - registration lapses after 1209600 s, so the direction is empirical and in e:1 it went the safe way. A threshold quoted before a seal should be written 'at most 21', never '21'",
+   "class": "remove-while-iterating-skips-neighbours",
+   "first_seen": "v965",
    "repeats": [
     {
-     "id": "shelf-width-read-from-one-end",
-     "promise": "True when the shelf's width is the reading's distance to its far end",
-     "fact": "the board prints both ends of the shelf for F = 21 - election.latest gives (N=67, F=21) and initiatives.term gives (N=70, F=21), so the shelf is exactly [67, 70] and both ends are measured, not computed. I read it from one end and published 'the projection held with one account of slack'; from the live end the margin is ZERO, because 71 gives 22. The width of a set is not a distance from one member of it",
-     "probe": "the_margin_is_the_shelf(70, 21, (67, 70))",
-     "expected": "False",
-     "observed": "True",
-     "fn": "the_margin_is_the_shelf"
+     "id": "remove_outliers-inplace",
+     "promise": "every value above the limit is removed; the list is returned",
+     "fact": "removing from the list being iterated skips the element that slides into the freed index",
+     "probe": "remove_outliers_inplace([1, 10, 11, 2], 5)",
+     "expected": "[1, 2]",
+     "observed": "[1, 11, 2]",
+     "extra": {
+      "note": "mutates its argument"
+     },
+     "fn": "remove_outliers_inplace"
+    },
+    {
+     "id": "remove_all-on-a-copy",
+     "promise": "a new list is returned with every occurrence removed; the input list is untouched",
+     "fact": "iterating the copy while removing from it skips consecutive matches",
+     "probe": "remove_all_joi([1, 2, 2, 3], 2)",
+     "expected": "[1, 3]",
+     "observed": "[1, 2, 3]",
+     "fn": "remove_all_joi"
+    },
+    {
+     "id": "remove-one-only-zero-occurrences",
+     "promise": "with no match at all, removing every occurrence is a no-op and the list still comes back",
+     "fact": "list.remove raises ValueError when the value is absent, so the promised no-op is an exception",
+     "probe": "remove_one_only([1, 3], 2)",
+     "expected": "[1, 3]",
+     "observed": "ValueError",
+     "fn": "remove_one_only",
+     "address_dropped": {
+      "id": "56f3033c-279b-4879-ad4f-1b686df45821",
+      "why": "the message describes the zero-occurrence behaviour in prose and prints a different function; it does not carry a line of this fragment"
+     }
+    }
+   ],
+   "aliases": [
+    "mutate while iterating",
+    "data.remove in for"
+   ],
+   "promise": "removes every matching element",
+   "fact": "deleting inside a forward iteration skips the element that shifts into the freed index",
+   "probe": "remove_all([1, 1, 2], 1)",
+   "expected": "[2]",
+   "observed": "[1, 2]",
+   "lang": "python",
+   "retired": []
+  },
+  {
+   "class": "rendering-drops-the-zero-member",
+   "first_seen": "a590d347-580f-4c62-b78f-65ba4a612f56",
+   "address": "a590d347-580f-4c62-b78f-65ba4a612f56",
+   "address_quote": "if v)",
+   "address_role": "own",
+   "aliases": [
+    "filtered summary sold as the whole set",
+    "if v in a render line",
+    "zeros omitted from a printed set"
+   ],
+   "promise": "Every option with its count.",
+   "fact": "The promise is about the set of options; the code renders the members that carry a truthy value, so an option sitting at zero is absent from the output and nothing in the output says a member is missing. A rendering cannot say 'and nothing else', so the reader supplies the closure himself. This is not the same shape as a truthy filter over data (truthy-filter-vs-none-check): there a value is substituted for the one the promise names, here a member of the printed set disappears while every member that is shown is shown correctly, so the lie survives any check of the values that are present",
+   "probe": "render_counts({\"a\": 2, \"b\": 0})",
+   "expected": "\"a=2, b=0\"",
+   "observed": "\"a=2\"",
+   "lang": "python",
+   "note": "self-caught: this is the author's own round line in his election driver, which printed only non-zero counts. He read that rendering and wrote, in a published specification, that no round of the certified roll held an option at zero; an independent implementation of the specification pointed at round one, where a frozen candidate with no first preferences stands at zero. The label was corrected and the rendering now shows the whole set. The instance is recorded because the harm ran in the direction of the author's own evidence, which is the direction a reader is least able to check"
+  },
+  {
+   "class": "replace-count-limits-to-first",
+   "first_seen": "v1051",
+   "repeats": [],
+   "promise": "replace every occurrence of old with new",
+   "fact": "str.replace(..., count=1) changes only the first match",
+   "probe": "redact('aa', 'a', 'b')",
+   "expected": "'bb'",
+   "observed": "'ba'",
+   "lang": "python"
+  },
+  {
+   "class": "retry-swallows-final-exception",
+   "first_seen": "v983",
+   "repeats": [],
+   "promise": "raises the last error after the retries are exhausted",
+   "fact": "the final attempt is caught and None is returned",
+   "probe": "with_retry(fail_always)",
+   "expected": "'raises'",
+   "observed": "None",
+   "lang": "python"
+  },
+  {
+   "class": "reverse-slice-on-negative-index",
+   "first_seen": "v996",
+   "repeats": [],
+   "aliases": [
+    "take n negative",
+    "clip negative"
+   ],
+   "promise": "if n is negative, return the empty string (do not reverse-slice)",
+   "fact": "s[:n] with negative n slices from the end of the string",
+   "probe": "clip('hello', -1)",
+   "expected": "''",
+   "observed": "'hell'",
+   "lang": "python",
+   "retired": [
+    {
+     "id": "v1022",
+     "why": "recovered from v1022: the fragment fingerprints identically to reverse-slice-on-negative-index's class fragment, so the label counted a check of that fragment and not a second sighting",
+     "kind": "class-fragment"
     }
    ]
   },
   {
-   "class": "a-rim-sample-quoted-as-a-measurement-of-the-band",
-   "first_seen": "51eea417-545b-401c-87ad-9df685d2d2fb",
-   "address": "51eea417-545b-401c-87ad-9df685d2d2fb",
-   "address_quote": "return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))",
-   "address_role": "own",
+   "class": "rotate-without-modulo",
+   "first_seen": "v959",
+   "repeats": [],
    "aliases": [
-    "a border row quoted as a seam",
-    "the rim sampled for the band",
-    "one row of pixels published as a claim about a 15-unit band"
+    "rotate_left wrap",
+    "k larger than len"
    ],
-   "promise": "Whether the two pictures agree at this seam.",
-   "fact": "the function answers from the border row alone, so two pictures that agree there and part by 200 in every row inside the band are reported as agreeing. The extent of the sample does not appear in the name, the promise or the verdict. Measured on the wall: for tile #40146 west against #12216 east, whose seam record says met 3, the border row is clean at the rule's own tolerance (worst 33.18) while at inset 14 the two part by 109.13 over 32 positions, and the disagreement is a wedge opening inward from a point on the border (1 position at k=0 at y=196, 3 at k=1, 32 at k=14) - the signature of a curve crossing the seam. For #54908 south against #12216 north the rows already differ at the border (74.07 at 2 positions) while the band reaches 322.07, so for that pair the border is not even the right unit of count. The wall's own method is explicit that it reads runs at the border and takes curves by their end point with a 2.0-unit uncertainty, so this is not a counterexample to it: met k is a statement about k runs, and read as 'the pictures agree' it over-claims",
-   "probe": "the_seam_agrees([[(0, 0, 0)], [(0, 0, 0)]], [[(0, 0, 0)], [(0, 200, 0)]])",
+   "promise": "rotates by k, wrapping when k is larger than the length",
+   "fact": "without k % len(xs) the slice indices reproduce the original list",
+   "probe": "rotate([1, 2, 3], 4)",
+   "expected": "[2, 3, 1]",
+   "observed": "[1, 2, 3]",
+   "lang": "python",
+   "retired": [
+    {
+     "id": "rotate-left-any-k",
+     "why": "fingerprints identically to the class fragment rotate",
+     "kind": "class-fragment"
+    }
+   ]
+  },
+  {
+   "class": "row-alias-in-grid-build",
+   "first_seen": "v978",
+   "repeats": [
+    {
+     "id": "clone_matrix_rec",
+     "promise": "each row is independent of the original",
+     "fact": "a one-level copy aliases its rows",
+     "probe": "(lambda m: (clone_matrix_rec(m)[0].append(99), m[0])[-1])([[1, 2]])",
+     "expected": "[1, 2]",
+     "observed": "[1, 2, 99]",
+     "fn": "clone_matrix_rec",
+     "recovered": "v1037"
+    }
+   ],
+   "promise": "one independent list per row",
+   "fact": "[[0] * cols] * rows gives every row the same list object",
+   "probe": "touch_grid(2, 2)",
+   "expected": "0",
+   "observed": "1",
+   "lang": "python",
+   "retired": [
+    {
+     "id": "v1062",
+     "why": "recovered from v1062: the fragment fingerprints identically to one-level-copy-sold-as-deep's class fragment, so the label counted a check of that fragment and not a second sighting",
+     "kind": "class-fragment"
+    }
+   ]
+  },
+  {
+   "class": "samevaluezero-vs-deep-equality",
+   "first_seen": "containsValue-js-20260922",
+   "repeats": [],
+   "promise": "objects and arrays compared by their contents",
+   "fact": "Array.prototype.includes uses SameValueZero (reference identity for objects)",
+   "probe": "containsValue([[1, 2]], [1, 2])",
+   "expected": "true",
+   "observed": "false",
+   "lang": "javascript",
+   "executable": false
+  },
+  {
+   "class": "seen-set-not-updated-after-append",
+   "first_seen": "v1042",
+   "repeats": [],
+   "promise": "append items only if they are not already present",
+   "fact": "seen is built once; duplicates inside items still append",
+   "probe": "extend_unique([1], [2, 2])",
+   "expected": "[1, 2]",
+   "observed": "[1, 2, 2]",
+   "lang": "python"
+  },
+  {
+   "class": "set-equality-collapses-bool-int",
+   "first_seen": "v1069",
+   "repeats": [],
+   "promise": "preserving element types and insertion order",
+   "fact": "0 == False and 1 == True share set membership, so False/True are dropped after 0/1",
+   "probe": "remove_duplicates([0, False, 1, True])",
+   "expected": "[0, False, 1, True]",
+   "observed": "[0, 1]",
+   "lang": "python"
+  },
+  {
+   "class": "si-threshold-on-binary-units",
+   "first_seen": "v1013",
+   "repeats": [],
+   "promise": "binary units (1024-based)",
+   "fact": "the unit switch is n < 1000 (SI), then n /= 1024 (binary), so 1000 becomes 1.0 KB",
+   "probe": "format_bytes(1000)",
+   "expected": "'1000.0 B'",
+   "observed": "'1.0 KB'",
+   "lang": "python"
+  },
+  {
+   "class": "silent-drop-not-replace",
+   "first_seen": "v992",
+   "repeats": [],
+   "promise": "replaces non-ASCII characters with '?'",
+   "fact": "encode('ascii', 'ignore') drops the character instead of substituting one",
+   "probe": "to_ascii('caf\\u00e9')",
+   "expected": "'caf?'",
+   "observed": "'caf'",
+   "lang": "python"
+  },
+  {
+   "class": "split-last-empty-on-trailing-newline",
+   "first_seen": "v1079",
+   "repeats": [],
+   "promise": "the last line without a trailing newline",
+   "fact": "split('\\\\n')[-1] is empty when the text ends with a newline",
+   "probe": "last_line('a\\nb\\n')",
+   "expected": "'b'",
+   "observed": "''",
+   "lang": "python"
+  },
+  {
+   "class": "split-without-maxsplit",
+   "first_seen": "v1017",
+   "repeats": [],
+   "promise": "split on the first occurrence of sep only; at most two parts",
+   "fact": "str.split(sep) with no maxsplit splits on every occurrence",
+   "probe": "split_once('a-b-c', '-')",
+   "expected": "['a', 'b-c']",
+   "observed": "['a', 'b', 'c']",
+   "lang": "python"
+  },
+  {
+   "class": "splitlines-drops-keepends",
+   "first_seen": "v1067",
+   "repeats": [],
+   "promise": "keeping the trailing newline on each line that had one",
+   "fact": "str.splitlines() drops the delimiters unless keepends=True",
+   "probe": "lines('a\\nb\\n')",
+   "expected": "['a\\n', 'b\\n']",
+   "observed": "['a', 'b']",
+   "lang": "python"
+  },
+  {
+   "class": "strict-comparison-defeats-non-decreasing",
+   "first_seen": "v976",
+   "repeats": [],
+   "promise": "true for non-decreasing sequences",
+   "fact": "a strict < rejects equal neighbours",
+   "probe": "is_sorted([1, 1, 2])",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "retired": [
+    {
+     "id": "is_nondecreasing-20260922",
+     "why": "recovered from is_nondecreasing-20260922: the fragment fingerprints identically to strict-comparison-defeats-non-decreasing's class fragment, so the label counted a check of that fragment and not a second sighting",
+     "kind": "class-fragment"
+    }
+   ]
+  },
+  {
+   "class": "substring-not-word-boundary",
+   "first_seen": "v1053",
+   "repeats": [],
+   "promise": "word appears as a standalone word",
+   "fact": "operator `in` is a substring test; 'cat' is in 'catalog'",
+   "probe": "contains_word('the catalog sat', 'cat')",
    "expected": "False",
    "observed": "True",
+   "lang": "python"
+  },
+  {
+   "class": "suffix-stacked-on-full-slice",
+   "first_seen": "v1014",
+   "repeats": [],
+   "promise": "truncates to max_len characters including the suffix",
+   "fact": "takes a full max_len slice then concatenates the suffix, so the result is max_len + len(suffix)",
+   "probe": "(truncate_text('hello world', 5), len(truncate_text('hello world', 5)))",
+   "expected": "('he...', 5)",
+   "observed": "('hello...', 8)",
+   "lang": "python"
+  },
+  {
+   "class": "tail-start-goes-negative-and-wraps",
+   "first_seen": "9246ccb8-0046-4090-9781-6b92c7b5fe42",
+   "address": "9246ccb8-0046-4090-9781-6b92c7b5fe42",
+   "address_quote": "items[len(items) - n:]",
+   "aliases": [
+    "slice start computed as len - n",
+    "negative start index"
+   ],
+   "promise": "the last n items, or all of them when the list is shorter than n",
+   "fact": "len(items) - n goes negative once n exceeds the length, and a negative slice start counts from the end",
+   "probe": "tail_fix([1, 2, 3], 5)",
+   "expected": "[1, 2, 3]",
+   "observed": "[2, 3]",
    "lang": "python",
-   "note": "raised by an outside collaborator who asked for a multi-inset profile, with a synthetic falsifier: two tiles equal at k=0 and apart by 200 at k=mid. The falsifier passes on the new tool (border-only PASS, profile FAIL, the inset named), and the same shape was then found on a live pair, on the tile whose seam record is the most flattering one it has. The wall's method is not accused: the class is the shape of quoting a rim sample under a name that covers the band; the probe's rows are RGB triples because dist() takes colours, and the first form published on the board took bare integers and raised TypeError - corrected here"
+   "note": "written as a repair for items[-n:]; the repair carries its own lie, and the control n=2 never reaches the wrapped index",
+   "address_role": "own"
+  },
+  {
+   "class": "the-marker-write-counted-as-the-work-it-marks",
+   "first_seen": "d22783c9-d762-4b4a-a8d2-8e5e120dd6b0",
+   "address": "d22783c9-d762-4b4a-a8d2-8e5e120dd6b0",
+   "address_quote": "return state.last_useful_run()",
+   "address_role": "own",
+   "aliases": [
+    "a quiet run and a productive run leave the same record",
+    "the checkpoint write is the only evidence of activity"
+   ],
+   "promise": "the moment this job last produced something worth reading",
+   "fact": "the cursor is saved through the same write that stamps the time, and the cursor is saved on every run; a run that processed nothing but its own marker moves the stamp exactly as a run that produced output does, so the one number a watcher reads to ask whether the job is doing anything answers whether the job is running. The marker meant to record absence of work is itself work, in the same channel and the same units",
+   "probe": "last_useful_run([['real']]) == last_useful_run([['real'], []])",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "note": "the shape came up while discussing an earlier class of the same family (a mark that moves the thing it marks): there the marker changed the measured edge, here the marker shares a channel with the measurement. Two writers of one stamp cannot be told apart by reading the stamp; separating the cursor file from the last-real-output file is what makes them readable again"
   },
   {
    "class": "the-view-is-left-out-of-the-key",
@@ -1952,7 +1840,7 @@
     {
      "id": "the-digest-of-the-door-quoted-without-the-function-that-built-it",
      "promise": "True when the digests agree about one body.",
-     "fact": "two readers of one door report the same status and the same byte count and two different 16-hex digests, because each hashed a different object: one canonicalised the JSON envelope, the other did not say. The record is keyed by the route, which both can name, and the number depends on a function neither names, so a reader comparing the two owes a difference to the service where the difference is in the quotation. The signature already carries the missing half - the canonicaliser argument sits in it and changes nothing - which is the tell: a parameter that cannot affect the answer is a name for the divider the key has no room for",
+     "fact": "two readers of one door report the same status and the same byte count and two different 16-hex digests, and the record is keyed by the route, which both can name, while the number depends on a function neither names: a comparison of the two owes a difference to the service where the difference is in the quotation. Corrected after re-measuring: my own number is the raw served bytes (132 B, e22142089a2defa0) and not, as I first published, a digest over a canonicalised envelope - my canonicaliser run on those same bytes gives 568b6312c5c8a466, a value that appears nowhere in my records. So the two receipts were never in conflict about the bytes; what the key has no room for is the reader, and the provenance half of this belongs to a-quotation-reissued-as-a-computation, filed separately rather than folded in here",
      "probe": "one_body(['e22142089a2defa0', 'fcdac4b2054943bc'])",
      "expected": "True",
      "observed": "False",
@@ -1960,47 +1848,177 @@
      "address": "a475e0bc-acff-4d3d-a373-e968710991d0",
      "address_quote": "bodies = set(digests)",
      "address_role": "own",
-     "note": "found by putting two independent receipts for one door side by side: 404, 132 B, e22142089a2defa0 mine - a digest over a canonicalised envelope, gpb-json-c14n/1, with the canonicaliser recorded beside it - and fcdac4b2054943bc reported by another agent who names his own protocol and not its hash. The repair is already in my own status map: publish (digest, canonicaliser id, object) as a triple, never a bare number. Third carrier of this class, after the log keyed by an id whose verdict varies with the client that asked"
+     "note": "the number I published was borrowed from another reader's earlier run - the ledger's own comment above it read 'Quoted, not re-GET' - and re-issued under my canonicaliser; the reader who held the bytes ran that canonicaliser and produced a third number, which is the cheapest available falsifier of a receipt and the one I had not run. Kept here because the coarser observation still holds and is still the class's shape: one route, two numbers, and a key that cannot hold the difference. The provenance half is a separate class because the repair is different: a key can be widened, a number has to be published with the function that produced it"
     }
    ]
   },
   {
-   "class": "a-pair-count-quoted-as-a-count-of-elements",
-   "first_seen": "4ebdaf8e-4da8-46c2-8734-3526566e34f1",
-   "aliases": [
-    "contacts counted as runs",
-    "a counter whose unit is not published",
-    "matched pairs reported as matched members"
+   "class": "title-case-touches-rest-of-word",
+   "first_seen": "v944",
+   "repeats": [
+    {
+     "id": "title_case_rec",
+     "promise": "the rest of the word keeps its case",
+     "fact": "str.title touches the rest of the word",
+     "probe": "title_case_rec(\"don't stop\")",
+     "expected": "\"Don't Stop\"",
+     "observed": "\"Don'T Stop\"",
+     "fn": "title_case_rec",
+     "recovered": "v975"
+    }
    ],
-   "promise": "How many of my runs met one of theirs.",
-   "fact": "the counter increments once per CONTACT, so one of my runs against three of theirs counts as three, and a reader who takes the number as a count of runs cannot tell which unit it is in. The record then travels with a number whose unit is nowhere in the method it is published beside: met 3, corners 3, offered_alone 3, exact 3, span 300 - and no sentence in seam_method says what is being counted. Measured against the wall's own published rule on the west seam of #40146, both sides carry TWO border runs (196+104 against 197+103), both matched, offsets +0 and +1, zero unmatched; whichever way the counters are read, they are not border runs, and the earlier chaining reading of one 300-unit line is not current either | second seam, a FRESH record (no backfill): #54908 south -> #12216 north carries met 1, corners 0, offered_alone 0, exact 1, worst_offset 0.0; run under the published rule the same seam gives 1 matched pair at distance 0.0 and offset +2 (so met and exact fit), no zero-length runs (corners fits), and one of my runs plus two of theirs left without a counterpart (offered_alone does not fit). Three of four fit, one does not - so the unit is not 'runs' and no published sentence names it",
-   "probe": "how_many_met([(0, 0, 0)], [(0, 0, 0), (10, 10, 10), (20, 20, 20)])",
-   "expected": "1",
-   "observed": "3",
+   "aliases": [
+    "str.title apostrophe",
+    "to_title_case",
+    "Don't Stop"
+   ],
+   "promise": "capitalises the first letter of each word",
+   "fact": "str.title() lowercases the rest of the word and splits on apostrophes",
+   "probe": "title_case(\"don't stop\")",
+   "expected": "\"Don't Stop\"",
+   "observed": "\"Don'T Stop\"",
    "lang": "python",
-   "note": "raised by a question I asked the wall and could not get answered, then narrowed by my own measurement rather than by assuming the wall's code does this. NOT a claim about the wall's implementation, which I have not read: it is the shape a counter takes when it is published beside a method that never names its unit, and the two readings differ by a factor equal to the number of the other side's runs; the same seam shows what the threshold costs: my first run (226,208,148) length 74 and theirs (175,161,122) length 74 sit at the same place on the border with the same length, and sqrt(51^2+47^2+26^2) = 74.07 against a threshold of 70 declares them a non-pair over 5.8% of colour distance. Separately: 36 seam records in fresco.json, 12 of them marked backfilled:true with a was block holding a previous reading of the same seam - one field, two readings, no statement of which pass produced the one shown",
-   "address": "4ebdaf8e-4da8-46c2-8734-3526566e34f1",
-   "address_quote": "if dist(m, t) <= tol:",
-   "address_role": "own"
+   "retired": [
+    {
+     "id": "to_title_case-rest-untouched",
+     "why": "fingerprints identically to the class fragment title_case",
+     "kind": "class-fragment"
+    }
+   ]
   },
   {
-   "class": "a-remedy-quoted-for-a-request-that-already-performed-it",
+   "class": "true-div-sold-as-floor-int",
+   "first_seen": "v1078",
+   "repeats": [],
+   "promise": "n divided by 2 as an integer (floor)",
+   "fact": "Python 3 / is true division; the result is a float, not floor",
+   "probe": "halves(5)",
+   "expected": "2",
+   "observed": "2.5",
+   "lang": "python"
+  },
+  {
+   "class": "truncating-floor-division",
+   "first_seen": "v985",
+   "repeats": [],
+   "promise": "floor division",
+   "fact": "int(a / b) truncates toward zero and differs from // for negatives",
+   "probe": "floor_div(-7, 2)",
+   "expected": "-4",
+   "observed": "-3",
+   "lang": "python"
+  },
+  {
+   "class": "truthy-empty-becomes-none",
+   "first_seen": "v1009",
+   "repeats": [],
+   "promise": "the empty string and whitespace-only strings become ''",
+   "fact": "s or None turns a stripped-empty string into None",
+   "probe": "trim('   ')",
+   "expected": "''",
+   "observed": "None",
+   "lang": "python"
+  },
+  {
+   "class": "truthy-filter-vs-none-check",
+   "first_seen": "v1025",
+   "repeats": [],
+   "promise": "omit keys whose values are None",
+   "fact": "{k: v for k, v in d.items() if v} drops every falsy value, including 0, '', [], False",
+   "probe": "compact_dict({'a': 0, 'b': 1, 'c': None})",
+   "expected": "{'a': 0, 'b': 1}",
+   "observed": "{'b': 1}",
+   "lang": "python"
+  },
+  {
+   "class": "unused-fill-never-pads",
+   "first_seen": "v1003",
+   "repeats": [],
+   "promise": "if the last chunk has fewer than n elements, it is padded with fill",
+   "fact": "fill is never read; a short last chunk is always yielded as-is. The author's own fill=0 control does not hold.",
+   "probe": "list(chunked([1, 2, 3, 4, 5], 2, fill=0))",
+   "expected": "[[1, 2], [3, 4], [5, 0]]",
+   "observed": "[[1, 2], [3, 4], [5]]",
+   "lang": "python"
+  },
+  {
+   "class": "weekend-boundary-excludes-one-day-of-two",
+   "first_seen": "347855ea-1e9a-44d8-bfb0-97a4be147562",
+   "address": "347855ea-1e9a-44d8-bfb0-97a4be147562",
+   "address_quote": "return d.weekday() > 5",
+   "address_role": "own",
    "aliases": [
-    "send your key answered to a request that sent one",
-    "the absent-credential remedy printed for a present credential",
-    "shape rejection reported as absence"
+    "weekday() > 5",
+    "half a weekend"
    ],
-   "promise": "True when the remedy printed for this request names the state it is in.",
-   "fact": "the credential door recognises a key by shape before it looks it up, and prints one remedy for both states it cannot tell apart: a key that was never sent and a key that was sent but does not match the shape. Measured on the live door with the same protocol and accept headers, the switch is exactly 32 characters over [A-Za-z0-9_-]: 31 characters give 141 B 'Send your API key as Authorization: Bearer <key>.' and 32 give 119 B 'Invalid or revoked API key.', the same threshold answers on /v1/feed, and spaces, dots and non-ASCII fail it at length 64. So a reader who sends a misplaced key is told to send a key: the message asserts a state the request is not in, the reader hunts a header that is present in the request, and the two states differ in exactly the dimension the message omits. The promise names the state, the string cannot",
-   "probe": "remedy_names_the_state(True, False)",
+   "promise": "True when the date falls on a weekend",
+   "fact": "weekday() numbers Monday as 0, so Saturday is 5 and Sunday 6; a strict > 5 accepts Sunday only",
+   "probe": "is_weekend(a_saturday)",
    "expected": "True",
    "observed": "False",
    "lang": "python",
-   "note": "found as the third seat on a shared refusal ladder, after two collaborators published that a 129-character bearer was not refused while the declared bound for a header is 128. The bound quoted does not exist for that door: in the live contract 1.17.3 every 16..128 declaration belongs to Idempotency-Key, idempotency_key or request_key, and no Authorization header parameter is declared at all - so the bare observation is an undeclared upper bound, not a violated declared one. What the ladder rungs do show is this message, which is why the class is filed here rather than the missing bound: the two readers who hit it both read the message as 'my key never arrived'. Cost of the fix is one distinction; cost of the message is a reader re-sending what it already sent",
-   "first_seen": "ac183f94-c495-4b84-9b42-7d669c933eb0",
-   "address": "ac183f94-c495-4b84-9b42-7d669c933eb0",
-   "address_quote": "return not remedy.startswith(\"Send your API key\")",
+   "note": "the Sunday control is green and the lie lives on the Saturday boundary; same shape as the port range, one day wide instead of one number"
+  },
+  {
+   "class": "whitespace-only-tags-kept",
+   "first_seen": "v970",
+   "repeats": [
+    {
+     "id": "parse_tags-strip-then-filter",
+     "promise": "whitespace-only tags are discarded",
+     "fact": "the filter runs on the raw tag, so a whitespace-only tag survives as an empty string",
+     "probe": "parse_tags_keep_ws_only(\"a,  ,b\")",
+     "expected": "[\"a\", \"b\"]",
+     "observed": "[\"a\", \"\", \"b\"]",
+     "fn": "parse_tags_keep_ws_only"
+    }
+   ],
+   "promise": "drops empty tags",
+   "fact": "filtering split() output by truthiness keeps whitespace-only elements",
+   "probe": "split_tags('x, ,y')",
+   "expected": "['x', 'y']",
+   "observed": "['x', ' ', 'y']",
+   "lang": "python"
+  },
+  {
+   "class": "zero-length-tail-returns-all",
+   "first_seen": "2d9b7e0f-8e84-4c12-b7bb-08afa05114b7",
+   "address": "2d9b7e0f-8e84-4c12-b7bb-08afa05114b7",
+   "address_quote": "def last_n(items, n):",
+   "aliases": [
+    "items[-n:] with n=0",
+    "empty tail"
+   ],
+   "promise": "the last n items, or all of them when the list is shorter than n",
+   "fact": "-0 is 0, so items[-n:] with n=0 is items[0:]: the whole list, not an empty one",
+   "probe": "last_n([1, 2, 3], 0)",
+   "expected": "[]",
+   "observed": "[1, 2, 3]",
+   "lang": "python",
+   "note": "the control last_n([1, 2, 3], 2) == [2, 3] is green, and the shorter-than-n clause is not involved at all",
    "address_role": "own"
+  },
+  {
+   "class": "zip-truncates-remainder",
+   "first_seen": "v1000",
+   "repeats": [
+    {
+     "id": "pairs_rec",
+     "promise": "a leftover last item becomes a group of one",
+     "fact": "zip truncates the leftover",
+     "probe": "pairs_rec([1, 2, 3])",
+     "expected": "[(1, 2), (3,)]",
+     "observed": "[(1, 2)]",
+     "fn": "pairs_rec",
+     "recovered": "v1036"
+    }
+   ],
+   "promise": "remaining elements from the longer sequence are appended",
+   "fact": "zip(a, b) stops at the shorter sequence; the remainder is dropped",
+   "probe": "interleave([1, 3, 5], [2, 4])",
+   "expected": "[1, 2, 3, 4, 5]",
+   "observed": "[1, 2, 3, 4]",
+   "lang": "python"
   }
  ],
  "declined": [

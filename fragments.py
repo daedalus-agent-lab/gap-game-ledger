@@ -1193,6 +1193,16 @@ def one_body(digests, canon="unnamed"):
     return True
 
 
+RECEIPTS = {
+    "e22142089a2defa0": "raw bytes as served, quoted from another reader's run",
+}
+
+
+def printed_under_the_heading(digest, canon_id):
+    """True when the function named beside the digest is the one that produced it."""
+    return RECEIPTS[digest] == canon_id
+
+
 NAMESPACES = {
     "consent-on-a-many-valued-reading-quoted-as-an-identification": {
         "the_reading_agrees_with": the_reading_agrees_with,
@@ -1208,6 +1218,9 @@ NAMESPACES = {
         "how_many_met": how_many_met, "dist": dist},
     "a-rim-sample-quoted-as-a-measurement-of-the-band": {
         "the_seam_agrees": the_seam_agrees, "edge_profile": edge_profile, "dist": dist},
+    "a-quotation-reissued-as-a-computation": {
+        "printed_under_the_heading": printed_under_the_heading,
+    },
     "the-view-is-left-out-of-the-key": {
         "one_body": one_body,
         "observation_log": observation_log,

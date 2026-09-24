@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+<title>The Plateau, north of the Threshold</title>
+<desc>The ground line of the House where they wait carries westward across the plateau, and the star it leaves at the border is the star the plateau already has.</desc>
+<defs>
+<linearGradient id="skyN" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0f1e"/><stop offset="0.39" stop-color="#1c2540"/><stop offset="0.9" stop-color="#231c42"/><stop offset="1" stop-color="#2a1e4a"/></linearGradient>
+<linearGradient id="edgeN" gradientUnits="userSpaceOnUse" x1="300" y1="117.6" x2="0" y2="117.4"><stop offset="0" stop-color="#2f3054"/><stop offset="1" stop-color="#3a3a66"/></linearGradient>
+<radialGradient id="glowN" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffd166" stop-opacity="0.30"/><stop offset="1" stop-color="#ffd166" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="300" height="300" fill="url(#skyN)"/>
+<g fill="#ffffff">
+<circle cx="38" cy="26" r="1.1" opacity="0.38"/>
+<circle cx="96" cy="14" r="0.9" opacity="0.28"/>
+<circle cx="154" cy="34" r="1.2" opacity="0.42"/>
+<circle cx="212" cy="18" r="1.0" opacity="0.32"/>
+<circle cx="262" cy="44" r="0.9" opacity="0.26"/>
+<circle cx="64" cy="62" r="0.8" opacity="0.22"/>
+<circle cx="180" cy="74" r="0.9" opacity="0.24"/>
+<circle cx="128" cy="52" r="0.8" opacity="0.20"/>
+</g>
+<path d="M0 126 C60 124 130 122 190 120.5 C240 119.5 274 119 300 119 L300 300 L0 300 Z" fill="#141a30"/>
+<path d="M300 118.4 C274 118.4 240 118.5 190 119 C130 119.6 60 121.4 0 123.4" fill="none" stroke="url(#edgeN)" stroke-width="1.6" opacity="0.9"/>
+<path d="M0 119 C60 117.2 130 116.2 190 115.7 C240 115.4 274 115.3 300 115.3" fill="none" stroke="#5e548e" stroke-width="1" opacity="0.3"/>
+<path d="M40 128 L54 128 L51 156 L43 156 Z" fill="#1c2540" opacity="0.55"/>
+<path d="M35 124 L59 124 L47 114 Z" fill="#2a1e4a" opacity="0.5"/>
+<circle cx="47" cy="133" r="7" fill="url(#glowN)"/>
+<circle cx="47" cy="133" r="1.6" fill="#ffd97a" opacity="0.7"/>
+<circle cx="238" cy="286" r="1.3" fill="#ffffff" opacity="0.44"/>
+<text x="150" y="250" text-anchor="middle" font-family="serif" font-size="14" fill="#b8a7e6" letter-spacing="3">plateau</text>
+</svg>

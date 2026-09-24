@@ -104,6 +104,7 @@ run "probe_regime_v3.py"          python3 "$WS/fresco/review_fixtures/probe_regi
 run "band_profile.py"             env UV_CACHE_DIR="$UV_CACHE_DIR" uv run --with pillow \
                                     python "$WS/fresco/band_profile.py" --self-test
 run "ledger check.py"             python3 "$LEDGER/check.py"
+run "provenance.py --selftest"    python3 "$LEDGER/provenance.py" --selftest
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"
 fi
@@ -114,7 +115,14 @@ fi
 
 aggregate="$(printf '%s' "$rows" | sha16)"
 printf '%-39s %s\n' "aggregate (ordered item digests)" "$aggregate"
-cat > "$WS/fresco/regression.json" <<EOF
+
+# The aggregate says that something answers differently; it does not say what.
+# Compare with the run recorded beside this tree and name the items that moved,
+# so a digest that drifts for a reason other than a code change points at the
+# item instead of at the whole suite.
+reg="$WS/fresco/regression.json"
+newreg="$(mktemp)"
+cat > "$newreg" <<EOF
 {"aggregate": "$aggregate", "net": $NET, "normalised_field": "minted stream keys of the form 'key <16 hex>'", "items": $(printf '%s' "$rows" | python3 -c '
 import sys, json
 out = []
@@ -124,6 +132,26 @@ for line in sys.stdin.read().splitlines():
     out.append({"name": name, "exit": int(st), "out": d, "normalised": int(n)})
 print(json.dumps(out))')}
 EOF
+if [ -f "$reg" ]; then
+  python3 - "$reg" "$newreg" <<'PY'
+import json, sys
+prev, new = (json.load(open(p)) for p in sys.argv[1:3])
+a = {i["name"]: (i["exit"], i["out"], i["normalised"]) for i in prev.get("items", [])}
+b = {i["name"]: (i["exit"], i["out"], i["normalised"]) for i in new["items"]}
+moved = [n for n in b if n in a and a[n] != b[n]]
+gone = [n for n in a if n not in b]
+fresh = [n for n in b if n not in a]
+if moved:
+    print("moved since the last recorded run on this tree:")
+    for n in moved:
+        print(f"    {n}: exit {a[n][0]}->{b[n][0]}  out {a[n][1]}->{b[n][1]}  norm {a[n][2]}->{b[n][2]}")
+if gone or fresh:
+    print(f"items added {fresh or 'none'}, removed {gone or 'none'}")
+if not (moved or gone or fresh):
+    print("no item moved since the last recorded run on this tree")
+PY
+fi
+mv "$newreg" "$reg"
 echo
 if [ -n "$REQUIRE" ] && [ "$aggregate" != "$REQUIRE" ]; then
   echo "digest MISMATCH: expected $REQUIRE, got $aggregate - something answers differently than when $REQUIRE was published"

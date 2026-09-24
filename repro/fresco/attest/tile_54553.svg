@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+<title>The Plateau — west of the Threshold</title>
+<desc>The plateau continues westward: the Threshold's ridge, ground edge and stair of light cross the border at the heights its edge card declares and keep their slopes.</desc>
+<defs>
+<linearGradient id="skyP" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0f1e"/><stop offset="0.55" stop-color="#1c2540"/><stop offset="1" stop-color="#2a1e4a"/></linearGradient>
+<linearGradient id="farP" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f2748"/><stop offset="1" stop-color="#161d3a"/></linearGradient>
+<linearGradient id="goldP" gradientUnits="userSpaceOnUse" x1="300" y1="100" x2="0" y2="133"><stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#e6c96a"/></linearGradient>
+<linearGradient id="rimP" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd166" stop-opacity="0.11"/><stop offset="1" stop-color="#ffd166" stop-opacity="0"/></linearGradient>
+<radialGradient id="crestP" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffd166" stop-opacity="0.20"/><stop offset="1" stop-color="#ffd166" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="300" height="300" fill="url(#skyP)"/>
+<g fill="#ffffff">
+<circle cx="46" cy="22" r="1.2" opacity="0.40"/>
+<circle cx="112" cy="12" r="0.9" opacity="0.30"/>
+<circle cx="178" cy="30" r="1.1" opacity="0.36"/>
+<circle cx="238" cy="14" r="1.3" opacity="0.44"/>
+<circle cx="264" cy="40" r="1.0" opacity="0.34"/>
+<circle cx="70" cy="48" r="0.8" opacity="0.26"/>
+<circle cx="206" cy="54" r="0.9" opacity="0.28"/>
+</g>
+<path d="M300 62 C240 66 180 74 120 83 C80 89 40 94 0 97 L0 300 L300 300 Z" fill="url(#farP)" opacity="0.9"/>
+<path d="M300 62 C240 66 180 74 120 83 C80 89 40 94 0 97" fill="none" stroke="#5e548e" stroke-width="1" opacity="0.28"/>
+<path d="M300 84 C240 88 180 96 120 105 C80 111 40 116 0 119 L0 300 L300 300 Z" fill="#141a30"/>
+<path d="M300 84 C240 88 180 96 120 105 C80 111 40 116 0 119" fill="none" stroke="#5e548e" stroke-width="1.5" opacity="0.55"/>
+<path d="M300 85 C240 89 180 97 120 106 C80 112 40 117 0 120 L0 140 C40 137 80 132 120 127 C180 118 240 110 300 106 Z" fill="url(#rimP)"/>
+<ellipse cx="200" cy="108" rx="30" ry="7" fill="url(#crestP)"/>
+<ellipse cx="90" cy="122" rx="20" ry="5" fill="url(#crestP)"/>
+<g stroke="url(#goldP)" stroke-linecap="round">
+<line x1="287.8" y1="102.0" x2="270" y2="104.6" stroke-width="2.0" opacity="0.30"/>
+<line x1="264" y1="105.9" x2="204" y2="114.4" stroke-width="1.8" opacity="0.23"/>
+<line x1="198" y1="115.3" x2="138" y2="121.7" stroke-width="1.6" opacity="0.17"/>
+<line x1="132" y1="122.4" x2="72" y2="127.7" stroke-width="1.4" opacity="0.12"/>
+<line x1="66" y1="128.4" x2="6" y2="132.5" stroke-width="1.2" opacity="0.09"/>
+</g>
+<g fill="url(#goldP)">
+<circle cx="289.6" cy="101.7" r="2.3" opacity="0.50"/>
+<circle cx="207" cy="113.9" r="2.1" opacity="0.40"/>
+<circle cx="129" cy="122.1" r="1.9" opacity="0.30"/>
+<circle cx="51" cy="129.9" r="1.7" opacity="0.22"/>
+</g>
+<text x="150" y="200" text-anchor="middle" font-family="serif" font-size="14" fill="#b8a7e6" letter-spacing="3">plateau</text>
+</svg>

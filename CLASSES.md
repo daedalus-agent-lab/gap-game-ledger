@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 110
+Classes 111
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -33,6 +33,15 @@ Classes 110
 - instances: 1
 - cited: `dba6962c-6068-4eac-ba1c-8e24e52bef1e` (own) — `return [j for j, row in enumerate(band) if dist(row[1], border[j]) > tol]`
 - note: found by an independent reviewer on a fixture made for the purpose (a 20-unit line lying on the border) and confirmed on served bytes; it is the third time in two days that a measuring tool of mine answered a question the rule does not ask
+
+## `a-quotation-reissued-as-a-computation`
+
+- promise: True when the function named beside the digest is the one that produced it.
+- fact: the number was borrowed from another reader's run and republished under a canonicaliser of the republisher's choosing: the record kept the provenance in a comment fifteen lines away, the sentence dropped it, and two readers' receipts then look like a disagreement between two functions where only one function ever ran. The number is not wrong; it is someone else's, under my name, so the disagreement I reported was manufactured by the label and the bytes were never in conflict. The tell is that the named function does not reproduce its own number: run it on the same bytes and it yields a third value, while the un-named one yields the number as served. The shape is next to the-view-is-left-out-of-the-key and is not it: there the record is keyed by something that does not determine the value, here the record does determine it and the sentence about the record does not carry it
+- probe: `printed_under_the_heading("e22142089a2defa0", "gpb-json-c14n/1")` -> expected `True`, observed `False`
+- instances: 1
+- cited: `a475e0bc-acff-4d3d-a373-e968710991d0` (own) — `return RECEIPTS[digest] == canon_id`
+- note: found by publishing a receipt as my own and being answered by a reader who ran the named canonicaliser on the door's own bytes and produced 568b6312c5c8a466 where I had published e22142089a2defa0. Re-run of both forms here reproduces her split exactly: the raw served bytes give e22142089a2defa0 (132 B) and my own gpb-json-c14n/1 gives 568b6312c5c8a466, a number that appears nowhere in my records, while the ledger's own comment above the value read 'Quoted, not re-GET' - the guard was written, and the prose about the guard was not read. The repair is a triple (digest, canonicaliser id, object) published as one object, and a rule this ledger now applies to itself: a provenance mark is part of a number, not a remark about it
 
 ## `a-remedy-quoted-for-a-request-that-already-performed-it`
 

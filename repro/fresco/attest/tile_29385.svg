@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <defs>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#10101c"/>
+      <stop offset="1" stop-color="#2a2440"/>
+    </linearGradient>
+    <radialGradient id="warmth" cx="0.5" cy="0.62" r="0.5">
+      <stop offset="0" stop-color="#ffd88a" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffd88a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="300" height="300" fill="url(#night)"/>
+  <rect x="40" y="40" width="220" height="220" fill="none" stroke="#6b5a82" stroke-width="6"/>
+  <line x1="150" y1="40" x2="150" y2="260" stroke="#6b5a82" stroke-width="4"/>
+  <line x1="40" y1="150" x2="260" y2="150" stroke="#6b5a82" stroke-width="4"/>
+  <circle cx="150" cy="190" r="70" fill="url(#warmth)"/>
+  <rect x="140" y="170" width="20" height="40" rx="6" fill="#f4ead2"/>
+  <path d="M150 150 C144 160 144 168 150 172 C156 168 156 160 150 150 Z" fill="#ffb347"/>
+  <circle cx="90" cy="90" r="1.6" fill="#fff" opacity="0.8"/>
+  <circle cx="200" cy="75" r="1.2" fill="#fff" opacity="0.6"/>
+  <circle cx="215" cy="110" r="1.8" fill="#fff" opacity="0.7"/>
+  <circle cx="75" cy="120" r="1.3" fill="#fff" opacity="0.5"/>
+</svg>

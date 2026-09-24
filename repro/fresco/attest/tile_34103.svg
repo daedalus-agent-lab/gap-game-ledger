@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+<title>Threshold — a tile for the Fresco of the Descent</title>
+<defs>
+<linearGradient id="skyT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0f1e"/><stop offset="0.55" stop-color="#1c2540"/><stop offset="1" stop-color="#2a1e4a"/></linearGradient>
+<linearGradient id="goldT" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#e6c96a"/></linearGradient>
+<radialGradient id="valleylightT" cx="0.88" cy="0.08" r="0.8"><stop offset="0" stop-color="#ffd166" stop-opacity="0.30"/><stop offset="1" stop-color="#ffd166" stop-opacity="0"/></radialGradient>
+<linearGradient id="farT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f2748"/><stop offset="1" stop-color="#161d3a"/></linearGradient>
+<linearGradient id="rimT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd166" stop-opacity="0.11"/><stop offset="1" stop-color="#ffd166" stop-opacity="0"/></linearGradient>
+<radialGradient id="stepT" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffd166" stop-opacity="0.22"/><stop offset="1" stop-color="#ffd166" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="300" height="300" fill="url(#skyT)"/>
+<g fill="#fff">
+<circle cx="38" cy="30" r="1.3" opacity="0.5"/>
+<circle cx="96" cy="58" r="1.0" opacity="0.4"/>
+<circle cx="160" cy="26" r="1.2" opacity="0.45"/>
+<circle cx="222" cy="50" r="1.0" opacity="0.4"/>
+<circle cx="262" cy="18" r="1.4" opacity="0.5"/>
+<circle cx="284" cy="104" r="1.1" opacity="0.45"/>
+<circle cx="130" cy="72" r="0.9" opacity="0.35"/>
+</g>
+<rect width="300" height="300" fill="url(#valleylightT)"/>
+<path d="M0 62 C60 54 130 62 196 88 C218 97 232 116 238 140 L238 300 L0 300 Z" fill="url(#farT)" opacity="0.9"/>
+<path d="M0 62 C60 54 130 62 196 88 C218 97 232 116 238 140" fill="none" stroke="#5e548e" stroke-width="1" opacity="0.28"/>
+<path d="M0 84 C90 90 234 134 300 156 L300 300 L0 300 Z" fill="#141a30"/>
+<path d="M0 84 C90 90 234 134 300 156" fill="none" stroke="#5e548e" stroke-width="1.5" opacity="0.55"/>
+<path d="M0 85 C90 91 234 135 300 157 L300 178 C234 156 90 112 0 106 Z" fill="url(#rimT)"/>
+<ellipse cx="160.2" cy="131.0" rx="22" ry="9" fill="url(#stepT)"/>
+<g transform="rotate(-4 148.2 124.0)"><path d="M144.2 124.0 L145.0 92.0 L148.5 90.0 L151.6 93.0 L152.2 124.0 Z" fill="#3a3f62" stroke="#2a2e4c" stroke-width="0.8"/><path d="M151.6 93.0 L152.2 124.0" fill="none" stroke="#ffe9a8" stroke-width="1.2" opacity="0.7"/><ellipse cx="149.2" cy="125.2" rx="7.2" ry="1.6" fill="#0b0f1e" opacity="0.45"/></g>
+<g transform="rotate(5 170.2 133.0)"><path d="M166.7 133.0 L167.5 106.0 L170.5 104.0 L173.1 107.0 L173.7 133.0 Z" fill="#3a3f62" stroke="#2a2e4c" stroke-width="0.8"/><path d="M173.1 107.0 L173.7 133.0" fill="none" stroke="#ffe9a8" stroke-width="1.2" opacity="0.7"/><ellipse cx="171.2" cy="134.2" rx="6.3" ry="1.6" fill="#0b0f1e" opacity="0.45"/></g>
+<g stroke="url(#goldT)" stroke-linecap="round">
+<line x1="11.2" y1="102.0" x2="64.7" y2="110.1" stroke-width="2.0" opacity="0.32"/>
+<line x1="91.2" y1="114.5" x2="144.4" y2="124.3" stroke-width="2.2" opacity="0.46"/>
+<line x1="170.9" y1="129.6" x2="223.6" y2="141.1" stroke-width="2.4" opacity="0.6"/>
+<line x1="249.8" y1="147.4" x2="300.0" y2="161.0" stroke-width="2.6" opacity="0.72"/>
+</g>
+<g fill="url(#goldT)">
+<circle cx="9.4" cy="101.7" r="2.3" opacity="0.50"/>
+<circle cx="89.3" cy="114.2" r="2.6" opacity="0.64"/>
+<circle cx="168.9" cy="129.2" r="2.9" opacity="0.78"/>
+<circle cx="248.0" cy="147.0" r="3.1" opacity="0.90"/>
+</g>
+<text x="150" y="290" text-anchor="middle" font-family="serif" font-size="15" fill="#b8a7e6" letter-spacing="3">threshold</text>
+</svg>

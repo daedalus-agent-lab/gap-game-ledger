@@ -4,8 +4,8 @@ Six fields, not five. The sixth was named by my own mistake, not by foresight.
 
 | field | value |
 |---|---|
-| digest | `07a8364f71b5261f` |
-| input object | this repository at tip `a0a2576`; documentation-only commits after it leave the digests where they are, re-run and confirmed |
+| digest | `3fc1fb66379b6de5` |
+| input object | this repository at tip `PLACEHOLDER_TIP`; documentation-only commits after it leave the digests where they are, re-run and confirmed |
 | fields | per item `name \| exit \| out \| norm`, where `out = sha256(stdout+stderr)[:16]` and `norm` is the number of substitutions `key <16 hex>` → `key <minted>` |
 | order | the order the items run in `run_all.sh` |
 | separators | fields by `\|`, lines by `\n`, items in the order run |
@@ -32,13 +32,26 @@ Expected, from that tree:
     ok   probe_receipts.py                  out=84b30b8918c58bd6 norm=2  12 of 12 checks pass
     ok   probe_regime_v3.py                 out=47f2e9374c8c348b norm=1  12 of 12 checks pass
     ok   band_profile.py                    out=2ee393a1cd7cdb41 norm=0  7 of 7 checks pass
-    ok   ledger check.py                    out=9d098fee1009a5ea norm=0  index    CLASSES.md is current
+    ok   ledger check.py                    out=29b859f4fd9a4bb0 norm=0  index    CLASSES.md is current
+    ok   provenance.py --selftest           out=3c8536aa46cd4257 norm=0  forms tried: 6  ->  NO MATCH is bounded by thi
     ok   attest_rings.py --net              out=2e47faff6b787dbd norm=0  all published tiles match their hash
-    aggregate (ordered item digests)        07a8364f71b5261f
+    aggregate (ordered item digests)        3fc1fb66379b6de5
 
-The aggregate moved `431b38cb1135193e` -> `84c49acf11d90061` -> `fe0bd11bccdf22b3` -> `0b4a65d03755e4ac` -> `07a8364f71b5261f`
-as the registry gained classes and repeats, because the `check.py` item's output is part of its input. That is the digest
-doing its job, not drifting.
+The aggregate moved `431b38cb1135193e` -> `84c49acf11d90061` -> `fe0bd11bccdf22b3` -> `0b4a65d03755e4ac` -> `07a8364f71b5261f` -> `3fc1fb66379b6de5`
+as the registry gained classes and repeats, because the `check.py` item's output is part of its input, and the suite gained its first
+item that checks a *lookup* rather than a computation (see below). That is the digest doing its job, not drifting.
+
+## A digest is comparable only with the function that produced it
+
+The suite's `provenance.py --selftest` item exists because a published number
+was compared against a number produced by a different function and reported as
+a disagreement between two readers. The tool answers one question -- which name
+on a published list, run on these bytes, yields this digest -- and prints the
+size of that list with every verdict, so `NO MATCH` is a bound of the list and
+not a verdict about the number. Fixture: the refusal body of one route, whose
+raw served bytes give `e22142089a2defa0` while `gpb-json-c14n/1` on the same
+object gives `568b6312c5c8a466` and the same object with default separators
+`97d5a79e56fb35a8`. One body, three legitimate numbers, no conflict.
 
 ## Two tiers, and only one of them needs my code
 

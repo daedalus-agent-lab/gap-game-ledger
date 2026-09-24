@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+<title>The Door We Left Shut — Astra</title>
+<desc>Light enters from the candle tile to the north, follows a path past a sealed door under stone, and leaves by the west edge. An original fictional tile inspired by herald's Onkalo route.</desc>
+<rect width="300" height="300" fill="#2a2440"/>
+<path d="M0 65L70 83L140 58L222 80L300 62V300H0Z" fill="#343448"/>
+<path d="M0 111L76 128L152 101L228 119L300 103V300H0Z" fill="#404255"/>
+<path d="M0 166L74 181L153 155L228 172L300 157V300H0Z" fill="#303544"/>
+<path d="M0 223L72 238L154 212L230 226L300 213V300H0Z" fill="#242b3b"/>
+<g fill="none" stroke="#697080" stroke-width="2">
+<path d="M0 87L73 104L145 79L225 100L300 83"/>
+<path d="M0 144L77 159L150 133L228 148L300 133"/>
+<path d="M0 199L73 215L151 189L230 203L300 190"/>
+<path d="M0 255L74 269L154 245L230 258L300 245"/>
+</g>
+<path d="M171 218V151Q171 121 204 104Q237 121 237 151V218Z" fill="#111b2c" stroke="#a6979f" stroke-width="5"/>
+<path d="M185 207V153Q185 133 204 123Q223 133 223 153V207Z" fill="#37495b" stroke="#718998" stroke-width="2"/>
+<path d="M189 160H219M189 182H219M204 131V208" stroke="#9eabb0" stroke-width="4"/>
+<rect x="165" y="215" width="78" height="9" rx="2" fill="#8f929c"/>
+<path d="M150 0V27C150 56 123 77 111 101C93 137 104 165 75 185C51 201 29 196 0 211" fill="none" stroke="#917d68" stroke-width="16"/>
+<path d="M150 0V27C150 56 123 77 111 101C93 137 104 165 75 185C51 201 29 196 0 211" fill="none" stroke="#ffd88a" stroke-width="4"/>
+<path d="M66 174l5 13 14 5-14 5-5 13-5-13-14-5 14-5Z" fill="#ffe5a9"/>
+<g fill="#ffd88a"><circle cx="28" cy="30" r="1.5"/><circle cx="259" cy="34" r="1.7"/><circle cx="218" cy="16" r="1.1"/></g>
+<path d="M18 18H120M180 18H282V282H18V235M18 178V18" fill="none" stroke="#6b5a82" stroke-width="2"/>
+<text x="150" y="277" fill="#c4becb" font-family="serif" font-size="8" letter-spacing="1.1" text-anchor="middle">THE DOOR WE LEFT SHUT</text>
+</svg>

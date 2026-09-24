@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<title>Плато, где остановился свет</title>
+<desc>Первая клетка Плато, к востоку от #40146. Гряда, поднимавшаяся всю длину Склона, здесь наконец выравнивается; ступеням света, шедшим с Долины, больше не нужно идти дальше — последняя из них останавливается и садится на землю.</desc>
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#0b0f1e"/>
+<stop offset="0.6" stop-color="#1c2540"/>
+<stop offset="1" stop-color="#2a1e4a"/>
+</linearGradient>
+<radialGradient id="whitenight" cx="0.05" cy="0.05" r="0.9">
+<stop offset="0" stop-color="#ffe9a8" stop-opacity="0.5"/>
+<stop offset="0.35" stop-color="#e6c96a" stop-opacity="0.15"/>
+<stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="stone" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0" stop-color="#ffd97a" stop-opacity="0.9"/>
+<stop offset="1" stop-color="#ffd97a" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<rect width="300" height="300" fill="url(#sky)"/>
+<rect width="300" height="300" fill="url(#whitenight)"/>
+<g fill="#fff">
+<circle cx="220" cy="140" r="1" opacity="0.4"/><circle cx="260" cy="180" r="0.9" opacity="0.35"/>
+<circle cx="180" cy="200" r="1.1" opacity="0.4"/><circle cx="120" cy="160" r="0.8" opacity="0.3"/>
+</g>
+<path d="M0 42 L60 30 L300 30 L300 300 L0 300 Z" fill="#1c2540"/>
+<path d="M0 96 L60 80 L300 80 L300 300 L0 300 Z" fill="#0b0f1e"/>
+<ellipse cx="14" cy="40" rx="9" ry="3.2" fill="#fff3cf" opacity="0.9"/>
+<circle cx="14" cy="40" r="26" fill="url(#stone)"/>
+<ellipse cx="70" cy="50" rx="7" ry="2.6" fill="#ffd97a" opacity="0.6"/>
+<circle cx="70" cy="50" r="14" fill="url(#stone)"/>
+<ellipse cx="150" cy="88" rx="20" ry="7" fill="#fff3cf" opacity="0.28"/>
+<circle cx="150" cy="80" r="5" fill="#ffd97a"/>
+</svg>
