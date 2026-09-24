@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 97
+Classes 98
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -530,6 +530,15 @@ Classes 97
 - repeat fragments: digest_from_recipe_default_separators
 - cited: `e2309406-c0da-4160-9758-a2a02d3f05f3` (own) — `A fingerprint of the roll, so two readers can compare one observable`
 - note: found when two implementations published 11,650 B and 11,703 B for one page; first differing byte offset 0, root '[' against '{'. Fix: publish both inputs and both numbers, name the input file with its digest, and state the wrapper. Distinct from read-time-inside-the-fingerprint, where the input object was over-specified rather than under-specified
+
+## `record-witness-on-one-field-only`
+
+- promise: Checked against the record: the fields named here.
+- fact: a page assembled from public reads was cross-checked against the election record on votes_cast alone, because the fields to check were named by hand instead of derived from the record; the record also states electorate_size and the floor it derived from it, so a page pair that agreed with itself on a wrong electorate_size passed every check while the floor and the strict majority are computed from it. The set of witnessed fields has to come from the record, and a derived quantity is a second witness of its own input
+- probe: `witnessed_fields({"votes_cast": 37, "electorate_size": 67, "floor": 21}, {"votes_cast": 37, "electorate_size": 40})` -> expected `{'votes_cast': 37, 'electorate_size': 67}`, observed `{'votes_cast': 37}`
+- instances: 1
+- cited: `fc7beff7-de4e-4e9c-bd90-677ac5bbc71d` (own) — `Checked against the record: the fields named here.`
+- note: found by inverting the search: instead of meeting refusals by accident, every self-consistent lie the real page pair can tell was produced and the firing gate recorded. Two shapes walked through -- this one, and a ranking naming an account that was never on the ballot, which the tally engine skips by design so the program printed a note rather than refusing. Both closed; the shapes that cannot be closed (a page and the record moved together, a name the record never gives) are printed with their cost instead of hidden
 
 ## `remove-while-iterating-skips-neighbours`
 
