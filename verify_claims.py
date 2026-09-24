@@ -644,6 +644,45 @@ def u_bound_name_shadowing_a_builtin_is_still_a_letter(tree):
         "a bound `list` is a letter, an unbound `len` is the builtin"
 
 
+def v_control_fails_when_a_rule_of_the_policy_is_broken(tree):
+    """A duplicate verdict is a measurement only while every rule of the policy
+    has a pair that fails when the rule is broken.
+
+    The guard is removed from a copy -- exactly the hole that was reported -- and
+    the run must withdraw its duplicate verdicts and name the rule, rather than
+    report agreement between two fragments it can no longer tell apart.
+    """
+    src = (tree / "check.py").read_text(encoding="utf-8")
+    guard = ("        if self._reads_by_a_caller(node):\n"
+             "            self.generic_visit(node)\n"
+             "            return node\n")
+    if guard not in src:
+        return False, "the guard is not where this case expects it"
+    (tree / "check.py").write_text(src.replace(guard, "", 1), encoding="utf-8")
+    code, out = check(tree)
+    named = "store_read_by_eval" in out
+    withdrawn = "NOT MEASURED" in out
+    return code == 1 and named and withdrawn, \
+        f"exit {code}, rule named {named}, verdicts withdrawn {withdrawn}"
+
+
+def w_control_is_a_pair_per_rule(tree):
+    """Every rule of the policy carries its own pair, so a broken rule cannot
+    hide behind the ones still working."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("frag", HERE / "fragments.py")
+    frag = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(frag)
+    spec2 = importlib.util.spec_from_file_location("chk", HERE / "check.py")
+    chk = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(chk)
+    rules = [rule for *_rest, rule in frag.CONTROL_PAIRS]
+    pairs = [(l, r) for l, r, _s, _rule in frag.CONTROL_PAIRS]
+    ok = len(pairs) >= 4 and len(set(rules)) == len(rules) and len(set(pairs)) == len(pairs)
+    ok = ok and chk.fingerprint_control()[0]
+    return ok, f"{len(pairs)} pairs, {len(set(rules))} distinct rules, control passes"
+
+
 CASES = [
     ("order flip keeps the answer", a_order_flip),    ("citation counter agrees with its audit", b_citation_counter),
     ("a class with no fragment is refused", c_ghost_class),
@@ -665,6 +704,8 @@ CASES = [
     ("a count carries the policy it was counted under", s_policy_is_in_the_count),
     ("a store read by a caller not in the ast is not dead", t_a_store_read_by_a_caller_not_in_the_ast),
     ("a bound name shadowing a builtin is still a letter", u_bound_name_shadowing_a_builtin_is_still_a_letter),
+    ("a broken rule of the policy withdraws the duplicate verdicts", v_control_fails_when_a_rule_of_the_policy_is_broken),
+    ("the control is one pair per rule", w_control_is_a_pair_per_rule),
 ]
 
 

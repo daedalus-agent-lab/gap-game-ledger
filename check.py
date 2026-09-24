@@ -401,6 +401,34 @@ def called_names(source: str) -> set:
     return out
 
 
+def fingerprint_control() -> tuple[bool, str]:
+    """Whether the fingerprint is still measuring what the ledger asks it to.
+
+    A verdict of `duplicate` is a measurement only while the instrument that
+    produced it separates a pair known to differ and joins a pair known to be
+    one piece of logic. `fragments.CONTROL_PAIRS` names one such pair per rule of
+    the policy -- free names kept, bound letters erased, a live store kept, a
+    dead store removed -- so a broken rule fails the control on its own pair
+    instead of hiding behind the other three. The first pair is the one that
+    found the erasure hole. When the control fails, every duplicate verdict in
+    the run is withdrawn as `not measured`: agreement between two things an
+    instrument cannot tell apart is not agreement.
+    """
+    import fragments as F
+    broken = []
+    for left, right, same, rule in F.CONTROL_PAIRS:
+        got = fingerprint(getattr(F, left)) == fingerprint(getattr(F, right))
+        if got != same:
+            broken.append(
+                f"{left}/{right}: {'joined' if got else 'separated'} a pair it must "
+                f"{'join' if same else 'separate'} ({rule})"
+            )
+    if broken:
+        return False, "; ".join(broken)
+    return True, (f"{len(F.CONTROL_PAIRS)} pairs, one per rule of the policy, each "
+                  "answers as its rule requires")
+
+
 def primary(entry: dict) -> str | None:
     """The fragment the entry's own probe calls: the class's bytes."""
     ns = NAMESPACES.get(entry["class"], {})
@@ -902,6 +930,9 @@ def main() -> int:
         collisions.append(line)
     collision_count, collisions_2, shared = class_collisions(data)
     collisions += collisions_2
+    control_ok, control_why = fingerprint_control()
+    if not control_ok:
+        collisions.append(f"fingerprint control failed: {control_why}")
     for line in collisions:
         print(f"DUPE  {'':<50} {line}")
 
@@ -913,6 +944,12 @@ def main() -> int:
         f"/{collision_count}  (class fragments only: no class is another class"
         " under a new name)"
     )
+    if control_ok:
+        print(f"fingerprint control ok  {control_why}")
+    else:
+        print(f"fingerprint control FAILED  {control_why}")
+        print("NOT MEASURED  the fingerprint cannot tell a known-different pair"
+              " apart, so every duplicate verdict above is withdrawn")
     print(f"equivalence policy {policy_hash()}  (python3 check.py --policy)")
     print(
         f"reported instances {instances} "

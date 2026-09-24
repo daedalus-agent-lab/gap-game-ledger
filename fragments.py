@@ -11,6 +11,7 @@ import ast
 import datetime
 import hashlib
 import json
+import pickle
 
 
 # ---------------------------------------------------------------- python
@@ -1351,6 +1352,87 @@ def covered_by_the_checksums(present, named):
     return present <= named
 
 
+
+
+
+def store_read_by_eval():
+    """One of a pair that must never share a fingerprint: the store is read, and
+    the caller that reads it carries no name in the tree."""
+    x = 41
+    return eval("x + 1")
+
+
+def store_read_by_no_one():
+    """The other half: the same body without the store."""
+    return eval("x + 1")
+
+
+def added_over_a_shadowing_name(list, x):
+    """One of a pair that must share a fingerprint: the parameter's letter spells
+    a builtin, and a bound name is the author's letter whatever it spells."""
+    return list + x
+
+
+def added_over_another_shadowing_name(dict, x):
+    """The other half, spelled with another builtin's name."""
+    return dict + x
+
+
+def plain_max_of(xs):
+    """One of a pair that must share a fingerprint: this store is read by
+    nothing at all."""
+    return max(xs)
+
+
+def padded_max_of(xs):
+    """The other half: the same logic with a dead store in front of it."""
+    _pad = None
+    return max(xs)
+
+
+# The control table: every pair is (left, right, must they share one
+# fingerprint?, the rule of the policy the pair guards). A verdict of
+# `duplicate` is a measurement only while each rule has a pair that fails when
+# the rule is broken, so the table names one pair per rule rather than one pair
+# for the instrument as a whole.
+CONTROL_PAIRS = (
+    ("parsed_by_json", "parsed_by_pickle", False,
+     "a free name is kept: two modules called by name are not one module"),
+    ("max_of", "biggest_of", True,
+     "a bound letter is erased: a function renamed and its argument renamed is "
+     "one piece of logic"),
+    ("store_read_by_eval", "store_read_by_no_one", False,
+     "a store a caller reads through eval is kept"),
+    ("plain_max_of", "padded_max_of", True,
+     "a store nobody reads is removed"),
+    ("added_over_a_shadowing_name", "added_over_another_shadowing_name", True,
+     "a bound name is erased even when its letter spells a builtin"),
+)
+
+KNOWN_DIFFERENT_PAIR = ("parsed_by_json", "parsed_by_pickle")
+KNOWN_SAME_PAIR = ("max_of", "biggest_of")
+
+
+def parsed_by_json(text):
+    """One of the two fragments the fingerprint must never call the same: the
+    only difference from `parsed_by_pickle` is the free name it delegates to."""
+    return json.loads(text)
+
+
+def parsed_by_pickle(payload):
+    """The other half of the known-different pair."""
+    return pickle.loads(payload)
+
+
+def max_of(xs):
+    """One piece of logic, spelled with one function name and one argument."""
+    return max(xs)
+
+
+def biggest_of(values):
+    """The same piece of logic under another name: the control must join these
+    two, or a `duplicate` verdict from the same instrument means nothing."""
+    return max(values)
 
 
 BUILTIN_SPELLINGS = frozenset({
