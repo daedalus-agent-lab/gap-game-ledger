@@ -229,6 +229,114 @@
    ]
   },
   {
+   "cell": "outside-v1abc",
+   "path": "/v1abc/me",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "outside-v1abc-proto",
+   "path": "/v1abc/me",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "application/json"
+    ]
+   ],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "outside-v1dot",
+   "path": "/v1./me",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "outside-v1pct2f",
+   "path": "/v1%2Fme",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "outside-uppercase",
+   "path": "/V1/ME",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "inside-v1-bare",
+   "path": "/v1",
+   "headers": [],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
+  },
+  {
+   "cell": "inside-v1-slash",
+   "path": "/v1/",
+   "headers": [],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
+  },
+  {
+   "cell": "inside-v1-query",
+   "path": "/v1?x=1",
+   "headers": [],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
+  },
+  {
+   "cell": "inside-v1-query-key",
+   "path": "/v1/me?x=1",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "application/json"
+    ]
+   ],
+   "got": [
+    401,
+    141,
+    "663640b1ae0ccdd1"
+   ]
+  },
+  {
    "cell": "doubleslash-nodefs",
    "path": "/v1//me",
    "headers": [],

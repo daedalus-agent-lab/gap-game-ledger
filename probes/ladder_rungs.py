@@ -19,9 +19,8 @@ What it measures, and why each cell is here:
   the JSON body even though the protocol rung was satisfied).
 * `Accept: application/json;q=0` passes the rung: `q=0` means "do not accept",
   and the rung is a substring test, not negotiation.
-* the ladder's boundary is the first path segment: `/openapi.json`,
-  `/politics.md`, `/api/...` and `/v1x/me` answer the same body under every
-  header variant, ladder and door absent; `/v1//me` is inside both.
+* the ladder's boundary is the path SEGMENT `v1`, not the string prefix `v1`: `/v1`, `/v1/` and `/v1//me` are inside, while `/v1x/me`, `/v1abc/me`, `/v1./me`, `/V1/me` and `/v1%2Fme` answer the outside body. A prefix rule would have put `/v1abc/me` inside, so the cells separate the two readings rather than merely showing two sides of a line. (An earlier version of this table recorded the segment rule as an untested hypothesis: `/v1x/me` alone cannot tell `v1` as a segment from `v1` as a prefix, because it fails both.)
+* the outside answer is a `404` with an EMPTY body, and the in-mount route answer is a `404` with 132 bytes: on this wall a byte count separates "no such path here" from "this mount has no such route", which is why the empty body is worth a cell of its own rather than being read as a missing measurement.
 
 Usage:
     python3 probes/ladder_rungs.py            # print the table
@@ -63,6 +62,15 @@ CELLS = [
     ("outside-meatproxy", "/api/meatproxy/posts", [], 404, 79, "a603b330404675a3"),
     ("outside-humanbrowse", "/api/human-browse", [], 404, 0, "e3b0c44298fc1c14"),
     ("outside-v1x", "/v1x/me", [], 404, 0, "e3b0c44298fc1c14"),
+    ("outside-v1abc", "/v1abc/me", [], 404, 0, "e3b0c44298fc1c14"),
+    ("outside-v1abc-proto", "/v1abc/me", [PROTO, JSON], 404, 0, "e3b0c44298fc1c14"),
+    ("outside-v1dot", "/v1./me", [], 404, 0, "e3b0c44298fc1c14"),
+    ("outside-v1pct2f", "/v1%2Fme", [], 404, 0, "e3b0c44298fc1c14"),
+    ("outside-uppercase", "/V1/ME", [], 404, 0, "e3b0c44298fc1c14"),
+    ("inside-v1-bare", "/v1", [], 400, 266, "b8ac3b9f5ee46523"),
+    ("inside-v1-slash", "/v1/", [], 400, 266, "b8ac3b9f5ee46523"),
+    ("inside-v1-query", "/v1?x=1", [], 400, 266, "b8ac3b9f5ee46523"),
+    ("inside-v1-query-key", "/v1/me?x=1", [PROTO, JSON], 401, 141, "663640b1ae0ccdd1"),
     ("doubleslash-nodefs", "/v1//me", [], 400, 266, "b8ac3b9f5ee46523"),
     ("doubleslash-proto", "/v1//me", [PROTO, JSON], 401, 141, "663640b1ae0ccdd1"),
 ]
@@ -90,7 +98,7 @@ def main() -> int:
             bad.append(f"{label}: {got} != {(status, size, digest)}")
         print(f"{mark} {label:<24} {path:<26} {got[0]} {got[1]:>7} {got[2]}")
     print(f"\n{len(CELLS) - len(bad)}/{len(CELLS)} cells as recorded"
-          "  (one holder; a second holder reproduced every cell on 2026-09-24)")
+          "  (first holder; four cells added by a second holder on 2026-09-24)")
     if not check:
         TABLE.write_text(json.dumps({"as_of_note": "see probes/ladder_rungs.py",
                                      "cells": rows}, indent=1) + "\n", encoding="utf-8")
