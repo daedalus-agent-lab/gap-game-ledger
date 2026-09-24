@@ -131,22 +131,39 @@ line is stale.
 
 Current tree, `bash repro/run_all.sh --net --stable` from the mirror with
 `REPRO_WS=$PWD REPRO_LEDGER=<the ledger>`:
-**aggregate `05073907b9e4f921`**, 10 items, all pass (receipt v1183; the run
-before it was `ac40e076b4cff863` over 17 ladder cells;
-the run before carried 9 items and the aggregate `bd6cd0800a424ad7`, receipt v1180; the runs before
+**aggregate `fdc1489026b9abfd`**, 13 items, all pass (receipt v1197; the run before
+that, over the same code with the mirror check pointed at the workspace root instead
+of the mirror, was `f8b61f83e774f09d`, and the run before
+it was `05073907b9e4f921` over 10 items, receipt v1183; the run before that was
+`ac40e076b4cff863` over 17 ladder cells; the run before carried 9 items and the
+aggregate `bd6cd0800a424ad7`, receipt v1180; the runs before
 it were `bf7971f570b644d4`, receipt v1179, and `3beeea5ee3b8ac12`, receipt v1177). The run
 names what moved against the recorded tree instead of leaving a stranger to guess:
-`ledger check.py: out bb025c521ed6ae95->a26e973113698519` and `ledger
-verify_claims.py: out b2a5aed82abef446->29caa5822abb43d9`, which is the fingerprint
-repair of commit `a319a79`, the control pairs and declared gap of `8401042` and
-`fa1d02c`, and the acceptance rows all three added. `--expect 05073907b9e4f921` exits 0
-and `--expect 4444444444444444` exits 2 with `digest MISMATCH`.
-`check.py`: 118 entries, 116 ok, 0 miss, 2 skipped, 116/116 distinct (with a
-fingerprint control of six pairs, one per rule of the policy, and two declared
-gap rules), policy
-`4ae2823498fa237e` (the classes page's digest at that commit was `41196365058405a9`); `verify_claims.py`: 24 cases, 0 failed.
+`ledger check.py: out d3e64d2232dc9d15->1f2213961848ce36` and `ledger
+verify_claims.py: out adba7d744558bc9e->3a0a82016b4e3236`, and it reports the item added:
+`policy mutations --check`. The mirror's own checksums are read as its first item
+again: with `REPRO_WS` pointing at the mirror it returns `out=e3b0c44298fc1c14`
+(silent when every file matches), and against the workspace root it can only say
+`no checksum file in this layout` — which is what it said in the run quoted
+before this one, so that run did not in fact check the mirror.
+`--expect fdc1489026b9abfd` exits 0 and `--expect 4444444444444444` exits 2 with
+`digest MISMATCH`.
+`check.py`: 118 entries, 116 ok, 0 miss, 2 skipped, 116/116 distinct, with a
+fingerprint control of **15 pairs over 14 enumerated rules of the policy** (13
+guarded by a pair, 1 declared with no pair and covered by a row the mutation
+harness runs), policy `ed1ffda14c79272e` (the classes page's digest at that commit
+is `d37540fb3550e85a`); `verify_claims.py`: **27 cases, 0 failed**; and
+`probes/policy_mutations.py --check` breaks every rule of the policy in memory and
+requires each break to be caught — by the control naming that rule's pair, or by
+the declared row failing on a copy.
+
+The recorded run before this one is superseded by commit `90ef203`, which
+replaces the policy's control labels with rule ids, gives the six rules an attack
+had broken without notice a pair each, fixes the two holes behind them (a `global`
+declaration's own name was never erased, and the declared idempotence of the
+erasure was false), and adds the mutation harness.
 
 Tips: `5922ce7` → `5013bab` → `8c17a1d` → `9cccff0` → `179082` → `89014de` →
 `2891eb6` → `5670881` → `b3df1d0` → `f167c27` → `36544e1` → `a319a79` →
 `30a7f40` → `8401042` → `fa1d02c` → `4f87143` → `b994aee` → `0d02259` →
-`ca0ebcb` (HEAD).
+`ca0ebcb` → `10feb20` → `107a302` → `90ef203` (HEAD).
