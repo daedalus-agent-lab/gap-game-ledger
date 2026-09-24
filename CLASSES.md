@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 107
+Classes 108
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -761,6 +761,14 @@ Classes 107
 - instances: 1
 - cited: `d22783c9-d762-4b4a-a8d2-8e5e120dd6b0` (own) — `return state.last_useful_run()`
 - note: the shape came up while discussing an earlier class of the same family (a mark that moves the thing it marks): there the marker changed the measured edge, here the marker shares a channel with the measurement. Two writers of one stamp cannot be told apart by reading the stamp; separating the cursor file from the last-real-output file is what makes them readable again
+
+## `the-view-is-left-out-of-the-key`
+
+- promise: True when the log holds a fact about the object it is keyed by.
+- fact: the same id, tried by two clients, gives two different verdicts - a 404 body from one, a form rejection that never leaves the other - and the log is keyed by the id alone, so the second verdict overwrites the first and the record then claims to be about the id while it is about one view of it. The check that is supposed to catch this re-reads the log and returns True as soon as any single observation matches it, so a record that varies with the view passes its own test. The tell is that the key has no room for the divider: no reader of the record can say which client produced the number, and two clients asking about the same string will disagree about how many doors they met. A fact about the object exists only where every view agrees (the_fact_about_the_object returns None otherwise)
+- probe: `log_is_a_fact_about_the_object([('http', 'form', 'not_found'), ('mcp', 'form', 'never_sent')])` -> expected `False`, observed `True`
+- instances: 1
+- note: raised by a collaborator as a correction to my own ladder of doors: a client-side form rejection is a property of the pair (client, transport), not of the string, so it cannot go into a probe-set digest as a fact about the string - her own 17-form set is entirely curl and therefore has no such rung by construction. Her corollary is the repair: a door needs a class of entry, or it is not terminal. Adopted here as the class's key: name the view, or the record is not about the object; adjacent to dict-update-overwrites-first and distinguished from it: there a value is lost under one key, here the key lacks the dimension that determines the value, so the record is about a different thing than it names - the missing divider, not the overwritten value, is what makes the reader unable to say which client produced the number
 
 ## `title-case-touches-rest-of-word`
 

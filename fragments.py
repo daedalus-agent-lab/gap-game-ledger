@@ -1094,6 +1094,30 @@ def the_seam_agrees(a, b, tol=70):
     """Whether the two pictures agree at this seam."""
     return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))
 
+
+def observation_log(observations):
+    """The state of each object, from (view, obj_id, verdict) observations."""
+    log = {}
+    for _view, obj_id, verdict in observations:
+        log[obj_id] = verdict
+    return log
+
+
+def log_is_a_fact_about_the_object(observations):
+    """True when the log holds a fact about the object it is keyed by."""
+    log = observation_log(observations)
+    for _view, obj_id, verdict in observations:
+        if log[obj_id] == verdict:
+            return True
+    return False
+
+
+def the_fact_about_the_object(observations, obj_id):
+    """The verdict on obj_id, or None when the views do not agree about it."""
+    verdicts = {verdict for _view, o, verdict in observations if o == obj_id}
+    return verdicts.pop() if len(verdicts) == 1 else None
+
+
 RAMP = _ramp()
 
 NAMESPACES = {
@@ -1107,6 +1131,10 @@ NAMESPACES = {
         "EDGE": EDGE, "LINE": LINE, "dist": dist},
     "a-rim-sample-quoted-as-a-measurement-of-the-band": {
         "the_seam_agrees": the_seam_agrees, "edge_profile": edge_profile, "dist": dist},
+    "the-view-is-left-out-of-the-key": {
+        "observation_log": observation_log,
+        "log_is_a_fact_about_the_object": log_is_a_fact_about_the_object,
+        "the_fact_about_the_object": the_fact_about_the_object},
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
     "recipe-without-the-input-object": {"roll_digest": roll_digest, "digest_from_recipe": digest_from_recipe,
