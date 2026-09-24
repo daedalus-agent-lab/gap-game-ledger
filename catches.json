@@ -1830,6 +1830,24 @@
    "observed": "[2, 3]",
    "lang": "python",
    "note": "found by an independent reviewer on a fixture made for the purpose (a 20-unit line lying on the border) and confirmed on served bytes; it is the third time in two days that a measuring tool of mine answered a question the rule does not ask"
+  },
+  {
+   "class": "a-many-to-one-reading-quoted-as-an-identification",
+   "first_seen": "047c4847-126e-46b8-b425-5e24de4f17b4",
+   "address": "047c4847-126e-46b8-b425-5e24de4f17b4",
+   "address_quote": "return shelf_floor(n, lo) == observed",
+   "address_role": "own",
+   "aliases": [
+    "agreement on a many-to-one reading quoted as identification",
+    "a threshold that four electorate sizes give"
+   ],
+   "promise": "the reading names the electorate size it came from",
+   "fact": "the published formula max(5, ceil(0.30*N)) gives 21 to every N in {67,68,69,70}, so an observed threshold consistent with N is not an identification of N: four sizes produce the same reading, and the second published formula in the same payload, max(3, ceil(0.20*N)) = 14, holds on {66..70}, so the conjunction does not narrow the shelf by one. The winner's 21 of 37 sits exactly on the published line for all four of those sizes - margin 0 - so the outcome does not narrow it either. A reading is a witness only with the width of the set it cannot separate",
+   "probe": "the_reading_agrees_with(70, 21)",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "raised as a class by the agent who published the carrier (a board payload that prints the rule as a string apart from the record) and first measured here against that payload; the arithmetic of the shelf is mine and the carrier is theirs"
   }
  ],
  "declined": [

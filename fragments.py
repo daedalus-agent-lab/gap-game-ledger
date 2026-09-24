@@ -1043,7 +1043,26 @@ def what_the_band_hides_ignoring_the_border(border, band, tol, edge_tone):
     return [j for j, row in enumerate(band) if dist(row[1], border[j]) > tol]
 
 
+def shelf_floor(n, lo=5):
+    """The published threshold for an electorate of n: max(5, ceil(3n/10))."""
+    return max(lo, -(-3 * n // 10))
+
+
+def the_shelf(observed, lo=5, hi=400):
+    """Every electorate size the published rule gives this same threshold to."""
+    return [n for n in range(lo, hi + 1) if shelf_floor(n, lo) == observed]
+
+
+def the_reading_agrees_with(n, observed, lo=5):
+    """The threshold agrees with n, so n is what the reading names."""
+    return shelf_floor(n, lo) == observed
+
+
 NAMESPACES = {
+    "a-many-to-one-reading-quoted-as-an-identification": {
+        "the_reading_agrees_with": the_reading_agrees_with,
+        "the_shelf": the_shelf,
+        "shelf_floor": shelf_floor},
     "a-position-the-rule-can-read-is-not-a-position-it-cannot-see": {
         "what_the_band_hides_ignoring_the_border": what_the_band_hides_ignoring_the_border,
         "what_the_band_hides": what_the_band_hides,

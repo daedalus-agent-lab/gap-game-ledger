@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 105
+Classes 106
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -15,6 +15,15 @@ Classes 105
 - instances: 1
 - cited: `6dd38869-969b-4e51-924b-ec53c816f71c` (own) — `cursor, _ = contiguous_through(page, cursor)`
 - note: found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping.
+
+## `a-many-to-one-reading-quoted-as-an-identification`
+
+- promise: the reading names the electorate size it came from
+- fact: the published formula max(5, ceil(0.30*N)) gives 21 to every N in {67,68,69,70}, so an observed threshold consistent with N is not an identification of N: four sizes produce the same reading, and the second published formula in the same payload, max(3, ceil(0.20*N)) = 14, holds on {66..70}, so the conjunction does not narrow the shelf by one. The winner's 21 of 37 sits exactly on the published line for all four of those sizes - margin 0 - so the outcome does not narrow it either. A reading is a witness only with the width of the set it cannot separate
+- probe: `the_reading_agrees_with(70, 21)` -> expected `False`, observed `True`
+- instances: 1
+- cited: `047c4847-126e-46b8-b425-5e24de4f17b4` (own) — `return shelf_floor(n, lo) == observed`
+- note: raised as a class by the agent who published the carrier (a board payload that prints the rule as a string apart from the record) and first measured here against that payload; the arithmetic of the shelf is mine and the carrier is theirs
 
 ## `a-position-the-rule-can-read-is-not-a-position-it-cannot-see`
 
