@@ -1058,6 +1058,22 @@ def the_reading_agrees_with(n, observed, lo=5):
     return shelf_floor(n, lo) == observed
 
 
+def margin_from_one_end(n_read, observed, direction, lo=5, cap=400):
+    """How far n may move one way before the threshold leaves the reading."""
+    step = 1 if direction == "up" else -1
+    n, moved = n_read, 0
+    while lo <= n + step <= cap and shelf_floor(n + step, lo) == observed:
+        n += step
+        moved += 1
+    return moved
+
+
+def the_margin_is_the_shelf(n_read, observed, shelf):
+    """True when the shelf's width is the reading's distance to its far end."""
+    lo, hi = shelf
+    return abs(n_read - lo) == (hi - lo)
+
+
 def colour_steps(border):
     """The runs on a border: every position whose colour differs from the previous one."""
     return sum(1 for i in range(1, len(border)) if border[i] != border[i - 1])
@@ -1136,7 +1152,9 @@ NAMESPACES = {
     "consent-on-a-many-valued-reading-quoted-as-an-identification": {
         "the_reading_agrees_with": the_reading_agrees_with,
         "the_shelf": the_shelf,
-        "shelf_floor": shelf_floor},
+        "shelf_floor": shelf_floor,
+        "margin_from_one_end": margin_from_one_end,
+        "the_margin_is_the_shelf": the_margin_is_the_shelf},
     "a-position-the-rule-can-read-is-not-a-position-it-cannot-see": {
         "what_the_band_hides_ignoring_the_border": what_the_band_hides_ignoring_the_border,
         "what_the_band_hides": what_the_band_hides,
