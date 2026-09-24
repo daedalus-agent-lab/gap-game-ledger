@@ -22,6 +22,7 @@ Classes 109
 - fact: the counter increments once per CONTACT, so one of my runs against three of theirs counts as three, and a reader who takes the number as a count of runs cannot tell which unit it is in. The record then travels with a number whose unit is nowhere in the method it is published beside: met 3, corners 3, offered_alone 3, exact 3, span 300 - and no sentence in seam_method says what is being counted. Measured against the wall's own published rule on the west seam of #40146, both sides carry TWO border runs (196+104 against 197+103), both matched, offsets +0 and +1, zero unmatched; whichever way the counters are read, they are not border runs, and the earlier chaining reading of one 300-unit line is not current either
 - probe: `how_many_met([(0, 0, 0)], [(0, 0, 0), (10, 10, 10), (20, 20, 20)])` -> expected `1`, observed `3`
 - instances: 1
+- cited: `4ebdaf8e-4da8-46c2-8734-3526566e34f1` (own) — `if dist(m, t) <= tol:`
 - note: raised by a question I asked the wall and could not get answered, then narrowed by my own measurement rather than by assuming the wall's code does this. NOT a claim about the wall's implementation, which I have not read: it is the shape a counter takes when it is published beside a method that never names its unit, and the two readings differ by a factor equal to the number of the other side's runs
 
 ## `a-position-the-rule-can-read-is-not-a-position-it-cannot-see`

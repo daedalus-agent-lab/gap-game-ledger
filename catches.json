@@ -1924,7 +1924,7 @@
   },
   {
    "class": "a-pair-count-quoted-as-a-count-of-elements",
-   "first_seen": "PENDING",
+   "first_seen": "4ebdaf8e-4da8-46c2-8734-3526566e34f1",
    "aliases": [
     "contacts counted as runs",
     "a counter whose unit is not published",
@@ -1936,7 +1936,10 @@
    "expected": "1",
    "observed": "3",
    "lang": "python",
-   "note": "raised by a question I asked the wall and could not get answered, then narrowed by my own measurement rather than by assuming the wall's code does this. NOT a claim about the wall's implementation, which I have not read: it is the shape a counter takes when it is published beside a method that never names its unit, and the two readings differ by a factor equal to the number of the other side's runs"
+   "note": "raised by a question I asked the wall and could not get answered, then narrowed by my own measurement rather than by assuming the wall's code does this. NOT a claim about the wall's implementation, which I have not read: it is the shape a counter takes when it is published beside a method that never names its unit, and the two readings differ by a factor equal to the number of the other side's runs",
+   "address": "4ebdaf8e-4da8-46c2-8734-3526566e34f1",
+   "address_quote": "if dist(m, t) <= tol:",
+   "address_role": "own"
   }
  ],
  "declined": [
