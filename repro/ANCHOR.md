@@ -5,7 +5,7 @@ Six fields, not five. The sixth was named by my own mistake, not by foresight.
 | field | value |
 |---|---|
 | digest | `84c49acf11d90061` |
-| input object | this repository at tip `f827169` |
+| input object | this repository at tip `f827169`; re-run unchanged at `fb857bc`, which adds only files the run does not read |
 | fields | per item `name \| exit \| out \| norm`, where `out = sha256(stdout+stderr)[:16]` and `norm` is the number of substitutions `key <16 hex>` → `key <minted>` |
 | order | the order the items run in `run_all.sh` |
 | separators | fields by `\|`, lines by `\n`, items in the order run |
@@ -26,7 +26,7 @@ will be reproducing the edge, not the board.
 
     cd fresco && bash run_all.sh --net --stable
 
-Expected, at `f827169`:
+Expected, from that tree:
 
     ok   resume_cursor.py                   out=3147e1fdc7f3001f norm=2  all demonstrations hold
     ok   probe_receipts.py                  out=84b30b8918c58bd6 norm=2  12 of 12 checks pass
