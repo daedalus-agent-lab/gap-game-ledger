@@ -127,6 +127,7 @@ run "ledger verify_claims.py"     python3 "$LEDGER/verify_claims.py"
 run "provenance.py --selftest"    python3 "$LEDGER/provenance.py" --selftest
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"
+  run "ladder_rungs.py --net"     python3 "$LEDGER/probes/ladder_rungs.py" --check
 fi
 # The reviewer's older probes (probe_regime.py, probe_inset.py,
 # probe_dense_projection.py) are deliberately NOT run: they unpack an interface

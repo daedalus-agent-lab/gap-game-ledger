@@ -1,0 +1,261 @@
+{
+ "as_of_note": "see probes/ladder_rungs.py",
+ "cells": [
+  {
+   "cell": "v1/no-headers",
+   "path": "/v1/no-such-route-xyz",
+   "headers": [],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
+  },
+  {
+   "cell": "v1/proto-only",
+   "path": "/v1/no-such-route-xyz",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ]
+   ],
+   "got": [
+    406,
+    184,
+    "cf6d6c4bf3d171d5"
+   ]
+  },
+  {
+   "cell": "v1/proto+json",
+   "path": "/v1/no-such-route-xyz",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "application/json"
+    ]
+   ],
+   "got": [
+    401,
+    141,
+    "663640b1ae0ccdd1"
+   ]
+  },
+  {
+   "cell": "v1/proto+html",
+   "path": "/v1/no-such-route-xyz",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "text/html"
+    ]
+   ],
+   "got": [
+    403,
+    220,
+    "7ecd3545a6c7a845"
+   ]
+  },
+  {
+   "cell": "v1/browser-door",
+   "path": "/v1/me",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "text/html"
+    ]
+   ],
+   "got": [
+    403,
+    220,
+    "7ecd3545a6c7a845"
+   ]
+  },
+  {
+   "cell": "proto-wrong-value",
+   "path": "/v1/me",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/2"
+    ],
+    [
+     "Accept",
+     "application/json"
+    ]
+   ],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
+  },
+  {
+   "cell": "proto-empty-value",
+   "path": "/v1/me",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     ""
+    ],
+    [
+     "Accept",
+     "application/json"
+    ]
+   ],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
+  },
+  {
+   "cell": "proto-lower-name",
+   "path": "/v1/me",
+   "headers": [
+    [
+     "x-agent-protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "application/json"
+    ]
+   ],
+   "got": [
+    401,
+    141,
+    "663640b1ae0ccdd1"
+   ]
+  },
+  {
+   "cell": "accept-q0",
+   "path": "/v1/me",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "application/json;q=0"
+    ]
+   ],
+   "got": [
+    401,
+    141,
+    "663640b1ae0ccdd1"
+   ]
+  },
+  {
+   "cell": "accept-upper",
+   "path": "/v1/me",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "TEXT/HTML"
+    ]
+   ],
+   "got": [
+    406,
+    184,
+    "cf6d6c4bf3d171d5"
+   ]
+  },
+  {
+   "cell": "outside-openapi",
+   "path": "/openapi.json",
+   "headers": [],
+   "got": [
+    200,
+    880023,
+    "13a43e1e9b0ed457"
+   ]
+  },
+  {
+   "cell": "outside-politicsmd",
+   "path": "/politics.md",
+   "headers": [],
+   "got": [
+    200,
+    49050,
+    "9d8ae29bac7b4533"
+   ]
+  },
+  {
+   "cell": "outside-meatproxy",
+   "path": "/api/meatproxy/posts",
+   "headers": [],
+   "got": [
+    404,
+    79,
+    "a603b330404675a3"
+   ]
+  },
+  {
+   "cell": "outside-humanbrowse",
+   "path": "/api/human-browse",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "outside-v1x",
+   "path": "/v1x/me",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "doubleslash-nodefs",
+   "path": "/v1//me",
+   "headers": [],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
+  },
+  {
+   "cell": "doubleslash-proto",
+   "path": "/v1//me",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "application/json"
+    ]
+   ],
+   "got": [
+    401,
+    141,
+    "663640b1ae0ccdd1"
+   ]
+  }
+ ]
+}
