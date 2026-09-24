@@ -76,6 +76,9 @@ class _DropDeadStores(ast.NodeTransformer):
         return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)
                 and isinstance(n.ctx, ast.Load)}
 
+    def visit_AsyncFunctionDef(self, node):
+        return self.visit_FunctionDef(node)
+
     def visit_FunctionDef(self, node):
         body, reads = [], set()
         for stmt in node.body:
@@ -94,23 +97,53 @@ class _DropDeadStores(ast.NodeTransformer):
         return node
 
 
+def bound_names(node) -> set:
+    """Every name the function binds, collected before anything is renamed.
+
+    Renaming during the walk made the erasure depend on traversal order: a
+    comprehension target is visited after the expression that uses it, a nested
+    def's name is visited in the middle of the body, and a walrus target appears
+    inside the condition that reads it first. Three copies scored as different
+    logic for renaming a target alone. Collecting the bound names in one pass
+    first removes the order from the question.
+    """
+    bound = set()
+    for sub in ast.walk(node):
+        if isinstance(sub, ast.arg):
+            bound.add(sub.arg)
+        elif isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            bound.add(sub.name)
+        elif isinstance(sub, ast.Name) and isinstance(sub.ctx, (ast.Store, ast.Del)):
+            bound.add(sub.id)
+        elif isinstance(sub, ast.alias) and sub.asname:
+            # an explicit `as` name is the author's choice; a bare `import json`
+            # binds the module under its own name, which is a reference to
+            # something outside the fragment and stays free
+            bound.add(sub.asname)
+        elif isinstance(sub, ast.ExceptHandler) and sub.name:
+            bound.add(sub.name)
+        elif isinstance(sub, (ast.Global, ast.Nonlocal)):
+            bound.update(sub.names)
+    return bound
+
+
 class _Normalise(ast.NodeTransformer):
     """Rename bound identifiers by order of first appearance; keep free ones.
 
-    A name that the function binds -- an argument, a local -- carries nothing but
-    the author's choice of letter, so it is erased. A name the function does not
-    bind is a reference to something outside the fragment: a module, a helper,
-    another fragment. Erasing those made `json.loads(x)` and `pickle.loads(x)`
-    one fingerprint -- different subjects under one verb -- and the fingerprint
-    is what decides whether a repeat repeats a class or is a copy of it. A free
-    name is kept under a `g:` prefix so it can never collide with an assigned
-    `vN`, and the prefix is not a builtin, so the erasure of bound names is
-    unchanged.
+    A name the function binds -- an argument, a local, a target -- carries
+    nothing but the author's choice of letter, so it is erased. A name the
+    function never binds is a reference to something outside the fragment: a
+    module, a helper, another fragment. Erasing those made `json.loads(x)` and
+    `pickle.loads(x)` one fingerprint -- different subjects under one verb --
+    and the fingerprint is what decides whether a repeat repeats a class or is a
+    copy of it. A free name is kept under a `g:` prefix so it can never collide
+    with an assigned `vN`, and the prefix is not a builtin, so the erasure of
+    bound names is unchanged.
     """
 
-    def __init__(self):
+    def __init__(self, bound: set):
         self.seen = {}
-        self.bound = set()
+        self.bound = bound
 
     def _rename(self, name: str) -> str:
         if name in BUILTINS or name.startswith("__"):
@@ -119,43 +152,6 @@ class _Normalise(ast.NodeTransformer):
             self.seen[name] = f"v{len(self.seen)}"
         return self.seen[name]
 
-    def _bind(self, node):
-        for sub in ast.walk(node):
-            if isinstance(sub, ast.Name) and isinstance(sub.ctx, (ast.Store, ast.Del)):
-                self.bound.add(sub.id)
-        self.generic_visit(node)
-
-    def visit_arg(self, node):
-        self.bound.add(node.arg)
-        node.arg = self._rename(node.arg)
-        return node
-
-    def visit_Assign(self, node):
-        self._bind(node)
-        return node
-
-    def visit_AugAssign(self, node):
-        self._bind(node)
-        return node
-
-    def visit_AnnAssign(self, node):
-        self._bind(node)
-        return node
-
-    def visit_For(self, node):
-        for sub in ast.walk(node.target):
-            if isinstance(sub, ast.Name) and isinstance(sub.ctx, ast.Store):
-                self.bound.add(sub.id)
-        self.generic_visit(node)
-        return node
-
-    def visit_comprehension(self, node):
-        for sub in ast.walk(node.target):
-            if isinstance(sub, ast.Name) and isinstance(sub.ctx, ast.Store):
-                self.bound.add(sub.id)
-        self.generic_visit(node)
-        return node
-
     def visit_Name(self, node):
         if isinstance(node.ctx, ast.Load) and node.id not in self.bound:
             node.id = "g:" + node.id
@@ -163,9 +159,32 @@ class _Normalise(ast.NodeTransformer):
         node.id = self._rename(node.id)
         return node
 
+    def visit_arg(self, node):
+        node.arg = self._rename(node.arg)
+        return node
+
     def visit_FunctionDef(self, node):
         node.name = self._rename(node.name)
         self.generic_visit(node)
+        return node
+
+    def visit_AsyncFunctionDef(self, node):
+        return self.visit_FunctionDef(node)
+
+    def visit_ClassDef(self, node):
+        node.name = self._rename(node.name)
+        self.generic_visit(node)
+        return node
+
+    def visit_ExceptHandler(self, node):
+        if node.name:
+            node.name = self._rename(node.name)
+        self.generic_visit(node)
+        return node
+
+    def visit_alias(self, node):
+        if node.asname:
+            node.asname = self._rename(node.asname)
         return node
 
 
@@ -184,9 +203,12 @@ def fingerprint(fn) -> str:
     """
     tree = ast.parse(inspect.getsource(fn).lstrip())
     node = tree.body[0]
-    if not isinstance(node, ast.FunctionDef):
+    if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
         # Anything that is not a named function -- a lambda, an assignment --
-        # has no body to examine and is fingerprinted as it stands.
+        # has no body to examine and is fingerprinted as it stands. An async def
+        # is one of the named functions: it used to fall through this test and
+        # be dumped unnormalised, so two async fragments differing only in the
+        # letters of their arguments read as different logic.
         return ast.dump(node)
     if (
         node.body
@@ -196,7 +218,7 @@ def fingerprint(fn) -> str:
     ):
         node.body = node.body[1:]
     _DropDeadStores().visit(node)
-    _Normalise().visit(node)
+    _Normalise(bound_names(node)).visit(node)
     return ast.dump(node)
 
 

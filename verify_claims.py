@@ -340,7 +340,7 @@ def r_attribute_pair(tree):
         linecache.cache[name] = (len(src), None, src.splitlines(True), name)
         ns: dict = {}
         exec(compile(src, name, "exec"), ns)
-        return ns[src.split("(")[0].replace("def ", "").strip()]
+        return ns[src.split("(")[0].split()[-1]]
 
     def same(left: str, right: str) -> bool:
         return fingerprint(build(left)) == fingerprint(build(right))
@@ -356,6 +356,27 @@ def r_attribute_pair(tree):
          "def a(xs):\n    return find_max(xs)\n", "def b(xs):\n    return pick_max(xs)\n"),
     ]
     one_shape = [
+        ("a comprehension target is a bound name",
+         "def a(xs):\n    return [y * 2 for y in xs]\n",
+         "def b(xs):\n    return [z * 2 for z in xs]\n"),
+        ("a lambda argument is a bound name",
+         "def a(xs):\n    return sorted(xs, key=lambda v: -v)\n",
+         "def b(xs):\n    return sorted(xs, key=lambda w: -w)\n"),
+        ("a nested def's name is a bound name",
+         "def a(xs):\n    def inner(v):\n        return v + 1\n    return [inner(x) for x in xs]\n",
+         "def b(xs):\n    def step(v):\n        return v + 1\n    return [step(x) for x in xs]\n"),
+        ("a walrus target is a bound name",
+         "def a(xs):\n    return [v for x in xs if (v := x) > 0]\n",
+         "def b(xs):\n    return [w for x in xs if (w := x) > 0]\n"),
+        ("a class name is a bound name",
+         "def a(xs):\n    class P:\n        pass\n    return P\n",
+         "def b(xs):\n    class Q:\n        pass\n    return Q\n"),
+        ("an except-as name is a bound name",
+         "def a(f):\n    try:\n        return f()\n    except ValueError as e:\n        return str(e)\n",
+         "def b(f):\n    try:\n        return f()\n    except ValueError as err:\n        return str(err)\n"),
+        ("an async def is a named function, renamed and dead-stripped like any other",
+         "async def a(xs):\n    _pad = None\n    return [x for x in xs]\n",
+         "async def b(zs):\n    return [z for z in zs]\n"),
         ("bound names are still erased",
          "def a(xs):\n    total = 0\n    for x in xs:\n        total += x\n    return total\n",
          "def b(items):\n    acc = 0\n    for it in items:\n        acc += it\n    return acc\n"),
@@ -364,6 +385,10 @@ def r_attribute_pair(tree):
         ("a helper that keeps its name is still one shape with its copy",
          "def a(xs):\n    return find_max(xs)\n", "def b(ys):\n    return find_max(ys)\n"),
     ]
+    # Order-independence has its own half: renaming during the walk made a
+    # comprehension target, a nested def's name and a walrus target score as
+    # different logic, because each is read before it is visited. Every entry
+    # above is such a case, so a return to renaming-during-the-walk fails here.
     bad_sep = [label for label, l, r in separate if same(l, r)]
     bad_one = [label for label, l, r in one_shape if not same(l, r)]
     if bad_sep or bad_one:
