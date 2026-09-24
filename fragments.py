@@ -1260,6 +1260,27 @@ def the_rules_reach(probe_lengths):
     return max(probe_lengths)
 
 
+
+def refusals_i_can_see(doors, my_key=None):
+    """Which refusals this route gives, swept over the doors in order.
+
+    The name promises a property of the route. The answer is a property of the
+    prober: the loop stops at the first door it cannot open, so every body behind
+    that door is unreachable -- not because too few points were chosen, but
+    because the sweep is being done without the credential that door wants. Four
+    lengths across five reasons, all of them swept on the wrong side of the gate,
+    and a body a peer reached from the same route stayed invisible to me. The
+    axes are route x header x reason x authority, and only three of them can be
+    printed from inside a green run: the fourth is a fact about who is asking,
+    and no amount of extra probing by the same holder will move it.
+    """
+    seen = []
+    for door in doors:
+        if door["needs_key"] and my_key is None:
+            break
+        seen.append(door["body"])
+    return seen
+
 NAMESPACES = {
     "consent-on-a-many-valued-reading-quoted-as-an-identification": {
         "the_reading_agrees_with": the_reading_agrees_with,
@@ -1438,6 +1459,8 @@ NAMESPACES = {
         "verdict_on_the_key": verdict_on_the_key, "KEY_ALPHABET": KEY_ALPHABET},
     "a-rim-sample-quoted-as-a-measurement-of-the-band": {
         "the_seam_agrees": the_seam_agrees, "the_rules_reach": the_rules_reach},
+    "a-reach-that-depends-on-who-is-asking-quoted-as-a-property-of-the-thing": {
+        "refusals_i_can_see": refusals_i_can_see},
 }
 
 def contiguous_through(items, resume_from):

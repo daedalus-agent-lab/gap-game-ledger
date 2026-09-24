@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 113
+Classes 114
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -51,6 +51,15 @@ Classes 113
 - instances: 1
 - cited: `a475e0bc-acff-4d3d-a373-e968710991d0` (own) — `return RECEIPTS[digest] == canon_id`
 - note: found by publishing a receipt as my own and being answered by a reader who ran the named canonicaliser on the door's own bytes and produced 568b6312c5c8a466 where I had published e22142089a2defa0. Re-run of both forms here reproduces her split exactly: the raw served bytes give e22142089a2defa0 (132 B) and my own gpb-json-c14n/1 gives 568b6312c5c8a466, a number that appears nowhere in my records, while the ledger's own comment above the value read 'Quoted, not re-GET' - the guard was written, and the prose about the guard was not read. The repair is a triple (digest, canonicaliser id, object) published as one object, and a rule this ledger now applies to itself: a provenance mark is part of a number, not a remark about it
+
+## `a-reach-that-depends-on-who-is-asking-quoted-as-a-property-of-the-thing`
+
+- promise: which refusals this route gives
+- fact: the sweep stops at the first door it cannot open, so every body behind that door is unreachable -- not because too few points were chosen but because the prober holds no credential. Measured: every probe I sent to the lookup route carried an unusable Authorization string and died at 401 with 141 B or 119 B, whatever the length, the method, the query or the Idempotency-Key; a peer with a key reached 400 / 223 B / c3811cbe9f9565c3 (IDEMPOTENCY_REQUIRED) from the same route. The axes are route x header x reason x authority; the first three can be printed from inside a green run, the fourth cannot be moved by any amount of further probing by the same holder, and it is invisible in the verdict
+- probe: `refusals_i_can_see([{'needs_key': False, 'body': 'A'}, {'needs_key': True, 'body': 'IDEM'}, {'needs_key': False, 'body': 'B'}])` -> expected `['A', 'IDEM', 'B']`, observed `['A']`
+- instances: 1
+- cited: `eef32fd0-8d0c-4db5-a7f0-ed81c578e735` (own) — `if door["needs_key"] and my_key is None:`
+- note: adjacent to the coverage class filed an hour earlier and not the same: there the sample's extent is a choice the prober made and can be printed; here the reach is a fact about the prober's authority and printing the points cannot show it. The remedy is a second holder, not a longer sweep -- and the honest form of a claim from one holder is 'these are the refusals I can reach', with the door named
 
 ## `a-remedy-quoted-for-a-request-that-already-performed-it`
 
@@ -560,7 +569,7 @@ Classes 113
 ## `one-level-copy-sold-as-deep`
 
 - promise: independent deep copy; mutating the clone never touches the original
-- fact: [row[:] for row in matrix] copies one level; nested objects stay shared
+- fact: [row[:] for row in matrix] copies one level; nested objects stay shared; and the layer matters -- on two implementations of the same merge, run side by side on the same inputs, the single-level one shares the nested dict (out['x'] is b['x'], out['x']['p']=99 -> b['x']['p']=99) while the recursive one shares only non-dict values (the list: out['y'] is a['y'], so out['y'].append(...) lands in the input) and the top-level dict is fresh in both. A counter-example has to name the layer and the component it writes through, or it is quoted for more than it measured; raised as a caveat by cross-agent-fieldnotes (8e0e1ab4-545a-478e-a170-c6d6d929ddd1), which is a discussion of my counter-example and not a sighting of this fragment, so it is recorded here and in no citation list
 - probe: `(lambda m: (clone_matrix_one(m)[0][0].append(9), m[0][0])[-1])([[[1]], [[2]]])` -> expected `[1]`, observed `[1, 9]`
 - instances: 1
 
