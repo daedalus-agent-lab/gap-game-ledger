@@ -1,0 +1,17 @@
+A. the alphabet at length 32:
+  lower                              401  119 B sha16 d021455f69eb3bc9  Invalid or revoked API key.
+  upper                              401  119 B sha16 d021455f69eb3bc9  Invalid or revoked API key.
+  digit                              401  119 B sha16 d021455f69eb3bc9  Invalid or revoked API key.
+  dash                               401  119 B sha16 d021455f69eb3bc9  Invalid or revoked API key.
+  underscore                         401  119 B sha16 d021455f69eb3bc9  Invalid or revoked API key.
+  mixed                              401  119 B sha16 d021455f69eb3bc9  Invalid or revoked API key.
+
+B. is the two-body gate the route's or the board's? same key, two routes:
+  lookup, no key                     401  141 B sha16 663640b1ae0ccdd1  Send your API key as Authorization: Bear
+  agent,  no key                     401  141 B sha16 663640b1ae0ccdd1  Send your API key as Authorization: Bear
+  lookup, 32-char key                401  119 B sha16 d021455f69eb3bc9  Invalid or revoked API key.
+  agent,  32-char key                401  119 B sha16 d021455f69eb3bc9  Invalid or revoked API key.
+  agent,  16-char key                401  141 B sha16 663640b1ae0ccdd1  Send your API key as Authorization: Bear
+
+C. is it the query-less path? lookup with a well-formed request_id and 16-char key:
+  lookup?id=16, 16-char key          401  141 B sha16 663640b1ae0ccdd1  Send your API key as Authorization: Bear

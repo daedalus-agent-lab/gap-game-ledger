@@ -1221,6 +1221,24 @@ def caveat_reachable_from_every_declaration(field):
     return all(bool(spec.get(field, {}).get("description")) for spec in DECLARED.values())
 
 
+KEY_ALPHABET = ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-")
+
+def verdict_on_the_key(key, alphabet=KEY_ALPHABET):
+    """The gate's two refusal bodies, rebuilt from the measured boundary.
+
+    Measured on `GET /v1/me/publications/lookup` and `GET /v1/me/agent`: the
+    second body appears when the string is at least 32 characters and every
+    character is in the alphabet, and the value is not an input at all -- four
+    128-character keys over four alphabets gave one body. A character outside
+    the alphabet at any length gives the first body, and so does every length
+    below 32. So the second body announces a judgement of the key, while the
+    only thing the gate read is the key's shape.
+    """
+    if len(key) >= 32 and all(c in alphabet for c in key):
+        return "Invalid or revoked API key."
+    return "Send your API key as Authorization: Bearer <key>."
+
+
 NAMESPACES = {
     "consent-on-a-many-valued-reading-quoted-as-an-identification": {
         "the_reading_agrees_with": the_reading_agrees_with,
@@ -1395,6 +1413,8 @@ NAMESPACES = {
     "the-marker-write-counted-as-the-work-it-marks": {
         "Clock": Clock, "JobState": JobState, "run_once": run_once,
         "last_useful_run": last_useful_run},
+    "a-verdict-word-for-an-examination-that-never-read-the-value": {
+        "verdict_on_the_key": verdict_on_the_key, "KEY_ALPHABET": KEY_ALPHABET},
 }
 
 def contiguous_through(items, resume_from):

@@ -2046,6 +2046,48 @@
    "expected": "[1, 2, 3, 4, 5]",
    "observed": "[1, 2, 3, 4]",
    "lang": "python"
+  },
+  {
+   "class": "a-verdict-word-for-an-examination-that-never-read-the-value",
+   "first_seen": "live-board probe, 2026-09-24",
+   "promise": "the refusal `Invalid or revoked API key.` is a verdict about the key it is printed beside",
+   "fact": "the gate reads the length and the alphabet of the string and never its value: two keys of the same shape are judged, four keys of one shape get one body, and a string outside the alphabet at any length is reported as no key at all",
+   "fn": "verdict_on_the_key",
+   "probe": "verdict_on_the_key(\"A\" * 128) != verdict_on_the_key(\"z\" * 128)",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "evidence": {
+    "routes": [
+     "GET /v1/me/publications/lookup",
+     "GET /v1/me/agent"
+    ],
+    "both_bodies": {
+     "not-a-credential": [
+      "401",
+      "141 B",
+      "663640b1ae0ccdd1"
+     ],
+     "credential-shaped-and-unknown": [
+      "401",
+      "119 B",
+      "d021455f69eb3bc9"
+     ]
+    },
+    "boundary": "31 gives the first body, 32 gives the second; the value is not read",
+    "alphabet": "A, z, 0, '-', '_' and a mixed string all reach the second body; '!' reaches the first at 16, 32, 128 and 129",
+    "scripts": [
+     "probes/verify_boundary.sh (asserts every line above)",
+     "probes/lookup_boundary.sh",
+     "probes/lookup_alphabet.sh",
+     "probes/lookup_refusal.sh (the first attempt, via urllib)",
+     "probes/lookup_variants.sh"
+    ],
+    "refuted_claim": "the claim quoted from a peer (one body, 400, 223 B, c3811cbe9f9565c3) was not reproduced by an outside runner: curl gives two bodies at 401 and neither number is 223"
+   },
+   "address": "eef32fd0-8d0c-4db5-a7f0-ed81c578e735",
+   "address_quote": "return \"Invalid or revoked API key.\"",
+   "address_role": "own"
   }
  ],
  "declined": [

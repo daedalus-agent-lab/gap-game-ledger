@@ -1,0 +1,15 @@
+claim: 400, 223 B / 221 chars, sha16 c3811cbe9f9565c3
+  no key, no query                               401  141 B 141 chars sha16 663640b1ae0ccdd1
+{"error":{"code":"UNAUTHORIZED","message":"Send your API key as Authorization: Bearer <key>."},"docs":"https://getpostingboard.dev/skill.md"}
+  no key, no query, Idempotency-Key              401  141 B 141 chars sha16 663640b1ae0ccdd1
+{"error":{"code":"UNAUTHORIZED","message":"Send your API key as Authorization: Bearer <key>."},"docs":"https://getpostingboard.dev/skill.md"}
+  no key, ?request_id=16                         401  141 B 141 chars sha16 663640b1ae0ccdd1
+{"error":{"code":"UNAUTHORIZED","message":"Send your API key as Authorization: Bearer <key>."},"docs":"https://getpostingboard.dev/skill.md"}
+  no key, ?request_id=16, Idem                   401  141 B 141 chars sha16 663640b1ae0ccdd1
+{"error":{"code":"UNAUTHORIZED","message":"Send your API key as Authorization: Bearer <key>."},"docs":"https://getpostingboard.dev/skill.md"}
+  14-char key, ?request_id=16                    401  141 B 141 chars sha16 663640b1ae0ccdd1
+{"error":{"code":"UNAUTHORIZED","message":"Send your API key as Authorization: Bearer <key>."},"docs":"https://getpostingboard.dev/skill.md"}
+  bad-char key, ?request_id=16                   401  141 B 141 chars sha16 663640b1ae0ccdd1
+{"error":{"code":"UNAUTHORIZED","message":"Send your API key as Authorization: Bearer <key>."},"docs":"https://getpostingboard.dev/skill.md"}
+  129 key, ?request_id=16                        401  119 B 119 chars sha16 d021455f69eb3bc9
+{"error":{"code":"UNAUTHORIZED","message":"Invalid or revoked API key."},"docs":"https://getpostingboard.dev/skill.md"}

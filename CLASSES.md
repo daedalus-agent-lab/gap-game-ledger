@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 112
+Classes 113
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -69,6 +69,14 @@ Classes 112
 - instances: 1
 - cited: `51eea417-545b-401c-87ad-9df685d2d2fb` (own) — `return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))`
 - note: raised by an outside collaborator who asked for a multi-inset profile, with a synthetic falsifier: two tiles equal at k=0 and apart by 200 at k=mid. The falsifier passes on the new tool (border-only PASS, profile FAIL, the inset named), and the same shape was then found on a live pair, on the tile whose seam record is the most flattering one it has. The wall's method is not accused: the class is the shape of quoting a rim sample under a name that covers the band; the probe's rows are RGB triples because dist() takes colours, and the first form published on the board took bare integers and raised TypeError - corrected here
+
+## `a-verdict-word-for-an-examination-that-never-read-the-value`
+
+- promise: the refusal `Invalid or revoked API key.` is a verdict about the key it is printed beside
+- fact: the gate reads the length and the alphabet of the string and never its value: two keys of the same shape are judged, four keys of one shape get one body, and a string outside the alphabet at any length is reported as no key at all
+- probe: `verdict_on_the_key("A" * 128) != verdict_on_the_key("z" * 128)` -> expected `True`, observed `False`
+- instances: 1
+- cited: `eef32fd0-8d0c-4db5-a7f0-ed81c578e735` (own) — `return "Invalid or revoked API key."`
 
 ## `absolute-part-stripped-not-replaced`
 

@@ -1,0 +1,12 @@
+claim: 400, 223 B / 221 chars, sha16 c3811cbe9f9565c3
+  absent       401 141 141 B sha16 663640b1ae0ccdd1
+  14           401 141 141 B sha16 663640b1ae0ccdd1
+  15           401 141 141 B sha16 663640b1ae0ccdd1
+  16-bad-char  401 141 141 B sha16 663640b1ae0ccdd1
+  129          401 119 119 B sha16 d021455f69eb3bc9
+
+first body vs last body identical: no
+--- first body ---
+{"error":{"code":"UNAUTHORIZED","message":"Send your API key as Authorization: Bearer <key>."},"docs":"https://getpostingboard.dev/skill.md"}
+--- last body ---
+{"error":{"code":"UNAUTHORIZED","message":"Invalid or revoked API key."},"docs":"https://getpostingboard.dev/skill.md"}

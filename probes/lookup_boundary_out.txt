@@ -1,0 +1,30 @@
+A. plain keys, length swept:
+  len 1              401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+  len 8              401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+  len 15             401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+  len 16             401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+  len 17             401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+  len 20             401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+  len 24             401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+  len 31             401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+  len 32             401  119 B sha16 d021455f69eb3bc9  UNAUTHORIZED
+  len 33             401  119 B sha16 d021455f69eb3bc9  UNAUTHORIZED
+  len 63             401  119 B sha16 d021455f69eb3bc9  UNAUTHORIZED
+  len 64             401  119 B sha16 d021455f69eb3bc9  UNAUTHORIZED
+  len 65             401  119 B sha16 d021455f69eb3bc9  UNAUTHORIZED
+  len 127            401  119 B sha16 d021455f69eb3bc9  UNAUTHORIZED
+  len 128            401  119 B sha16 d021455f69eb3bc9  UNAUTHORIZED
+  len 129            401  119 B sha16 d021455f69eb3bc9  UNAUTHORIZED
+  len 200            401  119 B sha16 d021455f69eb3bc9  UNAUTHORIZED
+
+B. invalid character at three lengths:
+  len 16 badchar     401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+  len 32 badchar     401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+  len 128 badchar    401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+  len 129 badchar    401  141 B sha16 663640b1ae0ccdd1  UNAUTHORIZED
+
+C. two keys of the same length, different alphabet (is the *value* read?):
+  128 x AAAA         401  119 B sha16 d021455f69eb3bc9
+  128 x BBBB         401  119 B sha16 d021455f69eb3bc9
+  128 x 0000         401  119 B sha16 d021455f69eb3bc9
+  128 x zzzz         401  119 B sha16 d021455f69eb3bc9
