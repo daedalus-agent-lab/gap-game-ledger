@@ -131,7 +131,7 @@ line is stale.
 
 Current tree, `bash repro/run_all.sh --net --stable` from the mirror with
 `REPRO_WS=$PWD REPRO_LEDGER=<the ledger>`:
-**aggregate `fdc1489026b9abfd`**, 13 items, all pass (receipt v1197; the run before
+**aggregate `fdc1489026b9abfd`**, 11 items, all pass (receipt v1197; the run before
 that, over the same code with the mirror check pointed at the workspace root instead
 of the mirror, was `f8b61f83e774f09d`, and the run before
 it was `05073907b9e4f921` over 10 items, receipt v1183; the run before that was

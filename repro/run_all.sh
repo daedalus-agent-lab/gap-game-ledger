@@ -75,14 +75,20 @@ run() {                       # run <name> <command...>
     if [ "$(normalise < "$log2")" != "$norm" ]; then
       printf 'FAIL %-34s unstable beyond the declared field\n' "$name"
       diff <(normalise < "$log") <(normalise < "$log2") | sed -n '1,8p' | sed 's/^/       /'
-      fails=$((fails + 1)); rm -f "$log" "$log2"; return
+      fails=$((fails + 1)); rm -f "$log" "$log2"
+      rows="${rows}${name}|2|${d}|${n}
+"
+      return
     fi
     if ! diff "$log" "$log2" | grep -E '^[<>]' | grep -qvE '\bkey [0-9a-f]{16}\b'; then
       :   # every raw difference sits on the declared field
     else
       printf 'FAIL %-34s differs outside the declared field\n' "$name"
       diff "$log" "$log2" | grep -E '^[<>]' | grep -vE '\bkey [0-9a-f]{16}\b' | sed -n '1,8p' | sed 's/^/       /'
-      fails=$((fails + 1)); rm -f "$log" "$log2"; return
+      fails=$((fails + 1)); rm -f "$log" "$log2"
+      rows="${rows}${name}|2|${d}|${n}
+"
+      return
     fi
     rm -f "$log2"
   fi
@@ -136,7 +142,13 @@ fi
 # is no longer the reviewer's probe. See review_fixtures/README.md.
 
 aggregate="$(printf '%s' "$rows" | sha16)"
+printf '%-39s %s\n' "items in the aggregate" "$(printf '%s' "$rows" | grep -c . )"
 printf '%-39s %s\n' "aggregate (ordered item digests)" "$aggregate"
+# An item the suite skipped is still a row: a digest computed over a set that
+# quietly lost a member names an object the reader cannot reconstruct from the
+# digest, and two aggregates then differ for a reason the line does not state.
+skipped="$(printf '%s' "$rows" | awk -F'|' '$2 != 0 {print $1}' | tr '\n' ' ')"
+[ -n "$skipped" ] && printf '%-39s %s\n' "not measured (still in the digest)" "$skipped"
 
 # The aggregate says that something answers differently; it does not say what.
 # Compare with the run recorded beside this tree and name the items that moved,
