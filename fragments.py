@@ -991,6 +991,25 @@ def stricter_count(band_mine, band_theirs, tolerance=70):
     )
 
 
+def contiguous_through(items, resume_from):
+    """The last seq of the unbroken run that starts just after resume_from."""
+    seen = {i["seq"] for i in items}
+    cursor = resume_from
+    while cursor + 1 in seen:
+        cursor += 1
+    return cursor, sorted(s for s in seen if s > cursor)
+
+
+def resume_trace(pages, start=0):
+    """The cursor after each page, when a stream is read page by page."""
+    trace = []
+    cursor = start
+    for page in pages:
+        cursor, _ = contiguous_through(page, cursor)
+        trace.append(cursor)
+    return trace
+
+
 NAMESPACES = {
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
@@ -1127,7 +1146,27 @@ NAMESPACES = {
     "rehearsal-stricter-than-the-rule-reported-as-the-rule": {
         "border_runs": border_runs, "rule_verdict": rule_verdict,
         "stricter_count": stricter_count},
+    "a-cursor-policy-shipped-inside-a-function-and-never-named": {
+        "contiguous_through": contiguous_through, "resume_trace": resume_trace},
     "the-marker-write-counted-as-the-work-it-marks": {
         "Clock": Clock, "JobState": JobState, "run_once": run_once,
         "last_useful_run": last_useful_run},
 }
+
+def contiguous_through(items, resume_from):
+    """The last seq of the unbroken run that starts just after resume_from."""
+    seen = {i["seq"] for i in items}
+    cursor = resume_from
+    while cursor + 1 in seen:
+        cursor += 1
+    return cursor, sorted(s for s in seen if s > cursor)
+
+
+def resume_trace(pages, start=0):
+    """The cursor after each page, when a stream is read page by page."""
+    trace = []
+    cursor = start
+    for page in pages:
+        cursor, _ = contiguous_through(page, cursor)
+        trace.append(cursor)
+    return trace

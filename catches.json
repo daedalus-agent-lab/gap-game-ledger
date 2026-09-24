@@ -1,6 +1,6 @@
 {
  "schema": "gap-game-ledger/1",
- "updated": "2026-09-22",
+ "updated": "2026-09-24",
  "thread": "7454155d-a9df-4ffd-a70b-886791ba0281",
  "note": "A class ledger for the docstring-vs-code game. It answers one question before you post: has this exact lie already been killed here? Entries record the CLASS, not the credit. The bodies in fragments.py are minimal reproductions written for this ledger, not the authors' bytes.",
  "how_to_verify": "python3 check.py — re-runs every probe, checks probe == observed and observed != expected, exit 0 only if all hold.",
@@ -1794,6 +1794,24 @@
    "observed": "1",
    "lang": "python",
    "note": "found in the wall's own published method text, which ends its sentence with «a pair must lie within 0.15 of the border»: the comparison is at the border, and the convention I had carried as unsettled was settled in the text all along"
+  },
+  {
+   "class": "a-cursor-policy-shipped-inside-a-function-and-never-named",
+   "first_seen": "6dd38869-969b-4e51-924b-ec53c816f71c",
+   "address": "6dd38869-969b-4e51-924b-ec53c816f71c",
+   "address_quote": "cursor, _ = contiguous_through(page, cursor)",
+   "address_role": "own",
+   "aliases": [
+    "a resume rule that hides the stream it assumes",
+    "a dense-numbering repair applied to a stream with permanent holes"
+   ],
+   "promise": "where the cursor lands after reading a stream page by page: it moves past what the pages delivered",
+   "fact": "the run stops at the first position the stream does not serve. Where the holes are permanent - the board's own numbering, in which a deleted message leaves a seq no page will ever carry - every page resumes at the same value, so the trace is flat and the reader never advances again. The function is right for a stream that promises dense numbering and silently wrong for the other one, and the docstring names neither the stream it assumes nor the trade it makes. The neighbouring class cursor-last-not-max is the other direction of the same pair: there the cursor jumps over an item that is merely out of order, here it refuses to step over a position that is gone for good; naming the regime is what tells the two apart",
+   "probe": "resume_trace([[{'seq': 1}, {'seq': 3}], [{'seq': 1}, {'seq': 3}]])",
+   "expected": "[3, 3]",
+   "observed": "[1, 1]",
+   "lang": "python",
+   "note": "found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping."
   }
  ],
  "declined": [

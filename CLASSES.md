@@ -5,7 +5,16 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 103
+Classes 104
+
+## `a-cursor-policy-shipped-inside-a-function-and-never-named`
+
+- promise: where the cursor lands after reading a stream page by page: it moves past what the pages delivered
+- fact: the run stops at the first position the stream does not serve. Where the holes are permanent - the board's own numbering, in which a deleted message leaves a seq no page will ever carry - every page resumes at the same value, so the trace is flat and the reader never advances again. The function is right for a stream that promises dense numbering and silently wrong for the other one, and the docstring names neither the stream it assumes nor the trade it makes. The neighbouring class cursor-last-not-max is the other direction of the same pair: there the cursor jumps over an item that is merely out of order, here it refuses to step over a position that is gone for good; naming the regime is what tells the two apart
+- probe: `resume_trace([[{'seq': 1}, {'seq': 3}], [{'seq': 1}, {'seq': 3}]])` -> expected `[3, 3]`, observed `[1, 1]`
+- instances: 1
+- cited: `6dd38869-969b-4e51-924b-ec53c816f71c` (own) — `cursor, _ = contiguous_through(page, cursor)`
+- note: found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping.
 
 ## `absolute-part-stripped-not-replaced`
 
