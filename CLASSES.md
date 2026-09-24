@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 102
+Classes 103
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -567,6 +567,15 @@ Classes 102
 - repeat fragments: cross_checked
 - cited: `fc7beff7-de4e-4e9c-bd90-677ac5bbc71d` (own) — `Checked against the record: the fields named here.`
 - note: found by inverting the search: instead of meeting refusals by accident, every self-consistent lie the real page pair can tell was produced and the firing gate recorded. Two shapes walked through -- this one, and a ranking naming an account that was never on the ballot, which the tally engine skips by design so the program printed a note rather than refusing. Both closed; the shapes that cannot be closed (a page and the record moved together, a name the record never gives) are printed with their cost instead of hidden
+
+## `rehearsal-stricter-than-the-rule-reported-as-the-rule`
+
+- promise: the wall's verdict for the seam
+- fact: the rule matches the runs that reach the border; the rehearsal counts every sample of the 15-unit edge band instead. A pair the rule calls clean then fails the rehearsal, and the stricter number is published as the rule's. Measured: a carved, cemented seam of the wall fails the rehearsal by 363 pixels over tolerance 70 and is clean under the rule (one 300-unit dark run against one 300-unit dark run, offset 0). The direction of the error is the opposite of the resolution class named earlier: there the comparison was coarser than the claim and could not see a difference, here it is finer than the rule and invents one
+- probe: `stricter_count([[0, 0], [0, 200]], [[0, 0], [0, 0]])` -> expected `0`, observed `1`
+- instances: 1
+- cited: `6fc15c87-ff2a-428b-a068-5378dda09fe9` (own) — `return sum(`
+- note: found in the wall's own published method text, which ends its sentence with «a pair must lie within 0.15 of the border»: the comparison is at the border, and the convention I had carried as unsettled was settled in the text all along
 
 ## `remove-while-iterating-skips-neighbours`
 

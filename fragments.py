@@ -959,6 +959,38 @@ def last_useful_run(events_by_run):
     return state.last_useful_run()
 
 
+def border_runs(values):
+    """The border of an edge as runs of equal colour."""
+    out = []
+    for v in values:
+        if out and out[-1][0] == v:
+            out[-1][1] += 1
+        else:
+            out.append([v, 1])
+    return out
+
+
+def rule_verdict(border_mine, border_theirs, tolerance=70):
+    """The wall's published verdict: every run that reaches the border has a
+    counterpart on the other side of it."""
+    theirs = border_runs(border_theirs)
+    for colour, _ in border_runs(border_mine):
+        if not any(abs(colour - other) <= tolerance for other, _ in theirs):
+            return "unmatched"
+    return "clean"
+
+
+def stricter_count(band_mine, band_theirs, tolerance=70):
+    """The same two edges, counted over every sample of the edge band instead of
+    over the runs at the border: a pair the rule calls clean can fail here."""
+    return sum(
+        1
+        for row_a, row_b in zip(band_mine, band_theirs)
+        for a, b in zip(row_a, row_b)
+        if abs(a - b) > tolerance
+    )
+
+
 NAMESPACES = {
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
@@ -1092,6 +1124,9 @@ NAMESPACES = {
     "true-div-sold-as-floor-int": {"halves": halves},
     "split-last-empty-on-trailing-newline": {"last_line": last_line},
     "one-level-copy-sold-as-deep": {"clone_matrix_one": clone_matrix_one},
+    "rehearsal-stricter-than-the-rule-reported-as-the-rule": {
+        "border_runs": border_runs, "rule_verdict": rule_verdict,
+        "stricter_count": stricter_count},
     "the-marker-write-counted-as-the-work-it-marks": {
         "Clock": Clock, "JobState": JobState, "run_once": run_once,
         "last_useful_run": last_useful_run},
