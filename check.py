@@ -58,6 +58,12 @@ def literal(text: str):
 
 
 FREE_PREFIX = "g:"
+# The letters the erasure writes in place of bound names. A colon is not an
+# identifier character, so neither this space nor the free-name space above can
+# be reached by anything an author writes: a fragment cannot already contain an
+# erased letter, which is what lets a second application of the pass leave its
+# own output alone instead of reading `v0` as a free name and erasing it again.
+BOUND_PREFIX = "b:"
 
 BUILTINS = {
     "abs", "all", "any", "bool", "dict", "enumerate", "float", "int", "isinstance",
@@ -245,6 +251,9 @@ class _Normalise(ast.NodeTransformer):
     def _rename(self, name: str) -> str:
         if name.startswith("__"):
             return name
+        if name.startswith(BOUND_PREFIX):
+            # the pass's own output: an erased letter is already an erased letter
+            return name
         if name in BUILTINS and not self._bound(name):
             # A name the fragment binds is the author's choice of letter even
             # when it shadows a builtin: `def f(list, x)` and `def f(dict, x)`
@@ -253,7 +262,7 @@ class _Normalise(ast.NodeTransformer):
             # stays as it is written.
             return name
         if name not in self.seen:
-            self.seen[name] = f"v{len(self.seen)}"
+            self.seen[name] = f"{BOUND_PREFIX}{len(self.seen)}"
         return self.seen[name]
 
     def _bound(self, name: str) -> bool:
@@ -269,12 +278,41 @@ class _Normalise(ast.NodeTransformer):
     def _pop(self):
         self.stack.pop()
 
+    def _free(self, name: str) -> str:
+        """A name in a `global`/`nonlocal` declaration is a name the fragment
+        declares it does not own, so it is treated exactly like a free read: kept
+        under the prefix when the declaration holds, renamed like any bound
+        letter when it does not.
+
+        Leaving it as written was a hole with no name in the policy: the erasure
+        reached every read of `counter` and not the `global counter` line itself,
+        so two fragments whose only difference was the letter in that line
+        fingerprinted as two pieces of logic even after the rule that makes the
+        name external was removed. The mutation harness found it: the rule had no
+        pair, and the reason no pair could be built was this.
+        """
+        if name.startswith(FREE_PREFIX) or not self._bound(name):
+            return name if name.startswith(FREE_PREFIX) else FREE_PREFIX + name
+        return self._rename(name)
+
+    def visit_Global(self, node):
+        node.names = [self._free(n) for n in node.names]
+        return node
+
+    def visit_Nonlocal(self, node):
+        return self.visit_Global(node)
+
     def visit_Name(self, node):
         if isinstance(node.ctx, ast.Load) and not self._bound(node.id):
+            if node.id.startswith(BOUND_PREFIX):
+                return node      # already the output of this pass
             if not node.id.startswith(FREE_PREFIX):
                 # a name already carrying the prefix is the output of an earlier
                 # pass over the same tree: marking it again would make the
-                # erasure a function of how many times it ran
+                # erasure a function of how many times it ran, and the erased
+                # letters would double up. Both prefixes are guarded, and both
+                # are unspellable, so the pass is a fixed point on its own output
+                # -- which is what `verify_claims.py` row r_idempotence measures.
                 node.id = FREE_PREFIX + node.id
             return node
         node.id = self._rename(node.id)
@@ -401,18 +439,35 @@ def called_names(source: str) -> set:
     return out
 
 
+def _row_exists(name: str) -> bool:
+    """Whether verify_claims.py has an acceptance row under this function name.
+
+    A declared gap is coverage by a row, and a pointer to a row that does not
+    exist is not coverage. The name is resolved against the rows as they are
+    defined, not against a copy of the list kept here.
+    """
+    import verify_claims as V
+    return any(fn.__name__ == name for _label, fn in V.CASES)
+
+
 def fingerprint_control() -> tuple[bool, str]:
     """Whether the fingerprint is still measuring what the ledger asks it to.
 
     A verdict of `duplicate` is a measurement only while the instrument that
-    produced it separates a pair known to differ and joins a pair known to be
-    one piece of logic. `fragments.CONTROL_PAIRS` names one such pair per rule of
-    the policy -- free names kept, bound letters erased, a live store kept, a
-    dead store removed -- so a broken rule fails the control on its own pair
-    instead of hiding behind the other three. The first pair is the one that
-    found the erasure hole. When the control fails, every duplicate verdict in
-    the run is withdrawn as `not measured`: agreement between two things an
-    instrument cannot tell apart is not agreement.
+    produced it separates a pair known to differ and joins a pair known to be one
+    piece of logic. `fragments.CONTROL_PAIRS` names such a pair against a rule id
+    from `fragments.POLICY_RULES`. Counting pairs was not enough: an attacker ran
+    six mutations of the policy past a table of six pairs that printed `one per
+    rule`, because the table counted labels, two pair labels guarded one rule,
+    and no pair exercised the parameters its label claimed. So the counts here
+    are over rule ids, a rule in neither table is an error rather than a silence,
+    and `probes/policy_mutations.py` is what measures the claim on every standing
+    run: each rule is broken, and either the control fails naming that rule's
+    pair or the rule is a declared blind spot whose row is run and must fail.
+
+    When the control fails, every duplicate verdict in the run is withdrawn as
+    `not measured`: agreement between two things an instrument cannot tell apart
+    is not agreement.
     """
     import fragments as F
     broken = []
@@ -423,16 +478,25 @@ def fingerprint_control() -> tuple[bool, str]:
                 f"{left}/{right}: {'joined' if got else 'separated'} a pair it must "
                 f"{'join' if same else 'separate'} ({rule})"
             )
+    rules = {rid for rid, _text in F.POLICY_RULES}
     pair_rules = {rule for _l, _r, _s, rule in F.CONTROL_PAIRS}
-    for rule, covered_by in F.RULES_WITHOUT_A_PAIR:
-        if not covered_by.strip():
+    gap_rules = {rule for rule, _row in F.RULES_WITHOUT_A_PAIR}
+    for rule in sorted((pair_rules | gap_rules) - rules, key=str):
+        broken.append(f"{rule}: guarded or declared, but not a rule of the policy")
+    for rule in sorted(rules - pair_rules - gap_rules, key=str):
+        broken.append(f"{rule}: a rule of the policy with no pair and no declaration")
+    for rule in sorted(pair_rules & gap_rules, key=str):
+        broken.append(f"{rule}: declared both as a pair and as uncovered")
+    for rule, row in F.RULES_WITHOUT_A_PAIR:
+        if not row.strip():
             broken.append(f"{rule}: declared without a pair and without a row covering it")
-        if rule in pair_rules:
-            broken.append(f"{rule}: declared both as a pair and as uncovered")
+        elif not _row_exists(row):
+            broken.append(f"{rule}: declared against the row {row}, which does not exist")
     if broken:
         return False, "; ".join(broken)
-    return True, (f"{len(F.CONTROL_PAIRS)} pairs, one per rule of the policy, each "
-                  "answers as its rule requires")
+    return True, (f"{len(F.CONTROL_PAIRS)} pairs over {len(rules)} rules of the policy "
+                  f"({len(pair_rules)} guarded, {len(gap_rules)} declared without a pair), "
+                  "each pair answering as its rule requires")
 
 
 def primary(entry: dict) -> str | None:

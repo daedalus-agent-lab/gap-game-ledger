@@ -667,8 +667,14 @@ def v_control_fails_when_a_rule_of_the_policy_is_broken(tree):
 
 
 def w_control_is_a_pair_per_rule(tree):
-    """Every rule of the policy carries its own pair, so a broken rule cannot
-    hide behind the ones still working."""
+    """Every rule of the policy answers for itself, so a broken rule cannot hide
+    behind the ones still working.
+
+    The count here is over rule ids from `fragments.POLICY_RULES`, not over the
+    labels of the pairs: an attacker ran six mutations of the policy past a table
+    whose six labels printed `one per rule`, because two of the labels guarded one
+    rule and no pair exercised the parameter its label claimed.
+    """
     import importlib.util
     spec = importlib.util.spec_from_file_location("frag", HERE / "fragments.py")
     frag = importlib.util.module_from_spec(spec)
@@ -676,37 +682,136 @@ def w_control_is_a_pair_per_rule(tree):
     spec2 = importlib.util.spec_from_file_location("chk", HERE / "check.py")
     chk = importlib.util.module_from_spec(spec2)
     spec2.loader.exec_module(chk)
-    rules = [rule for *_rest, rule in frag.CONTROL_PAIRS]
+    rules = {rid for rid, _text in frag.POLICY_RULES}
+    guarded = {rule for *_rest, rule in frag.CONTROL_PAIRS}
+    declared = {rid for rid, _row in frag.RULES_WITHOUT_A_PAIR}
     pairs = [(l, r) for l, r, _s, _rule in frag.CONTROL_PAIRS]
-    ok = len(pairs) >= 4 and len(set(rules)) == len(rules) and len(set(pairs)) == len(pairs)
-    ok = ok and chk.fingerprint_control()[0]
-    return ok, f"{len(pairs)} pairs, {len(set(rules))} distinct rules, control passes"
+    uncovered = sorted(rules - guarded - declared, key=str)
+    ok = (bool(pairs) and len(set(pairs)) == len(pairs) and not uncovered
+          and chk.fingerprint_control()[0])
+    return ok, (f"{len(pairs)} pairs over {len(rules)} rules, {len(guarded)} guarded, "
+                f"{len(declared)} declared, uncovered {uncovered or 'none'}")
 
 
 def x_the_declared_gap_points_at_a_row_that_exists(tree):
     """A gap named with a pointer that has rotted is not a declared gap.
 
-    Every rule of the policy without a control pair names the acceptance row that
-    covers it; that row must be a function in this file, or the declaration is
-    prose about a check nobody runs.
+    A rule of the policy without a control pair names the acceptance row that
+    covers it; that row must be a function defined in this file, or the
+    declaration is prose about a check nobody runs. The mutation harness goes one
+    step further and *runs* it on a copy with the rule broken.
     """
     import importlib.util
-    import re
     spec = importlib.util.spec_from_file_location("frag", HERE / "fragments.py")
     frag = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(frag)
-    missing, unnamed = [], []
-    for rule, covered_by in frag.RULES_WITHOUT_A_PAIR:
-        if not covered_by.strip():
-            unnamed.append(rule)
-            continue
-        for name in re.findall(r"row ([a-z_][a-z0-9_]*)", covered_by):
-            if name not in globals():
-                missing.append(f"{rule} -> {name}")
-    pairs = {(l, r) for l, r, _s, _rule in frag.CONTROL_PAIRS}
-    ok = not missing and not unnamed and len(pairs) == len(frag.CONTROL_PAIRS)
-    return ok, (f"{len(frag.RULES_WITHOUT_A_PAIR)} gap rules declared, "
-                f"{len(frag.CONTROL_PAIRS)} pairs, dead pointers {missing or 'none'}")
+    defined = {fn.__name__ for _label, fn in CASES}
+    missing = [f"{rule} -> {row}" for rule, row in frag.RULES_WITHOUT_A_PAIR
+               if row not in defined]
+    rules = {rid for rid, _text in frag.POLICY_RULES}
+    unknown = [rule for rule, _row in frag.RULES_WITHOUT_A_PAIR if rule not in rules]
+    return not missing and not unknown, \
+        (f"{len(frag.RULES_WITHOUT_A_PAIR)} gap rules declared, "
+         f"{len(frag.CONTROL_PAIRS)} pairs, dead pointers {missing or 'none'}")
+
+
+def r_idempotence(tree):
+    """The erasure is a fixed point on its own output.
+
+    Applying the pass twice to one tree must leave the second application with
+    nothing to do. The letters it writes are unspellable -- neither the free-name
+    prefix nor the erased-letter prefix is an identifier -- so it can tell its own
+    output from a name an author wrote, and two fragments that differ only in how
+    many times the instrument ran cannot read as two pieces of logic. This is the
+    row the declared gap for that rule points at, and the mutation harness runs it
+    on a copy with the guard removed: the second pass then prefixes again, and the
+    row must fail.
+    """
+    import importlib
+    cases = [
+        ("a padded function", "def f(xs):\n    _pad = None\n    return max(xs)\n"),
+        ("a free name and a bound one", "def f(xs):\n    return helper(xs) + len(xs)\n"),
+        ("a global declaration", "def f(xs):\n    global counter\n    counter = 1\n"
+                                 "    return counter + len(xs)\n"),
+        ("a nested local", "def f(xs):\n    def g(x):\n        return x\n    return g(xs)\n"),
+        ("a comprehension target", "def f(xs):\n    return [y for y in xs]\n"),
+        ("a bare lambda", "f = lambda x: x + y\n"),
+        ("an import with an alias", "def f(t):\n    import json as j\n    return j.loads(t)\n"),
+        ("a builtin-named argument", "def f(list, xs):\n    return list(xs)\n"),
+    ]
+    sys.path.insert(0, str(tree))
+    saved = {k: sys.modules.pop(k, None) for k in ("fragments", "check")}
+    try:
+        chk = importlib.import_module("check")
+        moved = []
+        for label, src in cases:
+            node = ast.parse(src).body[0]
+            chk._DropDeadStores().visit(node)
+            scopes, external = chk.scope_bindings(node)
+            chk._Normalise(scopes, external).visit(node)
+            first = ast.dump(node)
+            chk._Normalise(scopes, external).visit(node)
+            if ast.dump(node) != first:
+                moved.append(label)
+    finally:
+        for k in ("fragments", "check"):
+            sys.modules.pop(k, None)
+        for k, v in saved.items():
+            if v is not None:
+                sys.modules[k] = v
+        sys.path.remove(str(tree))
+    return not moved, (f"{len(cases)} fragments, the second pass moves {len(moved)}"
+                       + (f": {moved}" if moved else ""))
+
+
+def y_a_second_claim_needs_a_different_promise(tree):
+    """A repeat on the class's own bytes is refused while it makes the class's
+    claim, and kept once it makes a different one.
+
+    The first half is the old gate: same bytes, same promise, same claim. The
+    second half is the repair: a fragment can carry two lies, and a registry that
+    keys on the fragment drops the second without saying so. Both halves are
+    needed, because a gate that only ever loosens is how a duplicate gets in.
+    """
+    data = load(tree)
+    entry = find(data, CLAMP)
+    entry["repeats"].append({
+        "id": "born-identical", "promise": entry["promise"], "fact": entry["fact"],
+        "probe": "clamp(5, 10, 0)", "expected": "None", "observed": "0", "fn": "clamp",
+    })
+    save(tree, data)
+    code_same, out_same = check(tree)
+
+    data = load(tree)
+    entry = find(data, CLAMP)
+    entry["repeats"][-1]["promise"] = "clamp keeps val inside [low, high]"
+    entry["repeats"][-1]["probe"] = "clamp(5, 10, 0)"
+    entry["repeats"][-1]["expected"] = "None"
+    entry["repeats"][-1]["observed"] = "0"
+    save(tree, data)
+    code_new, out_new = check(tree)
+    return (code_same == 1 and "that is the class probe" in out_same
+            and code_new == 0 and "second claim on the same bytes" in out_new), \
+        f"same claim refused (exit {code_same}), different claim kept (exit {code_new})"
+
+
+def z_the_policy_is_measured_not_described(tree):
+    """Break every rule of the policy on a copy and check who notices.
+
+    `probes/policy_mutations.py` applies each mutation in
+    `fragments.POLICY_MUTATIONS` to check.py in memory: a guarded rule must make
+    the control fail and name that rule's pair, a declared rule must leave the
+    control passing and make the row the declaration points at fail. A rule in
+    neither table, or a mutation that moves no fingerprint, is drift.
+    """
+    row = tree / "probes" / "policy_mutations.py"
+    if not row.exists():
+        return False, "the mutation harness is not in the copy"
+    out = subprocess.run([sys.executable, str(row)], cwd=tree, capture_output=True,
+                         text=True, env={"PATH": "/usr/bin:/bin"})
+    tail = [l for l in (out.stdout + out.stderr).splitlines() if l.startswith("DRIFT")]
+    return out.returncode == 0, (f"exit {out.returncode}, drifts {len(tail)}"
+                                 + (f": {tail[:2]}" if tail else ""))
 
 
 CASES = [
@@ -733,6 +838,10 @@ CASES = [
     ("a broken rule of the policy withdraws the duplicate verdicts", v_control_fails_when_a_rule_of_the_policy_is_broken),
     ("the control is one pair per rule", w_control_is_a_pair_per_rule),
     ("a declared gap points at a row that exists", x_the_declared_gap_points_at_a_row_that_exists),
+    ("a second claim on the same bytes needs a different promise", y_a_second_claim_needs_a_different_promise),
+    ("the erasure is a fixed point on its own output", r_idempotence),
+    ("every rule of the policy is broken by a mutation and somebody notices",
+     z_the_policy_is_measured_not_described),
 ]
 
 

@@ -125,6 +125,7 @@ run "band_profile.py"             env UV_CACHE_DIR="$UV_CACHE_DIR" uv run --with
 run "ledger check.py"             python3 "$LEDGER/check.py"
 run "ledger verify_claims.py"     python3 "$LEDGER/verify_claims.py"
 run "provenance.py --selftest"    python3 "$LEDGER/provenance.py" --selftest
+run "policy mutations --check"    python3 "$LEDGER/probes/policy_mutations.py" --check
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"
   run "ladder_rungs.py --net"     python3 "$LEDGER/probes/ladder_rungs.py" --check

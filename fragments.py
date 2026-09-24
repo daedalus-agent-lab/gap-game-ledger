@@ -1405,38 +1405,236 @@ def padded_max_of(xs):
     return max(xs)
 
 
-# The control table: every pair is (left, right, must they share one
-# fingerprint?, the rule of the policy the pair guards). A verdict of
-# `duplicate` is a measurement only while each rule has a pair that fails when
-# the rule is broken, so the table names one pair per rule rather than one pair
-# for the instrument as a whole.
-CONTROL_PAIRS = (
-    ("parsed_by_json", "parsed_by_pickle", False,
-     "a free name is kept: two modules called by name are not one module"),
-    ("max_of", "biggest_of", True,
-     "a bound letter is erased: a function renamed and its argument renamed is "
-     "one piece of logic"),
-    ("store_read_by_eval", "store_read_by_no_one", False,
-     "a store a caller reads through eval is kept"),
-    ("plain_max_of", "padded_max_of", True,
-     "a store nobody reads is removed"),
-    ("read_by_eval_and_one_dead_store", "read_by_eval_only", False,
-     "the guard is a property of the fragment, not of one store"),
-    ("added_over_a_shadowing_name", "added_over_another_shadowing_name", True,
-     "a bound name is erased even when its letter spells a builtin"),
+# ---- fragments added for the pairs an attack on the control table found -----
+# A second holder attacked the published claim ("one pair per rule") on copies
+# of the tree and broke six rules of the policy without the control noticing:
+# two dynamic readers were unguarded, the import rule and the dunder rule had no
+# pair at all, the dead-store pass was never asked what counts as a read, and a
+# class body was never asked whether it binds outside itself. Each of those rules
+# now has a pair, and `POLICY_MUTATIONS` below is the table that measures the
+# instrument rather than describing it.
+
+def read_by_globals():
+    """A store read through globals(): the pass must keep it, not drop it."""
+    secret = 1
+    return globals()
+
+
+def read_by_globals_renamed():
+    """The same, with the store under another letter."""
+    other = 2
+    return globals()
+
+
+def read_by_vars():
+    """A store read through vars()."""
+    secret = 1
+    return vars()
+
+
+def read_by_vars_renamed():
+    """The same, with the store under another letter."""
+    other = 2
+    return vars()
+
+
+def read_by_dir():
+    """A store read through dir()."""
+    secret = 1
+    return dir(secret)
+
+
+def read_by_dir_renamed():
+    """The same, with the store under another letter."""
+    other = 2
+    return dir(other)
+
+
+def import_as_j(text):
+    """`import json as j`: the `as` name is the author's letter."""
+    import json as j
+    return j.loads(text)
+
+
+def import_as_k(text):
+    """`import json as k`: one piece of logic with the fragment above."""
+    import json as k
+    return k.loads(text)
+
+
+def dunder_letters(v):
+    """A dunder name is left as written -- it names something outside."""
+    __x = v
+    return __x
+
+
+def plain_letters(v):
+    """A bound name that is not a dunder: erased."""
+    y = v
+    return y
+
+
+def read_in_a_nested_scope():
+    """The store is read, by a name inside a nested def: not dead."""
+    x = 1
+
+    def g():
+        return x
+    return g
+
+
+def no_store_for_the_nested_read():
+    """The same fragment with nothing for the nested read to see."""
+    def g():
+        return x
+    return g
+
+
+def class_body_binds_nothing(xs):
+    """A class body binds `helper` inside the class, not in the function: the
+    call to `helper` here reads something outside both."""
+    class C:
+        helper = 1
+    return helper(xs)
+
+
+def class_body_other_name(xs):
+    """The same, with the class attribute under another letter. A class body
+    that leaked its bindings into the enclosing scope would erase the free name
+    below and make these two fragments one piece of logic."""
+    class C:
+        step = 1
+    return step(xs)
+
+
+def global_counter():
+    """`global counter` states the name is not this function's own."""
+    global counter
+    counter = 1
+    return counter
+
+
+def global_total():
+    """The same declaration under another letter."""
+    global total
+    total = 1
+    return total
+
+
+
+def free_name_beside_a_nested_arg(xs):
+    """`helper` is free here: a nested def that uses it as an argument binds it
+    inside that def only, so this fragment still refers to something outside."""
+    def inner(helper):
+        return helper(xs)
+    return helper(xs)
+
+
+def free_name_beside_a_nested_arg_renamed(xs):
+    """The same logic with the free name under another letter. A nested local
+    that leaked into the enclosing scope would erase both and make these one
+    piece of logic."""
+    def inner(step):
+        return step(xs)
+    return step(xs)
+
+
+# The policy, enumerated. A rule of the instrument that is not in this list is
+# not a rule anybody has counted, and the control below refuses a pair or a gap
+# that names a rule outside it. R13 and R14 are here because they are rules the
+# policy applies, not because they have pairs: a rule that appears in neither
+# table is exactly the silent case a reader must not have to guess about.
+POLICY_RULES = (
+    ("R1", "a free name is kept: two modules called by name are not one module"),
+    ("R2", "a bound letter is erased: a function renamed and its argument renamed "
+           "are one piece of logic"),
+    ("R3", "a store a caller reads through a dynamic reader is kept"),
+    ("R4", "a store nobody reads is removed"),
+    ("R5", "the dynamic-reader guard is a property of the fragment, not of one store"),
+    ("R6", "a bound name is erased even when its letter spells a builtin"),
+    ("R7", "every dynamic reader is guarded, not only the one a pair calls"),
+    ("R8", "an explicit `as` name is a bound name; a bare import keeps the module's "
+           "own name free"),
+    ("R9", "a dunder name is left as written"),
+    ("R10", "a read inside a nested scope is a read of the enclosing store"),
+    ("R11", "a class body binds nothing in the enclosing scope"),
+    ("R12", "a `global` or `nonlocal` declaration makes the name external"),
+    ("R13", "the erasure is idempotent: applying it to its own output changes nothing"),
+    ("R14", "a nested local binds nothing in the enclosing scope"),
 )
 
-# The gap, declared. A rule of the policy that has no control pair is a rule
-# whose breakage nothing in `check.py` would notice, so each one is named here
-# with the acceptance row that does notice it. An entry with no coverage is a
-# rule nobody covers, and the control fails on it; a rule added to the policy
-# without either a pair or an entry here is exactly the silent case this list
-# exists to prevent a reader from having to guess about.
+# The control table: (left, right, must they share one fingerprint?, rule id).
+# A verdict of `duplicate` is a measurement only while every rule of the policy
+# answers for itself: a pair that fails when its rule is broken, or a declared
+# gap whose covering row is *run* by `probes/policy_mutations.py`. The rule id
+# is what the counts are over; a pair labelled with a rule the policy does not
+# name is not a guard, it is a sentence.
+CONTROL_PAIRS = (
+    ("parsed_by_json", "parsed_by_pickle", False, "R1"),
+    ("max_of", "biggest_of", True, "R2"),
+    ("store_read_by_eval", "store_read_by_no_one", False, "R3"),
+    ("plain_max_of", "padded_max_of", True, "R4"),
+    ("read_by_eval_and_one_dead_store", "read_by_eval_only", False, "R5"),
+    ("added_over_a_shadowing_name", "added_over_another_shadowing_name", True, "R6"),
+    ("read_by_globals", "read_by_globals_renamed", False, "R7"),
+    ("read_by_vars", "read_by_vars_renamed", False, "R7"),
+    ("read_by_dir", "read_by_dir_renamed", False, "R7"),
+    ("import_as_j", "import_as_k", True, "R8"),
+    ("dunder_letters", "plain_letters", False, "R9"),
+    ("read_in_a_nested_scope", "no_store_for_the_nested_read", False, "R10"),
+    ("class_body_binds_nothing", "class_body_other_name", False, "R11"),
+    ("global_counter", "global_total", False, "R12"),
+    ("free_name_beside_a_nested_arg", "free_name_beside_a_nested_arg_renamed",
+     False, "R14"),
+)
+
+# The gap, declared, with the row that is expected to notice the break. The row
+# is run by `probes/policy_mutations.py`, on a copy with the rule broken: a
+# pointer nobody follows is not coverage.
 RULES_WITHOUT_A_PAIR = (
-    ("the erasure is idempotent: applying it to its own output changes nothing",
-     "verify_claims.py row r_attribute_pair"),
-    ("a nested local binds nothing in the enclosing scope, and an enclosing name "
-     "is not erased by it", "verify_claims.py row r_attribute_pair"),
+    ("R13", "r_idempotence"),
+)
+# The mutations. Each entry is (rule id, text in check.py, what it becomes). The
+# mutation is the rule's own parameter, changed to the wrong value: dropping a
+# member from the reader set, turning the alias branch off, letting a class body
+# write into the enclosing scope. `probes/policy_mutations.py` applies each to a
+# copy in memory, fingerprints every fragment named in the control table, and
+# requires that at least one fingerprint MOVED -- a mutation that changes nothing
+# cannot be counted as a guard of anything. A mutation of a guarded rule must
+# make the control fail and name that rule's pair; a mutation of a declared rule
+# must leave the control passing (that is the blind spot, measured) and make the
+# row the declaration points at fail on a copy.
+POLICY_MUTATIONS = (
+    ("R7", '"dir", "globals"}', '"dir"}'),
+    ("R7", '"locals", "vars", "dir"', '"locals", "dir"'),
+    ("R8", "elif isinstance(child, ast.alias) and child.asname:",
+     "elif False:"),
+    ("R9", '        if name.startswith("__"):\n            return name\n', "        pass\n"),
+    ("R10",
+     "    def _reads(self, node) -> set:\n"
+     "        return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)\n"
+     "                and isinstance(n.ctx, ast.Load)}",
+     "    def _reads(self, node) -> set:\n"
+     "        inside = {id(n) for d in ast.walk(node)\n"
+     "                  if isinstance(d, (ast.FunctionDef, ast.AsyncFunctionDef,"
+     " ast.Lambda))\n"
+     "                  for n in ast.walk(d)}\n"
+     "        return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)\n"
+     "                and isinstance(n.ctx, ast.Load) and id(n) not in inside}"),
+    ("R11", "            new = {child.name}\n            scopes[id(child)] = new",
+     "            new = cur\n            scopes[id(child)] = new"),
+    ("R12",
+     "            elif isinstance(child, (ast.Global, ast.Nonlocal)):\n"
+     "                external.update(child.names)",
+     "            elif isinstance(child, (ast.Global, ast.Nonlocal)):\n"
+     "                pass"),
+    ("R13", "            if not node.id.startswith(FREE_PREFIX):",
+     "            if True:"),
+    ("R14",
+     "            new = {a.arg for a in (*child.args.posonlyargs, *child.args.args,\n"
+     "                                   *child.args.kwonlyargs)}",
+     "            new = {a.arg for a in (*child.args.posonlyargs, *child.args.args,\n"
+     "                                   *child.args.kwonlyargs)}\n            cur |= new"),
 )
 
 
