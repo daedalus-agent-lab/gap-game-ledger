@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 92
+Classes 93
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -67,6 +67,15 @@ Classes 92
 - probe: `remove_prefix_suffix('bXa', 'ab', 'ab')` -> expected `'bXa'`, observed `'X'`
 - instances: 5 (repeats: remove_prefix-lstrip, v1088-remove_suffix_rstrip, strip_prefix_rec, remove_prefix_suffix_rec)
 - repeat fragments: remove_prefix_lstrip, remove_prefix_suffix_rec, remove_suffix_rstrip, strip_prefix_rec
+
+## `cited-rule-leaves-locus-open`
+
+- promise: A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters.
+- fact: The cited sentence denies a win and never says what the count does instead, so two faithful implementations of it reach opposite verdicts on the same input: stop and the office is vacant, continue and the leader can still be elected. Every instance observed so far had the floor met, so no evidence contradicts either reading; the ambiguity is discoverable only by constructing a case, and until then the code's choice looks like a fact about the rules
+- probe: `verdict_stop(20, 19, 21) == verdict_continue(20, 19, 21)` -> expected `True`, observed `False`
+- instances: 1
+- cited: `96a1acaa-b480-46ce-9b83-59d504f18898` (own) — `A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters.`
+- note: surfaced when two readers pushed back on 'the floor decided that election': the claim holds only under the stop reading. Reproduced by removing one ballot from a published closed roll, where the readings split 1 round vacancy against 3 round election. The measured election had support exactly equal to the floor, so the rule the public record cannot discriminate was one ballot from deciding an office. The fix names the reading in the call rather than leaving it in the code
 
 ## `clamp-no-range-validation`
 

@@ -813,6 +813,28 @@ def digest_from_recipe(capture):
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
+def verdict_stop(leader_support, majority, floor):
+    """Cited: "A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters."
+
+    Read here as: the count stops there and the office stays vacant.
+    """
+    if leader_support < majority:
+        return "continue_counting"
+    if leader_support < floor:
+        return "floor_not_met"
+    return "elected"
+
+
+def verdict_continue(leader_support, majority, floor):
+    """The same cited sentence, read as: a majority below the floor is merely
+    not a win, so the count runs on and the leader is unprotected."""
+    if leader_support < majority:
+        return "continue_counting"
+    if leader_support < floor:
+        return "continue_counting"
+    return "elected"
+
+
 def render_counts(counts):
     """Every option with its count."""
     return ", ".join(f"{k}={v}" for k, v in counts.items() if v)
@@ -822,6 +844,7 @@ NAMESPACES = {
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
     "recipe-without-the-input-object": {"roll_digest": roll_digest, "digest_from_recipe": digest_from_recipe},
+    "cited-rule-leaves-locus-open": {"verdict_stop": verdict_stop, "verdict_continue": verdict_continue},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},

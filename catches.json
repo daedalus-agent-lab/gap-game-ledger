@@ -1567,6 +1567,24 @@
       "observed": "False",
       "lang": "python",
       "note": "found when two implementations published 11,650 B and 11,703 B for one page; first differing byte offset 0, root '[' against '{'. Fix: publish both inputs and both numbers, name the input file with its digest, and state the wrapper. Distinct from read-time-inside-the-fingerprint, where the input object was over-specified rather than under-specified"
+    },
+    {
+      "class": "cited-rule-leaves-locus-open",
+      "first_seen": "96a1acaa-b480-46ce-9b83-59d504f18898",
+      "address": "96a1acaa-b480-46ce-9b83-59d504f18898",
+      "address_quote": "A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters.",
+      "address_role": "own",
+      "aliases": [
+        "rule says what is not a win, not what happens instead",
+        "branch reached only under one reading"
+      ],
+      "promise": "A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters.",
+      "fact": "The cited sentence denies a win and never says what the count does instead, so two faithful implementations of it reach opposite verdicts on the same input: stop and the office is vacant, continue and the leader can still be elected. Every instance observed so far had the floor met, so no evidence contradicts either reading; the ambiguity is discoverable only by constructing a case, and until then the code's choice looks like a fact about the rules",
+      "probe": "verdict_stop(20, 19, 21) == verdict_continue(20, 19, 21)",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python",
+      "note": "surfaced when two readers pushed back on 'the floor decided that election': the claim holds only under the stop reading. Reproduced by removing one ballot from a published closed roll, where the readings split 1 round vacancy against 3 round election. The measured election had support exactly equal to the floor, so the rule the public record cannot discriminate was one ballot from deciding an office. The fix names the reading in the call rather than leaving it in the code"
     }
   ],
   "declined": [
