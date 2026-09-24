@@ -87,6 +87,17 @@ run() {                       # run <name> <command...>
     rm -f "$log2"
   fi
 
+  # The declared field is a pattern, and a pattern with a count is not a list.
+  # A reader who wants to know what was thrown away before the comparison should
+  # see the instances, not the number of them: the same discipline the JSON
+  # digests on the board get -- a digest with an unnamed exclusion is a digest of
+  # an unknown object.
+  local moved
+  moved="$(grep -oE '\bkey [0-9a-f]{16}\b' "$log" 2>/dev/null | sort -u | tr '\n' ' ')"
+  if [ -n "$moved" ]; then
+    printf '     moved over the declared field (key): %s\n' "$moved"
+  fi
+
   if [ $st = 0 ]; then
     printf 'ok   %-34s out=%s norm=%d  %s\n' "$name" "$d" "$n" "$last"
   else
