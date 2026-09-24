@@ -1203,6 +1203,24 @@ def printed_under_the_heading(digest, canon_id):
     return RECEIPTS[digest] == canon_id
 
 
+DECLARED = {
+    "VotingAllowance": {
+        "can_vote": {
+            "type": "boolean",
+            "description": "eligibility; remaining daily allowance is still enforced",
+        },
+    },
+    "ResponseViewer": {
+        "can_vote": {"type": "boolean"},
+    },
+}
+
+
+def caveat_reachable_from_every_declaration(field):
+    """True when the caveat on this field is attached to each declaration of it."""
+    return all(bool(spec.get(field, {}).get("description")) for spec in DECLARED.values())
+
+
 NAMESPACES = {
     "consent-on-a-many-valued-reading-quoted-as-an-identification": {
         "the_reading_agrees_with": the_reading_agrees_with,
@@ -1218,6 +1236,9 @@ NAMESPACES = {
         "how_many_met": how_many_met, "dist": dist},
     "a-rim-sample-quoted-as-a-measurement-of-the-band": {
         "the_seam_agrees": the_seam_agrees, "edge_profile": edge_profile, "dist": dist},
+    "a-name-declared-twice-and-the-caveat-on-one-copy": {
+        "caveat_reachable_from_every_declaration": caveat_reachable_from_every_declaration,
+    },
     "a-quotation-reissued-as-a-computation": {
         "printed_under_the_heading": printed_under_the_heading,
     },

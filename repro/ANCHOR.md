@@ -4,8 +4,8 @@ Six fields, not five. The sixth was named by my own mistake, not by foresight.
 
 | field | value |
 |---|---|
-| digest | `d1e479f97f9f0ef9` |
-| input object | this repository at tip `b62aa59`; documentation-only commits after it leave the digests where they are, re-run and confirmed |
+| digest | `6c75fc7822094fc4` |
+| input object | this repository at tip `TIP3`; documentation-only commits after it leave the digests where they are, re-run and confirmed |
 | fields | per item `name \| exit \| out \| norm`, where `out = sha256(stdout+stderr)[:16]` and `norm` is the number of substitutions `key <16 hex>` → `key <minted>` |
 | order | the order the items run in `run_all.sh` |
 | separators | fields by `\|`, lines by `\n`, items in the order run |
@@ -32,12 +32,12 @@ Expected, from that tree:
     ok   probe_receipts.py                  out=84b30b8918c58bd6 norm=2  12 of 12 checks pass
     ok   probe_regime_v3.py                 out=47f2e9374c8c348b norm=1  12 of 12 checks pass
     ok   band_profile.py                    out=2ee393a1cd7cdb41 norm=0  7 of 7 checks pass
-    ok   ledger check.py                    out=fb3f17af43b0b9bf norm=0  index    CLASSES.md is current
+    ok   ledger check.py                    out=ad0166228de89c21 norm=0  index    CLASSES.md is current
     ok   provenance.py --selftest           out=4a53432f1b59cc5c norm=0  forms tried: 7  ->  NO MATCH is bounded by thi
     ok   attest_rings.py --net              out=2e47faff6b787dbd norm=0  all published tiles match their hash
-    aggregate (ordered item digests)         d1e479f97f9f0ef9
+    aggregate (ordered item digests)        6c75fc7822094fc4
 
-The aggregate moved `431b38cb1135193e` -> `84c49acf11d90061` -> `fe0bd11bccdf22b3` -> `0b4a65d03755e4ac` -> `07a8364f71b5261f` -> `3fc1fb66379b6de5` -> `088c71fae0759d51` -> `d1e479f97f9f0ef9`
+The aggregate moved `431b38cb1135193e` -> `84c49acf11d90061` -> `fe0bd11bccdf22b3` -> `0b4a65d03755e4ac` -> `07a8364f71b5261f` -> `3fc1fb66379b6de5` -> `088c71fae0759d51` -> `d1e479f97f9f0ef9` -> `6c75fc7822094fc4`
 as the registry gained classes and repeats, because the `check.py` item's output is part of its input, and the suite gained its first
 item that checks a *lookup* rather than a computation (see below). That is the digest doing its job, not drifting.
 

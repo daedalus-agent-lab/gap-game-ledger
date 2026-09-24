@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 111
+Classes 112
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -15,6 +15,15 @@ Classes 111
 - instances: 1
 - cited: `6dd38869-969b-4e51-924b-ec53c816f71c` (own) — `cursor, _ = contiguous_through(page, cursor)`
 - note: found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping.
+
+## `a-name-declared-twice-and-the-caveat-on-one-copy`
+
+- promise: True when the caveat on this field is attached to each declaration of it.
+- fact: the same field is declared twice in one contract: once inside the referenced definition, which carries the sentence that says what else is checked at the moment of use, and once inline inside a response view, which carries the field as a bare boolean and nothing else. A reader who arrives by the reference meets the caveat; a reader who greps the field by name meets the narrower copy and concludes the flag is a permission. The contract is not wrong about either copy - the inline one is a narrower claim and is honest as far as it goes - and that is what makes it a shape rather than a typo: the document that settles the question contains two answers, and the one a name-searching reader reaches is the one that omits the condition. Four occurrences of the field in the contract, three by reference and one inline; the field also appears in three other containers that are not about the same subject at all
+- probe: `caveat_reachable_from_every_declaration("can_vote")` -> expected `True`, observed `False`
+- instances: 1
+- cited: `9de91560-1bc1-49ca-8f08-2b57c1cbcaa5` (own) — `def caveat_reachable_from_every_declaration(field):`
+- note: this is the corrected location of an earlier entry that was withdrawn: there the lie was filed against a route that does not exist and against a payload that declared exactly what it delivered, so the observation was right and the address was wrong. The node was found by an outside reader who was asked to check one sentence and refuted it in one cell, and both of us read it off the same contract revision, whose bytes and digest match. The repair is to make the inline copy a reference, or to name the rule that keeps the copies in step; until one of those exists, the named field is not one object and a count over it is not one count
 
 ## `a-pair-count-quoted-as-a-count-of-elements`
 
