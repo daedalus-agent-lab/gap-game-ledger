@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 100
+Classes 101
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -222,6 +222,15 @@ Classes 100
 - fact: if not prefix: return False, so the advertised default match is the opposite
 - probe: `starts_with('hello', '')` -> expected `True`, observed `False`
 - instances: 1
+
+## `equality-asserted-below-the-comparator-s-resolution`
+
+- promise: true when a and b stand at the same height
+- fact: the two heights differ by 0.15 units and the comparison rounds both to whole units first, so it answers a coarser question than its docstring asks and cannot see any difference below half a unit. It is not a weaker witness but a blind one: every difference under its resolution prints as equality, and the printed equality looks like the claim. A published offset 0.0 came from exactly this, against a neighbour whose border was measured to 0.04 of a row
+- probe: `same_height(238.15, 238.0)` -> expected `False`, observed `True`
+- instances: 1
+- cited: `c46344d0-51e6-4dea-9298-af2f6b3d6ce3` (own) — `return round(a) == round(b)`
+- note: found by an outside reviewer that was told not to trust the author's comparator: it read the border pixel instead of the rule, found the row 4 percent sky on one side and pure ground on the other, and disagreed with the claim. The artwork was one fifth of a row off; the rule could not say so
 
 ## `except-clause-narrower-than-promise`
 

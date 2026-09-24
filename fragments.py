@@ -893,6 +893,11 @@ def render_counts(counts):
     return ", ".join(f"{k}={v}" for k, v in counts.items() if v)
 
 
+def same_height(a, b):
+    """True when a and b stand at the same height."""
+    return round(a) == round(b)
+
+
 SKY = "S"
 GROUND = "G"
 HIGHLIGHT = "H"
@@ -923,6 +928,7 @@ NAMESPACES = {
     "record-witness-on-one-field-only": {"witnessed_fields": witnessed_fields, "cross_checked": cross_checked},
     "both-inputs-read-from-one-source": {"seam_offset": seam_offset},
     "marking-the-edge-moves-the-edge": {"ground_top": ground_top},
+    "equality-asserted-below-the-comparator-s-resolution": {"same_height": same_height},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},
