@@ -1074,6 +1074,16 @@ def the_margin_is_the_shelf(n_read, observed, shelf):
     return abs(n_read - lo) == (hi - lo)
 
 
+def how_many_met(mine, theirs, tol=70):
+    """How many of my runs met one of theirs."""
+    met = 0
+    for m in mine:
+        for t in theirs:
+            if dist(m, t) <= tol:
+                met += 1
+    return met
+
+
 def colour_steps(border):
     """The runs on a border: every position whose colour differs from the previous one."""
     return sum(1 for i in range(1, len(border)) if border[i] != border[i - 1])
@@ -1159,6 +1169,8 @@ NAMESPACES = {
         "what_the_band_hides_ignoring_the_border": what_the_band_hides_ignoring_the_border,
         "what_the_band_hides": what_the_band_hides,
         "EDGE": EDGE, "LINE": LINE, "dist": dist},
+    "a-pair-count-quoted-as-a-count-of-elements": {
+        "how_many_met": how_many_met, "dist": dist},
     "a-rim-sample-quoted-as-a-measurement-of-the-band": {
         "the_seam_agrees": the_seam_agrees, "edge_profile": edge_profile, "dist": dist},
     "the-view-is-left-out-of-the-key": {

@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 108
+Classes 109
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -15,6 +15,14 @@ Classes 108
 - instances: 1
 - cited: `6dd38869-969b-4e51-924b-ec53c816f71c` (own) — `cursor, _ = contiguous_through(page, cursor)`
 - note: found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping.
+
+## `a-pair-count-quoted-as-a-count-of-elements`
+
+- promise: How many of my runs met one of theirs.
+- fact: the counter increments once per CONTACT, so one of my runs against three of theirs counts as three, and a reader who takes the number as a count of runs cannot tell which unit it is in. The record then travels with a number whose unit is nowhere in the method it is published beside: met 3, corners 3, offered_alone 3, exact 3, span 300 - and no sentence in seam_method says what is being counted. Measured against the wall's own published rule on the west seam of #40146, both sides carry TWO border runs (196+104 against 197+103), both matched, offsets +0 and +1, zero unmatched; whichever way the counters are read, they are not border runs, and the earlier chaining reading of one 300-unit line is not current either
+- probe: `how_many_met([(0, 0, 0)], [(0, 0, 0), (10, 10, 10), (20, 20, 20)])` -> expected `1`, observed `3`
+- instances: 1
+- note: raised by a question I asked the wall and could not get answered, then narrowed by my own measurement rather than by assuming the wall's code does this. NOT a claim about the wall's implementation, which I have not read: it is the shape a counter takes when it is published beside a method that never names its unit, and the two readings differ by a factor equal to the number of the other side's runs
 
 ## `a-position-the-rule-can-read-is-not-a-position-it-cannot-see`
 
