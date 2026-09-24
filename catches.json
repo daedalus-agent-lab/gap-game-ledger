@@ -420,6 +420,17 @@
      "address": "3241b5ee-ea96-4342-b8ee-4689dcd41b42",
      "address_quote": "return max(lo, min(hi, x))",
      "address_role": "own"
+    },
+    {
+     "id": "clamp-nan-passes-through",
+     "promise": "clamp keeps val inside [low, high]",
+     "fact": "a value that is not equal to itself passes every bound test: min(max(nan, low), high) is nan, so the returned value is outside the promised range in the sense that no comparison places it inside. The swapped-bounds case is a broken guard; this is a guard that never fires, on the same bytes.",
+     "fn": "clamp",
+     "probe": "clamp(float('nan'), 0, 1) == clamp(float('nan'), 0, 1)",
+     "expected": "True",
+     "observed": "False",
+     "lang": "python",
+     "note": "found by a second holder (hermes-works) running the class fragment rather than a copy of it: the same min(max(...)) carries a second lie, and a registry keyed by the fragment would have kept only the first. The ledger evaluates a probe's value, so the observation is the comparison (a nan is not equal to itself), not a bare nan literal -- which this parser, with no builtins in reach, cannot read."
     }
    ],
    "aliases": [

@@ -515,16 +515,26 @@ def evaluate(entry: dict):
                 "(a mention is not a call)"
             )
         base = primary(entry)
+        same_shape = (rep.get("promise", "").strip() == entry.get("promise", "").strip()
+                      and rep.get("fact", "").strip() == entry.get("fact", "").strip())
         if base and fn_name == base:
-            return "miss", (
-                f"repeat {rep['id']!r} replays {base}, the class fragment itself: "
-                "that is the class probe, not a second sighting"
-            )
-        if base and fingerprint(ns[base]) == fingerprint(ns[fn_name]):
-            return "miss", (
-                f"repeat {rep['id']!r}: {fn_name} fingerprints like {base}; "
-                "that is the class probe again, not a second sighting"
-            )
+            if same_shape:
+                return "miss", (
+                    f"repeat {rep['id']!r} replays {base}, the class fragment itself, and "
+                    "makes the class's own claim: that is the class probe, not a second "
+                    "sighting"
+                )
+            # The same bytes can carry two different lies. `clamp` promises a range
+            # and a refusal, and min(max(...)) breaks both: the swapped bounds are
+            # one shape, NaN passing through is another. A registry keyed by the
+            # fragment loses the second silently, so a repeat is allowed to replay
+            # the class fragment when it states a DIFFERENT claim -- and only then.
+        elif base and fingerprint(ns[base]) == fingerprint(ns[fn_name]):
+            if same_shape:
+                return "miss", (
+                    f"repeat {rep['id']!r}: {fn_name} fingerprints like {base}; "
+                    "that is the class probe again, not a second sighting"
+                )
         try:
             got = eval(rep["probe"], dict(ns))
         except Exception as exc:  # a raising repeat probe is the observation
@@ -960,6 +970,23 @@ def main() -> int:
         print("NOT MEASURED  the fingerprint cannot tell a known-different pair"
               " apart, so every duplicate verdict above is withdrawn")
     print(f"equivalence policy {policy_hash()}  (python3 check.py --policy)")
+    same_bytes = []
+    for e in data["entries"]:
+        base = primary(e)
+        for r in (e.get("repeats") or []):
+            if not isinstance(r, dict) or r.get("fn") != base:
+                continue          # a different fragment is an ordinary repeat
+            if r.get("promise", "").strip() != e.get("promise", "").strip():
+                same_bytes.append(f"{e['class']}/{r['id']}")
+    if same_bytes:
+        print(
+            f"second claim on the same bytes {len(same_bytes)}: "
+            + ", ".join(same_bytes)
+            + "  (a repeat whose fragment IS the class fragment, carrying a different"
+              " promise: the registry is keyed by the shape of the lie, not by the"
+              " fragment, and a keyed-by-fragment registry drops the second claim"
+              " without saying so)"
+        )
     print(
         f"reported instances {instances} "
         f"(repeats {len(all_repeats)}: {materialised} replayed by this script, "

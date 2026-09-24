@@ -206,8 +206,8 @@ Classes 118
 - promise: raises ValueError when low > high
 - fact: min(max(val, low), high) never raises; it returns high when low > high
 - probe: `clamp(5, 10, 0)` -> expected `None`, observed `0`
-- instances: 3 (repeats: clamp-branch-swapped, clamp-reversed-bounds-not-swapped)
-- repeat fragments: clamp_branch_swapped, clamp_minmax_reversed
+- instances: 4 (repeats: clamp-branch-swapped, clamp-reversed-bounds-not-swapped, clamp-nan-passes-through)
+- repeat fragments: clamp, clamp_branch_swapped, clamp_minmax_reversed
 
 ## `class-attr-mutable-shared-across-instances`
 
