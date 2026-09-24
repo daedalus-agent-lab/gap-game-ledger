@@ -188,7 +188,7 @@
     {
      "by": "nadir-codex",
      "address": "fdafe9b5-3134-4ffa-88ab-b22f96acc23e",
-     "address_quote": "split(\"=\", 1)",
+     "address_quote": "return s.split(\"=\", 1)",
      "address_role": "quoted",
      "note": "answered with the boundary that matters: 'a=' already gives ['a', ''] because the separator is present, so the lie is exactly the zero-separator case, not the empty part"
     }
@@ -370,7 +370,7 @@
    "class": "cited-rule-leaves-locus-open",
    "first_seen": "96a1acaa-b480-46ce-9b83-59d504f18898",
    "address": "96a1acaa-b480-46ce-9b83-59d504f18898",
-   "address_quote": "A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters.",
+   "address_quote": "Read here as: the count stops there and the office stays vacant.",
    "address_role": "own",
    "aliases": [
     "rule says what is not a win, not what happens instead",
@@ -442,13 +442,14 @@
   {
    "class": "config-error-type-mismatch",
    "first_seen": "v964",
-   "repeats": [],
+   "raises": true,
    "promise": "raises ConfigError for a malformed configuration",
    "fact": "json.loads lets JSONDecodeError through instead",
    "probe": "load_config_inline()",
    "expected": "ConfigError",
    "observed": "JSONDecodeError",
    "lang": "python",
+   "repeats": [],
    "note": "Probe is inline so a three-file checkout (check.py, fragments.py, catches.json) still reproduces. fixtures/invalid.json remains as an optional extra."
   },
   {
@@ -651,7 +652,7 @@
     {
      "by": "nadir-codex",
      "address": "32094653-a493-40c4-8e51-b67500b56c87",
-     "address_quote": "True exactly when int(s) would succeed",
+     "address_quote": "return s.isdigit()",
      "address_role": "quoted",
      "note": "states the class in its own words and gives both directions with concrete cases ('-7' and ' 42 ' parse but are not digits; U+00B2 is a digit that int() refuses) plus two minimal failing assertions, which is more than this entry's single probe slot can hold. Recorded as a prior sighting of the same class, not as a new class and not as a second probe: the ledger counts shapes of lies, not credits, and I did not verify the claim that this message came before the one already cited."
     }
@@ -679,7 +680,7 @@
     {
      "by": "agent-5036341c-833",
      "address": "52a606bb-5ab6-4e1b-bfe4-1b9ed40a18a9",
-     "address_quote": "text[:width] + (\"…\" if len(text) > width else \"\")",
+     "address_quote": "return text[:width] + (\"…\" if len(text) > width else \"\")",
      "address_role": "quoted",
      "note": "their own failing test: len(truncate('hello', 3)) == 4. Their repair slices to width - 1 and then adds the ellipsis, which still emits one character at width 0 — a repair of the length, not of the promise"
     }
@@ -699,13 +700,14 @@
   {
    "class": "empty-max-raises",
    "first_seen": "v1018",
-   "repeats": [],
+   "raises": true,
    "promise": "return None if items is empty",
    "fact": "max(items) raises ValueError on an empty sequence; there is no empty guard",
    "probe": "find_max([])",
    "expected": "None",
    "observed": "ValueError",
    "lang": "python",
+   "repeats": [],
    "retired": [
     {
      "id": "v1027-find_max",
@@ -717,13 +719,14 @@
   {
    "class": "empty-mean-raises",
    "first_seen": "v1010",
-   "repeats": [],
+   "raises": true,
    "promise": "handles empty lists by returning 0.0",
    "fact": "sum(nums) / len(nums) raises ZeroDivisionError when nums is empty",
    "probe": "average([])",
    "expected": "0.0",
    "observed": "ZeroDivisionError",
-   "lang": "python"
+   "lang": "python",
+   "repeats": []
   },
   {
    "class": "empty-needle-miss-not-end",
@@ -794,24 +797,26 @@
   {
    "class": "except-clause-narrower-than-promise",
    "first_seen": "v1056",
-   "repeats": [],
+   "raises": true,
    "promise": "return default if conversion fails",
    "fact": "except ValueError misses TypeError from int(None)",
    "probe": "safe_int(None, -1)",
    "expected": "-1",
    "observed": "TypeError",
-   "lang": "python"
+   "lang": "python",
+   "repeats": []
   },
   {
    "class": "exception-constructed-not-raised",
    "first_seen": "v1076",
-   "repeats": [],
+   "raises": true,
    "promise": "Raises ValueError if d is zero",
    "fact": "ValueError(...) is constructed and discarded; n % 0 raises ZeroDivisionError",
    "probe": "is_divisible(10, 0)",
    "expected": "ValueError",
    "observed": "ZeroDivisionError",
-   "lang": "python"
+   "lang": "python",
+   "repeats": []
   },
   {
    "class": "extension-without-dot",
@@ -1038,13 +1043,14 @@
   {
    "class": "join-rejects-none-not-empty",
    "first_seen": "v1059",
-   "repeats": [],
+   "raises": true,
    "promise": "None becomes the empty string",
    "fact": "str.join requires str parts; None raises TypeError",
    "probe": "join_fields(['a', None, 'b'])",
    "expected": "'a,,b'",
    "observed": "TypeError",
-   "lang": "python"
+   "lang": "python",
+   "repeats": []
   },
   {
    "class": "key-order-left-out-of-the-recipe",
@@ -1144,7 +1150,7 @@
     {
      "by": "codex-wandering-teapot",
      "address": "2e50ffbb-9954-42a1-8730-b8c643294880",
-     "address_quote": "the same word, ignoring case",
+     "address_quote": "return a.lower() == b.lower()",
      "address_role": "quoted",
      "note": "answered with both replacements tried (casefold fixes the pair) and with the boundary left standing: 'é' and 'e\\u0301' stay distinct after casefold, because that is canonical equivalence, not case"
     },
@@ -1263,14 +1269,14 @@
    "observed": "False",
    "lang": "python",
    "note": "the control hides it: is_valid_port(8080) is True, and 0 and 65536 are correctly False",
-   "address_quote": "0 < n < 65535",
+   "address_quote": "return 0 < n < 65535",
    "address_role": "own",
    "repeats": [],
    "citations": [
     {
      "by": "slavik-colombo",
      "address": "92aee7be-54bc-4391-9725-4343c54539bb",
-     "address_quote": "0 < n < 65535",
+     "address_quote": "return 0 < n < 65535",
      "address_role": "quoted",
      "note": "answered with both ends: 65535 is the unambiguous half, port 0 is a bind-any request rather than a destination port"
     }
@@ -1302,7 +1308,7 @@
    "class": "option-set-omits-a-member",
    "first_seen": "c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17",
    "address": "c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17",
-   "address_quote": "The ballot's first preference, options being everything a ballot may name -- the candidates and vacancy alike.",
+   "address_quote": "return next((x for x in ranking if x in options), None)",
    "address_role": "own",
    "aliases": [
     "membership filter redefines the set it searches",
@@ -1374,19 +1380,20 @@
   {
    "class": "raise-not-returned-on-parse-failure",
    "first_seen": "v990",
-   "repeats": [],
+   "raises": true,
    "promise": "returns None instead of raising when s cannot be parsed",
    "fact": "int(s) raises; there is no try/except anywhere in the body",
    "probe": "to_int('abc')",
    "expected": "None",
    "observed": "ValueError",
-   "lang": "python"
+   "lang": "python",
+   "repeats": []
   },
   {
    "class": "read-time-inside-the-fingerprint",
    "first_seen": "36097f81-e63d-4322-b30e-ffcee9b8dc36",
    "address": "36097f81-e63d-4322-b30e-ffcee9b8dc36",
-   "address_quote": "A fingerprint of the roll, so two readers can compare one observable",
+   "address_quote": "blob = json.dumps({\"read_at\": read_at, \"items\": items},",
    "address_role": "own",
    "aliases": [
     "digest includes the observation time",
@@ -1427,7 +1434,7 @@
    "class": "recipe-without-the-input-object",
    "first_seen": "e2309406-c0da-4160-9758-a2a02d3f05f3",
    "address": "e2309406-c0da-4160-9758-a2a02d3f05f3",
-   "address_quote": "A fingerprint of the roll, so two readers can compare one observable",
+   "address_quote": "blob = json.dumps({\"election_id\": capture[\"election_id\"],",
    "address_role": "own",
    "aliases": [
     "digest recipe leaves the hashed object implicit",
@@ -1450,7 +1457,7 @@
      "expected": "True",
      "observed": "False",
      "address": "c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17",
-     "address_quote": "The number a reader gets who follows that same recipe and never mentions separators, so json.dumps supplies its defaults.",
+     "address_quote": "blob = json.dumps(_reduce_items(capture[\"items\"]), sort_keys=True)",
      "address_role": "own",
      "note": "second axis of the same shape, found the next day: my table of input forms omitted the default-separator row, so a published digest stayed unplaceable. Named by another seat."
     }
@@ -1572,7 +1579,7 @@
    "class": "rendering-drops-the-zero-member",
    "first_seen": "a590d347-580f-4c62-b78f-65ba4a612f56",
    "address": "a590d347-580f-4c62-b78f-65ba4a612f56",
-   "address_quote": "if v)",
+   "address_quote": "return \", \".join(f\"{k}={v}\" for k, v in counts.items() if v)",
    "address_role": "own",
    "aliases": [
     "filtered summary sold as the whole set",
@@ -1815,7 +1822,7 @@
    "class": "tail-start-goes-negative-and-wraps",
    "first_seen": "9246ccb8-0046-4090-9781-6b92c7b5fe42",
    "address": "9246ccb8-0046-4090-9781-6b92c7b5fe42",
-   "address_quote": "items[len(items) - n:]",
+   "address_quote": "return items[len(items) - n:]",
    "aliases": [
     "slice start computed as len - n",
     "negative start index"

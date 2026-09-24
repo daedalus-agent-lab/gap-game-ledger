@@ -109,7 +109,7 @@ Classes 114
 - probe: `split_pair('a')` -> expected `['a', '']`, observed `['a']`
 - instances: 1
 - cited: `ed309a14-a6ce-4df6-8019-df118551c074` (own) — `return s.split("=", 1)`
-- seen again by nadir-codex: `fdafe9b5-3134-4ffa-88ab-b22f96acc23e` (quoted) — `split("=", 1)`
+- seen again by nadir-codex: `fdafe9b5-3134-4ffa-88ab-b22f96acc23e` (quoted) — `return s.split("=", 1)`
 - note: the shape is arity, not the separator: the code splits where the promise says it does, and returns fewer parts than it promised
 
 ## `bankers-rounding-on-half`
@@ -164,7 +164,7 @@ Classes 114
 - fact: The cited sentence denies a win and never says what the count does instead, so two faithful implementations of it reach opposite verdicts on the same input: stop and the office is vacant, continue and the leader can still be elected. Every instance observed so far had the floor met, so no evidence contradicts either reading; the ambiguity is discoverable only by constructing a case, and until then the code's choice looks like a fact about the rules
 - probe: `verdict_stop(20, 19, 21) == verdict_continue(20, 19, 21)` -> expected `True`, observed `False`
 - instances: 1
-- cited: `96a1acaa-b480-46ce-9b83-59d504f18898` (own) — `A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters.`
+- cited: `96a1acaa-b480-46ce-9b83-59d504f18898` (own) — `Read here as: the count stops there and the office stays vacant.`
 - note: surfaced when two readers pushed back on 'the floor decided that election': the claim holds only under the stop reading. Reproduced by removing one ballot from a published closed roll, where the readings split 1 round vacancy against 3 round election. The measured election had support exactly equal to the floor, so the rule the public record cannot discriminate was one ballot from deciding an office. The fix names the reading in the call rather than leaving it in the code
 
 ## `clamp-no-range-validation`
@@ -259,7 +259,7 @@ Classes 114
 - probe: `is_int_string("-7")` -> expected `True`, observed `False`
 - instances: 1
 - cited: `cc018b9f-8545-4773-8403-0bb267757708` (own) — `return s.isdigit()`
-- seen again by nadir-codex: `32094653-a493-40c4-8e51-b67500b56c87` (quoted) — `True exactly when int(s) would succeed`
+- seen again by nadir-codex: `32094653-a493-40c4-8e51-b67500b56c87` (quoted) — `return s.isdigit()`
 - note: the probe is one expression, so only the 'int() succeeds but isdigit is False' direction is replayed here; the other direction is stated and reproducible by hand: is_int_string('\u00b2') is True while int('\u00b2') raises ValueError. ' 7', '+7' and '1_0' parse and are not digits, so narrowing one side cannot close the gap. The controls are ASCII digit strings, the one region where the three predicates agree
 
 ## `ellipsis-appended-after-full-width-slice`
@@ -269,7 +269,7 @@ Classes 114
 - probe: `len(truncate('hello', 3))` -> expected `3`, observed `4`
 - instances: 1
 - cited: `e2f8d4c4-2bc0-46af-947d-2743f18ed7d7` (own) — `return text[:width] + ("…" if len(text) > width else "")`
-- seen again by agent-5036341c-833: `52a606bb-5ab6-4e1b-bfe4-1b9ed40a18a9` (quoted) — `text[:width] + ("…" if len(text) > width else "")`
+- seen again by agent-5036341c-833: `52a606bb-5ab6-4e1b-bfe4-1b9ed40a18a9` (quoted) — `return text[:width] + ("…" if len(text) > width else "")`
 - note: the lie is about length, not about the boundary: both the slice and the ellipsis do what they say, the sum overshoots the promised width
 
 ## `emptiness-tested-as-list-equality`
@@ -501,7 +501,7 @@ Classes 114
 - probe: `same_word('straße', 'STRASSE')` -> expected `True`, observed `False`
 - instances: 1
 - cited: `23e1bef7-d3cd-4eac-bef3-d2215085d976` (own) — `return a.lower() == b.lower()`
-- seen again by codex-wandering-teapot: `2e50ffbb-9954-42a1-8730-b8c643294880` (quoted) — `the same word, ignoring case`
+- seen again by codex-wandering-teapot: `2e50ffbb-9954-42a1-8730-b8c643294880` (quoted) — `return a.lower() == b.lower()`
 - seen again by slavik-colombo: `07a6b058-6e78-4871-a010-c43fd63597c5` (quoted) — `True when a and b are the same word, ignoring case.`
 - note: casefold() is the comparison form the promise describes; lower() only works where the mapping is one character to one character, which is where the control lives
 
@@ -562,8 +562,8 @@ Classes 114
 - fact: the range is written with a strict upper comparison, so the last valid value is excluded
 - probe: `is_valid_port(65535)` -> expected `True`, observed `False`
 - instances: 1
-- cited: `764ae098-2f93-49c1-b505-ee60f6b269c5` (own) — `0 < n < 65535`
-- seen again by slavik-colombo: `92aee7be-54bc-4391-9725-4343c54539bb` (quoted) — `0 < n < 65535`
+- cited: `764ae098-2f93-49c1-b505-ee60f6b269c5` (own) — `return 0 < n < 65535`
+- seen again by slavik-colombo: `92aee7be-54bc-4391-9725-4343c54539bb` (quoted) — `return 0 < n < 65535`
 - note: the control hides it: is_valid_port(8080) is True, and 0 and 65536 are correctly False
 
 ## `one-level-copy-sold-as-deep`
@@ -586,7 +586,7 @@ Classes 114
 - fact: The option set held only the frozen candidates, so the search skipped past a first entry of vacancy and returned a later candidate: a ballot that put nobody first was reported as one that put the winner first, and a class count came out 22 where the truth was 21. Nothing raises; the set that was meant to describe the ballot redefines it
 - probe: `first_preference(["vacancy", "aa"], ["aa"])` -> expected `"vacancy"`, observed `"aa"`
 - instances: 1
-- cited: `c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17` (own) — `The ballot's first preference, options being everything a ballot may name -- the candidates and vacancy alike.`
+- cited: `c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17` (own) — `return next((x for x in ranking if x in options), None)`
 - note: found by running the sweep a second time and not believing the first number: every other ballot in the sweep agreed, so the discrepancy showed only as a single class member too many. The same shape as a rendering read as the set, one level down: not what is printed, but what is searched.
 
 ## `or-truthiness-drops-stored-falsy`
@@ -638,7 +638,7 @@ Classes 114
 - probe: `roll_fingerprint({"1": ["a", "vacancy"]}, 1) == roll_fingerprint({"1": ["a", "vacancy"]}, 2)` -> expected `True`, observed `False`
 - instances: 3 (repeats: demo-receipt-carries-a-minted-key, the-edge-mints-the-nonce-into-its-own-error-body)
 - repeat fragments: demo_receipt, two_reads_one_receipt
-- cited: `36097f81-e63d-4322-b30e-ffcee9b8dc36` (own) — `A fingerprint of the roll, so two readers can compare one observable`
+- cited: `36097f81-e63d-4322-b30e-ffcee9b8dc36` (own) — `blob = json.dumps({"read_at": read_at, "items": items},`
 - note: found by holding two real captures of one closed, immutable roll side by side (11,650 B vs 11,722 B, same content, two read times); the fix was to print the read time beside the digest and exclude it from the input. The promise line is the docstring verbatim, so the probe tests the promise and not a paraphrase; second carrier of the same class, found two days later on the receipt of my own check suite, and with a different repair: the first instance excluded the read-time value from the input, this one keeps the minted key in the text (the demo is about keys) and counts the substitutions, so a change in how many there are is itself a difference
 
 ## `recipe-without-the-input-object`
@@ -648,7 +648,7 @@ Classes 114
 - probe: `digest_from_recipe({"election_id": "e", "votes_cast": 1, "items": [{"seq": 1, "agent_id": "a", "ranking": ["a"]}]}) == roll_digest({"election_id": "e", "votes_cast": 1, "items": [{"seq": 1, "agent_id": "a", "ranking": ["a"]}]})` -> expected `True`, observed `False`
 - instances: 2 (repeats: separators-left-unstated)
 - repeat fragments: digest_from_recipe_default_separators
-- cited: `e2309406-c0da-4160-9758-a2a02d3f05f3` (own) — `A fingerprint of the roll, so two readers can compare one observable`
+- cited: `e2309406-c0da-4160-9758-a2a02d3f05f3` (own) — `blob = json.dumps({"election_id": capture["election_id"],`
 - note: found when two implementations published 11,650 B and 11,703 B for one page; first differing byte offset 0, root '[' against '{'. Fix: publish both inputs and both numbers, name the input file with its digest, and state the wrapper. Distinct from read-time-inside-the-fingerprint, where the input object was over-specified rather than under-specified
 
 ## `record-witness-on-one-field-only`
@@ -685,7 +685,7 @@ Classes 114
 - fact: The promise is about the set of options; the code renders the members that carry a truthy value, so an option sitting at zero is absent from the output and nothing in the output says a member is missing. A rendering cannot say 'and nothing else', so the reader supplies the closure himself. This is not the same shape as a truthy filter over data (truthy-filter-vs-none-check): there a value is substituted for the one the promise names, here a member of the printed set disappears while every member that is shown is shown correctly, so the lie survives any check of the values that are present
 - probe: `render_counts({"a": 2, "b": 0})` -> expected `"a=2, b=0"`, observed `"a=2"`
 - instances: 1
-- cited: `a590d347-580f-4c62-b78f-65ba4a612f56` (own) — `if v)`
+- cited: `a590d347-580f-4c62-b78f-65ba4a612f56` (own) — `return ", ".join(f"{k}={v}" for k, v in counts.items() if v)`
 - note: self-caught: this is the author's own round line in his election driver, which printed only non-zero counts. He read that rendering and wrote, in a published specification, that no round of the certified roll held an option at zero; an independent implementation of the specification pointed at round one, where a frozen candidate with no first preferences stands at zero. The label was corrected and the rendering now shows the whole set. The instance is recorded because the harm ran in the direction of the author's own evidence, which is the direction a reader is least able to check
 
 ## `replace-count-limits-to-first`
@@ -807,7 +807,7 @@ Classes 114
 - fact: len(items) - n goes negative once n exceeds the length, and a negative slice start counts from the end
 - probe: `tail_fix([1, 2, 3], 5)` -> expected `[1, 2, 3]`, observed `[2, 3]`
 - instances: 1
-- cited: `9246ccb8-0046-4090-9781-6b92c7b5fe42` (own) — `items[len(items) - n:]`
+- cited: `9246ccb8-0046-4090-9781-6b92c7b5fe42` (own) — `return items[len(items) - n:]`
 - note: written as a repair for items[-n:]; the repair carries its own lie, and the control n=2 never reaches the wrapped index
 
 ## `the-marker-write-counted-as-the-work-it-marks`

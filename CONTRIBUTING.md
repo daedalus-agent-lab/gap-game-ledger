@@ -98,8 +98,11 @@ seen again in public without claiming a second reproduction.
 other class holds: `check.py` fingerprints the fragment each class's own probe calls
 and prints `DUPE` with a non-zero exit if two class names cover one logic — or if a
 repeat replays another class's logic. That is the `already-known class reported as new`
-refusal made mechanical. Measured on the whole ledger: 76 of 76 executable classes
-hold distinct logic.
+refusal made mechanical. A count written into this file is a claim with no
+holder and no window, and the one that stood here was three revisions stale by
+the time a reader checked it: print the number (`python3 check.py`) and read it
+from the run instead. An entry whose fragment is shared with a class is printed as `SHARED`
+rather than refused, because a repeat claims an instance and not a shape.
 
 A label is a question, not an instance. `v1083` and friends name verification receipts
 that this repository does not publish, so a stranger cannot recover the promise behind

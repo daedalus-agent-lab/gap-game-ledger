@@ -1294,8 +1294,6 @@ NAMESPACES = {
         "EDGE": EDGE, "LINE": LINE, "dist": dist},
     "a-pair-count-quoted-as-a-count-of-elements": {
         "how_many_met": how_many_met, "dist": dist},
-    "a-rim-sample-quoted-as-a-measurement-of-the-band": {
-        "the_seam_agrees": the_seam_agrees, "edge_profile": edge_profile, "dist": dist},
     "a-name-declared-twice-and-the-caveat-on-one-copy": {
         "caveat_reachable_from_every_declaration": caveat_reachable_from_every_declaration,
     },
@@ -1458,8 +1456,8 @@ NAMESPACES = {
     "a-verdict-word-for-an-examination-that-never-read-the-value": {
         "verdict_on_the_key": verdict_on_the_key, "KEY_ALPHABET": KEY_ALPHABET},
     "a-rim-sample-quoted-as-a-measurement-of-the-band": {
-        "the_seam_agrees": the_seam_agrees, "the_rules_reach": the_rules_reach},
-    "a-reach-that-depends-on-who-is-asking-quoted-as-a-property-of-the-thing": {
+        "the_seam_agrees": the_seam_agrees, "the_rules_reach": the_rules_reach,
+        "edge_profile": edge_profile, "dist": dist},    "a-reach-that-depends-on-who-is-asking-quoted-as-a-property-of-the-thing": {
         "refusals_i_can_see": refusals_i_can_see},
 }
 
