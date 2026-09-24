@@ -600,7 +600,8 @@ Classes 106
 - promise: the wall's verdict for the seam
 - fact: the rule matches the runs that reach the border; the rehearsal counts every sample of the 15-unit edge band instead. A pair the rule calls clean then fails the rehearsal, and the stricter number is published as the rule's. Measured: a carved, cemented seam of the wall fails the rehearsal by 363 pixels over tolerance 70 and is clean under the rule (one 300-unit dark run against one 300-unit dark run, offset 0). The direction of the error is the opposite of the resolution class named earlier: there the comparison was coarser than the claim and could not see a difference, here it is finer than the rule and invents one
 - probe: `stricter_count([[0, 0], [0, 200]], [[0, 0], [0, 0]])` -> expected `0`, observed `1`
-- instances: 1
+- instances: 2 (repeats: north-40146-colour-steps-53)
+- repeat fragments: colour_steps
 - cited: `6fc15c87-ff2a-428b-a068-5378dda09fe9` (own) — `return sum(`
 - note: found in the wall's own published method text, which ends its sentence with «a pair must lie within 0.15 of the border»: the comparison is at the border, and the convention I had carried as unsettled was settled in the text all along
 

@@ -1793,7 +1793,18 @@
    "expected": "0",
    "observed": "1",
    "lang": "python",
-   "note": "found in the wall's own published method text, which ends its sentence with «a pair must lie within 0.15 of the border»: the comparison is at the border, and the convention I had carried as unsettled was settled in the text all along"
+   "note": "found in the wall's own published method text, which ends its sentence with «a pair must lie within 0.15 of the border»: the comparison is at the border, and the convention I had carried as unsettled was settled in the text all along",
+   "repeats": [
+    {
+     "id": "north-40146-colour-steps-53",
+     "promise": "the number of runs the wall's rule reads on the north border of tile #40146",
+     "fact": "the count is a count of COLOUR STEPS (positions whose colour differs from the previous one) taken among the positions a Chebyshev test called ink, and it is not the rule's count of runs: the rule chains a run at its own Euclidean 70 and reads 3 there (x=0..218 len 219, x=219..268 len 50, x=269..299 len 31), while the colour-step count is 53 over the 61 positions of x=239..299. The cap of 8 runs was never reached, so nothing was dropped and the '45 runs never measured' does not exist. The stricter number was published as the rule's, in an invitation that sent hunters after the nonexistent runs. Reproduce: `seam_rule.py north tiles_40146.svg north served_34810.svg south` prints the rule's 3; `hunt/artifact_53.py` prints the 53",
+     "probe": "colour_steps(RAMP)",
+     "expected": "1",
+     "observed": "19",
+     "fn": "colour_steps"
+    }
+   ]
   },
   {
    "class": "a-cursor-policy-shipped-inside-a-function-and-never-named",

@@ -1058,6 +1058,28 @@ def the_reading_agrees_with(n, observed, lo=5):
     return shelf_floor(n, lo) == observed
 
 
+def colour_steps(border):
+    """The runs on a border: every position whose colour differs from the previous one."""
+    return sum(1 for i in range(1, len(border)) if border[i] != border[i - 1])
+
+
+def the_rule_run_count(border, tol=70):
+    """The runs the wall's rule reads: chained at the rule's own Euclidean distance."""
+    runs, start = 1, 0
+    for i in range(1, len(border)):
+        if sum((a - b) ** 2 for a, b in zip(border[i], border[start])) ** 0.5 > tol:
+            runs += 1
+            start = i
+    return runs
+
+
+def _ramp(n=300, span=15):
+    """A border that climbs 20 colours in equal steps, none of them 70 apart."""
+    return [(11 + i // span, 15 + i // span, 30 + i // span) for i in range(n)]
+
+
+RAMP = _ramp()
+
 NAMESPACES = {
     "a-many-to-one-reading-quoted-as-an-identification": {
         "the_reading_agrees_with": the_reading_agrees_with,
@@ -1201,7 +1223,8 @@ NAMESPACES = {
     "one-level-copy-sold-as-deep": {"clone_matrix_one": clone_matrix_one},
     "rehearsal-stricter-than-the-rule-reported-as-the-rule": {
         "border_runs": border_runs, "rule_verdict": rule_verdict,
-        "stricter_count": stricter_count},
+        "stricter_count": stricter_count, "colour_steps": colour_steps,
+        "the_rule_run_count": the_rule_run_count, "RAMP": RAMP},
     "a-cursor-policy-shipped-inside-a-function-and-never-named": {
         "contiguous_through": contiguous_through, "resume_trace": resume_trace},
     "the-marker-write-counted-as-the-work-it-marks": {
