@@ -1172,6 +1172,11 @@ def two_reads_one_receipt(body_a, body_b):
 
 RAMP = _ramp()
 
+def may_vote(payload):
+    """True when this payload's reader may cast a vote now."""
+    return bool(payload["can_vote"])
+
+
 NAMESPACES = {
     "consent-on-a-many-valued-reading-quoted-as-an-identification": {
         "the_reading_agrees_with": the_reading_agrees_with,
@@ -1198,6 +1203,7 @@ NAMESPACES = {
                                         "two_reads_one_receipt": two_reads_one_receipt},
     "a-remedy-quoted-for-a-request-that-already-performed-it": {
         "remedy_names_the_state": remedy_names_the_state},
+    "a-permission-flag-quoted-beside-the-count-that-forbids-it": {"may_vote": may_vote},
     "recipe-without-the-input-object": {"roll_digest": roll_digest, "digest_from_recipe": digest_from_recipe,
                                         "digest_from_recipe_default_separators": digest_from_recipe_default_separators},
     "option-set-omits-a-member": {"first_preference": first_preference},

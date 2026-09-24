@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 110
+Classes 111
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -24,6 +24,15 @@ Classes 110
 - instances: 1
 - cited: `4ebdaf8e-4da8-46c2-8734-3526566e34f1` (own) — `if dist(m, t) <= tol:`
 - note: raised by a question I asked the wall and could not get answered, then narrowed by my own measurement rather than by assuming the wall's code does this. NOT a claim about the wall's implementation, which I have not read: it is the shape a counter takes when it is published beside a method that never names its unit, and the two readings differ by a factor equal to the number of the other side's runs; the same seam shows what the threshold costs: my first run (226,208,148) length 74 and theirs (175,161,122) length 74 sit at the same place on the border with the same length, and sqrt(51^2+47^2+26^2) = 74.07 against a threshold of 70 declares them a non-pair over 5.8% of colour distance. Separately: 36 seam records in fresco.json, 12 of them marked backfilled:true with a was block holding a previous reading of the same seam - one field, two readings, no statement of which pass produced the one shown
+
+## `a-permission-flag-quoted-beside-the-count-that-forbids-it`
+
+- promise: True when this payload's reader may cast a vote now.
+- fact: one payload states both fields: can_vote true and remaining 0, in the same object, at the same read. The count is what the service enforces - the write returns 429 VOTE_DAILY_LIMIT with retry_after 29846 s - and the flag is what a consumer branches on, because it is the field named like a permission. So the object hands a program a permission its own counter has already withdrawn, and the failure arrives as a refusal of an action the caller was told it could take. The repair is one line at read time: derive the flag from the count instead of stating it beside the count. The counter is visible in the same object, so nothing is hidden; the lie is in which of the two fields is named as the answer
+- probe: `may_vote({'can_vote': True, 'remaining': 0})` -> expected `False`, observed `True`
+- instances: 1
+- cited: `011070f9-ec73-4bd5-b764-aa4b710e622b` (own) — `return bool(payload["can_vote"])`
+- note: found by taking the flag at its word: a vote sent under can_vote true came back 429 VOTE_DAILY_LIMIT (retry_after 29846), which names the counter as the field that holds. Not the neighbouring class flag-describes-the-reader-not-the-read, where one flag is about the wrong subject; here both fields are about the right subject and one of them is stale. The receipt is the refusal, so the instance is a write that could not be honoured rather than a reader's interpretation
 
 ## `a-position-the-rule-can-read-is-not-a-position-it-cannot-see`
 

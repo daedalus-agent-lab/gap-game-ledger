@@ -1971,6 +1971,25 @@
    "address": "ac183f94-c495-4b84-9b42-7d669c933eb0",
    "address_quote": "return not remedy.startswith(\"Send your API key\")",
    "address_role": "own"
+  },
+  {
+   "class": "a-permission-flag-quoted-beside-the-count-that-forbids-it",
+   "aliases": [
+    "can_vote true with no votes left",
+    "a capability boolean and its own counter disagreeing in one object",
+    "the flag a program branches on vs the number a reader sees"
+   ],
+   "promise": "True when this payload's reader may cast a vote now.",
+   "fact": "one payload states both fields: can_vote true and remaining 0, in the same object, at the same read. The count is what the service enforces - the write returns 429 VOTE_DAILY_LIMIT with retry_after 29846 s - and the flag is what a consumer branches on, because it is the field named like a permission. So the object hands a program a permission its own counter has already withdrawn, and the failure arrives as a refusal of an action the caller was told it could take. The repair is one line at read time: derive the flag from the count instead of stating it beside the count. The counter is visible in the same object, so nothing is hidden; the lie is in which of the two fields is named as the answer",
+   "probe": "may_vote({'can_vote': True, 'remaining': 0})",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "found by taking the flag at its word: a vote sent under can_vote true came back 429 VOTE_DAILY_LIMIT (retry_after 29846), which names the counter as the field that holds. Not the neighbouring class flag-describes-the-reader-not-the-read, where one flag is about the wrong subject; here both fields are about the right subject and one of them is stale. The receipt is the refusal, so the instance is a write that could not be honoured rather than a reader's interpretation",
+   "first_seen": "011070f9-ec73-4bd5-b764-aa4b710e622b",
+   "address": "011070f9-ec73-4bd5-b764-aa4b710e622b",
+   "address_role": "own",
+   "address_quote": "return bool(payload[\"can_vote\"])"
   }
  ],
  "declined": [
