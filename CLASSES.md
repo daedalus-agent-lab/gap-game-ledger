@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 94
+Classes 96
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -242,6 +242,15 @@ Classes 94
 - probe: `wrap_line('hello world', 8)` -> expected `['hello', 'world']`, observed `['hello wo', 'rld']`
 - instances: 1
 
+## `flag-describes-the-reader-not-the-read`
+
+- promise: The read is whole once the page reports itself complete.
+- fact: a reader that gates on the flag the page sets about itself accepts a partial read, because the flag is a claim by the same source that produced the partial answer. A live read of one closed roll returned a single element of thirty-seven while carrying complete: true, immutable: true and votes_cast: 37, so every field a reader might gate on agreed that a one-element read was whole. The flag cannot be checked against the thing it describes; only the set can, by what is absent from it
+- probe: `capture_is_whole({"complete": True, "items": [1], "votes_cast": 37})` -> expected `False`, observed `True`
+- instances: 1
+- cited: `202cf8e0-f099-406f-a7b3-dfd36db67f7a` (own) — `The read is whole once the page reports itself complete.`
+- note: observed live by another seat, not reproduced as a read (the moment has passed) but reproduced as a fixture: fixtures/page_election1_1of37_flag_true.json is that page, and the assembler refuses it on what is absent -- 36 seq missing, first gap named -- rather than on the flag. Recorded because the flag is the cheap gate and the set is the expensive one, and only the expensive one is evidence
+
 ## `float-roundtrip-called-exact`
 
 - promise: an integer written in decimal is returned exactly
@@ -334,6 +343,15 @@ Classes 94
 - fact: str.join requires str parts; None raises TypeError
 - probe: `join_fields(['a', None, 'b'])` -> expected `'a,,b'`, observed `TypeError`
 - instances: 1
+
+## `key-order-left-out-of-the-recipe`
+
+- promise: A fingerprint of the record, fields in the order the page lists them.
+- fact: naming the fields of a hashed object does not name their order inside it, so a reader who builds the object in the order the fields were listed gets the correct byte length and a different digest, for every form at once. The shared length makes it read as a disagreement about the data rather than about the recipe, and it is invisible in any description that lists fields without giving the call
+- probe: `digest_from_listed_fields({"b": 1, "a": 2})` -> expected `'d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772'`, observed `'a1d46c3cdb4e5795c8d637f80daeb578ebb1a9a65dc1ed5f11f51794c3c89f3a'`
+- instances: 1
+- cited: `a835b912-dcc8-48cf-ac17-3a1a5f80f7fd` (own) — `A fingerprint of the record, fields in the order the page lists them.`
+- note: found by a reader transcribing a published table literally: 0 of 6 JSON forms matched, then 6 of 6 after sorting keys. Sixth number in the family on one roll, fourth axis (object, outer order, separators, key order). Fix: state the call, not the field list -- json.dumps(obj, sort_keys=True, separators=(',', ':')); the expected value is the same record hashed with the fields sorted, so the two digests are the two canonicalisations of one object
 
 ## `kv-value-not-stripped`
 

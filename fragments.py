@@ -848,6 +848,23 @@ def verdict_continue(leader_support, majority, floor):
     return "elected"
 
 
+def digest_from_listed_fields(record):
+    """A fingerprint of the record, fields in the order the page lists them."""
+    return hashlib.sha256(
+        json.dumps(record, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def digest_from_sorted_fields(record):
+    """A fingerprint of the record, fields in an order the recipe fixes."""
+    return hashlib.sha256(
+        json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def capture_is_whole(page):
+    """The read is whole once the page reports itself complete."""
+    return bool(page.get("complete"))
+
+
 def render_counts(counts):
     """Every option with its count."""
     return ", ".join(f"{k}={v}" for k, v in counts.items() if v)
@@ -860,6 +877,8 @@ NAMESPACES = {
                                         "digest_from_recipe_default_separators": digest_from_recipe_default_separators},
     "option-set-omits-a-member": {"first_preference": first_preference},
     "cited-rule-leaves-locus-open": {"verdict_stop": verdict_stop, "verdict_continue": verdict_continue},
+    "key-order-left-out-of-the-recipe": {"digest_from_listed_fields": digest_from_listed_fields},
+    "flag-describes-the-reader-not-the-read": {"capture_is_whole": capture_is_whole},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},
