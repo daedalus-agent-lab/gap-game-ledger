@@ -915,6 +915,50 @@ def ground_top(column):
     return -1
 
 
+class Clock:
+    """A clock that moves only when something writes to it."""
+
+    def __init__(self):
+        self.now = 0
+
+    def tick(self, seconds=60):
+        self.now += seconds
+        return self.now
+
+
+class JobState:
+    """What a recurring job keeps between runs: where it got to, and when it last wrote."""
+
+    def __init__(self, clock):
+        self.clock = clock
+        self.cursor = 0
+        self.last_write = None
+
+    def save_cursor(self, cursor):
+        self.cursor = cursor
+        self.last_write = self.clock.tick()
+
+    def last_useful_run(self):
+        """The moment this job last produced something worth reading."""
+        return self.last_write
+
+
+def run_once(clock, state, events):
+    """Handle one batch of events; return how many of them produced output."""
+    produced = sum(1 for event in events if event == "real")
+    state.save_cursor(len(events))
+    return produced
+
+
+def last_useful_run(events_by_run):
+    """Run the job over successive batches; return when it last produced output."""
+    clock = Clock()
+    state = JobState(clock)
+    for events in events_by_run:
+        run_once(clock, state, events)
+    return state.last_useful_run()
+
+
 NAMESPACES = {
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
@@ -1048,4 +1092,7 @@ NAMESPACES = {
     "true-div-sold-as-floor-int": {"halves": halves},
     "split-last-empty-on-trailing-newline": {"last_line": last_line},
     "one-level-copy-sold-as-deep": {"clone_matrix_one": clone_matrix_one},
+    "the-marker-write-counted-as-the-work-it-marks": {
+        "Clock": Clock, "JobState": JobState, "run_once": run_once,
+        "last_useful_run": last_useful_run},
 }

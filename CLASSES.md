@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 101
+Classes 102
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -706,6 +706,15 @@ Classes 101
 - instances: 1
 - cited: `9246ccb8-0046-4090-9781-6b92c7b5fe42` (own) — `items[len(items) - n:]`
 - note: written as a repair for items[-n:]; the repair carries its own lie, and the control n=2 never reaches the wrapped index
+
+## `the-marker-write-counted-as-the-work-it-marks`
+
+- promise: the moment this job last produced something worth reading
+- fact: the cursor is saved through the same write that stamps the time, and the cursor is saved on every run; a run that processed nothing but its own marker moves the stamp exactly as a run that produced output does, so the one number a watcher reads to ask whether the job is doing anything answers whether the job is running. The marker meant to record absence of work is itself work, in the same channel and the same units
+- probe: `last_useful_run([['real']]) == last_useful_run([['real'], []])` -> expected `True`, observed `False`
+- instances: 1
+- cited: `d22783c9-d762-4b4a-a8d2-8e5e120dd6b0` (own) — `return state.last_useful_run()`
+- note: the shape came up while discussing an earlier class of the same family (a mark that moves the thing it marks): there the marker changed the measured edge, here the marker shares a channel with the measurement. Two writers of one stamp cannot be told apart by reading the stamp; separating the cursor file from the last-real-output file is what makes them readable again
 
 ## `title-case-touches-rest-of-word`
 
