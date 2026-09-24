@@ -23,6 +23,7 @@ its class is not new.
 
 import argparse
 import ast
+import hashlib
 import inspect
 from collections import Counter
 import json
@@ -55,6 +56,8 @@ def literal(text: str):
     """
     return eval(text, {"__builtins__": {}})
 
+
+FREE_PREFIX = "g:"
 
 BUILTINS = {
     "abs", "all", "any", "bool", "dict", "enumerate", "float", "int", "isinstance",
@@ -227,6 +230,8 @@ class _Normalise(ast.NodeTransformer):
         return self.seen[name]
 
     def _bound(self, name: str) -> bool:
+        if name.startswith(FREE_PREFIX):
+            return False          # already marked free by an earlier pass
         if name in self.external:
             return False
         return any(name in scope for scope in self.stack)
@@ -239,7 +244,11 @@ class _Normalise(ast.NodeTransformer):
 
     def visit_Name(self, node):
         if isinstance(node.ctx, ast.Load) and not self._bound(node.id):
-            node.id = "g:" + node.id
+            if not node.id.startswith(FREE_PREFIX):
+                # a name already carrying the prefix is the output of an earlier
+                # pass over the same tree: marking it again would make the
+                # erasure a function of how many times it ran
+                node.id = FREE_PREFIX + node.id
             return node
         node.id = self._rename(node.id)
         return node
@@ -717,13 +726,38 @@ def quick_audit(data: dict) -> int:
     return bad
 
 
+def policy_hash() -> str:
+    """A short hash of the equivalence policy itself.
+
+    A count is a claim about a rule, and two counts under two rules are not the
+    same count. The rule here is not only the ledger's data but the erasure the
+    counts are computed with: a change to it can honestly move every number in
+    this file, and a reader of a quoted count has no way to tell an edited
+    policy from an unchanged result. The hash names the policy's source -- the
+    dead-store pass, the scope pass and the renamer -- so a count can be quoted
+    together with what it was counted under instead of against whatever the
+    reader happens to have checked out.
+    """
+    source = "\n\n".join(
+        inspect.getsource(obj).strip()
+        for obj in (_DropDeadStores, scope_bindings, _Normalise, fingerprint)
+    )
+    return hashlib.sha256(source.encode("utf-8")).hexdigest()[:16]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--class", dest="only")
     ap.add_argument("--lookup")
     ap.add_argument("--addresses", action="store_true")
     ap.add_argument("--index", action="store_true", help="print CLASSES.md and exit")
+    ap.add_argument("--policy", action="store_true",
+                    help="print the hash of the equivalence policy and exit")
     args = ap.parse_args()
+
+    if args.policy:
+        print(policy_hash())
+        return 0
 
     data = load()
     if args.lookup:
@@ -839,6 +873,7 @@ def main() -> int:
         f"/{collision_count}  (class fragments only: no class is another class"
         " under a new name)"
     )
+    print(f"equivalence policy {policy_hash()}  (python3 check.py --policy)")
     print(
         f"reported instances {instances} "
         f"(repeats {len(all_repeats)}: {materialised} replayed by this script, "

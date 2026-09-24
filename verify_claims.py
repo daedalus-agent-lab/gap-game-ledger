@@ -22,6 +22,7 @@ Nothing here writes to the ledger itself: each case gets its own tree under
 `verify/case-<name>/`.
 """
 import argparse
+import ast
 import json
 import re
 import shutil
@@ -306,6 +307,50 @@ def q_duplicate_declaration(tree):
     return code == 1 and "declares" in out, "a repeated class name is a DUPE"
 
 
+def s_policy_is_in_the_count(tree):
+    """A count carries the policy it was counted under.
+
+    Two counts under two rules are not the same count, and the rule here is not
+    only the ledger's data: a change to the erasure can honestly move every
+    number `check.py` prints, and a reader of a quoted count cannot tell an
+    edited policy from an unchanged result. So the normal run prints a hash of
+    the policy's own source beside the counts, and `--policy` prints it alone.
+
+    This row asserts three things: the plain run prints that line; the hash is
+    exactly what the three policy objects' source digests to; and a change to
+    that source moves the hash, so the line cannot survive an edit unnoticed.
+    """
+    import hashlib
+    code, out = check(tree)
+    if code != 0:
+        return False, f"the ledger itself does not pass: {code}"
+    line = [l for l in out.splitlines() if l.startswith("equivalence policy")]
+    if not line:
+        return False, "the counts do not name the policy they were counted under"
+    quoted = line[0].split()[2]
+
+    text = (tree / "check.py").read_text(encoding="utf-8")
+    module = ast.parse(text)
+    wanted = {"_DropDeadStores", "scope_bindings", "_Normalise", "fingerprint"}
+    blocks = [ast.get_source_segment(text, node).strip() for node in module.body
+              if isinstance(node, (ast.ClassDef, ast.FunctionDef)) and node.name in wanted]
+    if len(blocks) != len(wanted):
+        return False, f"the policy objects are not all in check.py: {len(blocks)} of {len(wanted)}"
+    expected = hashlib.sha256("\n\n".join(blocks).encode("utf-8")).hexdigest()[:16]
+    if quoted != expected:
+        return False, f"the printed policy {quoted} is not the policy in the file {expected}"
+
+    marked = (tree / "check.py").read_text(encoding="utf-8").replace(
+        "    def _rename(self, name: str) -> str:",
+        "    # a policy edit\n    def _rename(self, name: str) -> str:", 1)
+    (tree / "check.py").write_text(marked, encoding="utf-8")
+    code2, out2 = check(tree, "--policy")
+    moved = out2.strip()
+    if code2 != 0 or moved == quoted:
+        return False, "the policy hash did not move when the policy source changed"
+    return True, f"the count is quoted under policy {quoted}, and an edit moves it"
+
+
 def r_attribute_pair(tree):
     """An outside attack on the fingerprint, and the two erasures it found.
 
@@ -352,6 +397,16 @@ def r_attribute_pair(tree):
 
     def same(left: str, right: str) -> bool:
         return fingerprint(build(left)) == fingerprint(build(right))
+
+    def chk_ast(source: str):
+        """The body of a snippet as a tree, the way fingerprint() reads it."""
+        tree = ast.parse(textwrap.dedent(source).strip() + "\n")
+        node = tree.body[0]
+        if (node.body and isinstance(node.body[0], ast.Expr)
+                and isinstance(node.body[0].value, ast.Constant)
+                and isinstance(node.body[0].value.value, str)):
+            node.body = node.body[1:]
+        return node
 
     separate = [
         ("verbs on one receiver: lstrip against rstrip",
@@ -414,15 +469,42 @@ def r_attribute_pair(tree):
          "def a(n):\n    return n if n < 2 else n * a(n - 1)\n",
          "def b(k):\n    return k if k < 2 else k * b(k - 1)\n"),
     ]
+    capture = [
+        ("a free name spelled like an assigned name",
+         "def a(x):\n    return x + v0\n",
+         "def b(x):\n    return x + x\n"),
+    ]
     # Order-independence has its own half: renaming during the walk made a
     # comprehension target, a nested def's name and a walrus target score as
     # different logic, because each is read before it is visited. Every entry
     # above is such a case, so a return to renaming-during-the-walk fails here.
     bad_sep = [label for label, l, r in separate if same(l, r)]
     bad_one = [label for label, l, r in one_shape if not same(l, r)]
-    if bad_sep or bad_one:
-        return False, f"boundary moved: not separate={bad_sep} not one shape={bad_one}"
-    return True, "verbs and subjects separate; bound names, padding and helpers do not"
+    bad_cap = [label for label, l, r in capture if same(l, r)]
+    if bad_sep or bad_one or bad_cap:
+        return False, (f"boundary moved: not separate={bad_sep} not one shape={bad_one} "
+                       f"captured={bad_cap}")
+
+    # Idempotence: the erasure run twice over one tree must equal the erasure run
+    # once. It did not -- a free name came out of the first pass already marked,
+    # and the second pass marked it again (`g:find_max` -> `g:g:find_max`), so the
+    # answer depended on how many times the policy had been applied.
+    twice_bad = []
+    for label, left, _ in one_shape + separate + capture:
+        first = chk_ast(left)
+        chk._DropDeadStores().visit(first)
+        sc, ex = chk.scope_bindings(first)
+        chk._Normalise(sc, ex).visit(first)
+        once = ast.dump(first)
+        sc2, ex2 = chk.scope_bindings(first)
+        chk._Normalise(sc2, ex2).visit(first)
+        if ast.dump(first) != once:
+            twice_bad.append(label)
+    if twice_bad:
+        return False, f"the erasure is not idempotent: {twice_bad}"
+
+    return True, ("verbs and subjects separate; bound names stay inside their scope; "
+                  "padding, helpers and a second pass do not move the answer")
 
 
 CASES = [
@@ -444,6 +526,7 @@ CASES = [
     ("literals have no builtins", p_literals_have_no_builtins),
     ("a repeated class name is refused", q_duplicate_declaration),
     ("the fingerprint separates verbs and subjects, and says its price", r_attribute_pair),
+    ("a count carries the policy it was counted under", s_policy_is_in_the_count),
 ]
 
 
