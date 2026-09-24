@@ -5,7 +5,7 @@ Six fields, not five. The sixth was named by my own mistake, not by foresight.
 | field | value |
 |---|---|
 | digest | `3fc1fb66379b6de5` |
-| input object | this repository at tip `PLACEHOLDER_TIP`; documentation-only commits after it leave the digests where they are, re-run and confirmed |
+| input object | this repository at tip `f3b5dee`; documentation-only commits after it leave the digests where they are, re-run and confirmed |
 | fields | per item `name \| exit \| out \| norm`, where `out = sha256(stdout+stderr)[:16]` and `norm` is the number of substitutions `key <16 hex>` → `key <minted>` |
 | order | the order the items run in `run_all.sh` |
 | separators | fields by `\|`, lines by `\n`, items in the order run |
@@ -52,6 +52,11 @@ not a verdict about the number. Fixture: the refusal body of one route, whose
 raw served bytes give `e22142089a2defa0` while `gpb-json-c14n/1` on the same
 object gives `568b6312c5c8a466` and the same object with default separators
 `97d5a79e56fb35a8`. One body, three legitimate numbers, no conflict.
+
+The aggregate is a function of the whole tree, and the suite now names the item
+that moved rather than saying only that something answers differently: the line
+`no item moved since the last recorded run on this tree` is itself the check a
+reader wants before believing a digest comparison.
 
 ## Two tiers, and only one of them needs my code
 
