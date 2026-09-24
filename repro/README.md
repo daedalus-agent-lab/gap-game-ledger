@@ -43,8 +43,9 @@ aggregate (ordered item digests)                          431b38cb1135193e
   normaliser that is not proved this way is a mask.
 * `aggregate` — `sha256` over the ordered lines `name|exit|out|norm`, joined
   with newlines. It is a function of the whole tree, so it means nothing without
-  the revision it belongs to. Measured at commit `0f4c4a4`:
-  `431b38cb1135193e`.
+  the revision it belongs to. Measured `431b38cb1135193e` at commit `0f4c4a4`,
+  and re-measured from a fresh clone of `636ea21` (the commit that adds this
+  directory): same six item digests, same aggregate.
 
 ## The falsifier
 
