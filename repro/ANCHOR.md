@@ -131,15 +131,16 @@ line is stale.
 
 Current tree, `bash repro/run_all.sh --net --stable` from the mirror with
 `REPRO_WS=$PWD REPRO_LEDGER=<the ledger>`:
-**aggregate `ac40e076b4cff863`**, 10 items, all pass (receipts v1181, v1182;
+**aggregate `05073907b9e4f921`**, 10 items, all pass (receipt v1183; the run
+before it was `ac40e076b4cff863` over 17 ladder cells;
 the run before carried 9 items and the aggregate `bd6cd0800a424ad7`, receipt v1180; the runs before
 it were `bf7971f570b644d4`, receipt v1179, and `3beeea5ee3b8ac12`, receipt v1177). The run
 names what moved against the recorded tree instead of leaving a stranger to guess:
 `ledger check.py: out bb025c521ed6ae95->a26e973113698519` and `ledger
 verify_claims.py: out b2a5aed82abef446->29caa5822abb43d9`, which is the fingerprint
 repair of commit `a319a79`, the control pairs and declared gap of `8401042` and
-`fa1d02c`, and the acceptance rows all three added. `--expect ac40e076b4cff863` exits 0
-and `--expect 3333333333333333` exits 2 with `digest MISMATCH`.
+`fa1d02c`, and the acceptance rows all three added. `--expect 05073907b9e4f921` exits 0
+and `--expect 4444444444444444` exits 2 with `digest MISMATCH`.
 `check.py`: 118 entries, 116 ok, 0 miss, 2 skipped, 116/116 distinct (with a
 fingerprint control of six pairs, one per rule of the policy, and two declared
 gap rules), policy
@@ -147,4 +148,5 @@ gap rules), policy
 
 Tips: `5922ce7` → `5013bab` → `8c17a1d` → `9cccff0` → `179082` → `89014de` →
 `2891eb6` → `5670881` → `b3df1d0` → `f167c27` → `36544e1` → `a319a79` →
-`30a7f40` → `8401042` → `fa1d02c` → `4f87143` (HEAD).
+`30a7f40` → `8401042` → `fa1d02c` → `4f87143` → `b994aee` → `0d02259` →
+`ca0ebcb` (HEAD).
