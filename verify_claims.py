@@ -562,9 +562,90 @@ def r_attribute_pair(tree):
                   "padding, helpers and a second pass do not move the answer")
 
 
+def t_a_store_read_by_a_caller_not_in_the_ast(tree):
+    """A store read by eval/locals/dir is not a dead store.
+
+    The dead-store pass sees reads that are names in the tree. `eval("x + 1")`
+    carries no name `x`, so the pass removed the store and two functions that
+    answer 42 and NameError shared one fingerprint. The repair keeps everything
+    in a fragment that calls a dynamic reader: erasing less is visible, erasing
+    a live store is not.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("chk", HERE / "check.py")
+    chk = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(chk)
+
+    def ev_a():
+        x = 41
+        return eval("x + 1")
+
+    def ev_b():
+        return eval("x + 1")
+
+    def loc_a():
+        x = 1
+        return locals()
+
+    def loc_b():
+        return locals()
+
+    def dr_a():
+        secret = 1
+        return dir()
+
+    def dr_b():
+        return dir()
+
+    def plain_pad(xs):
+        _pad = None
+        return max(xs)
+
+    def plain(xs):
+        return max(xs)
+
+    separated = all(
+        chk.fingerprint(a) != chk.fingerprint(b)
+        for a, b in ((ev_a, ev_b), (loc_a, loc_b), (dr_a, dr_b))
+    )
+    still_drops = chk.fingerprint(plain_pad) == chk.fingerprint(plain)
+    return separated and still_drops, \
+        "eval/locals/dir keep their store, plain padding is still invisible"
+
+
+def u_bound_name_shadowing_a_builtin_is_still_a_letter(tree):
+    """A parameter named `list` is the author's letter, not the builtin.
+
+    The normaliser asked BUILTINS before asking what the fragment binds, so a
+    parameter called `list` kept its name while the same function with the
+    parameter called `dict` kept another: two spellings of one piece of logic
+    read as two pieces of logic. An unbound `len` is the builtin and stays.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("chk", HERE / "check.py")
+    chk = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(chk)
+
+    def f_one(list, x):
+        return list + x
+
+    def f_two(dict, x):
+        return dict + x
+
+    def g_one(xs):
+        return len(xs)
+
+    def g_two(ys):
+        return len(ys)
+
+    shadowed = chk.fingerprint(f_one) == chk.fingerprint(f_two)
+    builtin_still_free = chk.fingerprint(g_one) == chk.fingerprint(g_two)
+    return shadowed and builtin_still_free, \
+        "a bound `list` is a letter, an unbound `len` is the builtin"
+
+
 CASES = [
-    ("order flip keeps the answer", a_order_flip),
-    ("citation counter agrees with its audit", b_citation_counter),
+    ("order flip keeps the answer", a_order_flip),    ("citation counter agrees with its audit", b_citation_counter),
     ("a class with no fragment is refused", c_ghost_class),
     ("a probe that did not run is a miss", d_probe_that_did_not_run),
     ("a repeat must call the fragment it names", e_repeat_shim),
@@ -582,6 +663,8 @@ CASES = [
     ("a repeated class name is refused", q_duplicate_declaration),
     ("the fingerprint separates verbs and subjects, and says its price", r_attribute_pair),
     ("a count carries the policy it was counted under", s_policy_is_in_the_count),
+    ("a store read by a caller not in the ast is not dead", t_a_store_read_by_a_caller_not_in_the_ast),
+    ("a bound name shadowing a builtin is still a letter", u_bound_name_shadowing_a_builtin_is_still_a_letter),
 ]
 
 

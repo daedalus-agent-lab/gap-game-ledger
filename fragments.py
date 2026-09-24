@@ -1352,6 +1352,92 @@ def covered_by_the_checksums(present, named):
 
 
 
+
+BUILTIN_SPELLINGS = frozenset({
+    "list", "dict", "set", "str", "bytes", "int", "float", "bool", "len",
+    "max", "min", "sum", "id", "type", "input", "filter", "map", "hash",
+    "next", "zip", "open", "vars", "dir", "eval", "exec", "locals", "globals",
+})
+
+
+def stores_no_name_reads(src):
+    """The logic of a fragment with the stores no name in the tree reads removed.
+
+    This is the reading the erasure used before the guard: a read is a name under
+    `ast.Load`, so a store whose name never appears that way is dropped, whatever
+    else in the file reads it.
+    """
+    tree = ast.parse(src)
+    fn = tree.body[0]
+    reads = {n.id for n in ast.walk(fn)
+             if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}
+    keep = []
+    for stmt in fn.body:
+        targets = []
+        if isinstance(stmt, ast.Assign):
+            targets = [t for t in stmt.targets if isinstance(t, ast.Name)]
+        if targets and all(t.id not in reads for t in targets):
+            continue
+        keep.append(stmt)
+    fn.body = keep or [ast.Pass()]
+    return ast.dump(tree)
+
+
+def a_store_only_a_caller_reads(keep_store):
+    """Two fragments of one file: one keeps a store that only `eval` reads."""
+    body = "    x = 41\n" if keep_store else ""
+    return "def f():\n" + body + '    return eval("x + 1")\n'
+
+
+def two_logics_read_as_one_by_the_dead_store_pass():
+    left = stores_no_name_reads(a_store_only_a_caller_reads(True))
+    right = stores_no_name_reads(a_store_only_a_caller_reads(False))
+    return left == right
+
+
+def letters_with_the_builtins_asked_first(src):
+    """The logic of a fragment with the names it binds erased, except where the
+    letter happens to spell a builtin: that check used to come first."""
+    tree = ast.parse(src)
+    fn = tree.body[0]
+    bound = {a.arg for a in list(fn.args.args) + list(fn.args.posonlyargs)
+             + list(fn.args.kwonlyargs)}
+    if fn.args.vararg:
+        bound.add(fn.args.vararg.arg)
+    if fn.args.kwarg:
+        bound.add(fn.args.kwarg.arg)
+    seen = {}
+    for sub in ast.walk(fn):
+        target = None
+        if isinstance(sub, ast.Name) and sub.id in bound:
+            target = "id"
+        elif isinstance(sub, ast.arg) and sub.arg in bound:
+            target = "arg"
+        if target is None:
+            continue
+        name = getattr(sub, target)
+        if name in BUILTIN_SPELLINGS:
+            continue
+        if name not in seen:
+            seen[name] = f"v{len(seen)}"
+        setattr(sub, target, seen[name])
+    return ast.dump(tree)
+
+
+def a_bound_name_spelled_like_a_builtin(letter):
+    """One piece of logic in two spellings: the parameter's letter is the only
+    difference, and one of the letters is a builtin's name."""
+    return f"def f({letter}, x):\n    return {letter} + x\n"
+
+
+def builtin_named_letters_read_as_one():
+    left = letters_with_the_builtins_asked_first(
+        a_bound_name_spelled_like_a_builtin("list"))
+    right = letters_with_the_builtins_asked_first(
+        a_bound_name_spelled_like_a_builtin("dict"))
+    return left == right
+
+
 HASHES_BY_HEADING = {
     "policy": "c01ed633e3855776",
 }
@@ -1397,6 +1483,17 @@ NAMESPACES = {
         "how_many_met": how_many_met, "dist": dist},
     "a-name-declared-twice-and-the-caveat-on-one-copy": {
         "caveat_reachable_from_every_declaration": caveat_reachable_from_every_declaration,
+    },
+    "a-store-erased-though-the-fragment-reads-it": {
+        "stores_no_name_reads": stores_no_name_reads,
+        "a_store_only_a_caller_reads": a_store_only_a_caller_reads,
+        "two_logics_read_as_one_by_the_dead_store_pass":
+            two_logics_read_as_one_by_the_dead_store_pass,
+    },
+    "a-name-kept-because-it-spells-a-builtin": {
+        "letters_with_the_builtins_asked_first": letters_with_the_builtins_asked_first,
+        "a_bound_name_spelled_like_a_builtin": a_bound_name_spelled_like_a_builtin,
+        "builtin_named_letters_read_as_one": builtin_named_letters_read_as_one,
     },
     "a-quotation-reissued-as-a-computation": {
         "printed_under_the_heading": printed_under_the_heading,

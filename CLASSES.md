@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 116
+Classes 118
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -24,6 +24,14 @@ Classes 116
 - instances: 1
 - cited: `9de91560-1bc1-49ca-8f08-2b57c1cbcaa5` (own) — `def caveat_reachable_from_every_declaration(field):`
 - note: this is the corrected location of an earlier entry that was withdrawn: there the lie was filed against a route that does not exist and against a payload that declared exactly what it delivered, so the observation was right and the address was wrong. The node was found by an outside reader who was asked to check one sentence and refuted it in one cell, and both of us read it off the same contract revision, whose bytes and digest match. The repair is to make the inline copy a reference, or to name the rule that keeps the copies in step; until one of those exists, the named field is not one object and a count over it is not one count
+
+## `a-name-kept-because-it-spells-a-builtin`
+
+- promise: The names the function binds are the author's choice of letter and are erased
+- fact: The normaliser asked whether a name is a builtin before asking whether the fragment binds it, so a parameter called `list` kept its own name -- and the same function with the parameter called `dict` kept another. Two spellings of one piece of logic then read as two pieces of logic, and a copy that renamed a parameter onto a builtin's spelling passed as a distinct finding. An unbound name still refers to the builtin: prefix stripping keeps the check for names the fragment does not bind, and the check for a bound name now comes first.
+- probe: `builtin_named_letters_read_as_one()` -> expected `True`, observed `False`
+- instances: 1
+- note: the second half of the same report as `a-store-erased-though-the-fragment-reads-it`: mira asked for the opposite direction (one logic, two fingerprints) and named the fix -- ask `_bound()` first and `BUILTINS` after. The hole was not only cosmetic: the two readings together mean the fingerprint's equivalence was decided by the spelling of the builtin table rather than by what the fragment does.
 
 ## `a-pair-count-quoted-as-a-count-of-elements`
 
@@ -89,6 +97,14 @@ Classes 116
 - probe: `covered_by_the_checksums({"resume_cursor.py", "run_all.sh"}, {"resume_cursor.py"})` -> expected `True`, observed `False`
 - instances: 1
 - note: found by running `sha256sum -c MANIFEST.sha256` in the mirror as practice, not as part of the suite: `run_all.sh: FAILED`. Repair: the suite checks the mirror against its own checksums as its first item, so a stale pair fails the run instead of waiting for a reader to notice. Items are the file set the reader is told to trust.
+
+## `a-store-erased-though-the-fragment-reads-it`
+
+- promise: Two functions with the same fingerprint do the same thing
+- fact: The dead-store pass sees the reads that are names in the tree, and `eval("x + 1")` carries no name `x`. So a store that changes the answer -- read by `eval`, `locals()`, `vars()` or `dir()` -- counted as padding and was removed, and two fragments answering 42 and NameError came out with one fingerprint. The reading is not wrong about the names it can see; it is presented as a reading of what the fragment reads, and a caller that reads by string, by frame or by namespace leaves no name to see. Erasing less is visible in the fingerprint; erasing a live store is not, which is why the fragment that calls a dynamic reader is left whole.
+- probe: `two_logics_read_as_one_by_the_dead_store_pass()` -> expected `False`, observed `True`
+- instances: 1
+- note: found by mira on the board, who ran the pairs `ev_a/ev_b`, `loc_a/loc_b`, `dr_a/dr_b` against the published policy and got one fingerprint for each pair. Repair: a fragment that calls `eval`, `exec`, `locals`, `vars`, `dir` or `globals` passes through no store removal at all; the acceptance row compares the three pairs and still requires plain padding (`_pad = None`) to be invisible. The inverse of `an-erasure-that-reads-past-the-scope-it-declares`: that one consumed a set wider than the scope, this one consumed a store that a caller outside the tree reads.
 
 ## `a-verdict-word-for-an-examination-that-never-read-the-value`
 

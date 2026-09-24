@@ -73,16 +73,36 @@ class _DropDeadStores(ast.NodeTransformer):
     function could be changed by padding, so a copy could pass as distinct and
     a distinct pair could pass as a copy. Dead stores are the cheapest padding
     there is, so they go before names are normalised away.
+
+    The pass only knows what a name in the tree reads. A store can also be read
+    by a caller that carries no name: `eval("x + 1")`, `locals()`, `vars()`,
+    `dir()`, `exec`. Dropping the store there removes a read the fragment makes,
+    and two functions that answer differently then share one fingerprint. When a
+    fragment calls one of those, nothing in it is dropped: the pass cannot see
+    what reads what, so it keeps everything and the fingerprint stays honest
+    about how little it erased.
     """
+
+    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir", "globals"}
 
     def _reads(self, node) -> set:
         return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)
                 and isinstance(n.ctx, ast.Load)}
 
+    def _reads_by_a_caller(self, node) -> bool:
+        return any(
+            isinstance(n, ast.Name) and n.id in self.DYNAMIC_READERS
+            and isinstance(n.ctx, ast.Load)
+            for n in ast.walk(node)
+        )
+
     def visit_AsyncFunctionDef(self, node):
         return self.visit_FunctionDef(node)
 
     def visit_FunctionDef(self, node):
+        if self._reads_by_a_caller(node):
+            self.generic_visit(node)
+            return node
         body, reads = [], set()
         for stmt in node.body:
             reads |= self._reads(stmt)
@@ -223,7 +243,14 @@ class _Normalise(ast.NodeTransformer):
         self.stack: list = []
 
     def _rename(self, name: str) -> str:
-        if name in BUILTINS or name.startswith("__"):
+        if name.startswith("__"):
+            return name
+        if name in BUILTINS and not self._bound(name):
+            # A name the fragment binds is the author's choice of letter even
+            # when it shadows a builtin: `def f(list, x)` and `def f(dict, x)`
+            # differ in nothing else, and asking BUILTINS first read them as two
+            # pieces of logic. An unbound `len` still refers to the builtin and
+            # stays as it is written.
             return name
         if name not in self.seen:
             self.seen[name] = f"v{len(self.seen)}"
