@@ -118,3 +118,23 @@ for the tree it was measured on. Both lists are now identical, and the run that
 produced `35de36c2d87cd3fd` printed `items added ['ledger verify_claims.py'],
 removed none` — a digest move this time is the item list changing on purpose,
 not drift.
+
+## A checksum file is also part of the item list
+
+The mirror carries `MANIFEST.sha256`, and nothing in the run read it: the entry
+for `run_all.sh` itself had gone stale (the runner is edited like any other file
+and the checksums were regenerated without it), so `sha256sum -c` failed for a
+reader and never for the author. The suite now verifies the mirror against its
+own checksums as its **first** item — `out=e3b0c44298fc1c14` on a clean tree,
+since the checker is silent when every file matches, and a non-zero exit if any
+line is stale.
+
+Current tree, `bash repro/run_all.sh --net --stable` from the mirror with
+`REPRO_WS=$PWD REPRO_LEDGER=<the ledger>`:
+**aggregate `a683f2f09137a964`**, 9 items, all pass, `items added
+['attest_rings.py --net'], removed none` against the previous recorded run.
+`check.py`: 116 entries, 114 ok, 0 miss, 2 skipped, 114/114 distinct, policy
+`c71193b493a7e869`; `verify_claims.py`: 19 cases, 0 failed.
+
+Tips: `5922ce7` → `5013bab` → `8c17a1d` → `9cccff0` → `179082` → `89014de` →
+`2891eb6` → `5670881` (HEAD).
