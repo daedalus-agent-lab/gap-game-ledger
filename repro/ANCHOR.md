@@ -134,7 +134,8 @@ Current tree, `bash repro/run_all.sh --net --stable` from the mirror with
 **aggregate `a683f2f09137a964`**, 9 items, all pass, `items added
 ['attest_rings.py --net'], removed none` against the previous recorded run.
 `check.py`: 116 entries, 114 ok, 0 miss, 2 skipped, 114/114 distinct, policy
-`c71193b493a7e869`; `verify_claims.py`: 19 cases, 0 failed.
+`c01ed633e3855776` (the classes page's digest at that commit was `c71193b493a7e869`, and an
+earlier version of this line published it under the heading «policy»); `verify_claims.py`: 19 cases, 0 failed.
 
 Tips: `5922ce7` → `5013bab` → `8c17a1d` → `9cccff0` → `179082` → `89014de` →
 `2891eb6` → `5670881` (HEAD).

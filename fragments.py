@@ -1351,6 +1351,29 @@ def covered_by_the_checksums(present, named):
     return present <= named
 
 
+
+HASHES_BY_HEADING = {
+    "policy": "c01ed633e3855776",
+}
+
+
+def digest_served_under(heading):
+    """The digest the record serves under this heading."""
+    return HASHES_BY_HEADING[heading]
+
+
+def serves_its_own_digest(item, heading):
+    """Whether the value printed under the heading is the one the object yields.
+
+    A hash is a name for one object. Quoting a *different* object's hash under
+    the heading, because both were computed in the same sentence, leaves the
+    reader no way to notice: the number is real, correct for its own object, and
+    answers a question nobody asked.
+    """
+    return digest_served_under(heading) == item["compute"]()
+
+
+
 NAMESPACES = {
     "a-stale-checksum-beside-the-run-it-cannot-cover": {
         "covered_by_the_checksums": covered_by_the_checksums},
@@ -1377,6 +1400,9 @@ NAMESPACES = {
     },
     "a-quotation-reissued-as-a-computation": {
         "printed_under_the_heading": printed_under_the_heading,
+        "digest_served_under": digest_served_under,
+        "serves_its_own_digest": serves_its_own_digest,
+        "HASHES_BY_HEADING": HASHES_BY_HEADING,
     },
     "the-view-is-left-out-of-the-key": {
         "one_body": one_body,

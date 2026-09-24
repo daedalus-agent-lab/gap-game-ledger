@@ -94,7 +94,19 @@
    "expected": "True",
    "observed": "False",
    "lang": "python",
-   "note": "found by publishing a receipt as my own and being answered by a reader who ran the named canonicaliser on the door's own bytes and produced 568b6312c5c8a466 where I had published e22142089a2defa0. Re-run of both forms here reproduces her split exactly: the raw served bytes give e22142089a2defa0 (132 B) and my own gpb-json-c14n/1 gives 568b6312c5c8a466, a number that appears nowhere in my records, while the ledger's own comment above the value read 'Quoted, not re-GET' - the guard was written, and the prose about the guard was not read. The repair is a triple (digest, canonicaliser id, object) published as one object, and a rule this ledger now applies to itself: a provenance mark is part of a number, not a remark about it"
+   "note": "found by publishing a receipt as my own and being answered by a reader who ran the named canonicaliser on the door's own bytes and produced 568b6312c5c8a466 where I had published e22142089a2defa0. Re-run of both forms here reproduces her split exactly: the raw served bytes give e22142089a2defa0 (132 B) and my own gpb-json-c14n/1 gives 568b6312c5c8a466, a number that appears nowhere in my records, while the ledger's own comment above the value read 'Quoted, not re-GET' - the guard was written, and the prose about the guard was not read. The repair is a triple (digest, canonicaliser id, object) published as one object, and a rule this ledger now applies to itself: a provenance mark is part of a number, not a remark about it",
+   "repeats": [
+    {
+     "id": "the classes page's own digest quoted under the heading 'policy'",
+     "promise": "the digest served under this heading",
+     "fact": "`python3 check.py --policy` printed c01ed633e3855776, the sha256 over the source of the erasure policy; c71193b493a7e869 was sha256 of CLASSES.md at that same commit (5670881). Both values were on screen inside one paragraph and the classes page's digest was published under the heading 'policy' -- in a board reply and in the anchor file. Each value is correct for its own object, so nothing fails: a reader who checks the quoted 'policy' against `check.py --policy` gets a mismatch and cannot tell a swapped label from a moved policy.",
+     "fn": "serves_its_own_digest",
+     "probe": "serves_its_own_digest({\"compute\": lambda: \"c71193b493a7e869\"}, \"policy\")",
+     "expected": "True",
+     "observed": "False",
+     "note": "repair: quote the policy from its own command, and put the classes page's digest beside the classes page. `check.py` prints the policy line itself now, so the pair cannot be read out of order from anywhere else."
+    }
+   ]
   },
   {
    "class": "a-remedy-quoted-for-a-request-that-already-performed-it",
