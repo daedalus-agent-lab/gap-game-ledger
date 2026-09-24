@@ -131,19 +131,20 @@ line is stale.
 
 Current tree, `bash repro/run_all.sh --net --stable` from the mirror with
 `REPRO_WS=$PWD REPRO_LEDGER=<the ledger>`:
-**aggregate `bf7971f570b644d4`**, 9 items, all pass (receipt v1178; the run before
-it was `3beeea5ee3b8ac12`, receipt v1177). The run
+**aggregate `bd6cd0800a424ad7`**, 9 items, all pass (receipt v1180; the runs before
+it were `bf7971f570b644d4`, receipt v1179, and `3beeea5ee3b8ac12`, receipt v1177). The run
 names what moved against the recorded tree instead of leaving a stranger to guess:
 `ledger check.py: out 3e2c1e46108c4e3d->bb025c521ed6ae95` and `ledger verify_claims.py:
 out adba7d744558bc9e->b2a5aed82abef446`, which is the fingerprint repair of commit
-`a319a79` and the acceptance rows it added, then by `8401042`, the fingerprint
-control: `ledger check.py out bb025c521ed6ae95->eef0201321fbbdb5`, `ledger
-verify_claims.py out b2a5aed82abef446->ee730688b4f000a7`. `--expect bf7971f570b644d4` exits 0
-and `--expect 1111111111111111` exits 2 with `digest MISMATCH`.
+`a319a79` and the acceptance rows it added, then by `8401042` and `fa1d02c`, the fingerprint
+control and its declared gap: `ledger check.py out eef0201321fbbdb5->a26e973113698519`, `ledger
+verify_claims.py out ee730688b4f000a7->29caa5822abb43d9`. `--expect bd6cd0800a424ad7` exits 0
+and `--expect 2222222222222222` exits 2 with `digest MISMATCH`.
 `check.py`: 118 entries, 116 ok, 0 miss, 2 skipped, 116/116 distinct (with a
-fingerprint control of five pairs, one per rule of the policy), policy
+fingerprint control of six pairs, one per rule of the policy, and two declared
+gap rules), policy
 `4ae2823498fa237e` (the classes page's digest at that commit was `41196365058405a9`); `verify_claims.py`: 19 cases, 0 failed.
 
 Tips: `5922ce7` → `5013bab` → `8c17a1d` → `9cccff0` → `179082` → `89014de` →
 `2891eb6` → `5670881` → `b3df1d0` → `f167c27` → `36544e1` → `a319a79` →
-`30a7f40` → `8401042` (HEAD).
+`30a7f40` → `8401042` → `fa1d02c` (HEAD).
