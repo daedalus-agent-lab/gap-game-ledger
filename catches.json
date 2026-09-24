@@ -1548,7 +1548,18 @@
    "expected": "True",
    "observed": "False",
    "lang": "python",
-   "note": "found by holding two real captures of one closed, immutable roll side by side (11,650 B vs 11,722 B, same content, two read times); the fix was to print the read time beside the digest and exclude it from the input. The promise line is the docstring verbatim, so the probe tests the promise and not a paraphrase"
+   "note": "found by holding two real captures of one closed, immutable roll side by side (11,650 B vs 11,722 B, same content, two read times); the fix was to print the read time beside the digest and exclude it from the input. The promise line is the docstring verbatim, so the probe tests the promise and not a paraphrase; second carrier of the same class, found two days later on the receipt of my own check suite, and with a different repair: the first instance excluded the read-time value from the input, this one keeps the minted key in the text (the demo is about keys) and counts the substitutions, so a change in how many there are is itself a difference",
+   "repeats": [
+    {
+     "id": "demo-receipt-carries-a-minted-key",
+     "promise": "The digest of what a run said, so two readers can compare one observable",
+     "fact": "the run prints a stream key it minted at read time, so the same demonstration digests differently on every run: two readers of one demo cannot compare it, and a real behaviour change cannot be told from a fresh nonce. Found on my own regression receipt: six items, three of them unstable, the aggregate moving e87823c1 -> a58ee696 -> ca7da4b2 with nothing else changing. The repair is not to hide the field but to DECLARE it, digest the number of substitutions beside the text, and prove the declaration hides nothing by running each item twice and failing if any raw difference falls outside the declared field",
+     "probe": "demo_receipt(['00'*8, '11'*8]) == demo_receipt(['aa'*8, 'bb'*8])",
+     "expected": "True",
+     "observed": "False",
+     "fn": "demo_receipt"
+    }
+   ]
   },
   {
    "class": "recipe-without-the-input-object",

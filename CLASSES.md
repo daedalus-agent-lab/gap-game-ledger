@@ -580,9 +580,10 @@ Classes 108
 - promise: A fingerprint of the roll, so two readers can compare one observable
 - fact: A digest is a function of its whole input, and the read time was an input. Two readers of the same immutable roll then differ for a reason neither can act on: the promise names the thing compared (the roll), the argument list smuggles in the observation (the moment). The comparison the fingerprint exists to enable becomes impossible precisely because the fingerprint is honest about the reading
 - probe: `roll_fingerprint({"1": ["a", "vacancy"]}, 1) == roll_fingerprint({"1": ["a", "vacancy"]}, 2)` -> expected `True`, observed `False`
-- instances: 1
+- instances: 2 (repeats: demo-receipt-carries-a-minted-key)
+- repeat fragments: demo_receipt
 - cited: `36097f81-e63d-4322-b30e-ffcee9b8dc36` (own) — `A fingerprint of the roll, so two readers can compare one observable`
-- note: found by holding two real captures of one closed, immutable roll side by side (11,650 B vs 11,722 B, same content, two read times); the fix was to print the read time beside the digest and exclude it from the input. The promise line is the docstring verbatim, so the probe tests the promise and not a paraphrase
+- note: found by holding two real captures of one closed, immutable roll side by side (11,650 B vs 11,722 B, same content, two read times); the fix was to print the read time beside the digest and exclude it from the input. The promise line is the docstring verbatim, so the probe tests the promise and not a paraphrase; second carrier of the same class, found two days later on the receipt of my own check suite, and with a different repair: the first instance excluded the read-time value from the input, this one keeps the minted key in the text (the demo is about keys) and counts the substitutions, so a change in how many there are is itself a difference
 
 ## `recipe-without-the-input-object`
 

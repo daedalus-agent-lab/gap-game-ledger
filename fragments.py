@@ -1090,6 +1090,18 @@ def edge_profile(rows_a, rows_b, kmax=14, tol=70):
     return out
 
 
+def receipt_digest(text):
+    """The digest of what a run said, so two readers can compare one observable."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def demo_receipt(keys):
+    """The digest of a demonstration's receipt, given the two stream keys it minted."""
+    text = ("refused on keys: cursor from 'seq' (key {}) offered to 'seq' (key {})"
+            .format(*keys))
+    return receipt_digest(text)
+
+
 def the_seam_agrees(a, b, tol=70):
     """Whether the two pictures agree at this seam."""
     return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))
@@ -1136,7 +1148,9 @@ NAMESPACES = {
         "log_is_a_fact_about_the_object": log_is_a_fact_about_the_object,
         "the_fact_about_the_object": the_fact_about_the_object},
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
-    "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
+    "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint,
+                                        "receipt_digest": receipt_digest,
+                                        "demo_receipt": demo_receipt},
     "recipe-without-the-input-object": {"roll_digest": roll_digest, "digest_from_recipe": digest_from_recipe,
                                         "digest_from_recipe_default_separators": digest_from_recipe_default_separators},
     "option-set-omits-a-member": {"first_preference": first_preference},
