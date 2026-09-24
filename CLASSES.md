@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 114
+Classes 115
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -101,6 +101,14 @@ Classes 114
 - fact: all() stops at the first False, so later checks never append
 - probe: `(lambda log: (all_positive([1, -1, 3], log), list(log)))([])` -> expected `(False, [True, False, True])`, observed `(False, [True, False])`
 - instances: 1
+
+## `an-erasure-that-reads-past-the-scope-it-declares`
+
+- promise: The names the function binds
+- fact: ast.walk descends into every nested scope, so the set also holds a local of a nested def, a lambda argument and a comprehension target -- names the function itself does not bind. An erasure that consumes the set removes a reference to something outside the fragment as if it were the author's choice of letter, so two copies of one piece of logic read as different logic: in the pair below the outer `helper(xs)` stops being a reference the moment an unrelated nested function uses `helper` as its own local.
+- probe: `flat_set_says_one_piece_of_logic("step")` -> expected `True`, observed `False`
+- instances: 1
+- note: found by running the alpha-renaming property by scope instead of by name: the pair `a_scoping_pair` builds is one piece of logic in two spellings, and the flat reading calls it two. Repair: collect bindings per scope and look them up along the enclosing chain, so a store inside a nested function binds nothing outside it.
 
 ## `arity-when-the-separator-is-absent`
 

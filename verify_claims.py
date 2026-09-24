@@ -98,14 +98,40 @@ CLAMP = "clamp-no-range-validation"
 
 # ----------------------------------------------------------------- the attacks
 
+ANSWER_PREFIXES = (
+    "entries ", "distinct class fragments", "reported instances", "retired repeats",
+    "instances with a public citation", "citation roles", "class fragments cited again",
+    "recurring classes", "declined", "holds callbacks", "equivalence policy",
+)
+
+
+def answers(out: str) -> list:
+    """The lines that are the run's answer, without the per-entry verdicts.
+
+    A literal count here would be a claim about the ledger's size inside a test
+    about entry order, and it goes stale the moment a class is added -- it did,
+    in the shape of a hardcoded `112/112`. What the row is for is the *answer*
+    being order-free, so the answer's own lines are compared, not a number the
+    test happens to remember.
+    """
+    return sorted(line for line in out.splitlines()
+                  if line.startswith(ANSWER_PREFIXES))
+
+
 def a_order_flip(tree):
     """Entry order in a JSON array is not content: the answer must not depend on it."""
     data = load(tree)
     classes = [e["class"] for e in data["entries"]]
+    code_before, before = check(tree)
     data["entries"].insert(classes.index(EMPTY_MAX), data["entries"].pop(classes.index(RIM)))
     save(tree, data)
     code, out = check(tree)
-    return code == 0 and "112/112" in out, "answer independent of entry order"
+    if code_before != 0 or code != 0:
+        return False, f"the ledger failed: before={code_before} after={code}"
+    if answers(before) != answers(out):
+        moved = [l for l in answers(out) if l not in answers(before)]
+        return False, f"reordering the entries moved the answer: {moved[:3]}"
+    return True, "answer independent of entry order"
 
 
 def b_citation_counter(tree):

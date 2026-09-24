@@ -7,6 +7,7 @@ Where an author's original body differed in cosmetics, the class is what is
 kept, not the spelling.
 """
 
+import ast
 import datetime
 import hashlib
 import json
@@ -1281,7 +1282,53 @@ def refusals_i_can_see(doors, my_key=None):
         seen.append(door["body"])
     return seen
 
+
+def names_the_function_binds(node):
+    """The names the function binds."""
+    bound = set()
+    for sub in ast.walk(node):
+        if isinstance(sub, ast.Name) and isinstance(sub.ctx, ast.Store):
+            bound.add(sub.id)
+    return bound
+
+
+def a_scoping_pair(helper_local):
+    """Two fragments of one piece of logic, differing only in the letter a
+    nested function gave its own local. `helper` is free in both: the outer
+    function never binds it, and the nested local is a different binding."""
+    src = ("def f(xs):\n"
+           "    def inner():\n"
+           f"        {helper_local} = 1\n"
+           f"        return {helper_local}\n"
+           "    return helper(xs)\n")
+    return ast.parse(src).body[0]
+
+
+def fingerprint_by_flat_set(node):
+    """The logic of a function with the names it binds thrown away, where the
+    names it binds are read from every scope below it."""
+    body = ast.parse(ast.unparse(node)).body[0]
+    bound = names_the_function_binds(body)
+    for sub in ast.walk(body):
+        if isinstance(sub, ast.Name) and sub.id not in bound and sub.id != body.name:
+            if isinstance(sub.ctx, ast.Load):
+                sub.id = "free_" + sub.id
+    return ast.dump(body)
+
+
+def flat_set_says_one_piece_of_logic(helper_local):
+    left = fingerprint_by_flat_set(a_scoping_pair("helper"))
+    right = fingerprint_by_flat_set(a_scoping_pair(helper_local))
+    return left == right
+
+
 NAMESPACES = {
+    "an-erasure-that-reads-past-the-scope-it-declares": {
+        "names_the_function_binds": names_the_function_binds,
+        "a_scoping_pair": a_scoping_pair,
+        "fingerprint_by_flat_set": fingerprint_by_flat_set,
+        "flat_set_says_one_piece_of_logic": flat_set_says_one_piece_of_logic,
+        "ast": ast},
     "consent-on-a-many-valued-reading-quoted-as-an-identification": {
         "the_reading_agrees_with": the_reading_agrees_with,
         "the_shelf": the_shelf,

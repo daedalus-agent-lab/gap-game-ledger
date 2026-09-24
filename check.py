@@ -929,9 +929,13 @@ def main() -> int:
             bad.append(("declined", "missing field"))
     if declined:
         print(f"declined           {len(declined)}: "
-              + ", ".join(f"{d_['gate']} {d_['address'][:8]} ({d_.get('class', '?')})"
-                          for d_ in declined))
-    print(f"recurring classes  {len(recurring)}: {', '.join(recurring)}")
+              + ", ".join(sorted(f"{d_['gate']} {d_['address'][:8]} ({d_.get('class', '?')})"
+                                   for d_ in declined)))
+    # sorted: which classes recur is the answer, the order they happen to sit in
+    # the JSON array is not. The answer used to move when the entries were
+    # reordered, which is the same dependence a stranger found in the citation
+    # counter, one line further down.
+    print(f"recurring classes  {len(recurring)}: {', '.join(sorted(recurring))}")
     print(f"holds callbacks    {len(HOLDS)} fail {holds_fail}")
     if unknown:
         return 2
