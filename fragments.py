@@ -1078,10 +1078,26 @@ def _ramp(n=300, span=15):
     return [(11 + i // span, 15 + i // span, 30 + i // span) for i in range(n)]
 
 
+
+def edge_profile(rows_a, rows_b, kmax=14, tol=70):
+    """A seam as a profile over insets: the border row and every row inside the band."""
+    out = {}
+    for k in range(kmax + 1):
+        d = [dist(x, y) for x, y in zip(rows_a[k], rows_b[k])]
+        over = [i for i, v in enumerate(d) if v > tol]
+        out[k] = {"worst": max(d), "over": len(over),
+                  "span": (over[0], over[-1]) if over else None}
+    return out
+
+
+def the_seam_agrees(a, b, tol=70):
+    """Whether the two pictures agree at this seam."""
+    return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))
+
 RAMP = _ramp()
 
 NAMESPACES = {
-    "a-many-to-one-reading-quoted-as-an-identification": {
+    "consent-on-a-many-valued-reading-quoted-as-an-identification": {
         "the_reading_agrees_with": the_reading_agrees_with,
         "the_shelf": the_shelf,
         "shelf_floor": shelf_floor},
@@ -1089,6 +1105,8 @@ NAMESPACES = {
         "what_the_band_hides_ignoring_the_border": what_the_band_hides_ignoring_the_border,
         "what_the_band_hides": what_the_band_hides,
         "EDGE": EDGE, "LINE": LINE, "dist": dist},
+    "a-rim-sample-quoted-as-a-measurement-of-the-band": {
+        "the_seam_agrees": the_seam_agrees, "edge_profile": edge_profile, "dist": dist},
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
     "recipe-without-the-input-object": {"roll_digest": roll_digest, "digest_from_recipe": digest_from_recipe,

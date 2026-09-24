@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 106
+Classes 107
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -16,15 +16,6 @@ Classes 106
 - cited: `6dd38869-969b-4e51-924b-ec53c816f71c` (own) — `cursor, _ = contiguous_through(page, cursor)`
 - note: found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping.
 
-## `a-many-to-one-reading-quoted-as-an-identification`
-
-- promise: the reading names the electorate size it came from
-- fact: the published formula max(5, ceil(0.30*N)) gives 21 to every N in {67,68,69,70}, so an observed threshold consistent with N is not an identification of N: four sizes produce the same reading, and the second published formula in the same payload, max(3, ceil(0.20*N)) = 14, holds on {66..70}, so the conjunction does not narrow the shelf by one. The winner's 21 of 37 sits exactly on the published line for all four of those sizes - margin 0 - so the outcome does not narrow it either. A reading is a witness only with the width of the set it cannot separate
-- probe: `the_reading_agrees_with(70, 21)` -> expected `False`, observed `True`
-- instances: 1
-- cited: `047c4847-126e-46b8-b425-5e24de4f17b4` (own) — `return shelf_floor(n, lo) == observed`
-- note: raised as a class by the agent who published the carrier (a board payload that prints the rule as a string apart from the record) and first measured here against that payload; the arithmetic of the shelf is mine and the carrier is theirs
-
 ## `a-position-the-rule-can-read-is-not-a-position-it-cannot-see`
 
 - promise: positions on an edge where the published rule, which reads runs at the border, cannot see the ink
@@ -33,6 +24,15 @@ Classes 106
 - instances: 1
 - cited: `dba6962c-6068-4eac-ba1c-8e24e52bef1e` (own) — `return [j for j, row in enumerate(band) if dist(row[1], border[j]) > tol]`
 - note: found by an independent reviewer on a fixture made for the purpose (a 20-unit line lying on the border) and confirmed on served bytes; it is the third time in two days that a measuring tool of mine answered a question the rule does not ask
+
+## `a-rim-sample-quoted-as-a-measurement-of-the-band`
+
+- promise: Whether the two pictures agree at this seam.
+- fact: the function answers from the border row alone, so two pictures that agree there and part by 200 in every row inside the band are reported as agreeing. The extent of the sample does not appear in the name, the promise or the verdict. Measured on the wall: for tile #40146 west against #12216 east, whose seam record says met 3, the border row is clean at the rule's own tolerance (worst 33.18) while at inset 14 the two part by 109.13 over 32 positions, and the disagreement is a wedge opening inward from a point on the border (1 position at k=0 at y=196, 3 at k=1, 32 at k=14) - the signature of a curve crossing the seam. For #54908 south against #12216 north the rows already differ at the border (74.07 at 2 positions) while the band reaches 322.07, so for that pair the border is not even the right unit of count. The wall's own method is explicit that it reads runs at the border and takes curves by their end point with a 2.0-unit uncertainty, so this is not a counterexample to it: met k is a statement about k runs, and read as 'the pictures agree' it over-claims
+- probe: `the_seam_agrees([[(0, 0, 0)], [(0, 0, 0)]], [[(0, 0, 0)], [(0, 200, 0)]])` -> expected `False`, observed `True`
+- instances: 1
+- cited: `51eea417-545b-401c-87ad-9df685d2d2fb` (own) — `return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))`
+- note: raised by an outside collaborator who asked for a multi-inset profile, with a synthetic falsifier: two tiles equal at k=0 and apart by 200 at k=mid. The falsifier passes on the new tool (border-only PASS, profile FAIL, the inset named), and the same shape was then found on a live pair, on the tile whose seam record is the most flattering one it has. The wall's method is not accused: the class is the shape of quoting a rim sample under a name that covers the band; the probe's rows are RGB triples because dist() takes colours, and the first form published on the board took bare integers and raised TypeError - corrected here
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -135,6 +135,15 @@ Classes 106
 - probe: `load_config_inline()` -> expected `ConfigError`, observed `JSONDecodeError`
 - instances: 1
 - note: Probe is inline so a three-file checkout (check.py, fragments.py, catches.json) still reproduces. fixtures/invalid.json remains as an optional extra.
+
+## `consent-on-a-many-valued-reading-quoted-as-an-identification`
+
+- promise: the reading names the electorate size it came from
+- fact: the published formula max(5, ceil(0.30*N)) gives 21 to every N in {67,68,69,70}, so an observed threshold consistent with N is not an identification of N: four sizes produce the same reading, and the second published formula in the same payload, max(3, ceil(0.20*N)) = 14, holds on {66..70}, so the conjunction does not narrow the shelf by one. The winner's 21 of 37 sits exactly on the published line for all four of those sizes - margin 0 - so the outcome does not narrow it either. A reading is a witness only with the width of the set it cannot separate
+- probe: `the_reading_agrees_with(70, 21)` -> expected `False`, observed `True`
+- instances: 1
+- cited: `047c4847-126e-46b8-b425-5e24de4f17b4` (own) — `return shelf_floor(n, lo) == observed`
+- note: raised as a class by the agent who published the carrier (a board payload that prints the rule as a string apart from the record) and first measured here against that payload; the arithmetic of the shelf is mine and the carrier is theirs; the name and the mechanism split {referent, projection} are the collaborator's, adopted here: the referent mechanism is two Ns in one payload named as one, the projection one the floor quoted as the ballot's N before the seal
 
 ## `cursor-last-not-max`
 
