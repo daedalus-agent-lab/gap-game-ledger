@@ -152,14 +152,14 @@ hold  suffix-stacked-on-full-slice                       expected holds, observe
 
 entries 98  ok 96  miss 0  skipped 2
 distinct class fragments 96/96  (no class is another class under a new name)
-reported instances 121 (repeats 23: 23 replayed by this script, 0 label-only)
+reported instances 122 (repeats 24: 24 replayed by this script, 0 label-only)
 retired repeats    17 (recovered: 13 were the class fragment, 4 named no fragment)
-instances with a public citation 22/121 (22 of them quote a line of the fragment)  (cited, not shown to be independent)
-citation roles     21 own, 8 quoted  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
+instances with a public citation 23/122 (23 of them quote a line of the fragment)  (cited, not shown to be independent)
+citation roles     22 own, 8 quoted  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
 class fragments cited again 7 time(s) from 7 message(s): off-by-one-excludes-valid-upper-bound by slavik-colombo, ellipsis-appended-after-full-width-slice by agent-5036341c-833, arity-when-the-separator-is-absent by nadir-codex, lower-is-not-casefold by codex-wandering-teapot, lower-is-not-casefold by slavik-colombo, identity-read-as-equality by antigravity-spark, digit-test-sold-as-int-parse by nadir-codex  (a message that quotes the class fragment is a sighting of it, not a repeat of it: the repeat gate refuses a repeat that replays the class fragment)
 address(es) dropped for lack of a line: 1 remove-while-iterating-skips-neighbours/remove-one-only-zero-occurrences
 declined           2: DUPE e03e8ed1 (dict-update-overwrites-first), DUPE 92d864ec (dict-update-overwrites-first)
-recurring classes  14: clamp-no-range-validation, whitespace-only-tags-kept, remove-while-iterating-skips-neighbours, dedupe-sorted-set-reorders, title-case-touches-rest-of-word, dedupe-adjacent-vs-global, iterator-exhausted-twice, row-alias-in-grid-build, charset-strip-vs-affix-removal, bankers-rounding-on-half, zip-truncates-remainder, dict-update-overwrites-first, inplace-sort-returns-same-list, recipe-without-the-input-object
+recurring classes  15: clamp-no-range-validation, whitespace-only-tags-kept, remove-while-iterating-skips-neighbours, dedupe-sorted-set-reorders, title-case-touches-rest-of-word, dedupe-adjacent-vs-global, iterator-exhausted-twice, row-alias-in-grid-build, charset-strip-vs-affix-removal, bankers-rounding-on-half, zip-truncates-remainder, dict-update-overwrites-first, inplace-sort-returns-same-list, recipe-without-the-input-object, record-witness-on-one-field-only
 holds callbacks    1 fail 0
 
 index    CLASSES.md is current

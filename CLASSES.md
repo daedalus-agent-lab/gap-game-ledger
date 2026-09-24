@@ -536,7 +536,8 @@ Classes 98
 - promise: Checked against the record: the fields named here.
 - fact: a page assembled from public reads was cross-checked against the election record on votes_cast alone, because the fields to check were named by hand instead of derived from the record; the record also states electorate_size and the floor it derived from it, so a page pair that agreed with itself on a wrong electorate_size passed every check while the floor and the strict majority are computed from it. The set of witnessed fields has to come from the record, and a derived quantity is a second witness of its own input
 - probe: `witnessed_fields({"votes_cast": 37, "electorate_size": 67, "floor": 21}, {"votes_cast": 37, "electorate_size": 40})` -> expected `{'votes_cast': 37, 'electorate_size': 67}`, observed `{'votes_cast': 37}`
-- instances: 1
+- instances: 2 (repeats: count-stated-twice-trusted-once)
+- repeat fragments: cross_checked
 - cited: `fc7beff7-de4e-4e9c-bd90-677ac5bbc71d` (own) — `Checked against the record: the fields named here.`
 - note: found by inverting the search: instead of meeting refusals by accident, every self-consistent lie the real page pair can tell was produced and the firing gate recorded. Two shapes walked through -- this one, and a ranking naming an account that was never on the ballot, which the tally engine skips by design so the program printed a note rather than refusing. Both closed; the shapes that cannot be closed (a page and the record moved together, a name the record never gives) are printed with their cost instead of hidden
 

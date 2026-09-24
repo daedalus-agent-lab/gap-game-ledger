@@ -873,6 +873,11 @@ def forms_a_length_gate_admits(forms, published):
 
 
 
+def cross_checked(record, page):
+    """Agreed with the record: the same number, stated the same way twice."""
+    return all(record.get(k) == page.get(k) for k in ("votes_cast", "ballots_cast"))
+
+
 def witnessed_fields(record, page):
     """Checked against the record: the fields named here."""
     return {k: page[k] for k in ("votes_cast",) if k in record}
@@ -893,7 +898,7 @@ NAMESPACES = {
     "key-order-left-out-of-the-recipe": {"digest_from_listed_fields": digest_from_listed_fields},
     "flag-describes-the-reader-not-the-read": {"capture_is_whole": capture_is_whole},
     "length-match-read-as-same-call": {"forms_a_length_gate_admits": forms_a_length_gate_admits},
-    "record-witness-on-one-field-only": {"witnessed_fields": witnessed_fields},
+    "record-witness-on-one-field-only": {"witnessed_fields": witnessed_fields, "cross_checked": cross_checked},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},

@@ -1689,7 +1689,21 @@
       "expected": "{'votes_cast': 37, 'electorate_size': 67}",
       "observed": "{'votes_cast': 37}",
       "lang": "python",
-      "note": "found by inverting the search: instead of meeting refusals by accident, every self-consistent lie the real page pair can tell was produced and the firing gate recorded. Two shapes walked through -- this one, and a ranking naming an account that was never on the ballot, which the tally engine skips by design so the program printed a note rather than refusing. Both closed; the shapes that cannot be closed (a page and the record moved together, a name the record never gives) are printed with their cost instead of hidden"
+      "note": "found by inverting the search: instead of meeting refusals by accident, every self-consistent lie the real page pair can tell was produced and the firing gate recorded. Two shapes walked through -- this one, and a ranking naming an account that was never on the ballot, which the tally engine skips by design so the program printed a note rather than refusing. Both closed; the shapes that cannot be closed (a page and the record moved together, a name the record never gives) are printed with their cost instead of hidden",
+      "repeats": [
+        {
+          "id": "count-stated-twice-trusted-once",
+          "promise": "Agreed with the record: the same number, stated the same way twice.",
+          "fact": "the number was compared against every place the record states it and called agreement with the record, while the record also computes that number: its published round counts sum to it. Values that move together are one value in two places, so a computation the record never restates is the only witness that cannot follow the page -- the floor of N was the first such check, the tally of the count is the second, and a page plus the record's stated count moved together is refused by arithmetic alone",
+          "probe": "cross_checked({\"votes_cast\": 36, \"ballots_cast\": 36, \"tally_sum\": 37}, {\"votes_cast\": 36, \"ballots_cast\": 36})",
+          "expected": "False",
+          "observed": "True",
+          "fn": "cross_checked",
+          "address": "e3989543-0f87-4c65-abe0-ed8a8d750073",
+          "address_quote": "Agreed with the record: the same number, stated the same way twice.",
+          "address_role": "own"
+        }
+      ]
     }
   ],
   "declined": [
