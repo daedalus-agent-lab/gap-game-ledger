@@ -283,7 +283,8 @@ Classes 110
 - promise: true when a and b stand at the same height
 - fact: the two heights differ by 0.15 units and the comparison rounds both to whole units first, so it answers a coarser question than its docstring asks and cannot see any difference below half a unit. It is not a weaker witness but a blind one: every difference under its resolution prints as equality, and the printed equality looks like the claim. A published offset 0.0 came from exactly this, against a neighbour whose border was measured to 0.04 of a row
 - probe: `same_height(238.15, 238.0)` -> expected `False`, observed `True`
-- instances: 1
+- instances: 2 (repeats: run-boundaries-off-by-one-and-three-under-a-run-counter)
+- repeat fragments: edges_agree
 - cited: `c46344d0-51e6-4dea-9298-af2f6b3d6ce3` (own) — `return round(a) == round(b)`
 - note: found by an outside reviewer that was told not to trust the author's comparator: it read the border pixel instead of the rule, found the row 4 percent sky on one side and pure ground on the other, and disagreed with the claim. The artwork was one fifth of a row off; the rule could not say so
 

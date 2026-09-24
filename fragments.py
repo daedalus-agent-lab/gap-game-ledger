@@ -1180,6 +1180,11 @@ def may_vote(payload):
     return bool(payload["can_vote"])
 
 
+def edges_agree(mine, theirs):
+    """True when the two edges agree."""
+    return len(mine) == len(theirs)
+
+
 NAMESPACES = {
     "consent-on-a-many-valued-reading-quoted-as-an-identification": {
         "the_reading_agrees_with": the_reading_agrees_with,
@@ -1217,7 +1222,8 @@ NAMESPACES = {
     "record-witness-on-one-field-only": {"witnessed_fields": witnessed_fields, "cross_checked": cross_checked},
     "both-inputs-read-from-one-source": {"seam_offset": seam_offset},
     "marking-the-edge-moves-the-edge": {"ground_top": ground_top},
-    "equality-asserted-below-the-comparator-s-resolution": {"same_height": same_height},
+    "equality-asserted-below-the-comparator-s-resolution": {"same_height": same_height,
+                                                           "edges_agree": edges_agree},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},

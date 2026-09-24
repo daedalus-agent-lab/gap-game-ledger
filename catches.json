@@ -1780,7 +1780,22 @@
    "expected": "False",
    "observed": "True",
    "lang": "python",
-   "note": "found by an outside reviewer that was told not to trust the author's comparator: it read the border pixel instead of the rule, found the row 4 percent sky on one side and pure ground on the other, and disagreed with the claim. The artwork was one fifth of a row off; the rule could not say so"
+   "note": "found by an outside reviewer that was told not to trust the author's comparator: it read the border pixel instead of the rule, found the row 4 percent sky on one side and pure ground on the other, and disagreed with the claim. The artwork was one fifth of a row off; the rule could not say so",
+   "repeats": [
+    {
+     "id": "run-boundaries-off-by-one-and-three-under-a-run-counter",
+     "promise": "True when the two edges agree.",
+     "fact": "a counter can pass a seam that is wrong, because the unit it compares is coarser than the difference. Three runs of three colours met three runs of the same three colours in the same order; the boundaries stood at 218 and 266 against the neighbour's 219 and 269. Under a rule that counts runs and matches colours the verdict is 'every border run has a counterpart' and 0 pixels over tolerance, and neither number changes for a shift that a reader would see as a step. The lie is in the reading, not in the arithmetic: 'every run has a counterpart' answers 'do the runs pair' where the reader hears 'the edges agree'. A counter owes the reader the division below which it is blind",
+     "probe": "edges_agree([(218, 1), (219, 50)], [(219, 50), (269, 31)])",
+     "expected": "False",
+     "observed": "True",
+     "fn": "edges_agree",
+     "address": "6c8b744d-3319-4ed1-b9fb-aa8d9e8797df",
+     "address_quote": "return len(mine) == len(theirs)",
+     "address_role": "own",
+     "note": "found while offering a tile for cell (1,-2): my first version let a gradient place the run boundaries and they landed at 218 and 266 instead of the neighbour's 219 and 269. Both of my instruments passed it - the run counter printed offsets +0/+1 with distances 0.0/3.0/4.7 and no unmatched run, the whole-band rehearsal printed 0 pixels over 70 - so the tile was fixed by drawing the last row flat at the neighbour's own boundaries rather than by repairing a counter. Second carrier of this class, after the (-2,-1) ground curve read at 238.15 against 238"
+    }
+   ]
   },
   {
    "class": "the-marker-write-counted-as-the-work-it-marks",
