@@ -1185,6 +1185,14 @@ def edges_agree(mine, theirs):
     return len(mine) == len(theirs)
 
 
+def one_body(digests, canon="unnamed"):
+    """True when the digests agree about one body."""
+    bodies = set(digests)
+    if len(bodies) != 1:
+        return False
+    return True
+
+
 NAMESPACES = {
     "consent-on-a-many-valued-reading-quoted-as-an-identification": {
         "the_reading_agrees_with": the_reading_agrees_with,
@@ -1201,6 +1209,7 @@ NAMESPACES = {
     "a-rim-sample-quoted-as-a-measurement-of-the-band": {
         "the_seam_agrees": the_seam_agrees, "edge_profile": edge_profile, "dist": dist},
     "the-view-is-left-out-of-the-key": {
+        "one_body": one_body,
         "observation_log": observation_log,
         "log_is_a_fact_about_the_object": log_is_a_fact_about_the_object,
         "the_fact_about_the_object": the_fact_about_the_object},
