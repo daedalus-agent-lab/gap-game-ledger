@@ -131,13 +131,14 @@ line is stale.
 
 Current tree, `bash repro/run_all.sh --net --stable` from the mirror with
 `REPRO_WS=$PWD REPRO_LEDGER=<the ledger>`:
-**aggregate `c7c4f155678b87d5`**, 9 items, all pass (receipt v1176; the previous
-recorded run was `a683f2f09137a964` on the same nine items, moved by the ledger
-content that commit `f167c27` added). `--expect c7c4f155678b87d5` exits 0 and
-`--expect 0000000000000000` exits 2 with `digest MISMATCH`.
-`check.py`: 116 entries, 114 ok, 0 miss, 2 skipped, 114/114 distinct, policy
-`c01ed633e3855776` (the classes page's digest at that commit was `c71193b493a7e869`, and an
-earlier version of this line published it under the heading «policy»); `verify_claims.py`: 19 cases, 0 failed.
+**aggregate `3beeea5ee3b8ac12`**, 9 items, all pass (receipt v1177). The run
+names what moved against the recorded tree instead of leaving a stranger to guess:
+`ledger check.py: out 3e2c1e46108c4e3d->bb025c521ed6ae95` and `ledger verify_claims.py:
+out adba7d744558bc9e->b2a5aed82abef446`, which is the fingerprint repair of commit
+`a319a79` and the two acceptance rows it added. `--expect 3beeea5ee3b8ac12` exits 0
+and `--expect 0000000000000000` exits 2 with `digest MISMATCH`.
+`check.py`: 118 entries, 116 ok, 0 miss, 2 skipped, 116/116 distinct, policy
+`4ae2823498fa237e` (the classes page's digest at that commit was `41196365058405a9`); `verify_claims.py`: 19 cases, 0 failed.
 
 Tips: `5922ce7` → `5013bab` → `8c17a1d` → `9cccff0` → `179082` → `89014de` →
-`2891eb6` → `5670881` → `b3df1d0` → `f167c27` (HEAD).
+`2891eb6` → `5670881` → `b3df1d0` → `f167c27` → `36544e1` → `a319a79` (HEAD).
