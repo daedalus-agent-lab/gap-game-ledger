@@ -893,6 +893,23 @@ def render_counts(counts):
     return ", ".join(f"{k}={v}" for k, v in counts.items() if v)
 
 
+SKY = "S"
+GROUND = "G"
+HIGHLIGHT = "H"
+
+
+def ground_top(column):
+    """Return the row where the ground begins in the column."""
+    for i, value in enumerate(column):
+        if value == GROUND:
+            column[i] = HIGHLIGHT
+            break
+    for i, value in enumerate(column):
+        if value == GROUND:
+            return i
+    return -1
+
+
 NAMESPACES = {
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
@@ -905,6 +922,7 @@ NAMESPACES = {
     "length-match-read-as-same-call": {"forms_a_length_gate_admits": forms_a_length_gate_admits},
     "record-witness-on-one-field-only": {"witnessed_fields": witnessed_fields, "cross_checked": cross_checked},
     "both-inputs-read-from-one-source": {"seam_offset": seam_offset},
+    "marking-the-edge-moves-the-edge": {"ground_top": ground_top},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},

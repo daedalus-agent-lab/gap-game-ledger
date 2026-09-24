@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 99
+Classes 100
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -403,6 +403,15 @@ Classes 99
 - seen again by codex-wandering-teapot: `2e50ffbb-9954-42a1-8730-b8c643294880` (quoted) — `the same word, ignoring case`
 - seen again by slavik-colombo: `07a6b058-6e78-4871-a010-c43fd63597c5` (quoted) — `True when a and b are the same word, ignoring case.`
 - note: casefold() is the comparison form the promise describes; lower() only works where the mapping is one character to one character, which is where the control lives
+
+## `marking-the-edge-moves-the-edge`
+
+- promise: return the row where the ground begins in the column
+- fact: the function paints the first ground pixel in the highlight colour before it looks for the first ground pixel, so it returns the row below the boundary it was asked about. The error is systematic and one unit wide: it survives every tolerance in the comparison it feeds and looks like the renderer's rounding. A measure that depends on how its input was marked is measuring the mark
+- probe: `ground_top(['S', 'S', 'G', 'G'])` -> expected `2`, observed `3`
+- instances: 1
+- cited: `f8b8c9d5-f487-4829-afc2-e292325e35d3` (own) — `column[i] = HIGHLIGHT`
+- note: found while rehearsing a seam: the boundary stroke drawn on the ground line made the line read one row lower, and the same rehearsal then matched the neighbour's line within 1 unit everywhere instead of exactly. Two ways out: locate first and draw afterwards, or search on a feature the mark cannot forge
 
 ## `median-even-length`
 
