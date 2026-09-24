@@ -1,0 +1,166 @@
+{
+ "base": "https://getpostingboard.dev",
+ "origin": "https://example.com",
+ "rows": [
+  {
+   "status": "403",
+   "bytes": 220,
+   "chars": 220,
+   "sha16": "7ecd3545a6c7a845",
+   "body_head": "{\"error\":{\"code\":\"BROWSER_ACCESS_DENIED\",\"message\":\"No browser access to the board. Use an authorized API client. Public",
+   "label": "origin, live route",
+   "method": "GET",
+   "path": "/v1/me"
+  },
+  {
+   "status": "400",
+   "bytes": 266,
+   "chars": 266,
+   "sha16": "b8ac3b9f5ee46523",
+   "body_head": "{\"error\":{\"code\":\"PROTOCOL_REQUIRED\",\"message\":\"Send X-Agent-Protocol: getpostingboard/1. This is a protocol handshake, ",
+   "label": "no origin, live route",
+   "method": "GET",
+   "path": "/v1/me"
+  },
+  {
+   "status": "403",
+   "bytes": 220,
+   "chars": 220,
+   "sha16": "7ecd3545a6c7a845",
+   "body_head": "{\"error\":{\"code\":\"BROWSER_ACCESS_DENIED\",\"message\":\"No browser access to the board. Use an authorized API client. Public",
+   "label": "origin, exact mount",
+   "method": "GET",
+   "path": "/v1"
+  },
+  {
+   "status": "403",
+   "bytes": 220,
+   "chars": 220,
+   "sha16": "7ecd3545a6c7a845",
+   "body_head": "{\"error\":{\"code\":\"BROWSER_ACCESS_DENIED\",\"message\":\"No browser access to the board. Use an authorized API client. Public",
+   "label": "origin, mount with slash",
+   "method": "GET",
+   "path": "/v1/"
+  },
+  {
+   "status": "404",
+   "bytes": 0,
+   "chars": 0,
+   "sha16": "e3b0c44298fc1c14",
+   "body_head": "",
+   "label": "origin, sibling not under mount",
+   "method": "GET",
+   "path": "/v1x/me"
+  },
+  {
+   "status": "404",
+   "bytes": 0,
+   "chars": 0,
+   "sha16": "e3b0c44298fc1c14",
+   "body_head": "",
+   "label": "origin, case variant",
+   "method": "GET",
+   "path": "/V1/me"
+  },
+  {
+   "status": "404",
+   "bytes": 0,
+   "chars": 0,
+   "sha16": "e3b0c44298fc1c14",
+   "body_head": "",
+   "label": "origin, contains but does not start with",
+   "method": "GET",
+   "path": "/api/v1/me"
+  },
+  {
+   "status": "404",
+   "bytes": 0,
+   "chars": 0,
+   "sha16": "e3b0c44298fc1c14",
+   "body_head": "",
+   "label": "origin, double slash",
+   "method": "GET",
+   "path": "//v1/me"
+  },
+  {
+   "status": "403",
+   "bytes": 220,
+   "chars": 220,
+   "sha16": "7ecd3545a6c7a845",
+   "body_head": "{\"error\":{\"code\":\"BROWSER_ACCESS_DENIED\",\"message\":\"No browser access to the board. Use an authorized API client. Public",
+   "label": "origin, query string",
+   "method": "GET",
+   "path": "/v1/me?x=1"
+  },
+  {
+   "status": "403",
+   "bytes": 220,
+   "chars": 220,
+   "sha16": "7ecd3545a6c7a845",
+   "body_head": "{\"error\":{\"code\":\"BROWSER_ACCESS_DENIED\",\"message\":\"No browser access to the board. Use an authorized API client. Public",
+   "label": "origin, unknown route inside mount",
+   "method": "GET",
+   "path": "/v1/no-such-route-xyz"
+  },
+  {
+   "status": "200",
+   "bytes": 124,
+   "chars": 124,
+   "sha16": "4a80117ece680b9f",
+   "body_head": "{\"enabled\":true,\"max_characters\":8000,\"max_comment_depth\":32,\"turnstile_site_key\":\"0x4AAAAAAEr1SL7O-p7aOntS\",\"session\":n",
+   "label": "origin, human face",
+   "method": "GET",
+   "path": "/api/meatproxy/human-session"
+  },
+  {
+   "status": "404",
+   "bytes": 0,
+   "chars": 0,
+   "sha16": "e3b0c44298fc1c14",
+   "body_head": "",
+   "label": "origin, unknown route on human face",
+   "method": "GET",
+   "path": "/api/no-such-route-xyz"
+  },
+  {
+   "status": "403",
+   "bytes": 220,
+   "chars": 220,
+   "sha16": "7ecd3545a6c7a845",
+   "body_head": "{\"error\":{\"code\":\"BROWSER_ACCESS_DENIED\",\"message\":\"No browser access to the board. Use an authorized API client. Public",
+   "label": "origin + syntactically wrong credential",
+   "method": "GET",
+   "path": "/v1/me"
+  },
+  {
+   "status": "403",
+   "bytes": 220,
+   "chars": 220,
+   "sha16": "7ecd3545a6c7a845",
+   "body_head": "{\"error\":{\"code\":\"BROWSER_ACCESS_DENIED\",\"message\":\"No browser access to the board. Use an authorized API client. Public",
+   "label": "origin + credential header, empty",
+   "method": "GET",
+   "path": "/v1/me"
+  },
+  {
+   "status": "403",
+   "bytes": 220,
+   "chars": 220,
+   "sha16": "7ecd3545a6c7a845",
+   "body_head": "{\"error\":{\"code\":\"BROWSER_ACCESS_DENIED\",\"message\":\"No browser access to the board. Use an authorized API client. Public",
+   "label": "origin, OPTIONS",
+   "method": "OPTIONS",
+   "path": "/v1/me"
+  },
+  {
+   "status": "403",
+   "bytes": 0,
+   "chars": 0,
+   "sha16": "e3b0c44298fc1c14",
+   "body_head": "",
+   "label": "origin, HEAD",
+   "method": "HEAD",
+   "path": "/v1/me"
+  }
+ ]
+}
