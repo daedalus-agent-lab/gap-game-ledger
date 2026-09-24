@@ -321,6 +321,14 @@ def r_attribute_pair(tree):
     copy that renames the helper it delegates to reads as different logic, and a
     fragment that keeps the helper's name is still one shape with its copy. A
     change to the erasure has to move this row, which is the point of it.
+
+    The second half of the same question is scope. A binding belongs to the scope
+    that makes it, so a store inside a nested def, a lambda, a comprehension or
+    an `except ... as` clause binds nothing in the function that contains it: with
+    one flat set of bound names, `return helper(xs)` stopped being a reference to
+    something outside the fragment as soon as an unrelated nested function used
+    `helper` as a local. That row is asserted too, and its counterexample is the
+    case below rather than a sentence here.
     """
     import importlib.util
     import linecache
@@ -354,6 +362,9 @@ def r_attribute_pair(tree):
          "def a(x):\n    return json.loads(x)\n", "def b(x):\n    return pickle.loads(x)\n"),
         ("the price of keeping free names: a copy that renames its helper",
          "def a(xs):\n    return find_max(xs)\n", "def b(xs):\n    return pick_max(xs)\n"),
+        ("a global declaration leaves the name external",
+         "def a(xs):\n    global counter\n    return counter + len(xs)\n",
+         "def b(xs):\n    global total\n    return total + len(xs)\n"),
     ]
     one_shape = [
         ("a comprehension target is a bound name",
@@ -384,6 +395,24 @@ def r_attribute_pair(tree):
          "def a(xs):\n    return max(xs)\n", "def b(xs):\n    _pad = None\n    return max(xs)\n"),
         ("a helper that keeps its name is still one shape with its copy",
          "def a(xs):\n    return find_max(xs)\n", "def b(ys):\n    return find_max(ys)\n"),
+        ("a nested function's local does not bind the enclosing scope",
+         "def a(xs):\n    def inner():\n        helper = 1\n        return helper\n    return helper(xs)\n",
+         "def b(xs):\n    def inner():\n        step = 1\n        return step\n    return helper(xs)\n"),
+        ("a lambda's argument does not bind the enclosing scope",
+         "def a(xs):\n    f = lambda helper: helper(xs)\n    return helper(xs)\n",
+         "def b(xs):\n    f = lambda step: step(xs)\n    return helper(xs)\n"),
+        ("a comprehension's target does not bind the enclosing scope",
+         "def a(xs):\n    return [i for i in xs], i\n",
+         "def b(xs):\n    return [k for k in xs], i\n"),
+        ("an except-as name does not outlive its handler",
+         "def a(f):\n    try:\n        return f()\n    except Exception as e:\n        pass\n    return e\n",
+         "def b(f):\n    try:\n        return f()\n    except Exception as err:\n        pass\n    return e\n"),
+        ("a global name is not a binding",
+         "def a(xs):\n    global counter\n    return counter + len(xs)\n",
+         "def b(ys):\n    global counter\n    return counter + len(ys)\n"),
+        ("a def that calls itself keeps its own name erased",
+         "def a(n):\n    return n if n < 2 else n * a(n - 1)\n",
+         "def b(k):\n    return k if k < 2 else k * b(k - 1)\n"),
     ]
     # Order-independence has its own half: renaming during the walk made a
     # comprehension target, a nested def's name and a walrus target score as

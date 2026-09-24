@@ -97,34 +97,102 @@ class _DropDeadStores(ast.NodeTransformer):
         return node
 
 
-def bound_names(node) -> set:
-    """Every name the function binds, collected before anything is renamed.
+FUNC_SCOPES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
+COMP_SCOPES = (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
+
+
+def scope_bindings(node) -> tuple:
+    """The names each scope binds, kept apart per scope, plus the names declared
+    external.
 
     Renaming during the walk made the erasure depend on traversal order: a
     comprehension target is visited after the expression that uses it, a nested
     def's name is visited in the middle of the body, and a walrus target appears
     inside the condition that reads it first. Three copies scored as different
     logic for renaming a target alone. Collecting the bound names in one pass
-    first removes the order from the question.
+    first removed the order from the question.
+
+    One flat set was the other half of the same mistake. Python binds a name in
+    the scope that assigns it, so a store inside a nested def, a lambda or a
+    comprehension binds nothing in the enclosing function. With one set, an
+    outer `helper(xs)` stopped looking like a reference to something outside the
+    fragment the moment an unrelated nested function happened to use `helper` as
+    a local -- two copies of one piece of logic read as different. Bindings are
+    now collected per scope and looked up along the enclosing chain. A `global`
+    or `nonlocal` declaration is the opposite case: the function states that the
+    name is not its own, so it is external and stays free wherever it is read.
     """
-    bound = set()
-    for sub in ast.walk(node):
-        if isinstance(sub, ast.arg):
-            bound.add(sub.arg)
-        elif isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            bound.add(sub.name)
-        elif isinstance(sub, ast.Name) and isinstance(sub.ctx, (ast.Store, ast.Del)):
-            bound.add(sub.id)
-        elif isinstance(sub, ast.alias) and sub.asname:
-            # an explicit `as` name is the author's choice; a bare `import json`
-            # binds the module under its own name, which is a reference to
-            # something outside the fragment and stays free
-            bound.add(sub.asname)
-        elif isinstance(sub, ast.ExceptHandler) and sub.name:
-            bound.add(sub.name)
-        elif isinstance(sub, (ast.Global, ast.Nonlocal)):
-            bound.update(sub.names)
-    return bound
+    scopes: dict = {}
+    external: set = set()
+
+    def handle(child, cur) -> None:
+        if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            new = {a.arg for a in (*child.args.posonlyargs, *child.args.args,
+                                   *child.args.kwonlyargs)}
+            if child.args.vararg:
+                new.add(child.args.vararg.arg)
+            if child.args.kwarg:
+                new.add(child.args.kwarg.arg)
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                cur.add(child.name)          # a def binds its name outside itself
+                new.add(child.name)          # and may call itself
+            scopes[id(child)] = new
+            for extra in (getattr(child, "decorator_list", None) or []):
+                walk(extra, cur)             # decorators run in the outer scope
+            for d in (*child.args.defaults, *child.args.kw_defaults):
+                if d is not None:
+                    walk(d, cur)             # defaults too
+            for a in (*child.args.posonlyargs, *child.args.args,
+                      *child.args.kwonlyargs):
+                if a.annotation is not None:
+                    walk(a.annotation, cur)
+            if getattr(child, "returns", None) is not None:
+                walk(child.returns, cur)
+            for stmt in (child.body if isinstance(child.body, list) else [child.body]):
+                handle(stmt, new)
+        elif isinstance(child, ast.ClassDef):
+            cur.add(child.name)
+            for extra in (*child.decorator_list, *child.bases, *child.keywords):
+                walk(extra, cur)
+            new = {child.name}
+            scopes[id(child)] = new
+            for stmt in child.body:
+                handle(stmt, new)
+        elif isinstance(child, COMP_SCOPES):
+            new = {t.id for g in child.generators for t in ast.walk(g.target)
+                   if isinstance(t, ast.Name)}
+            scopes[id(child)] = new
+            for sub in ast.iter_child_nodes(child):
+                handle(sub, new)
+        else:
+            if isinstance(child, ast.Name) and isinstance(child.ctx, (ast.Store, ast.Del)):
+                cur.add(child.id)
+            elif isinstance(child, ast.alias) and child.asname:
+                # an explicit `as` name is the author's choice; a bare
+                # `import json` binds the module under its own name, which is a
+                # reference to something outside the fragment and stays free
+                cur.add(child.asname)
+            elif isinstance(child, ast.ExceptHandler):
+                # an `as` name lives only inside its handler: Python deletes it
+                # when the handler ends, so it binds nothing in the enclosing
+                # scope and a later read of that identifier is a global
+                new = {child.name} if child.name else set()
+                scopes[id(child)] = new
+                if child.type is not None:
+                    handle(child.type, cur)
+                for stmt in child.body:
+                    handle(stmt, new)
+                return
+            elif isinstance(child, (ast.Global, ast.Nonlocal)):
+                external.update(child.names)
+            walk(child, cur)
+
+    def walk(n, cur) -> None:
+        for child in ast.iter_child_nodes(n):
+            handle(child, cur)
+
+    handle(node, set())
+    return scopes, external
 
 
 class _Normalise(ast.NodeTransformer):
@@ -139,11 +207,17 @@ class _Normalise(ast.NodeTransformer):
     copy of it. A free name is kept under a `g:` prefix so it can never collide
     with an assigned `vN`, and the prefix is not a builtin, so the erasure of
     bound names is unchanged.
+
+    Which names count as bound is read from the scope the name sits in, so a
+    store inside a nested function no longer erases the same identifier in the
+    enclosing one.
     """
 
-    def __init__(self, bound: set):
+    def __init__(self, scopes: dict, external: set):
         self.seen = {}
-        self.bound = bound
+        self.scopes = scopes
+        self.external = external
+        self.stack: list = []
 
     def _rename(self, name: str) -> str:
         if name in BUILTINS or name.startswith("__"):
@@ -152,8 +226,19 @@ class _Normalise(ast.NodeTransformer):
             self.seen[name] = f"v{len(self.seen)}"
         return self.seen[name]
 
+    def _bound(self, name: str) -> bool:
+        if name in self.external:
+            return False
+        return any(name in scope for scope in self.stack)
+
+    def _push(self, node):
+        self.stack.append(self.scopes.get(id(node), set()))
+
+    def _pop(self):
+        self.stack.pop()
+
     def visit_Name(self, node):
-        if isinstance(node.ctx, ast.Load) and node.id not in self.bound:
+        if isinstance(node.ctx, ast.Load) and not self._bound(node.id):
             node.id = "g:" + node.id
             return node
         node.id = self._rename(node.id)
@@ -165,21 +250,41 @@ class _Normalise(ast.NodeTransformer):
 
     def visit_FunctionDef(self, node):
         node.name = self._rename(node.name)
+        self._push(node)
         self.generic_visit(node)
+        self._pop()
         return node
 
     def visit_AsyncFunctionDef(self, node):
         return self.visit_FunctionDef(node)
 
+    def visit_Lambda(self, node):
+        self._push(node)
+        self.generic_visit(node)
+        self._pop()
+        return node
+
     def visit_ClassDef(self, node):
         node.name = self._rename(node.name)
+        self._push(node)
         self.generic_visit(node)
+        self._pop()
         return node
+
+    def _comp(self, node):
+        self._push(node)
+        self.generic_visit(node)
+        self._pop()
+        return node
+
+    visit_ListComp = visit_SetComp = visit_DictComp = visit_GeneratorExp = _comp
 
     def visit_ExceptHandler(self, node):
         if node.name:
             node.name = self._rename(node.name)
+        self._push(node)
         self.generic_visit(node)
+        self._pop()
         return node
 
     def visit_alias(self, node):
@@ -218,7 +323,8 @@ def fingerprint(fn) -> str:
     ):
         node.body = node.body[1:]
     _DropDeadStores().visit(node)
-    _Normalise(bound_names(node)).visit(node)
+    scopes, external = scope_bindings(node)
+    _Normalise(scopes, external).visit(node)
     return ast.dump(node)
 
 
