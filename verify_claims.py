@@ -7,7 +7,9 @@ citation counter printed before the audit that contradicts it, a class with no
 fragment at all, a probe that did not run, a repeat that named a fragment it
 never called, a class copy padded with a dead assignment, a multiline "quote", an
 address that resolves to nothing, a retired kind dropped from its own sub-counts,
-modes that exited 0 over a broken ledger, and a skipped entry with no divergence.
+modes that exited 0 over a broken ledger, a skipped entry with no divergence, and
+an outside attack that predicted methods on one receiver would collapse -- they do
+not, so the row records where the fingerprint does collapse instead.
 
 A fix without a test is a promise. This file is the test: it applies each attack
 to a copy of the ledger, runs the registry's own `python3 check.py`, and asserts
@@ -304,6 +306,50 @@ def q_duplicate_declaration(tree):
     return code == 1 and "declares" in out, "a repeated class name is a DUPE"
 
 
+def r_attribute_pair(tree):
+    """An outside attack on the fingerprint, and the bound it lands on instead.
+
+    The attack claimed `s.lstrip("ab")` and `s.rstrip("ab")` collapse into one
+    shape because names are erased after parsing. They do not: attribute names
+    survive normalisation, so methods on one receiver separate. The same erasure
+    does collapse different receivers with the same method, `json.loads` against
+    `pickle.loads`, and that is the bound -- stated here so it cannot widen
+    unnoticed, and so a fix to it has to change this row.
+    """
+    import importlib.util
+    sys.path.insert(0, str(HERE))
+    spec = importlib.util.spec_from_file_location("chk", HERE / "check.py")
+    chk = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(chk)
+
+    import linecache
+    import textwrap
+    n = [0]
+
+    def build(source: str):
+        n[0] += 1
+        src = textwrap.dedent(source).strip() + "\n"
+        name = f"<pair{n[0]}>"
+        linecache.cache[name] = (len(src), None, src.splitlines(True), name)
+        ns: dict = {}
+        exec(compile(src, name, "exec"), ns)
+        return ns[src.split("(")[0].replace("def ", "").strip()]
+
+    separate = [
+        ('def a(s):\n    return s.lstrip("ab")\n', 'def b(s):\n    return s.rstrip("ab")\n'),
+        ('def a(s):\n    return s.find("a")\n', 'def b(s):\n    return s.rfind("a")\n'),
+        ('def a(s):\n    return s.split(",")\n', 'def b(s):\n    return s.rsplit(",")\n'),
+    ]
+    one_shape = [
+        ("def a(x):\n    return json.loads(x)\n", "def b(x):\n    return pickle.loads(x)\n"),
+    ]
+    ok_sep = all(chk.fingerprint(build(l)) != chk.fingerprint(build(r)) for l, r in separate)
+    ok_bound = all(chk.fingerprint(build(l)) == chk.fingerprint(build(r)) for l, r in one_shape)
+    detail = ("attribute names separate; receiver names do not" if ok_sep and ok_bound
+              else f"boundary moved: separate={ok_sep} one_shape={ok_bound}")
+    return ok_sep and ok_bound, detail
+
+
 CASES = [
     ("order flip keeps the answer", a_order_flip),
     ("citation counter agrees with its audit", b_citation_counter),
@@ -322,6 +368,7 @@ CASES = [
     ("dead stores are not a difference", o_dead_store_is_not_a_difference),
     ("literals have no builtins", p_literals_have_no_builtins),
     ("a repeated class name is refused", q_duplicate_declaration),
+    ("the fingerprint's boundary is where it says", r_attribute_pair),
 ]
 
 
