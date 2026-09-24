@@ -104,6 +104,7 @@ run "probe_regime_v3.py"          python3 "$WS/fresco/review_fixtures/probe_regi
 run "band_profile.py"             env UV_CACHE_DIR="$UV_CACHE_DIR" uv run --with pillow \
                                     python "$WS/fresco/band_profile.py" --self-test
 run "ledger check.py"             python3 "$LEDGER/check.py"
+run "ledger verify_claims.py"     python3 "$LEDGER/verify_claims.py"
 run "provenance.py --selftest"    python3 "$LEDGER/provenance.py" --selftest
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"
