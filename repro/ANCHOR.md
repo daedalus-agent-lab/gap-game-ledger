@@ -5,7 +5,7 @@ Six fields, not five. The sixth was named by my own mistake, not by foresight.
 | field | value |
 |---|---|
 | digest | `b89458f0f78d2e79` |
-| input object | this repository at tip `2bad702`, plus the repeat filed after an independent reviewer refuted the published upper bound; documentation-only commits after it leave the digests where they are, re-run and confirmed |
+| input object | this repository at tip `9c15ae3`, plus the repeat filed after an independent reviewer refuted the published upper bound; documentation-only commits after it leave the digests where they are, re-run and confirmed |
 | fields | per item `name \| exit \| out \| norm`, where `out = sha256(stdout+stderr)[:16]` and `norm` is the number of substitutions `key <16 hex>` → `key <minted>` |
 | order | the order the items run in `run_all.sh` |
 | separators | fields by `\|`, lines by `\n`, items in the order run |
@@ -33,11 +33,12 @@ Expected, from that tree:
     ok   probe_regime_v3.py                 out=47f2e9374c8c348b norm=1  12 of 12 checks pass
     ok   band_profile.py                    out=2ee393a1cd7cdb41 norm=0  7 of 7 checks pass
     ok   ledger check.py                    out=64fe657eac4c6641 norm=0  index    CLASSES.md is current
+    ok   ledger verify_claims.py            out=bfa42a28fac5c761 norm=0  cases 18 failed 0
     ok   provenance.py --selftest           out=969b9c43cde8ec32 norm=0  forms tried: 9  ->  NO MATCH is bounded by thi
     ok   attest_rings.py --net              out=2e47faff6b787dbd norm=0  all published tiles match their hash
-    aggregate (ordered item digests)        d733221f50b6388a
+    aggregate (ordered item digests)        35de36c2d87cd3fd
 
-The aggregate moved `431b38cb1135193e` -> `84c49acf11d90061` -> `fe0bd11bccdf22b3` -> `0b4a65d03755e4ac` -> `07a8364f71b5261f` -> `3fc1fb66379b6de5` -> `088c71fae0759d51` -> `d1e479f97f9f0ef9` -> `6c75fc7822094fc4` -> `8815014c673c8f31` -> `fc0cc3c1c10d3e29` -> `b796065981b5e2f1` -> `d733221f50b6388a` -> `b89458f0f78d2e79`
+The aggregate moved `431b38cb1135193e` -> `84c49acf11d90061` -> `fe0bd11bccdf22b3` -> `0b4a65d03755e4ac` -> `07a8364f71b5261f` -> `3fc1fb66379b6de5` -> `088c71fae0759d51` -> `d1e479f97f9f0ef9` -> `6c75fc7822094fc4` -> `8815014c673c8f31` -> `fc0cc3c1c10d3e29` -> `b796065981b5e2f1` -> `d733221f50b6388a` -> `b89458f0f78d2e79` -> `89e2e225aaf9dc25` -> `35de36c2d87cd3fd`
 as the registry gained classes and repeats, because the `check.py` item's output is part of its input, and the suite gained its first
 item that checks a *lookup* rather than a computation (see below). That is the digest doing its job, not drifting.
 
@@ -106,3 +107,14 @@ running the program: there is no way to verify `out=c8749d2cbf9fc6d1` by reading
 What a second reader *can* do here is exactly what the invitation asks — run the
 same commands and either print the same digests or name the first line that
 differs, including the possibility that the recipe is underdetermined.
+
+## The item list is part of the recipe, and the suite names what moved
+
+`repro/run_all.sh` had fallen one item behind the runner used day to day
+(`ledger verify_claims.py`), so the aggregate named an item set a second reader
+could not reproduce: the `--stable` comparison printed `items removed
+['ledger verify_claims.py']` beside a digest that was nonetheless self-consistent
+for the tree it was measured on. Both lists are now identical, and the run that
+produced `35de36c2d87cd3fd` printed `items added ['ledger verify_claims.py'],
+removed none` — a digest move this time is the item list changing on purpose,
+not drift.
