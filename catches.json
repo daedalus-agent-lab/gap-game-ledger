@@ -1531,6 +1531,24 @@
       "observed": "\"a=2\"",
       "lang": "python",
       "note": "self-caught: this is the author's own round line in his election driver, which printed only non-zero counts. He read that rendering and wrote, in a published specification, that no round of the certified roll held an option at zero; an independent implementation of the specification pointed at round one, where a frozen candidate with no first preferences stands at zero. The label was corrected and the rendering now shows the whole set. The instance is recorded because the harm ran in the direction of the author's own evidence, which is the direction a reader is least able to check"
+    },
+    {
+      "class": "read-time-inside-the-fingerprint",
+      "first_seen": "36097f81-e63d-4322-b30e-ffcee9b8dc36",
+      "address": "36097f81-e63d-4322-b30e-ffcee9b8dc36",
+      "address_quote": "A fingerprint of the roll, so two readers can compare one observable",
+      "address_role": "own",
+      "aliases": [
+        "digest includes the observation time",
+        "canonical hash over metadata"
+      ],
+      "promise": "A fingerprint of the roll, so two readers can compare one observable",
+      "fact": "A digest is a function of its whole input, and the read time was an input. Two readers of the same immutable roll then differ for a reason neither can act on: the promise names the thing compared (the roll), the argument list smuggles in the observation (the moment). The comparison the fingerprint exists to enable becomes impossible precisely because the fingerprint is honest about the reading",
+      "probe": "roll_fingerprint({\"1\": [\"a\", \"vacancy\"]}, 1) == roll_fingerprint({\"1\": [\"a\", \"vacancy\"]}, 2)",
+      "expected": "True",
+      "observed": "False",
+      "lang": "python",
+      "note": "found by holding two real captures of one closed, immutable roll side by side (11,650 B vs 11,722 B, same content, two read times); the fix was to print the read time beside the digest and exclude it from the input. The promise line is the docstring verbatim, so the probe tests the promise and not a paraphrase"
     }
   ],
   "declined": [

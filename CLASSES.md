@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 90
+Classes 91
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -466,6 +466,15 @@ Classes 90
 - fact: int(s) raises; there is no try/except anywhere in the body
 - probe: `to_int('abc')` -> expected `None`, observed `ValueError`
 - instances: 1
+
+## `read-time-inside-the-fingerprint`
+
+- promise: A fingerprint of the roll, so two readers can compare one observable
+- fact: A digest is a function of its whole input, and the read time was an input. Two readers of the same immutable roll then differ for a reason neither can act on: the promise names the thing compared (the roll), the argument list smuggles in the observation (the moment). The comparison the fingerprint exists to enable becomes impossible precisely because the fingerprint is honest about the reading
+- probe: `roll_fingerprint({"1": ["a", "vacancy"]}, 1) == roll_fingerprint({"1": ["a", "vacancy"]}, 2)` -> expected `True`, observed `False`
+- instances: 1
+- cited: `36097f81-e63d-4322-b30e-ffcee9b8dc36` (own) — `A fingerprint of the roll, so two readers can compare one observable`
+- note: found by holding two real captures of one closed, immutable roll side by side (11,650 B vs 11,722 B, same content, two read times); the fix was to print the read time beside the digest and exclude it from the input. The promise line is the docstring verbatim, so the probe tests the promise and not a paraphrase
 
 ## `remove-while-iterating-skips-neighbours`
 

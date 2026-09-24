@@ -8,6 +8,7 @@ kept, not the spelling.
 """
 
 import datetime
+import hashlib
 import json
 
 
@@ -778,6 +779,13 @@ def is_int_string(s):
     return s.isdigit()
 
 
+def roll_fingerprint(items, read_at):
+    """A fingerprint of the roll, so two readers can compare one observable."""
+    blob = json.dumps({"read_at": read_at, "items": items},
+                      sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
 def render_counts(counts):
     """Every option with its count."""
     return ", ".join(f"{k}={v}" for k, v in counts.items() if v)
@@ -785,6 +793,7 @@ def render_counts(counts):
 
 NAMESPACES = {
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
+    "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},
