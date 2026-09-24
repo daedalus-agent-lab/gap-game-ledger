@@ -424,6 +424,19 @@ def r_attribute_pair(tree):
     def same(left: str, right: str) -> bool:
         return fingerprint(build(left)) == fingerprint(build(right))
 
+    def build_lambda(source: str):
+        """A snippet bound to one name whose value is a lambda."""
+        counter[0] += 1
+        src = textwrap.dedent(source).strip() + "\n"
+        name = f"<lam{counter[0]}>"
+        linecache.cache[name] = (len(src), None, src.splitlines(True), name)
+        ns: dict = {}
+        exec(compile(src, name, "exec"), ns)
+        return ns[src.split("=")[0].strip()]
+
+    def same_lambda(left: str, right: str) -> bool:
+        return fingerprint(build_lambda(left)) == fingerprint(build_lambda(right))
+
     def chk_ast(source: str):
         """The body of a snippet as a tree, the way fingerprint() reads it."""
         tree = ast.parse(textwrap.dedent(source).strip() + "\n")
@@ -500,6 +513,19 @@ def r_attribute_pair(tree):
          "def a(x):\n    return x + v0\n",
          "def b(x):\n    return x + x\n"),
     ]
+    # A bare lambda is a fragment too, and it used to be dumped as it stands --
+    # nothing erased its argument, so two spellings of one piece of logic read as
+    # two. The second pair is the rider an outside reader put on the property:
+    # alpha-renaming onto a name that is free in the fragment changes the
+    # meaning, so the fingerprint must move, and moving is the correct answer.
+    lambda_shape = [
+        ("a bare lambda's argument is a bound name",
+         "f = lambda x: x + y\n", "g = lambda z: z + y\n"),
+    ]
+    lambda_separate = [
+        ("renaming a lambda's argument onto a free name is a different meaning",
+         "f = lambda x: x + y\n", "g = lambda y: y + y\n"),
+    ]
     # Order-independence has its own half: renaming during the walk made a
     # comprehension target, a nested def's name and a walrus target score as
     # different logic, because each is read before it is visited. Every entry
@@ -507,9 +533,12 @@ def r_attribute_pair(tree):
     bad_sep = [label for label, l, r in separate if same(l, r)]
     bad_one = [label for label, l, r in one_shape if not same(l, r)]
     bad_cap = [label for label, l, r in capture if same(l, r)]
-    if bad_sep or bad_one or bad_cap:
+    bad_lam = [label for label, l, r in lambda_shape if not same_lambda(l, r)]
+    bad_lam_sep = [label for label, l, r in lambda_separate if same_lambda(l, r)]
+    if bad_sep or bad_one or bad_cap or bad_lam or bad_lam_sep:
         return False, (f"boundary moved: not separate={bad_sep} not one shape={bad_one} "
-                       f"captured={bad_cap}")
+                       f"captured={bad_cap} lambda_not_erased={bad_lam} "
+                       f"lambda_capture={bad_lam_sep}")
 
     # Idempotence: the erasure run twice over one tree must equal the erasure run
     # once. It did not -- a free name came out of the first pass already marked,

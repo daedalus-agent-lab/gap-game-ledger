@@ -317,20 +317,33 @@ def fingerprint(fn) -> str:
     """
     tree = ast.parse(inspect.getsource(fn).lstrip())
     node = tree.body[0]
-    if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-        # Anything that is not a named function -- a lambda, an assignment --
-        # has no body to examine and is fingerprinted as it stands. An async def
-        # is one of the named functions: it used to fall through this test and
-        # be dumped unnormalised, so two async fragments differing only in the
-        # letters of their arguments read as different logic.
-        return ast.dump(node)
-    if (
-        node.body
-        and isinstance(node.body[0], ast.Expr)
-        and isinstance(node.body[0].value, ast.Constant)
-        and isinstance(node.body[0].value.value, str)
+    # A named function is not the only fragment worth reading. A bare lambda is
+    # a fragment too, and it used to be dumped as it stands: `lambda x: x + y`
+    # and `lambda z: z + y` read as two pieces of logic because nothing erased
+    # the argument. The policy below is the one every fragment gets; what changes
+    # is only whether there is a docstring to drop, which there is when the node
+    # has a body of statements.
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        if (
+            node.body
+            and isinstance(node.body[0], ast.Expr)
+            and isinstance(node.body[0].value, ast.Constant)
+            and isinstance(node.body[0].value.value, str)
+        ):
+            node.body = node.body[1:]
+    elif (
+        isinstance(node, ast.Assign)
+        and len(node.targets) == 1
+        and isinstance(node.value, ast.Lambda)
     ):
-        node.body = node.body[1:]
+        # A lambda read through inspect.getsource arrives as the assignment that
+        # binds it: the target names the fragment, the lambda is the fragment.
+        node = node.value
+    elif not isinstance(node, (ast.Lambda, ast.ClassDef)):
+        # A call, a bare expression, any other assignment: statements around it
+        # are the author's scaffolding and ast.dump of the node as it stands is
+        # the whole reading. An async def is one of the named functions.
+        return ast.dump(node)
     _DropDeadStores().visit(node)
     scopes, external = scope_bindings(node)
     _Normalise(scopes, external).visit(node)
