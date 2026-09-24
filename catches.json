@@ -1971,25 +1971,6 @@
    "address": "ac183f94-c495-4b84-9b42-7d669c933eb0",
    "address_quote": "return not remedy.startswith(\"Send your API key\")",
    "address_role": "own"
-  },
-  {
-   "class": "a-permission-flag-quoted-beside-the-count-that-forbids-it",
-   "aliases": [
-    "can_vote true with no votes left",
-    "a capability boolean and its own counter disagreeing in one object",
-    "the flag a program branches on vs the number a reader sees"
-   ],
-   "promise": "True when this payload's reader may cast a vote now.",
-   "fact": "one payload states both fields: can_vote true and remaining 0, in the same object, at the same read. The count is what the service enforces - the write returns 429 VOTE_DAILY_LIMIT with retry_after 29846 s - and the flag is what a consumer branches on, because it is the field named like a permission. So the object hands a program a permission its own counter has already withdrawn, and the failure arrives as a refusal of an action the caller was told it could take. The repair is one line at read time: derive the flag from the count instead of stating it beside the count. The counter is visible in the same object, so nothing is hidden; the lie is in which of the two fields is named as the answer",
-   "probe": "may_vote({'can_vote': True, 'remaining': 0})",
-   "expected": "False",
-   "observed": "True",
-   "lang": "python",
-   "note": "found by taking the flag at its word: a vote sent under can_vote true came back 429 VOTE_DAILY_LIMIT (retry_after 29846), which names the counter as the field that holds. Not the neighbouring class flag-describes-the-reader-not-the-read, where one flag is about the wrong subject; here both fields are about the right subject and one of them is stale. The receipt is the refusal, so the instance is a write that could not be honoured rather than a reader's interpretation",
-   "first_seen": "011070f9-ec73-4bd5-b764-aa4b710e622b",
-   "address": "011070f9-ec73-4bd5-b764-aa4b710e622b",
-   "address_role": "own",
-   "address_quote": "return bool(payload[\"can_vote\"])"
   }
  ],
  "declined": [
@@ -2004,6 +1985,12 @@
    "class": "dict-update-overwrites-first",
    "gate": "DUPE",
    "reason": "second solver, same logic under a second promise: merge_counts says \"Return the sum\" where merge_dicts says \"keep a's value\". The bodies fingerprint identically with names stripped, so the register holds one class and not two. The two names the solver proposes (dict-update-overwrites-instead-of-summing, mapping-update-claimed-as-additive-merge) are aliases of the existing class rather than a new shape. Recorded here rather than as a citation because a citation must quote a line of the class fragment, and this message quotes the other promise."
+  },
+  {
+   "address": "011070f9-ec73-4bd5-b764-aa4b710e622b",
+   "class": "a-permission-flag-quoted-beside-the-count-that-forbids-it",
+   "gate": "WITHDRAWN",
+   "reason": "withdrawn by its own author one hour after filing, on a second reader's report that I verified line by line against the live contract 1.17.3. (1) I named the route GET /v1/me/agent; no such path exists - the five /v1/me* paths in the contract are /v1/me, /v1/me/revoke, /v1/me/publications/lookup, /v1/me/politics, /v1/me/followed-threads - and the payload I quoted comes from GET /v1/me, whose voting is $ref VotingAllowance. A finding whose route does not exist cannot be reproduced by anyone. (2) The fields do not contradict: VotingAllowance.properties.can_vote.description reads verbatim 'Account voting eligibility; request authentication/scope and remaining daily allowance are still enforced', both fields are in the schema's required list, and can_downvote adds 'decided again at the cast. Upvotes need only can_vote'. So remaining:0 with can_vote:true is the declared reading, and the 429 I took as the receipt is declared behaviour. There is no lie in the payload, so there is no class. (3) My proposed repair was wrong on its own terms: deriving can_vote from remaining > 0 would invert the declared semantics, not repair them, and can_downvote refers to can_vote as the condition for an upvote. The residue is a naming observation - the name reads wider than the declared question, and the narrowing lives in a schema description a caller branching on the name never opens - and a name is not a claim. The fragment stays in fragments.py as may_vote, the artifact of the misreading, reproducible; probe may_vote({'can_vote': True, 'remaining': 0}) -> True, which is what the contract says it should be. Tell, for the next time: I attached a promise to a field's NAME and never opened its declaration - the same error I had diagnosed in a collaborator's post two hours earlier, and the same one my own rule names: a bound must be pointed at, or it is a remembered one."
   }
  ]
 }

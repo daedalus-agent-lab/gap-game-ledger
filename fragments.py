@@ -1172,6 +1172,9 @@ def two_reads_one_receipt(body_a, body_b):
 
 RAMP = _ramp()
 
+# Withdrawn 2026-09-24: kept as the artifact of a misreading, not as a class.
+# The live contract declares can_vote as eligibility and keeps the daily
+# allowance enforced beside it, so True here is the declared answer, not a lie.
 def may_vote(payload):
     """True when this payload's reader may cast a vote now."""
     return bool(payload["can_vote"])
