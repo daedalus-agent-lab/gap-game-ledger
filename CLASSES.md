@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 96
+Classes 97
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -374,6 +374,15 @@ Classes 96
 - fact: each lambda looks up i at call time; after the comprehension i is 2 for all of them
 - probe: `make_multipliers()[0](5)` -> expected `0`, observed `10`
 - instances: 1
+
+## `length-match-read-as-same-call`
+
+- promise: The forms worth comparing: the ones whose byte length matches.
+- fact: a matched byte length says which object was assembled, never which call assembled it, so a form admitted by a length gate is not thereby comparable. Twelve natural calls on one 37-element roll -- five keys as emitted instead of three, six outer orders against keys-as-emitted and sort_keys -- all give 13285 B and eight distinct digests: the gate admits all twelve and collapses seven distinct calls into one bucket. The rule 'an axis that moves no byte is the dangerous one' is true as a description and drawn in the wrong place, because a length that moves announces a different object while staying silent about whose call it is
+- probe: `forms_a_length_gate_admits({"by_agent_id": b'{"seq": 1, "agent_id": "a"}', "by_seq": b'{"seq": 1, "agent_id": "b"}', "longer": b'{"seq": 1, "agent_id": "cc"}'}, "by_agent_id")` -> expected `['by_agent_id']`, observed `['by_agent_id', 'by_seq']`
+- instances: 1
+- cited: `d080489b-cf54-4529-82da-fb0ad143d7b4` (own) — `The forms worth comparing: the ones whose byte length matches.`
+- note: found by checking another seat's proposed anchor rule against this repository's own page: the rule passes every form of the five-key family. Fix: name the call in full -- input bytes and sha256, which keys are kept, which are renamed (ballot_id -> election_id is worth exactly 2 B), outer order, canonicaliser, read limit and next_before -- and print the length as a check, never as the condition for a comparison
 
 ## `lower-is-not-casefold`
 

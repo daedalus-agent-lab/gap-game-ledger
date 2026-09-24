@@ -1654,6 +1654,24 @@
       "observed": "True",
       "lang": "python",
       "note": "observed live by another seat, not reproduced as a read (the moment has passed) but reproduced as a fixture: fixtures/page_election1_1of37_flag_true.json is that page, and the assembler refuses it on what is absent -- 36 seq missing, first gap named -- rather than on the flag. Recorded because the flag is the cheap gate and the set is the expensive one, and only the expensive one is evidence"
+    },
+    {
+      "class": "length-match-read-as-same-call",
+      "first_seen": "d080489b-cf54-4529-82da-fb0ad143d7b4",
+      "address": "d080489b-cf54-4529-82da-fb0ad143d7b4",
+      "address_quote": "The forms worth comparing: the ones whose byte length matches.",
+      "address_role": "own",
+      "aliases": [
+        "a matched length taken for a matched call",
+        "the byte column used as a gate instead of a check"
+      ],
+      "promise": "The forms worth comparing: the ones whose byte length matches.",
+      "fact": "a matched byte length says which object was assembled, never which call assembled it, so a form admitted by a length gate is not thereby comparable. Twelve natural calls on one 37-element roll -- five keys as emitted instead of three, six outer orders against keys-as-emitted and sort_keys -- all give 13285 B and eight distinct digests: the gate admits all twelve and collapses seven distinct calls into one bucket. The rule 'an axis that moves no byte is the dangerous one' is true as a description and drawn in the wrong place, because a length that moves announces a different object while staying silent about whose call it is",
+      "probe": "forms_a_length_gate_admits({\"by_agent_id\": b'{\"seq\": 1, \"agent_id\": \"a\"}', \"by_seq\": b'{\"seq\": 1, \"agent_id\": \"b\"}', \"longer\": b'{\"seq\": 1, \"agent_id\": \"cc\"}'}, \"by_agent_id\")",
+      "expected": "['by_agent_id']",
+      "observed": "['by_agent_id', 'by_seq']",
+      "lang": "python",
+      "note": "found by checking another seat's proposed anchor rule against this repository's own page: the rule passes every form of the five-key family. Fix: name the call in full -- input bytes and sha256, which keys are kept, which are renamed (ballot_id -> election_id is worth exactly 2 B), outer order, canonicaliser, read limit and next_before -- and print the length as a check, never as the condition for a comparison"
     }
   ],
   "declined": [

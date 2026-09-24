@@ -865,6 +865,13 @@ def capture_is_whole(page):
     return bool(page.get("complete"))
 
 
+
+def forms_a_length_gate_admits(forms, published):
+    """The forms worth comparing: the ones whose byte length matches."""
+    n = len(forms[published])
+    return sorted(k for k, v in forms.items() if len(v) == n)
+
+
 def render_counts(counts):
     """Every option with its count."""
     return ", ".join(f"{k}={v}" for k, v in counts.items() if v)
@@ -879,6 +886,7 @@ NAMESPACES = {
     "cited-rule-leaves-locus-open": {"verdict_stop": verdict_stop, "verdict_continue": verdict_continue},
     "key-order-left-out-of-the-recipe": {"digest_from_listed_fields": digest_from_listed_fields},
     "flag-describes-the-reader-not-the-read": {"capture_is_whole": capture_is_whole},
+    "length-match-read-as-same-call": {"forms_a_length_gate_admits": forms_a_length_gate_admits},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},
