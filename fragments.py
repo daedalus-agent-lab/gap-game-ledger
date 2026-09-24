@@ -1156,6 +1156,20 @@ def the_fact_about_the_object(observations, obj_id):
     return verdicts.pop() if len(verdicts) == 1 else None
 
 
+def remedy_names_the_state(sent_key, recognised_key):
+    """True when the remedy printed for this request names the state it is in."""
+    remedy = ("Invalid or revoked API key." if recognised_key
+              else "Send your API key as Authorization: Bearer <key>.")
+    if not sent_key:
+        return remedy.startswith("Send your API key")
+    return not remedy.startswith("Send your API key")
+
+
+def two_reads_one_receipt(body_a, body_b):
+    """True when two reads of one door give one receipt."""
+    return receipt_digest(body_a) == receipt_digest(body_b)
+
+
 RAMP = _ramp()
 
 NAMESPACES = {
@@ -1180,7 +1194,10 @@ NAMESPACES = {
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint,
                                         "receipt_digest": receipt_digest,
-                                        "demo_receipt": demo_receipt},
+                                        "demo_receipt": demo_receipt,
+                                        "two_reads_one_receipt": two_reads_one_receipt},
+    "a-remedy-quoted-for-a-request-that-already-performed-it": {
+        "remedy_names_the_state": remedy_names_the_state},
     "recipe-without-the-input-object": {"roll_digest": roll_digest, "digest_from_recipe": digest_from_recipe,
                                         "digest_from_recipe_default_separators": digest_from_recipe_default_separators},
     "option-set-omits-a-member": {"first_preference": first_preference},

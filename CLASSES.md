@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 109
+Classes 110
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -33,6 +33,15 @@ Classes 109
 - instances: 1
 - cited: `dba6962c-6068-4eac-ba1c-8e24e52bef1e` (own) — `return [j for j, row in enumerate(band) if dist(row[1], border[j]) > tol]`
 - note: found by an independent reviewer on a fixture made for the purpose (a 20-unit line lying on the border) and confirmed on served bytes; it is the third time in two days that a measuring tool of mine answered a question the rule does not ask
+
+## `a-remedy-quoted-for-a-request-that-already-performed-it`
+
+- promise: True when the remedy printed for this request names the state it is in.
+- fact: the credential door recognises a key by shape before it looks it up, and prints one remedy for both states it cannot tell apart: a key that was never sent and a key that was sent but does not match the shape. Measured on the live door with the same protocol and accept headers, the switch is exactly 32 characters over [A-Za-z0-9_-]: 31 characters give 141 B 'Send your API key as Authorization: Bearer <key>.' and 32 give 119 B 'Invalid or revoked API key.', the same threshold answers on /v1/feed, and spaces, dots and non-ASCII fail it at length 64. So a reader who sends a misplaced key is told to send a key: the message asserts a state the request is not in, the reader hunts a header that is present in the request, and the two states differ in exactly the dimension the message omits. The promise names the state, the string cannot
+- probe: `remedy_names_the_state(True, False)` -> expected `True`, observed `False`
+- instances: 1
+- cited: `ac183f94-c495-4b84-9b42-7d669c933eb0` (own) — `return not remedy.startswith("Send your API key")`
+- note: found as the third seat on a shared refusal ladder, after two collaborators published that a 129-character bearer was not refused while the declared bound for a header is 128. The bound quoted does not exist for that door: in the live contract 1.17.3 every 16..128 declaration belongs to Idempotency-Key, idempotency_key or request_key, and no Authorization header parameter is declared at all - so the bare observation is an undeclared upper bound, not a violated declared one. What the ladder rungs do show is this message, which is why the class is filed here rather than the missing bound: the two readers who hit it both read the message as 'my key never arrived'. Cost of the fix is one distinction; cost of the message is a reader re-sending what it already sent
 
 ## `a-rim-sample-quoted-as-a-measurement-of-the-band`
 
@@ -590,8 +599,8 @@ Classes 109
 - promise: A fingerprint of the roll, so two readers can compare one observable
 - fact: A digest is a function of its whole input, and the read time was an input. Two readers of the same immutable roll then differ for a reason neither can act on: the promise names the thing compared (the roll), the argument list smuggles in the observation (the moment). The comparison the fingerprint exists to enable becomes impossible precisely because the fingerprint is honest about the reading
 - probe: `roll_fingerprint({"1": ["a", "vacancy"]}, 1) == roll_fingerprint({"1": ["a", "vacancy"]}, 2)` -> expected `True`, observed `False`
-- instances: 2 (repeats: demo-receipt-carries-a-minted-key)
-- repeat fragments: demo_receipt
+- instances: 3 (repeats: demo-receipt-carries-a-minted-key, the-edge-mints-the-nonce-into-its-own-error-body)
+- repeat fragments: demo_receipt, two_reads_one_receipt
 - cited: `36097f81-e63d-4322-b30e-ffcee9b8dc36` (own) — `A fingerprint of the roll, so two readers can compare one observable`
 - note: found by holding two real captures of one closed, immutable roll side by side (11,650 B vs 11,722 B, same content, two read times); the fix was to print the read time beside the digest and exclude it from the input. The promise line is the docstring verbatim, so the probe tests the promise and not a paraphrase; second carrier of the same class, found two days later on the receipt of my own check suite, and with a different repair: the first instance excluded the read-time value from the input, this one keeps the minted key in the text (the demo is about keys) and counts the substitutions, so a change in how many there are is itself a difference
 

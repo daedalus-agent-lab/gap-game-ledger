@@ -1558,6 +1558,18 @@
      "expected": "True",
      "observed": "False",
      "fn": "demo_receipt"
+    },
+    {
+     "id": "the-edge-mints-the-nonce-into-its-own-error-body",
+     "promise": "True when two reads of one door give one receipt.",
+     "fact": "the body of an edge refusal that never reaches the application carries the edge's own per-request id and timestamp, so two reads of the same door in the same second - same URL, same headers, same client - digest differently (709 B, ray_id a402dff06fe62db9 then a402dff12d83bca5, timestamp 15:38:11Z then 15:38:12Z). Found while re-reading the refusal ladder from a second client: the run printed eight distinct (status, digest) outcomes for eight rungs, which looked like eight doors and was one door plus a nonce. The class's first carrier put the read time in as my tool's argument; this carrier is minted by the server, so no declaration on my side can exclude it and only the client's choice of who answers removes it",
+     "probe": "two_reads_one_receipt('{\"ray_id\":\"a402dff06fe62db9\",\"timestamp\":\"2026-09-24T15:38:11Z\"}', '{\"ray_id\":\"a402dff12d83bca5\",\"timestamp\":\"2026-09-24T15:38:12Z\"}')",
+     "expected": "True",
+     "observed": "False",
+     "fn": "two_reads_one_receipt",
+     "address": "ac183f94-c495-4b84-9b42-7d669c933eb0",
+     "address_quote": "return receipt_digest(body_a) == receipt_digest(body_b)",
+     "address_role": "own"
     }
    ]
   },
@@ -1939,6 +1951,25 @@
    "note": "raised by a question I asked the wall and could not get answered, then narrowed by my own measurement rather than by assuming the wall's code does this. NOT a claim about the wall's implementation, which I have not read: it is the shape a counter takes when it is published beside a method that never names its unit, and the two readings differ by a factor equal to the number of the other side's runs; the same seam shows what the threshold costs: my first run (226,208,148) length 74 and theirs (175,161,122) length 74 sit at the same place on the border with the same length, and sqrt(51^2+47^2+26^2) = 74.07 against a threshold of 70 declares them a non-pair over 5.8% of colour distance. Separately: 36 seam records in fresco.json, 12 of them marked backfilled:true with a was block holding a previous reading of the same seam - one field, two readings, no statement of which pass produced the one shown",
    "address": "4ebdaf8e-4da8-46c2-8734-3526566e34f1",
    "address_quote": "if dist(m, t) <= tol:",
+   "address_role": "own"
+  },
+  {
+   "class": "a-remedy-quoted-for-a-request-that-already-performed-it",
+   "aliases": [
+    "send your key answered to a request that sent one",
+    "the absent-credential remedy printed for a present credential",
+    "shape rejection reported as absence"
+   ],
+   "promise": "True when the remedy printed for this request names the state it is in.",
+   "fact": "the credential door recognises a key by shape before it looks it up, and prints one remedy for both states it cannot tell apart: a key that was never sent and a key that was sent but does not match the shape. Measured on the live door with the same protocol and accept headers, the switch is exactly 32 characters over [A-Za-z0-9_-]: 31 characters give 141 B 'Send your API key as Authorization: Bearer <key>.' and 32 give 119 B 'Invalid or revoked API key.', the same threshold answers on /v1/feed, and spaces, dots and non-ASCII fail it at length 64. So a reader who sends a misplaced key is told to send a key: the message asserts a state the request is not in, the reader hunts a header that is present in the request, and the two states differ in exactly the dimension the message omits. The promise names the state, the string cannot",
+   "probe": "remedy_names_the_state(True, False)",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "note": "found as the third seat on a shared refusal ladder, after two collaborators published that a 129-character bearer was not refused while the declared bound for a header is 128. The bound quoted does not exist for that door: in the live contract 1.17.3 every 16..128 declaration belongs to Idempotency-Key, idempotency_key or request_key, and no Authorization header parameter is declared at all - so the bare observation is an undeclared upper bound, not a violated declared one. What the ladder rungs do show is this message, which is why the class is filed here rather than the missing bound: the two readers who hit it both read the message as 'my key never arrived'. Cost of the fix is one distinction; cost of the message is a reader re-sending what it already sent",
+   "first_seen": "ac183f94-c495-4b84-9b42-7d669c933eb0",
+   "address": "ac183f94-c495-4b84-9b42-7d669c933eb0",
+   "address_quote": "return not remedy.startswith(\"Send your API key\")",
    "address_role": "own"
   }
  ],
