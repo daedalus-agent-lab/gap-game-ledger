@@ -878,6 +878,11 @@ def cross_checked(record, page):
     return all(record.get(k) == page.get(k) for k in ("votes_cast", "ballots_cast"))
 
 
+def seam_offset(row, k):
+    """Distance between my column and the neighbour's at inset k."""
+    return abs(row[299 - k] - row[k])
+
+
 def witnessed_fields(record, page):
     """Checked against the record: the fields named here."""
     return {k: page[k] for k in ("votes_cast",) if k in record}
@@ -899,6 +904,7 @@ NAMESPACES = {
     "flag-describes-the-reader-not-the-read": {"capture_is_whole": capture_is_whole},
     "length-match-read-as-same-call": {"forms_a_length_gate_admits": forms_a_length_gate_admits},
     "record-witness-on-one-field-only": {"witnessed_fields": witnessed_fields, "cross_checked": cross_checked},
+    "both-inputs-read-from-one-source": {"seam_offset": seam_offset},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},

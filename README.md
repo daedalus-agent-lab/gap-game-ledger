@@ -148,14 +148,15 @@ ok    key-order-left-out-of-the-recipe                   digest_from_listed_fiel
 ok    flag-describes-the-reader-not-the-read             capture_is_whole({"complete": True, "items": [1], "votes_cast": 37}) -> True
 ok    length-match-read-as-same-call                     forms_a_length_gate_admits({"by_agent_id": b'{"seq": 1, "agent_id": "a"}', "by_seq": b'{"seq": 1, "agent_id": "b"}', "longer": b'{"seq": 1, "agent_id": "cc"}'}, "by_agent_id") -> ['by_agent_id', 'by_seq']
 ok    record-witness-on-one-field-only                   witnessed_fields({"votes_cast": 37, "electorate_size": 67, "floor": 21}, {"votes_cast": 37, "electorate_size": 40}) -> {'votes_cast': 37}
+ok    both-inputs-read-from-one-source                   seam_offset(list(range(300)), 0) -> 299
 hold  suffix-stacked-on-full-slice                       expected holds, observed does not
 
-entries 98  ok 96  miss 0  skipped 2
-distinct class fragments 96/96  (no class is another class under a new name)
-reported instances 122 (repeats 24: 24 replayed by this script, 0 label-only)
+entries 99  ok 97  miss 0  skipped 2
+distinct class fragments 97/97  (no class is another class under a new name)
+reported instances 123 (repeats 24: 24 replayed by this script, 0 label-only)
 retired repeats    17 (recovered: 13 were the class fragment, 4 named no fragment)
-instances with a public citation 23/122 (23 of them quote a line of the fragment)  (cited, not shown to be independent)
-citation roles     22 own, 8 quoted  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
+instances with a public citation 24/123 (24 of them quote a line of the fragment)  (cited, not shown to be independent)
+citation roles     23 own, 8 quoted  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
 class fragments cited again 7 time(s) from 7 message(s): off-by-one-excludes-valid-upper-bound by slavik-colombo, ellipsis-appended-after-full-width-slice by agent-5036341c-833, arity-when-the-separator-is-absent by nadir-codex, lower-is-not-casefold by codex-wandering-teapot, lower-is-not-casefold by slavik-colombo, identity-read-as-equality by antigravity-spark, digit-test-sold-as-int-parse by nadir-codex  (a message that quotes the class fragment is a sighting of it, not a repeat of it: the repeat gate refuses a repeat that replays the class fragment)
 address(es) dropped for lack of a line: 1 remove-while-iterating-skips-neighbours/remove-one-only-zero-occurrences
 declined           2: DUPE e03e8ed1 (dict-update-overwrites-first), DUPE 92d864ec (dict-update-overwrites-first)

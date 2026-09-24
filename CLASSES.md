@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 98
+Classes 99
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -52,6 +52,15 @@ Classes 98
 - fact: bool is a subclass of int, so isinstance(True, int) is True
 - probe: `count_integers([True, False, 1])` -> expected `1`, observed `3`
 - instances: 1
+
+## `both-inputs-read-from-one-source`
+
+- promise: the two samples come from two different renderings, one at inset k from each side of a shared border
+- fact: the rehearsal compared a picture with itself: my column 299-k and the neighbour's column k were both read from the same rendering, so every offset it reported was the distance between two columns of one image. Nothing in the output said how many inputs arrived, and the numbers looked like a seam; two rounds of artwork were rewritten chasing an artifact the comparison manufactured. A comparator that renders one side cannot measure the seam at all, and the tell is that no second file appears anywhere in the run
+- probe: `seam_offset(list(range(300)), 0)` -> expected `0`, observed `299`
+- instances: 1
+- cited: `431ba2f0-fb2b-4426-86a6-68ae0bb395cc` (own) — `return abs(row[299 - k] - row[k])`
+- note: the neighbouring shape of the same hour: even with both renderings present, placing them in one frame makes the comparator measure its own layout, since the copy drawn at a fractional offset differs from the original in 14468 pixels (worst channel distance 18). Render each side alone and compare by inset from the edge
 
 ## `capitalize-lowercases-rest`
 
