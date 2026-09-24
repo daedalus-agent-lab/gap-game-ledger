@@ -307,47 +307,68 @@ def q_duplicate_declaration(tree):
 
 
 def r_attribute_pair(tree):
-    """An outside attack on the fingerprint, and the bound it lands on instead.
+    """An outside attack on the fingerprint, and the two erasures it found.
 
-    The attack claimed `s.lstrip("ab")` and `s.rstrip("ab")` collapse into one
-    shape because names are erased after parsing. They do not: attribute names
-    survive normalisation, so methods on one receiver separate. The same erasure
-    does collapse different receivers with the same method, `json.loads` against
-    `pickle.loads`, and that is the bound -- stated here so it cannot widen
-    unnoticed, and so a fix to it has to change this row.
+    The attack claimed `s.lstrip("ab")` and `s.rstrip("ab")` collapse because
+    names are erased after parsing. They do not: attribute names survive, so
+    verbs on one receiver separate. Running it found the erasure one step aside
+    -- the subject -- where `json.loads(x)` and `pickle.loads(x)` were one shape
+    because the receiver is a `Name`. That half is now closed: a name the
+    function never binds is a reference to something outside the fragment and is
+    kept, while a bound name is still the author's choice of letter.
+
+    Every line below is asserted, including the price: keeping free names means a
+    copy that renames the helper it delegates to reads as different logic, and a
+    fragment that keeps the helper's name is still one shape with its copy. A
+    change to the erasure has to move this row, which is the point of it.
     """
     import importlib.util
+    import linecache
+    import sys
+    import textwrap
     sys.path.insert(0, str(HERE))
     spec = importlib.util.spec_from_file_location("chk", HERE / "check.py")
     chk = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(chk)
-
-    import linecache
-    import textwrap
-    n = [0]
+    fingerprint = chk.fingerprint
+    counter = [0]
 
     def build(source: str):
-        n[0] += 1
+        counter[0] += 1
         src = textwrap.dedent(source).strip() + "\n"
-        name = f"<pair{n[0]}>"
+        name = f"<pair{counter[0]}>"
         linecache.cache[name] = (len(src), None, src.splitlines(True), name)
         ns: dict = {}
         exec(compile(src, name, "exec"), ns)
         return ns[src.split("(")[0].replace("def ", "").strip()]
 
+    def same(left: str, right: str) -> bool:
+        return fingerprint(build(left)) == fingerprint(build(right))
+
     separate = [
-        ('def a(s):\n    return s.lstrip("ab")\n', 'def b(s):\n    return s.rstrip("ab")\n'),
-        ('def a(s):\n    return s.find("a")\n', 'def b(s):\n    return s.rfind("a")\n'),
-        ('def a(s):\n    return s.split(",")\n', 'def b(s):\n    return s.rsplit(",")\n'),
+        ("verbs on one receiver: lstrip against rstrip",
+         'def a(s):\n    return s.lstrip("ab")\n', 'def b(s):\n    return s.rstrip("ab")\n'),
+        ("verbs at both arities: strip against lstrip",
+         'def a(s):\n    return s.strip("ab")\n', 'def b(s):\n    return s.lstrip("ab")\n'),
+        ("subjects under one verb: json.loads against pickle.loads",
+         "def a(x):\n    return json.loads(x)\n", "def b(x):\n    return pickle.loads(x)\n"),
+        ("the price of keeping free names: a copy that renames its helper",
+         "def a(xs):\n    return find_max(xs)\n", "def b(xs):\n    return pick_max(xs)\n"),
     ]
     one_shape = [
-        ("def a(x):\n    return json.loads(x)\n", "def b(x):\n    return pickle.loads(x)\n"),
+        ("bound names are still erased",
+         "def a(xs):\n    total = 0\n    for x in xs:\n        total += x\n    return total\n",
+         "def b(items):\n    acc = 0\n    for it in items:\n        acc += it\n    return acc\n"),
+        ("dead-store padding is still invisible",
+         "def a(xs):\n    return max(xs)\n", "def b(xs):\n    _pad = None\n    return max(xs)\n"),
+        ("a helper that keeps its name is still one shape with its copy",
+         "def a(xs):\n    return find_max(xs)\n", "def b(ys):\n    return find_max(ys)\n"),
     ]
-    ok_sep = all(chk.fingerprint(build(l)) != chk.fingerprint(build(r)) for l, r in separate)
-    ok_bound = all(chk.fingerprint(build(l)) == chk.fingerprint(build(r)) for l, r in one_shape)
-    detail = ("attribute names separate; receiver names do not" if ok_sep and ok_bound
-              else f"boundary moved: separate={ok_sep} one_shape={ok_bound}")
-    return ok_sep and ok_bound, detail
+    bad_sep = [label for label, l, r in separate if same(l, r)]
+    bad_one = [label for label, l, r in one_shape if not same(l, r)]
+    if bad_sep or bad_one:
+        return False, f"boundary moved: not separate={bad_sep} not one shape={bad_one}"
+    return True, "verbs and subjects separate; bound names, padding and helpers do not"
 
 
 CASES = [
@@ -368,7 +389,7 @@ CASES = [
     ("dead stores are not a difference", o_dead_store_is_not_a_difference),
     ("literals have no builtins", p_literals_have_no_builtins),
     ("a repeated class name is refused", q_duplicate_declaration),
-    ("the fingerprint's boundary is where it says", r_attribute_pair),
+    ("the fingerprint separates verbs and subjects, and says its price", r_attribute_pair),
 ]
 
 

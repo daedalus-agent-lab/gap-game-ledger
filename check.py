@@ -95,10 +95,22 @@ class _DropDeadStores(ast.NodeTransformer):
 
 
 class _Normalise(ast.NodeTransformer):
-    """Rename every identifier that is not a builtin, by order of first appearance."""
+    """Rename bound identifiers by order of first appearance; keep free ones.
+
+    A name that the function binds -- an argument, a local -- carries nothing but
+    the author's choice of letter, so it is erased. A name the function does not
+    bind is a reference to something outside the fragment: a module, a helper,
+    another fragment. Erasing those made `json.loads(x)` and `pickle.loads(x)`
+    one fingerprint -- different subjects under one verb -- and the fingerprint
+    is what decides whether a repeat repeats a class or is a copy of it. A free
+    name is kept under a `g:` prefix so it can never collide with an assigned
+    `vN`, and the prefix is not a builtin, so the erasure of bound names is
+    unchanged.
+    """
 
     def __init__(self):
         self.seen = {}
+        self.bound = set()
 
     def _rename(self, name: str) -> str:
         if name in BUILTINS or name.startswith("__"):
@@ -107,12 +119,48 @@ class _Normalise(ast.NodeTransformer):
             self.seen[name] = f"v{len(self.seen)}"
         return self.seen[name]
 
-    def visit_Name(self, node):
-        node.id = self._rename(node.id)
-        return node
+    def _bind(self, node):
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Name) and isinstance(sub.ctx, (ast.Store, ast.Del)):
+                self.bound.add(sub.id)
+        self.generic_visit(node)
 
     def visit_arg(self, node):
+        self.bound.add(node.arg)
         node.arg = self._rename(node.arg)
+        return node
+
+    def visit_Assign(self, node):
+        self._bind(node)
+        return node
+
+    def visit_AugAssign(self, node):
+        self._bind(node)
+        return node
+
+    def visit_AnnAssign(self, node):
+        self._bind(node)
+        return node
+
+    def visit_For(self, node):
+        for sub in ast.walk(node.target):
+            if isinstance(sub, ast.Name) and isinstance(sub.ctx, ast.Store):
+                self.bound.add(sub.id)
+        self.generic_visit(node)
+        return node
+
+    def visit_comprehension(self, node):
+        for sub in ast.walk(node.target):
+            if isinstance(sub, ast.Name) and isinstance(sub.ctx, ast.Store):
+                self.bound.add(sub.id)
+        self.generic_visit(node)
+        return node
+
+    def visit_Name(self, node):
+        if isinstance(node.ctx, ast.Load) and node.id not in self.bound:
+            node.id = "g:" + node.id
+            return node
+        node.id = self._rename(node.id)
         return node
 
     def visit_FunctionDef(self, node):
@@ -122,7 +170,13 @@ class _Normalise(ast.NodeTransformer):
 
 
 def fingerprint(fn) -> str:
-    """The logic of a function with the names it chose thrown away.
+    """The logic of a function with the names it binds thrown away.
+
+    Bound names -- arguments, locals -- are the author's choice of letter and are
+    erased. A name the function never binds refers to something outside the
+    fragment, so it is kept: erasing it called `json.loads(x)` and
+    `pickle.loads(x)` one shape, and the cost of keeping it is that a copy which
+    renames the helper it delegates to reads as different logic instead.
 
     Two functions with the same fingerprint do the same thing; a repeat whose
     fragment fingerprints identically to the class fragment is the class probe

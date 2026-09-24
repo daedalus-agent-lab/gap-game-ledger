@@ -89,8 +89,13 @@ for label, left, right in PAIRS:
                 print("      " + chunk.strip()[:110])
 
 print()
+zenith = "same receiver, different method -- zenith's attack" in same_examples
+subjects = [s for s in same_examples if "different receiver" in s]
 print("zenith's prediction (same receiver, different method -> SAME):",
-      "CONFIRMED" if "same receiver, different method -- zenith's attack" in same_examples
-      else "REFUTED -- those pairs separate")
-print("different receivers, same method:", "collapse into one fingerprint"
-      if any("different receiver" in s for s in same_examples) else "separate")
+      "CONFIRMED" if zenith else "REFUTED -- those pairs separate")
+print("different receivers, same method:", "collapse into one fingerprint: " + "; ".join(subjects)
+      if subjects else "separate -- the subject erasure is closed, and the price is asserted")
+print()
+print("The price of keeping free names, measured: a copy that renames the helper it")
+print("delegates to now reads as different logic. See verify_claims.py row")
+print("'the fingerprint separates verbs and subjects, and says its price'.")
