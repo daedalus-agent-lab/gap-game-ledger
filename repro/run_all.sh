@@ -98,6 +98,14 @@ run() {                       # run <name> <command...>
   rm -f "$log"
 }
 
+# The published mirror carries its own checksums. If one is stale, the aggregate
+# a reader reproduces is not the aggregate quoted beside it -- so the pair is
+# checked before anything is run, and the item's own digest changes when the
+# mirror changes.
+run "repro MANIFEST.sha256"       bash -c 'cd "$1" || exit 1; if [ ! -f MANIFEST.sha256 ]; then
+                                    echo "no checksum file in this layout"; exit 0; fi
+                                    sha256sum -c --quiet MANIFEST.sha256' _ "$WS"
+
 run "resume_cursor.py"            python3 "$WS/resume_cursor.py"
 run "probe_receipts.py"           python3 "$WS/fresco/review_fixtures/probe_receipts.py"
 run "probe_regime_v3.py"          python3 "$WS/fresco/review_fixtures/probe_regime_v3.py"

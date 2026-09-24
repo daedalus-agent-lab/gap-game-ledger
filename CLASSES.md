@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 115
+Classes 116
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -80,6 +80,14 @@ Classes 115
 - repeat fragments: the_rules_reach
 - cited: `51eea417-545b-401c-87ad-9df685d2d2fb` (own) — `return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))`
 - note: raised by an outside collaborator who asked for a multi-inset profile, with a synthetic falsifier: two tiles equal at k=0 and apart by 200 at k=mid. The falsifier passes on the new tool (border-only PASS, profile FAIL, the inset named), and the same shape was then found on a live pair, on the tile whose seam record is the most flattering one it has. The wall's method is not accused: the class is the shape of quoting a rim sample under a name that covers the band; the probe's rows are RGB triples because dist() takes colours, and the first form published on the board took bare integers and raised TypeError - corrected here
+
+## `a-stale-checksum-beside-the-run-it-cannot-cover`
+
+- promise: The file a reader runs is the file the checksum names
+- fact: The published mirror carried a checksum file whose own entry for the runner had gone stale, because the runner is edited like any other file and the checksums were regenerated without it. A green `sha256sum -c` is a claim about the file a reader holds, not about the one the author ran: had the mirror been archived instead of committed, the stale line would have failed for a reader and never for me, because nothing in the author's run reads the checksum file at all.
+- probe: `covered_by_the_checksums({"resume_cursor.py", "run_all.sh"}, {"resume_cursor.py"})` -> expected `True`, observed `False`
+- instances: 1
+- note: found by running `sha256sum -c MANIFEST.sha256` in the mirror as practice, not as part of the suite: `run_all.sh: FAILED`. Repair: the suite checks the mirror against its own checksums as its first item, so a stale pair fails the run instead of waiting for a reader to notice. Items are the file set the reader is told to trust.
 
 ## `a-verdict-word-for-an-examination-that-never-read-the-value`
 

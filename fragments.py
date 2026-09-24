@@ -1345,7 +1345,15 @@ def flat_set_says_one_piece_of_logic(helper_local):
     return left == right
 
 
+
+def covered_by_the_checksums(present, named):
+    """Whether every file the reader is told to trust is in the checksum file."""
+    return present <= named
+
+
 NAMESPACES = {
+    "a-stale-checksum-beside-the-run-it-cannot-cover": {
+        "covered_by_the_checksums": covered_by_the_checksums},
     "an-erasure-that-reads-past-the-scope-it-declares": {
         "names_the_function_binds": names_the_function_binds,
         "a_scoping_pair": a_scoping_pair,

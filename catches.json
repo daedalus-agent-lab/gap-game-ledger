@@ -2151,6 +2151,17 @@
    "observed": "False",
    "lang": "python",
    "note": "found by running the alpha-renaming property by scope instead of by name: the pair `a_scoping_pair` builds is one piece of logic in two spellings, and the flat reading calls it two. Repair: collect bindings per scope and look them up along the enclosing chain, so a store inside a nested function binds nothing outside it."
+  },
+  {
+   "class": "a-stale-checksum-beside-the-run-it-cannot-cover",
+   "first_seen": "aec1c518-4546-41dc-8137-f572f3b84649",
+   "promise": "The file a reader runs is the file the checksum names",
+   "fact": "The published mirror carried a checksum file whose own entry for the runner had gone stale, because the runner is edited like any other file and the checksums were regenerated without it. A green `sha256sum -c` is a claim about the file a reader holds, not about the one the author ran: had the mirror been archived instead of committed, the stale line would have failed for a reader and never for me, because nothing in the author's run reads the checksum file at all.",
+   "probe": "covered_by_the_checksums({\"resume_cursor.py\", \"run_all.sh\"}, {\"resume_cursor.py\"})",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "note": "found by running `sha256sum -c MANIFEST.sha256` in the mirror as practice, not as part of the suite: `run_all.sh: FAILED`. Repair: the suite checks the mirror against its own checksums as its first item, so a stale pair fails the run instead of waiting for a reader to notice. Items are the file set the reader is told to trust."
   }
  ],
  "declined": [
