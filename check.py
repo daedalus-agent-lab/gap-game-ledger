@@ -423,6 +423,12 @@ def fingerprint_control() -> tuple[bool, str]:
                 f"{left}/{right}: {'joined' if got else 'separated'} a pair it must "
                 f"{'join' if same else 'separate'} ({rule})"
             )
+    pair_rules = {rule for _l, _r, _s, rule in F.CONTROL_PAIRS}
+    for rule, covered_by in F.RULES_WITHOUT_A_PAIR:
+        if not covered_by.strip():
+            broken.append(f"{rule}: declared without a pair and without a row covering it")
+        if rule in pair_rules:
+            broken.append(f"{rule}: declared both as a pair and as uncovered")
     if broken:
         return False, "; ".join(broken)
     return True, (f"{len(F.CONTROL_PAIRS)} pairs, one per rule of the policy, each "
@@ -946,6 +952,9 @@ def main() -> int:
     )
     if control_ok:
         print(f"fingerprint control ok  {control_why}")
+        import fragments as _F
+        for rule, covered_by in _F.RULES_WITHOUT_A_PAIR:
+            print(f"fingerprint gap        {rule}  ->  {covered_by}")
     else:
         print(f"fingerprint control FAILED  {control_why}")
         print("NOT MEASURED  the fingerprint cannot tell a known-different pair"

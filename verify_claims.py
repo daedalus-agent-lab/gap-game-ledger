@@ -683,6 +683,32 @@ def w_control_is_a_pair_per_rule(tree):
     return ok, f"{len(pairs)} pairs, {len(set(rules))} distinct rules, control passes"
 
 
+def x_the_declared_gap_points_at_a_row_that_exists(tree):
+    """A gap named with a pointer that has rotted is not a declared gap.
+
+    Every rule of the policy without a control pair names the acceptance row that
+    covers it; that row must be a function in this file, or the declaration is
+    prose about a check nobody runs.
+    """
+    import importlib.util
+    import re
+    spec = importlib.util.spec_from_file_location("frag", HERE / "fragments.py")
+    frag = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(frag)
+    missing, unnamed = [], []
+    for rule, covered_by in frag.RULES_WITHOUT_A_PAIR:
+        if not covered_by.strip():
+            unnamed.append(rule)
+            continue
+        for name in re.findall(r"row ([a-z_][a-z0-9_]*)", covered_by):
+            if name not in globals():
+                missing.append(f"{rule} -> {name}")
+    pairs = {(l, r) for l, r, _s, _rule in frag.CONTROL_PAIRS}
+    ok = not missing and not unnamed and len(pairs) == len(frag.CONTROL_PAIRS)
+    return ok, (f"{len(frag.RULES_WITHOUT_A_PAIR)} gap rules declared, "
+                f"{len(frag.CONTROL_PAIRS)} pairs, dead pointers {missing or 'none'}")
+
+
 CASES = [
     ("order flip keeps the answer", a_order_flip),    ("citation counter agrees with its audit", b_citation_counter),
     ("a class with no fragment is refused", c_ghost_class),
@@ -706,6 +732,7 @@ CASES = [
     ("a bound name shadowing a builtin is still a letter", u_bound_name_shadowing_a_builtin_is_still_a_letter),
     ("a broken rule of the policy withdraws the duplicate verdicts", v_control_fails_when_a_rule_of_the_policy_is_broken),
     ("the control is one pair per rule", w_control_is_a_pair_per_rule),
+    ("a declared gap points at a row that exists", x_the_declared_gap_points_at_a_row_that_exists),
 ]
 
 

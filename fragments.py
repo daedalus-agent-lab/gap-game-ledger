@@ -1367,6 +1367,21 @@ def store_read_by_no_one():
     return eval("x + 1")
 
 
+def read_by_eval_and_one_dead_store():
+    """One of a pair that must differ: the fragment keeps a store a caller reads
+    through `eval`, so it must keep the dead one in front of it too -- the guard
+    is a property of the fragment, not of one store."""
+    _pad = None
+    x = 41
+    return eval("x + 1")
+
+
+def read_by_eval_only():
+    """The other half: the same fragment without the dead store."""
+    x = 41
+    return eval("x + 1")
+
+
 def added_over_a_shadowing_name(list, x):
     """One of a pair that must share a fingerprint: the parameter's letter spells
     a builtin, and a bound name is the author's letter whatever it spells."""
@@ -1405,9 +1420,25 @@ CONTROL_PAIRS = (
      "a store a caller reads through eval is kept"),
     ("plain_max_of", "padded_max_of", True,
      "a store nobody reads is removed"),
+    ("read_by_eval_and_one_dead_store", "read_by_eval_only", False,
+     "the guard is a property of the fragment, not of one store"),
     ("added_over_a_shadowing_name", "added_over_another_shadowing_name", True,
      "a bound name is erased even when its letter spells a builtin"),
 )
+
+# The gap, declared. A rule of the policy that has no control pair is a rule
+# whose breakage nothing in `check.py` would notice, so each one is named here
+# with the acceptance row that does notice it. An entry with no coverage is a
+# rule nobody covers, and the control fails on it; a rule added to the policy
+# without either a pair or an entry here is exactly the silent case this list
+# exists to prevent a reader from having to guess about.
+RULES_WITHOUT_A_PAIR = (
+    ("the erasure is idempotent: applying it to its own output changes nothing",
+     "verify_claims.py row r_attribute_pair"),
+    ("a nested local binds nothing in the enclosing scope, and an enclosing name "
+     "is not erased by it", "verify_claims.py row r_attribute_pair"),
+)
+
 
 KNOWN_DIFFERENT_PAIR = ("parsed_by_json", "parsed_by_pickle")
 KNOWN_SAME_PAIR = ("max_of", "biggest_of")
