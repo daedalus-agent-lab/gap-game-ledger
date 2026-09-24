@@ -22,6 +22,7 @@ import argparse
 import hashlib
 import json
 import sys
+import unicodedata
 
 DIGEST_CHARS = 16
 
@@ -50,6 +51,8 @@ FORMS = {
     "sort-keys-separators-ensure-ascii-True": lambda b: json.dumps(
         _loads(b), ensure_ascii=True, sort_keys=True, separators=(",", ":")
     ).encode("utf-8"),
+    "utf8-NFC": lambda b: unicodedata.normalize("NFC", b.decode("utf-8")).encode("utf-8"),
+    "utf8-NFD": lambda b: unicodedata.normalize("NFD", b.decode("utf-8")).encode("utf-8"),
 }
 
 # A form is a dial only where it moves the bytes. ensure_ascii is a dial on a
@@ -73,6 +76,29 @@ FIXTURE_EXPECTED = {
 # and the function: a digest over bytes nobody can obtain is unverifiable by
 # construction, and that is a fact about the object, not a missing check.
 FIXTURE_RECIPE = "GET /v1/nope without a key, first 132 bytes of the body as served"
+
+
+def object_facts(body: bytes) -> dict:
+    """What has to be said about the object before a form can be called a dial.
+
+    A form is a dial for a pair (object, marks), not for a function: ensure_ascii
+    moves the bytes only where the object carries non-ASCII, and NFC/NFD move
+    them only where it carries decomposable marks. A list that does not say
+    which object it was measured on invites a reader to call a form checked
+    where there was nothing to distinguish.
+    """
+    try:
+        text = body.decode("utf-8")
+        decoded = True
+    except UnicodeDecodeError:
+        text, decoded = "", False
+    return {
+        "bytes": len(body),
+        "ascii_clean": all(ord(c) < 128 for c in text) if decoded else False,
+        "decodable_utf8": decoded,
+        "characters": len(text) if decoded else None,
+        "decomposable": unicodedata.normalize("NFD", text) != text if decoded else None,
+    }
 
 
 def forms_for(body: bytes) -> dict[str, str]:
@@ -99,9 +125,14 @@ def selftest() -> int:
         ok = got.get(name) == want
         print(f"{'ok  ' if ok else 'FAIL'} {name:34s} {got.get(name)} (expected {want})")
         bad += 0 if ok else 1
+    # On an ASCII-clean object the two normalising forms cannot move the bytes,
+    # so they answer with the raw digest too. A hit list is only as narrow as
+    # the object allows, and the fixture is here to keep that visible.
     hits = reproduces(FIXTURE, FIXTURE_EXPECTED["raw-bytes-as-served"])
-    ok = hits == ["raw-bytes-as-served"]
+    want = ["raw-bytes-as-served", "utf8-NFC", "utf8-NFD"]
+    ok = hits == want
     print(f"{'ok  ' if ok else 'FAIL'} lookup of {FIXTURE_EXPECTED['raw-bytes-as-served']}: {hits}")
+    print("      the two normalising forms answer too, because neither can move an ASCII-clean object")
     bad += 0 if ok else 1
     a = got.get("gpb-json-c14n/1")
     b = got.get("sort-keys-separators-ensure-ascii-True")
@@ -113,7 +144,16 @@ def selftest() -> int:
     ok = miss == []
     print(f"{'ok  ' if ok else 'FAIL'} lookup of an unknown digest: {miss or 'NO MATCH'}")
     bad += 0 if ok else 1
-    print(f"\nforms tried: {len(got)}  ->  NO MATCH is bounded by this list, not by all functions")
+    facts = object_facts(FIXTURE)
+    ok = facts["ascii_clean"] and facts["decomposable"] is False
+    print(f"{'ok  ' if ok else 'FAIL'} fixture object: {facts}")
+    bad += 0 if ok else 1
+    a, b = got.get("utf8-NFC"), got.get("utf8-NFD")
+    ok = a == b and a == got.get("raw-bytes-as-served")
+    print(f"{'ok  ' if ok else 'FAIL'} NFC/NFD are not dials on this object: {a} == {b}")
+    bad += 0 if ok else 1
+    print(f"\nforms tried: {len(got)}  ->  NO MATCH is bounded by this list")
+    print("  a form is a dial for a pair (object, marks), so the bound is (list x object)")
     return 1 if bad else 0
 
 
@@ -131,8 +171,9 @@ def main(argv=None) -> int:
         p.error("--body-file is required unless --selftest")
     body = open(a.body_file, "rb").read()
     got = forms_for(body)
+    facts = object_facts(body)
     if a.list or not a.digest:
-        print(f"bytes {len(body)}")
+        print(f"object: {facts}")
         for name, v in sorted(got.items()):
             print(f"  {name:34s} {v}")
         print(f"forms tried: {len(got)}")
@@ -140,7 +181,8 @@ def main(argv=None) -> int:
     hits = reproduces(body, a.digest)
     if hits:
         print(f"{a.digest}: reproduced by {', '.join(hits)}  ({len(got)} forms tried)")
-        print(f"  object: {len(body)} bytes as served; a receipt is (digest, function, object)")
+        print(f"  object: {facts}")
+        print("  a receipt is (digest, function, object) where the object is a recipe")
         return 0
     print(f"{a.digest}: NO MATCH among {len(got)} forms tried")
     print("  this is a bound of the list, not a verdict about the number")

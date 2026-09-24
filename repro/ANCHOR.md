@@ -4,8 +4,8 @@ Six fields, not five. The sixth was named by my own mistake, not by foresight.
 
 | field | value |
 |---|---|
-| digest | `6c75fc7822094fc4` |
-| input object | this repository at tip `a1db9a2`; documentation-only commits after it leave the digests where they are, re-run and confirmed |
+| digest | `8815014c673c8f31` |
+| input object | this repository at tip `TIP4`; documentation-only commits after it leave the digests where they are, re-run and confirmed |
 | fields | per item `name \| exit \| out \| norm`, where `out = sha256(stdout+stderr)[:16]` and `norm` is the number of substitutions `key <16 hex>` → `key <minted>` |
 | order | the order the items run in `run_all.sh` |
 | separators | fields by `\|`, lines by `\n`, items in the order run |
@@ -33,11 +33,11 @@ Expected, from that tree:
     ok   probe_regime_v3.py                 out=47f2e9374c8c348b norm=1  12 of 12 checks pass
     ok   band_profile.py                    out=2ee393a1cd7cdb41 norm=0  7 of 7 checks pass
     ok   ledger check.py                    out=ad0166228de89c21 norm=0  index    CLASSES.md is current
-    ok   provenance.py --selftest           out=4a53432f1b59cc5c norm=0  forms tried: 7  ->  NO MATCH is bounded by thi
+    ok   provenance.py --selftest           out=969b9c43cde8ec32 norm=0  forms tried: 9  ->  NO MATCH is bounded by thi
     ok   attest_rings.py --net              out=2e47faff6b787dbd norm=0  all published tiles match their hash
-    aggregate (ordered item digests)        6c75fc7822094fc4
+    aggregate (ordered item digests)        8815014c673c8f31
 
-The aggregate moved `431b38cb1135193e` -> `84c49acf11d90061` -> `fe0bd11bccdf22b3` -> `0b4a65d03755e4ac` -> `07a8364f71b5261f` -> `3fc1fb66379b6de5` -> `088c71fae0759d51` -> `d1e479f97f9f0ef9` -> `6c75fc7822094fc4`
+The aggregate moved `431b38cb1135193e` -> `84c49acf11d90061` -> `fe0bd11bccdf22b3` -> `0b4a65d03755e4ac` -> `07a8364f71b5261f` -> `3fc1fb66379b6de5` -> `088c71fae0759d51` -> `d1e479f97f9f0ef9` -> `6c75fc7822094fc4` -> `8815014c673c8f31`
 as the registry gained classes and repeats, because the `check.py` item's output is part of its input, and the suite gained its first
 item that checks a *lookup* rather than a computation (see below). That is the digest doing its job, not drifting.
 
@@ -56,8 +56,16 @@ One body, four legitimate numbers, no conflict; two of the seven forms are
 identical on it, because `ensure_ascii` moves the bytes only where the object
 carries non-ASCII, so a form is a dial only on the bodies it changes.
 
-The three numbers reproduced byte-for-byte on a second machine, from the same
-recipe, without a run of mine: that is what makes the fixture a fixture.
+The numbers reproduced byte-for-byte on a second machine, from the same recipe,
+without a run of mine: that is what makes the fixture a fixture.
+
+A form is a dial for a pair (object, marks), not for a function. On this
+ASCII-clean object both normalising forms answer with the raw digest, because
+neither can move these bytes, and the tool prints the object's own facts beside
+the answer so a reader can see why the hit list is three names wide rather than
+one. The same form is a real dial on a body carrying decomposed marks. Hence the
+bound is (list x object): `NO MATCH` says no form on the list produced this
+number **for this object**, and nothing about all functions.
 
 The aggregate is a function of the whole tree, and the suite now names the item
 that moved rather than saying only that something answers differently: the line
