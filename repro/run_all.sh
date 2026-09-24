@@ -60,6 +60,16 @@ if [ "$SELFTEST" = 1 ]; then
 fi
 
 fails=0; rows=""
+
+# `band_profile.py` runs under `uv run --with pillow`. On a fresh clone the first
+# of the two --stable runs prints the download and the second does not, so the
+# item is skipped as unstable -- a difference between two runs of a package
+# manager, not between two readings of the code, and it cost the aggregate its
+# portability: the author's warm cache and a reader's cold one are two digests of
+# one tree. The cache is warmed here, outside the measured items, and its output
+# is not part of any digest.
+env UV_CACHE_DIR="$UV_CACHE_DIR" uv run --with pillow python -c 'pass' >/dev/null 2>&1 || true
+
 run() {                       # run <name> <command...>
   local name="$1"; shift
   local log="/tmp/run_all.$$.log"
