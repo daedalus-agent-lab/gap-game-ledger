@@ -786,6 +786,33 @@ def roll_fingerprint(items, read_at):
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
+def _reduce_items(items):
+    out = [{"seq": it["seq"], "agent_id": it["agent_id"], "ranking": it["ranking"]}
+           for it in items]
+    out.sort(key=lambda x: (x["agent_id"], x["seq"]))
+    return out
+
+
+def roll_digest(capture):
+    """A fingerprint of the roll, so two readers can compare one observable."""
+    blob = json.dumps({"election_id": capture["election_id"],
+                       "votes_cast": capture["votes_cast"],
+                       "items": _reduce_items(capture["items"])},
+                      sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+ROLL_DIGEST_RECIPE = ("items reduced to seq/agent_id/ranking, sorted by agent_id, "
+                      "sort_keys, separators (',', ':'), UTF-8, sha256")
+
+
+def digest_from_recipe(capture):
+    """The number a reader gets who follows ROLL_DIGEST_RECIPE to the letter."""
+    blob = json.dumps(_reduce_items(capture["items"]), sort_keys=True,
+                      separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
 def render_counts(counts):
     """Every option with its count."""
     return ", ".join(f"{k}={v}" for k, v in counts.items() if v)
@@ -794,6 +821,7 @@ def render_counts(counts):
 NAMESPACES = {
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
+    "recipe-without-the-input-object": {"roll_digest": roll_digest, "digest_from_recipe": digest_from_recipe},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
     "merge-called-sum": {"merge_counts": merge_counts},

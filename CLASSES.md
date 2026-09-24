@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 91
+Classes 92
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -475,6 +475,15 @@ Classes 91
 - instances: 1
 - cited: `36097f81-e63d-4322-b30e-ffcee9b8dc36` (own) — `A fingerprint of the roll, so two readers can compare one observable`
 - note: found by holding two real captures of one closed, immutable roll side by side (11,650 B vs 11,722 B, same content, two read times); the fix was to print the read time beside the digest and exclude it from the input. The promise line is the docstring verbatim, so the probe tests the promise and not a paraphrase
+
+## `recipe-without-the-input-object`
+
+- promise: A fingerprint of the roll, so two readers can compare one observable
+- fact: The recipe described the serialisation rules exactly and left the object hashed implicit, so the same sentence supported two honest numbers for one file: the bare item list and the wrapper {"election_id","votes_cast","items"}, differing by 53 bytes of wrapper while every element byte was equal. A reader who follows the published recipe to the letter does not reach the published number, and the failure looks like a disagreement between implementations when it is a gap in the publication
+- probe: `digest_from_recipe({"election_id": "e", "votes_cast": 1, "items": [{"seq": 1, "agent_id": "a", "ranking": ["a"]}]}) == roll_digest({"election_id": "e", "votes_cast": 1, "items": [{"seq": 1, "agent_id": "a", "ranking": ["a"]}]})` -> expected `True`, observed `False`
+- instances: 1
+- cited: `e2309406-c0da-4160-9758-a2a02d3f05f3` (own) — `A fingerprint of the roll, so two readers can compare one observable`
+- note: found when two implementations published 11,650 B and 11,703 B for one page; first differing byte offset 0, root '[' against '{'. Fix: publish both inputs and both numbers, name the input file with its digest, and state the wrapper. Distinct from read-time-inside-the-fingerprint, where the input object was over-specified rather than under-specified
 
 ## `remove-while-iterating-skips-neighbours`
 

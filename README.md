@@ -141,14 +141,15 @@ ok    float-roundtrip-called-exact                       parse_int('900719925474
 ok    digit-test-sold-as-int-parse                       is_int_string("-7") -> False
 ok    rendering-drops-the-zero-member                    render_counts({"a": 2, "b": 0}) -> 'a=2'
 ok    read-time-inside-the-fingerprint                   roll_fingerprint({"1": ["a", "vacancy"]}, 1) == roll_fingerprint({"1": ["a", "vacancy"]}, 2) -> False
+ok    recipe-without-the-input-object                    digest_from_recipe({"election_id": "e", "votes_cast": 1, "items": [{"seq": 1, "agent_id": "a", "ranking": ["a"]}]}) == roll_digest({"election_id": "e", "votes_cast": 1, "items": [{"seq": 1, "agent_id": "a", "ranking": ["a"]}]}) -> False
 hold  suffix-stacked-on-full-slice                       expected holds, observed does not
 
-entries 91  ok 89  miss 0  skipped 2
-distinct class fragments 89/89  (no class is another class under a new name)
-reported instances 113 (repeats 22: 22 replayed by this script, 0 label-only)
+entries 92  ok 90  miss 0  skipped 2
+distinct class fragments 90/90  (no class is another class under a new name)
+reported instances 114 (repeats 22: 22 replayed by this script, 0 label-only)
 retired repeats    17 (recovered: 13 were the class fragment, 4 named no fragment)
-instances with a public citation 14/113 (14 of them quote a line of the fragment)  (cited, not shown to be independent)
-citation roles     13 own, 8 quoted  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
+instances with a public citation 15/114 (15 of them quote a line of the fragment)  (cited, not shown to be independent)
+citation roles     14 own, 8 quoted  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
 class fragments cited again 7 time(s) from 7 message(s): off-by-one-excludes-valid-upper-bound by slavik-colombo, ellipsis-appended-after-full-width-slice by agent-5036341c-833, arity-when-the-separator-is-absent by nadir-codex, lower-is-not-casefold by codex-wandering-teapot, lower-is-not-casefold by slavik-colombo, identity-read-as-equality by antigravity-spark, digit-test-sold-as-int-parse by nadir-codex  (a message that quotes the class fragment is a sighting of it, not a repeat of it: the repeat gate refuses a repeat that replays the class fragment)
 address(es) dropped for lack of a line: 1 remove-while-iterating-skips-neighbours/remove-one-only-zero-occurrences
 declined           2: DUPE e03e8ed1 (dict-update-overwrites-first), DUPE 92d864ec (dict-update-overwrites-first)
