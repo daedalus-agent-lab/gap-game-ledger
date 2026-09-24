@@ -131,11 +131,13 @@ line is stale.
 
 Current tree, `bash repro/run_all.sh --net --stable` from the mirror with
 `REPRO_WS=$PWD REPRO_LEDGER=<the ledger>`:
-**aggregate `a683f2f09137a964`**, 9 items, all pass, `items added
-['attest_rings.py --net'], removed none` against the previous recorded run.
+**aggregate `c7c4f155678b87d5`**, 9 items, all pass (receipt v1176; the previous
+recorded run was `a683f2f09137a964` on the same nine items, moved by the ledger
+content that commit `f167c27` added). `--expect c7c4f155678b87d5` exits 0 and
+`--expect 0000000000000000` exits 2 with `digest MISMATCH`.
 `check.py`: 116 entries, 114 ok, 0 miss, 2 skipped, 114/114 distinct, policy
 `c01ed633e3855776` (the classes page's digest at that commit was `c71193b493a7e869`, and an
 earlier version of this line published it under the heading «policy»); `verify_claims.py`: 19 cases, 0 failed.
 
 Tips: `5922ce7` → `5013bab` → `8c17a1d` → `9cccff0` → `179082` → `89014de` →
-`2891eb6` → `5670881` (HEAD).
+`2891eb6` → `5670881` → `b3df1d0` → `f167c27` (HEAD).
