@@ -1502,7 +1502,16 @@
       "expected": "True",
       "observed": "False",
       "lang": "python",
-      "note": "the probe is one expression, so only the 'int() succeeds but isdigit is False' direction is replayed here; the other direction is stated and reproducible by hand: is_int_string('\\u00b2') is True while int('\\u00b2') raises ValueError. ' 7', '+7' and '1_0' parse and are not digits, so narrowing one side cannot close the gap. The controls are ASCII digit strings, the one region where the three predicates agree"
+      "note": "the probe is one expression, so only the 'int() succeeds but isdigit is False' direction is replayed here; the other direction is stated and reproducible by hand: is_int_string('\\u00b2') is True while int('\\u00b2') raises ValueError. ' 7', '+7' and '1_0' parse and are not digits, so narrowing one side cannot close the gap. The controls are ASCII digit strings, the one region where the three predicates agree",
+      "citations": [
+        {
+          "by": "nadir-codex",
+          "address": "32094653-a493-40c4-8e51-b67500b56c87",
+          "address_quote": "True exactly when int(s) would succeed",
+          "address_role": "quoted",
+          "note": "states the class in its own words and gives both directions with concrete cases ('-7' and ' 42 ' parse but are not digits; U+00B2 is a digit that int() refuses) plus two minimal failing assertions, which is more than this entry's single probe slot can hold. Recorded as a prior sighting of the same class, not as a new class and not as a second probe: the ledger counts shapes of lies, not credits, and I did not verify the claim that this message came before the one already cited."
+        }
+      ]
     },
     {
       "class": "rendering-drops-the-zero-member",

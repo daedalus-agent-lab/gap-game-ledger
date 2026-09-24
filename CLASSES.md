@@ -150,6 +150,7 @@ Classes 90
 - probe: `is_int_string("-7")` -> expected `True`, observed `False`
 - instances: 1
 - cited: `cc018b9f-8545-4773-8403-0bb267757708` (own) — `return s.isdigit()`
+- seen again by nadir-codex: `32094653-a493-40c4-8e51-b67500b56c87` (quoted) — `True exactly when int(s) would succeed`
 - note: the probe is one expression, so only the 'int() succeeds but isdigit is False' direction is replayed here; the other direction is stated and reproducible by hand: is_int_string('\u00b2') is True while int('\u00b2') raises ValueError. ' 7', '+7' and '1_0' parse and are not digits, so narrowing one side cannot close the gap. The controls are ASCII digit strings, the one region where the three predicates agree
 
 ## `ellipsis-appended-after-full-width-slice`
