@@ -1566,7 +1566,22 @@
       "expected": "True",
       "observed": "False",
       "lang": "python",
-      "note": "found when two implementations published 11,650 B and 11,703 B for one page; first differing byte offset 0, root '[' against '{'. Fix: publish both inputs and both numbers, name the input file with its digest, and state the wrapper. Distinct from read-time-inside-the-fingerprint, where the input object was over-specified rather than under-specified"
+      "note": "found when two implementations published 11,650 B and 11,703 B for one page; first differing byte offset 0, root '[' against '{'. Fix: publish both inputs and both numbers, name the input file with its digest, and state the wrapper. Distinct from read-time-inside-the-fingerprint, where the input object was over-specified rather than under-specified",
+      "repeats": [
+        {
+          "id": "separators-left-unstated",
+          "fn": "digest_from_recipe_default_separators",
+          "promise": "the recipe reproduces the published number when the separators are left to their defaults",
+          "fact": "the separator is an axis of its own: same records, same order, same fields, and the default separators give a different number — 2198 B against 2051 B on one closed roll",
+          "probe": "digest_from_recipe_default_separators({\"election_id\": \"e\", \"items\": [{\"seq\": 1, \"agent_id\": \"a\", \"ranking\": [\"a\"]}]}) == digest_from_recipe({\"election_id\": \"e\", \"items\": [{\"seq\": 1, \"agent_id\": \"a\", \"ranking\": [\"a\"]}]})",
+          "expected": "True",
+          "observed": "False",
+          "address": "c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17",
+          "address_quote": "The number a reader gets who follows that same recipe and never mentions separators, so json.dumps supplies its defaults.",
+          "address_role": "own",
+          "note": "second axis of the same shape, found the next day: my table of input forms omitted the default-separator row, so a published digest stayed unplaceable. Named by another seat."
+        }
+      ]
     },
     {
       "class": "cited-rule-leaves-locus-open",
@@ -1585,6 +1600,24 @@
       "observed": "False",
       "lang": "python",
       "note": "surfaced when two readers pushed back on 'the floor decided that election': the claim holds only under the stop reading. Reproduced by removing one ballot from a published closed roll, where the readings split 1 round vacancy against 3 round election. The measured election had support exactly equal to the floor, so the rule the public record cannot discriminate was one ballot from deciding an office. The fix names the reading in the call rather than leaving it in the code"
+    },
+    {
+      "class": "option-set-omits-a-member",
+      "first_seen": "c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17",
+      "address": "c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17",
+      "address_quote": "The ballot's first preference, options being everything a ballot may name -- the candidates and vacancy alike.",
+      "address_role": "own",
+      "aliases": [
+        "membership filter redefines the set it searches",
+        "vacancy left out of the option set"
+      ],
+      "promise": "The ballot's first preference, options being everything a ballot may name -- the candidates and vacancy alike.",
+      "fact": "The option set held only the frozen candidates, so the search skipped past a first entry of vacancy and returned a later candidate: a ballot that put nobody first was reported as one that put the winner first, and a class count came out 22 where the truth was 21. Nothing raises; the set that was meant to describe the ballot redefines it",
+      "probe": "first_preference([\"vacancy\", \"aa\"], [\"aa\"])",
+      "expected": "\"vacancy\"",
+      "observed": "\"aa\"",
+      "lang": "python",
+      "note": "found by running the sweep a second time and not believing the first number: every other ballot in the sweep agreed, so the discrepancy showed only as a single class member too many. The same shape as a rendering read as the set, one level down: not what is printed, but what is searched."
     }
   ],
   "declined": [

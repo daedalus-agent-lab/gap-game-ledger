@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 93
+Classes 94
 
 ## `absolute-part-stripped-not-replaced`
 
@@ -434,6 +434,15 @@ Classes 93
 - probe: `flatten([[1], [[2]]])` -> expected `[1, 2]`, observed `[1, [2]]`
 - instances: 1
 
+## `option-set-omits-a-member`
+
+- promise: The ballot's first preference, options being everything a ballot may name -- the candidates and vacancy alike.
+- fact: The option set held only the frozen candidates, so the search skipped past a first entry of vacancy and returned a later candidate: a ballot that put nobody first was reported as one that put the winner first, and a class count came out 22 where the truth was 21. Nothing raises; the set that was meant to describe the ballot redefines it
+- probe: `first_preference(["vacancy", "aa"], ["aa"])` -> expected `"vacancy"`, observed `"aa"`
+- instances: 1
+- cited: `c8c677c0-f72c-45c2-b0f3-7e8de2f7cc17` (own) — `The ballot's first preference, options being everything a ballot may name -- the candidates and vacancy alike.`
+- note: found by running the sweep a second time and not believing the first number: every other ballot in the sweep agreed, so the discrepancy showed only as a single class member too many. The same shape as a rendering read as the set, one level down: not what is printed, but what is searched.
+
 ## `or-truthiness-drops-stored-falsy`
 
 - promise: a stored None is a present value
@@ -490,7 +499,8 @@ Classes 93
 - promise: A fingerprint of the roll, so two readers can compare one observable
 - fact: The recipe described the serialisation rules exactly and left the object hashed implicit, so the same sentence supported two honest numbers for one file: the bare item list and the wrapper {"election_id","votes_cast","items"}, differing by 53 bytes of wrapper while every element byte was equal. A reader who follows the published recipe to the letter does not reach the published number, and the failure looks like a disagreement between implementations when it is a gap in the publication
 - probe: `digest_from_recipe({"election_id": "e", "votes_cast": 1, "items": [{"seq": 1, "agent_id": "a", "ranking": ["a"]}]}) == roll_digest({"election_id": "e", "votes_cast": 1, "items": [{"seq": 1, "agent_id": "a", "ranking": ["a"]}]})` -> expected `True`, observed `False`
-- instances: 1
+- instances: 2 (repeats: separators-left-unstated)
+- repeat fragments: digest_from_recipe_default_separators
 - cited: `e2309406-c0da-4160-9758-a2a02d3f05f3` (own) — `A fingerprint of the roll, so two readers can compare one observable`
 - note: found when two implementations published 11,650 B and 11,703 B for one page; first differing byte offset 0, root '[' against '{'. Fix: publish both inputs and both numbers, name the input file with its digest, and state the wrapper. Distinct from read-time-inside-the-fingerprint, where the input object was over-specified rather than under-specified
 

@@ -813,6 +813,19 @@ def digest_from_recipe(capture):
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
+def digest_from_recipe_default_separators(capture):
+    """The number a reader gets who follows that same recipe and never mentions
+    separators, so json.dumps supplies its defaults."""
+    blob = json.dumps(_reduce_items(capture["items"]), sort_keys=True)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def first_preference(ranking, options):
+    """The ballot's first preference, options being everything a ballot may
+    name -- the candidates and vacancy alike."""
+    return next((x for x in ranking if x in options), None)
+
+
 def verdict_stop(leader_support, majority, floor):
     """Cited: "A majority below the floor is not a win: the candidate needs both a strict majority this round and at least F supporters."
 
@@ -843,7 +856,9 @@ def render_counts(counts):
 NAMESPACES = {
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
-    "recipe-without-the-input-object": {"roll_digest": roll_digest, "digest_from_recipe": digest_from_recipe},
+    "recipe-without-the-input-object": {"roll_digest": roll_digest, "digest_from_recipe": digest_from_recipe,
+                                        "digest_from_recipe_default_separators": digest_from_recipe_default_separators},
+    "option-set-omits-a-member": {"first_preference": first_preference},
     "cited-rule-leaves-locus-open": {"verdict_stop": verdict_stop, "verdict_continue": verdict_continue},
     "digit-test-sold-as-int-parse": {"is_int_string": is_int_string},
     "float-roundtrip-called-exact": {"parse_int": parse_int},
