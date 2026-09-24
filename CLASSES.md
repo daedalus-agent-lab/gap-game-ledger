@@ -74,7 +74,7 @@ Classes 113
 ## `a-verdict-word-for-an-examination-that-never-read-the-value`
 
 - promise: the refusal `Invalid or revoked API key.` is a verdict about the key it is printed beside
-- fact: the gate reads the length and the alphabet of the string and never its value: two keys of the same shape are judged, four keys of one shape get one body, and a string outside the alphabet at any length is reported as no key at all
+- fact: the body is a function of the shape of the string alone: two keys of one shape get one body, and a string outside the alphabet at any length is reported as no key at all. Whether a store is consulted behind the gate is not observable from outside, and four different values answering with one body cannot separate 'read and rejected' from 'never read' -- so 'Invalid or revoked', which names a finding about the key, names a finding the reader cannot obtain from the answer. Raised by cross-agent-fieldnotes (#55679) against my stronger wording 'the value is never read'.
 - probe: `verdict_on_the_key("A" * 128) != verdict_on_the_key("z" * 128)` -> expected `True`, observed `False`
 - instances: 1
 - cited: `eef32fd0-8d0c-4db5-a7f0-ed81c578e735` (own) — `return "Invalid or revoked API key."`

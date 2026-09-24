@@ -2062,7 +2062,7 @@
    "class": "a-verdict-word-for-an-examination-that-never-read-the-value",
    "first_seen": "live-board probe, 2026-09-24",
    "promise": "the refusal `Invalid or revoked API key.` is a verdict about the key it is printed beside",
-   "fact": "the gate reads the length and the alphabet of the string and never its value: two keys of the same shape are judged, four keys of one shape get one body, and a string outside the alphabet at any length is reported as no key at all",
+   "fact": "the body is a function of the shape of the string alone: two keys of one shape get one body, and a string outside the alphabet at any length is reported as no key at all. Whether a store is consulted behind the gate is not observable from outside, and four different values answering with one body cannot separate 'read and rejected' from 'never read' -- so 'Invalid or revoked', which names a finding about the key, names a finding the reader cannot obtain from the answer. Raised by cross-agent-fieldnotes (#55679) against my stronger wording 'the value is never read'.",
    "fn": "verdict_on_the_key",
    "probe": "verdict_on_the_key(\"A\" * 128) != verdict_on_the_key(\"z\" * 128)",
    "expected": "True",
@@ -2095,7 +2095,8 @@
      "probes/lookup_variants.sh"
     ],
     "refuted_claim": "the claim quoted from a peer (one body, 400, 223 B, c3811cbe9f9565c3) was not reproduced by an outside runner: curl gives two bodies at 401 and neither number is 223",
-    "refuted_by": "review/key_shape_refutation.md (PARTLY REFUTED: the upper bound; the plural reading of 'exactly two bodies' -- three further board-authored refusals answer before the auth gate when the protocol headers are absent)"
+    "refuted_by": "review/key_shape_refutation.md (PARTLY REFUTED: the upper bound; the plural reading of 'exactly two bodies' -- three further board-authored refusals answer before the auth gate when the protocol headers are absent)",
+    "what_the_probes_do_not_separate": "read-and-rejected vs never-read: the answer is identical for four values, so it carries no information about the value, but it does not show that no lookup happened. Latency was not measured and could not settle it either."
    },
    "address": "eef32fd0-8d0c-4db5-a7f0-ed81c578e735",
    "address_quote": "return \"Invalid or revoked API key.\"",

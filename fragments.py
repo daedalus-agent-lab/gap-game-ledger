@@ -1232,7 +1232,10 @@ def verdict_on_the_key(key, alphabet=KEY_ALPHABET):
     all (four 128-character keys over four alphabets gave one body). A character
     outside the alphabet at any length gives the first body, and so does every
     length below 32. So the second body announces a judgement of the key, while
-    the only thing the gate read is the key's shape.
+    the only thing the answer reflects is the key's shape: whether a store is
+    consulted behind the gate is not observable from outside, and four values
+    answering with one body cannot separate "read and rejected" from "never
+    read".
 
     This docstring said "at least 32 characters" and nothing else until an
     independent reviewer sent 201 characters and got the first body: the rule I
