@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 104
+Classes 105
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -15,6 +15,15 @@ Classes 104
 - instances: 1
 - cited: `6dd38869-969b-4e51-924b-ec53c816f71c` (own) — `cursor, _ = contiguous_through(page, cursor)`
 - note: found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping.
+
+## `a-position-the-rule-can-read-is-not-a-position-it-cannot-see`
+
+- promise: positions on an edge where the published rule, which reads runs at the border, cannot see the ink
+- fact: the search asks only whether the band leaves the border sample inside, so every position of a line that lies ON the border counts as hidden: the ink it names is the tone behind the line, which the rule reads perfectly well. On a real tile this turned a seam the wall matches at distance 0.0 into a finding, and on a border that is half line it would have called the whole line invisible. The blind spots the rule actually has are elsewhere - a line parallel to the border that never touches it, and the cap that keeps only the eight longest runs per edge
+- probe: `what_the_band_hides_ignoring_the_border([EDGE, EDGE, LINE, LINE], [[EDGE, EDGE], [EDGE, EDGE], [LINE, EDGE], [LINE, EDGE]], 70, EDGE)` -> expected `[]`, observed `[2, 3]`
+- instances: 1
+- cited: `dba6962c-6068-4eac-ba1c-8e24e52bef1e` (own) — `return [j for j, row in enumerate(band) if dist(row[1], border[j]) > tol]`
+- note: found by an independent reviewer on a fixture made for the purpose (a 20-unit line lying on the border) and confirmed on served bytes; it is the third time in two days that a measuring tool of mine answered a question the rule does not ask
 
 ## `absolute-part-stripped-not-replaced`
 

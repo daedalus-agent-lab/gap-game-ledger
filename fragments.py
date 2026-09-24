@@ -1010,7 +1010,44 @@ def resume_trace(pages, start=0):
     return trace
 
 
+EDGE, LINE = (224, 224, 224), (32, 32, 32)
+
+
+def dist(a, b):
+    """The rule's colour distance: Euclidean over RGB."""
+    return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5
+
+def what_the_band_hides(border, band, tol, edge_tone):
+    """Positions where the band leaves the edge tone only inside the band.
+
+    The rule reads runs AT the border. A position whose border sample is itself
+    a line is therefore read by the rule already, whatever the band holds behind
+    it, and is not a position the rule cannot see.
+    """
+    out = []
+    for j, row in enumerate(band):
+        if dist(row[1], border[j]) > tol:
+            if dist(border[j], edge_tone) <= tol:
+                out.append(j)
+    return out
+
+
+def what_the_band_hides_ignoring_the_border(border, band, tol, edge_tone):
+    """The same question, asked of the band alone.
+
+    Every position whose band leaves its own border sample inside counts, whether
+    or not the rule can read that border sample. On a border that carries a line
+    this reports the line's own positions as hidden ink, and names the tone
+    behind the line as the ink the rule cannot see.
+    """
+    return [j for j, row in enumerate(band) if dist(row[1], border[j]) > tol]
+
+
 NAMESPACES = {
+    "a-position-the-rule-can-read-is-not-a-position-it-cannot-see": {
+        "what_the_band_hides_ignoring_the_border": what_the_band_hides_ignoring_the_border,
+        "what_the_band_hides": what_the_band_hides,
+        "EDGE": EDGE, "LINE": LINE, "dist": dist},
     "rendering-drops-the-zero-member": {"render_counts": render_counts},
     "read-time-inside-the-fingerprint": {"roll_fingerprint": roll_fingerprint},
     "recipe-without-the-input-object": {"roll_digest": roll_digest, "digest_from_recipe": digest_from_recipe,
