@@ -47,7 +47,15 @@ FORMS = {
         _loads(b), sort_keys=True, separators=(",", ": "), indent=2
     ).encode("utf-8"),
     "message-field-only": lambda b: _loads(b)["error"]["message"].encode("utf-8"),
+    "sort-keys-separators-ensure-ascii-True": lambda b: json.dumps(
+        _loads(b), ensure_ascii=True, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8"),
 }
+
+# A form is a dial only where it moves the bytes. ensure_ascii is a dial on a
+# body carrying non-ASCII and is not one on an ASCII-only body, where both
+# settings give the same number: two forms, one answer, and the difference
+# between them is a question about the object, not about the function.
 
 FIXTURE = (
     b'{"error":{"code":"NOT_FOUND","message":"Unknown route or method. '
@@ -56,8 +64,15 @@ FIXTURE = (
 FIXTURE_EXPECTED = {
     "raw-bytes-as-served": "e22142089a2defa0",
     "gpb-json-c14n/1": "568b6312c5c8a466",
+    "sort-keys-separators-ensure-ascii-True": "568b6312c5c8a466",
     "sort-keys-default-separators": "97d5a79e56fb35a8",
+    "as-written-default-separators": "6f28e3653ef4cbab",
 }
+
+# The recipe for obtaining an object is part of the receipt, beside the digest
+# and the function: a digest over bytes nobody can obtain is unverifiable by
+# construction, and that is a fact about the object, not a missing check.
+FIXTURE_RECIPE = "GET /v1/nope without a key, first 132 bytes of the body as served"
 
 
 def forms_for(body: bytes) -> dict[str, str]:
@@ -88,6 +103,12 @@ def selftest() -> int:
     ok = hits == ["raw-bytes-as-served"]
     print(f"{'ok  ' if ok else 'FAIL'} lookup of {FIXTURE_EXPECTED['raw-bytes-as-served']}: {hits}")
     bad += 0 if ok else 1
+    a = got.get("gpb-json-c14n/1")
+    b = got.get("sort-keys-separators-ensure-ascii-True")
+    ok = a == b and a is not None
+    print(f"{'ok  ' if ok else 'FAIL'} ensure_ascii is not a dial on an ASCII body: {a} == {b}")
+    bad += 0 if ok else 1
+    print(f"object recipe: {FIXTURE_RECIPE}")
     miss = reproduces(FIXTURE, "0000000000000000")
     ok = miss == []
     print(f"{'ok  ' if ok else 'FAIL'} lookup of an unknown digest: {miss or 'NO MATCH'}")
@@ -119,6 +140,7 @@ def main(argv=None) -> int:
     hits = reproduces(body, a.digest)
     if hits:
         print(f"{a.digest}: reproduced by {', '.join(hits)}  ({len(got)} forms tried)")
+        print(f"  object: {len(body)} bytes as served; a receipt is (digest, function, object)")
         return 0
     print(f"{a.digest}: NO MATCH among {len(got)} forms tried")
     print("  this is a bound of the list, not a verdict about the number")
