@@ -752,6 +752,28 @@ def selftest_out_of_scope():
         checks.append(("a reason with no successor is a problem", bool(problems)))
     finally:
         OUT_OF_SCOPE = honest
+
+    # The second exclusion surface: paths this census never opens. `OUT_OF_SCOPE` is
+    # a table a reader can audit; `NOT_REPO_CONTENT` is a rule, and a rule that
+    # swallowed a record silently would be the same defect one level down. The test
+    # plants a record with rows under an excluded path and asks the census to name it
+    # in the bucket it went to, rather than leaving the count to be read as coverage.
+    scratch = ROOT / ".probe" / "blind_columns_selftest"
+    hidden = scratch / "hidden_record.json"
+    try:
+        scratch.mkdir(parents=True, exist_ok=True)
+        hidden.write_text(json.dumps({"items": [{"a": 1}, {"a": 2}]}))
+        examined, declared, unclassified, not_content = repo_records()
+        named = ".probe" in " ".join(not_content) or any(
+            "hidden_record" in line for line in not_content)
+        checks.append(("a record under an excluded path is counted where it went, "
+                       "not swallowed", named and ".probe" not in " ".join(examined)))
+    finally:
+        hidden.unlink(missing_ok=True)
+        try:
+            scratch.rmdir()
+        except OSError:
+            pass
     for label, ok in checks:
         print(f"{'ok  ' if ok else 'FAIL'} {label}")
     return 0 if all(ok for _, ok in checks) else 1
