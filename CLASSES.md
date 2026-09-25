@@ -5,7 +5,17 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 118
+Classes 119
+
+## `a-coverage-check-drawn-from-the-covered-set`
+
+- promise: How many rules of the policy carry a control pair of their own.
+- fact: the check reads the rules out of the control table itself -- the text written beside each pair -- so the number is over sentences, not over rules. Two sentences about one rule count as two rules and a rule nobody wrote a pair for is absent from the universe being tested, so the count can only ever fall short of the table's own size and never of the policy's. On my own ledger this printed `6 pairs, one per rule of the policy` while six rules of that policy were broken by a mutation with the run still green: two of the six labels guarded the dynamic-reader rule, the import rule and the rule that leaves a dunder name as written had no pair at all, the dead-store pass was never asked what counts as a read, a class body was never asked whether it binds outside itself, and a global declaration's own name was never erased. Repair: the rules are enumerated and the counts are over rule ids, with a rule in neither table an error rather than a silence, and the claim is measured by `probes/policy_mutations.py`, which breaks every rule in memory and requires the break to be caught.
+- probe: `every_rule_is_guarded(guard_pairs(), GUARDED_POLICY)` -> expected `False`, observed `True`
+- instances: 2 (repeats: the-count-names-its-universe)
+- repeat fragments: every_rule_is_guarded
+- cited: `5c2b8d21-0f14-4a77-9a53-6e0c1f2b7d34` (own) — `    written = [note for _l, _r, _same, note in pairs]`
+- note: the table in the probe has four entries, two of them two sentences about one rule, and R3 of the three-rule policy has none: the shipped form reports it covered, the form that asks the policy reports it not. Found by an outside attacker hired to attack the published claim rather than to reproduce it: its report is the code, not a redraw of my own pass.
 
 ## `a-cursor-policy-shipped-inside-a-function-and-never-named`
 
@@ -95,7 +105,8 @@ Classes 118
 - promise: The file a reader runs is the file the checksum names
 - fact: The published mirror carried a checksum file whose own entry for the runner had gone stale, because the runner is edited like any other file and the checksums were regenerated without it. A green `sha256sum -c` is a claim about the file a reader holds, not about the one the author ran: had the mirror been archived instead of committed, the stale line would have failed for a reader and never for me, because nothing in the author's run reads the checksum file at all.
 - probe: `covered_by_the_checksums({"resume_cursor.py", "run_all.sh"}, {"resume_cursor.py"})` -> expected `True`, observed `False`
-- instances: 1
+- instances: 2 (repeats: the-mirror-item-pointed-at-no-mirror)
+- repeat fragments: check_passes_when_there_is_nothing_to_check
 - note: found by running `sha256sum -c MANIFEST.sha256` in the mirror as practice, not as part of the suite: `run_all.sh: FAILED`. Repair: the suite checks the mirror against its own checksums as its first item, so a stale pair fails the run instead of waiting for a reader to notice. Items are the file set the reader is told to trust.
 
 ## `a-store-erased-though-the-fragment-reads-it`

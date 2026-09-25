@@ -1347,6 +1347,61 @@ def flat_set_says_one_piece_of_logic(helper_local):
 
 
 
+GUARDED_POLICY = ("R1", "R2", "R3")
+SMALL_POLICY = ("R1", "R2")
+
+
+def guard_pairs():
+    """A control table that reads as `one pair per rule` while one rule of the
+    policy has no pair: two of its four entries are two sentences about the same
+    rule, and no entry mentions R3."""
+    return [
+        ("left_a", "right_a", False, "a free name is kept"),
+        ("left_b", "right_b", False, "a store a caller reads is kept"),
+        ("left_c", "right_c", False, "the guard is a property of the fragment"),
+        ("left_d", "right_d", True, "a dead store is removed"),
+    ]
+
+
+def guard_pairs_with_ids():
+    """The repaired table: the column is a rule id, not a sentence about one."""
+    return [
+        ("a", "b", False, "R1"),
+        ("c", "d", False, "R2"),
+        ("e", "f", False, "R2"),
+        ("g", "h", True, "R2"),
+    ]
+
+
+def every_rule_is_guarded(pairs, policy):
+    """Whether every rule of the policy carries a control pair of its own.
+
+    As written, the rules are the sentences written beside the pairs, so two
+    sentences about one rule count as two rules, and a rule nobody wrote a pair
+    for is absent from the universe the check ranges over -- the count can only
+    ever fall short of the table's own size, never of the policy's.
+    """
+    written = [note for _l, _r, _same, note in pairs]
+    return (len(pairs) >= 4
+            and len(set(written)) == len(written)
+            and len({(l, r) for l, r, _s, _n in pairs}) == len(pairs)
+            and len(policy) <= len(written))
+
+
+def every_rule_of_the_policy_is_guarded(pairs, policy):
+    """The same question asked of the policy rather than of the table's prose."""
+    guarded = {rule for _l, _r, _same, rule in pairs}
+    return {rule for rule in policy} <= guarded
+
+
+def check_passes_when_there_is_nothing_to_check(present, named):
+    """The mirror item as the runner ran it: the file it checks is not there, so
+    it prints a sentence and exits zero."""
+    if not present:
+        return True
+    return present <= named
+
+
 def covered_by_the_checksums(present, named):
     """Whether every file the reader is told to trust is in the checksum file."""
     return present <= named
@@ -1772,8 +1827,17 @@ def serves_its_own_digest(item, heading):
 
 
 NAMESPACES = {
+    "a-coverage-check-drawn-from-the-covered-set": {
+        "every_rule_is_guarded": every_rule_is_guarded,
+        "every_rule_of_the_policy_is_guarded": every_rule_of_the_policy_is_guarded,
+        "guard_pairs": guard_pairs,
+        "guard_pairs_with_ids": guard_pairs_with_ids,
+        "GUARDED_POLICY": GUARDED_POLICY,
+        "SMALL_POLICY": SMALL_POLICY},
     "a-stale-checksum-beside-the-run-it-cannot-cover": {
-        "covered_by_the_checksums": covered_by_the_checksums},
+        "covered_by_the_checksums": covered_by_the_checksums,
+        "check_passes_when_there_is_nothing_to_check":
+            check_passes_when_there_is_nothing_to_check},
     "an-erasure-that-reads-past-the-scope-it-declares": {
         "names_the_function_binds": names_the_function_binds,
         "a_scoping_pair": a_scoping_pair,

@@ -6,6 +6,40 @@
  "how_to_verify": "python3 check.py — re-runs every probe, checks probe == observed and observed != expected, exit 0 only if all hold.",
  "entries": [
   {
+   "class": "a-coverage-check-drawn-from-the-covered-set",
+   "first_seen": "5c2b8d21-0f14-4a77-9a53-6e0c1f2b7d34",
+   "address": "5c2b8d21-0f14-4a77-9a53-6e0c1f2b7d34",
+   "address_quote": "    written = [note for _l, _r, _same, note in pairs]",
+   "address_role": "own",
+   "aliases": [
+    "one pair per rule counted over the prose beside the pairs",
+    "a control table whose universe is itself",
+    "rules counted by their labels, not by the policy"
+   ],
+   "promise": "How many rules of the policy carry a control pair of their own.",
+   "fact": "the check reads the rules out of the control table itself -- the text written beside each pair -- so the number is over sentences, not over rules. Two sentences about one rule count as two rules and a rule nobody wrote a pair for is absent from the universe being tested, so the count can only ever fall short of the table's own size and never of the policy's. On my own ledger this printed `6 pairs, one per rule of the policy` while six rules of that policy were broken by a mutation with the run still green: two of the six labels guarded the dynamic-reader rule, the import rule and the rule that leaves a dunder name as written had no pair at all, the dead-store pass was never asked what counts as a read, a class body was never asked whether it binds outside itself, and a global declaration's own name was never erased. Repair: the rules are enumerated and the counts are over rule ids, with a rule in neither table an error rather than a silence, and the claim is measured by `probes/policy_mutations.py`, which breaks every rule in memory and requires the break to be caught.",
+   "probe": "every_rule_is_guarded(guard_pairs(), GUARDED_POLICY)",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "the table in the probe has four entries, two of them two sentences about one rule, and R3 of the three-rule policy has none: the shipped form reports it covered, the form that asks the policy reports it not. Found by an outside attacker hired to attack the published claim rather than to reproduce it: its report is the code, not a redraw of my own pass.",
+   "repeats": [
+    {
+     "id": "the-count-names-its-universe",
+     "fn": "every_rule_is_guarded",
+     "promise": "A one-rule policy is covered by a one-entry table, and a two-rule policy by a two-entry one",
+     "fact": "the form refuses any table smaller than four entries, so a small policy cannot be guarded at all: the number four is a size the instrument felt comfortable with, written where a rule about coverage belongs, and a reader of the green run cannot tell it from a bound the policy asks for.",
+     "probe": "every_rule_is_guarded(guard_pairs_with_ids()[:2], SMALL_POLICY)",
+     "expected": "True",
+     "observed": "False",
+     "lang": "python",
+     "address_quote": "    return (len(pairs) >= 4",
+     "address_role": "own",
+     "note": "the honest answer for these two entries is `every rule of the policy has a pair`, and the form answers no because its floor is four. The divergence is in the other direction from the class probe, which is why it is a repeat and not the class: the table is small and complete here, large and incomplete there."
+    }
+   ]
+  },
+  {
    "class": "a-cursor-policy-shipped-inside-a-function-and-never-named",
    "first_seen": "6dd38869-969b-4e51-924b-ec53c816f71c",
    "address": "6dd38869-969b-4e51-924b-ec53c816f71c",
@@ -2184,7 +2218,22 @@
    "expected": "True",
    "observed": "False",
    "lang": "python",
-   "note": "found by running `sha256sum -c MANIFEST.sha256` in the mirror as practice, not as part of the suite: `run_all.sh: FAILED`. Repair: the suite checks the mirror against its own checksums as its first item, so a stale pair fails the run instead of waiting for a reader to notice. Items are the file set the reader is told to trust."
+   "note": "found by running `sha256sum -c MANIFEST.sha256` in the mirror as practice, not as part of the suite: `run_all.sh: FAILED`. Repair: the suite checks the mirror against its own checksums as its first item, so a stale pair fails the run instead of waiting for a reader to notice. Items are the file set the reader is told to trust.",
+   "repeats": [
+    {
+     "id": "the-mirror-item-pointed-at-no-mirror",
+     "fn": "check_passes_when_there_is_nothing_to_check",
+     "promise": "The item that checks the mirror is a claim about the mirror",
+     "fact": "the runner's first item is `sha256sum -c MANIFEST.sha256` inside the directory it is handed. Run against a directory that holds no manifest it prints `no checksum file in this layout` and exits zero, so the item reports ok while no checksum was compared, and the aggregate counts it. My own recorded run was quoted as carrying this item and did not measure it: the digest of that item is e3b0c44298fc1c14, the digest of silence, in the run that checks a mirror and in the run that finds none.",
+     "probe": "check_passes_when_there_is_nothing_to_check(set(), {\"run_all.sh\"})",
+     "expected": "False",
+     "observed": "True",
+     "lang": "python",
+     "address_quote": "    if not present:",
+     "address_role": "own",
+     "note": "found by pointing the runner at the workspace root instead of the mirror and reading the item line rather than the aggregate. Repair: the mirror's checksums are read with the directory that holds them, and an item the suite cannot measure is now carried in the digest at a status that is not zero and named in the run instead of dropped from it."
+    }
+   ]
   },
   {
    "class": "a-store-erased-though-the-fragment-reads-it",
