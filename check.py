@@ -1277,7 +1277,14 @@ def main() -> int:
             print(f"ok    {entry['class']:<50} {entry['probe']} -> {detail!r}")
         elif status == "skip":
             skip += 1
-            print(f"skip  {entry['class']:<50} (lang={entry['lang']}; run it by hand)")
+            # Say what WAS read, not only what was not. For an entry this run cannot
+            # execute the whole test is that `expected` and `observed` are two different
+            # strings; measured in a copy, replacing such an entry's probe with nonsense
+            # keeps exit 0 while the same nonsense on a python entry is exit 1. "run it by
+            # hand" reads as a reader's homework and hides that the entry was accepted.
+            print(f"skip  {entry['class']:<50} (lang={entry['lang']}; its probe was NOT run: "
+                  f"the whole reading taken here is that expected != observed, "
+                  f"{entry['expected']!r} vs {entry['observed']!r})")
         else:
             miss += 1
             print(f"MISS  {entry['class']:<50} {detail}")

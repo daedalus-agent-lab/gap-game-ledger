@@ -3245,7 +3245,46 @@ def what_a_reader_of_the_sentence_predicts(name, states=COPY_RULE_STATES):
     """What the rule's own wording implies for a file it says it tracks."""
     return (True, WHAT_THE_COMMIT_HOLDS[name]) if name in WHAT_THE_COMMIT_HOLDS else None
 
+
+# --- a probe that nothing reads, accepted because two strings differ -------------
+#
+# Two entries carry lang=javascript and the run has no way to execute them. What the
+# run asks of them is not that the probe reproduces anything: it is that `expected`
+# and `observed` are two different strings. Measured in a copy: replacing the probe
+# with nonsense keeps exit 0, putting `observed` back to `expected` is exit 1, and the
+# same nonsense on a python entry is exit 1. The record therefore carries two of its
+# 140 entries on a string inequality, printed beside entries that were run.
+
+WHAT_THE_TWO_STRINGS_ARE = ("[1, 2, 10]", "[1, 10, 2]")
+A_PROBE_NOTHING_CAN_READ = "this is not javascript (( not a probe ]].zzz"
+
+
+def what_a_skipped_language_requires(expected, observed, probe):
+    """The whole test this run applies to an entry whose language cannot be executed.
+
+    `probe` is accepted as an argument and never looked at -- which is the defect,
+    shown rather than described: the reading does not change when the probe does.
+    """
+    return {
+        "probe_parsed": False,
+        "expected": expected,
+        "observed": observed,
+        "accepted": expected != observed,
+    }
+
+
+def accepts_an_unreadable_probe():
+    """Whether a nonsense probe still passes: it should be refused, and it is not."""
+    return what_a_skipped_language_requires(
+        WHAT_THE_TWO_STRINGS_ARE[0], WHAT_THE_TWO_STRINGS_ARE[1],
+        A_PROBE_NOTHING_CAN_READ)["accepted"]
+
+
 NAMESPACES = {
+    "a-probe-that-nothing-reads-accepted-because-two-strings-differ": {
+        "accepts_an_unreadable_probe": accepts_an_unreadable_probe,
+        "what_a_skipped_language_requires": what_a_skipped_language_requires},
+
     "a-copy-that-takes-its-list-from-one-place-and-its-bytes-from-another": {
         "copy_list_and_copy_bytes": copy_list_and_copy_bytes,
         "what_a_reader_of_the_sentence_predicts": what_a_reader_of_the_sentence_predicts,

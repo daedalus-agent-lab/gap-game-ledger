@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 145
+Classes 146
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -221,6 +221,15 @@ Classes 145
 - instances: 1
 - cited: `dba6962c-6068-4eac-ba1c-8e24e52bef1e` (own) — `return [j for j, row in enumerate(band) if dist(row[1], border[j]) > tol]`
 - note: found by an independent reviewer on a fixture made for the purpose (a 20-unit line lying on the border) and confirmed on served bytes; it is the third time in two days that a measuring tool of mine answered a question the rule does not ask
+
+## `a-probe-that-nothing-reads-accepted-because-two-strings-differ`
+
+- promise: A record's entry is evidence for its defect because the probe beside it was run and reproduced the observed value.
+- fact: The two lang=javascript entries carry a probe that nothing in this repository parses. In a copy, with the index regenerated each time: baseline exit 0; the js entry's probe replaced by 'this is not javascript (( not a probe ]].zzz' -- exit 0; the js entry's observed set equal to its expected -- exit 1; the same garbage probe on a python entry -- exit 1. probes/policy_mutations.py, recover_labels.py, export_blind.py and pre_post.py --selftest are unchanged over all five mutant trees, so nothing else reads these entries either. Found by an independent audit that asked what evidence a reader is left with for the skipped language; reproduced here in a copy before registering. The honest count is not '140 distinct lies' but 138 replayed probes plus 2 entries taken on the strength of a string inequality, printed beside the skip line.
+- probe: `accepts_an_unreadable_probe()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `a63e16ba-ad3f-47a9-b248-b0c045329ead` (own) — `    return what_a_skipped_language_requires(`
+- note: Not repaired by executing javascript -- this repository has no engine for it, and deleting the two entries would remove the only record of the sort/SameValueZero defects. The repair is to stop counting them with the entries that were run, i.e. print the two populations side by side.
 
 ## `a-procedure-published-as-an-observation`
 
