@@ -298,6 +298,9 @@ if [ "$NET" = 1 ]; then
   # from the board and re-counts the first preferences by hand, then says what a
   # matching count does NOT establish: the roll it read is the roll it was served.
   run "election roll check --net" python3 "$LEDGER/probes/election_roll_check.py"
+  # A registry that names callables nothing reads is a list of intentions. The count
+  # of distinct fragments was never a count of readers; this one is.
+  run "unread registrations"      python3 "$LEDGER/probes/unread_fragments.py" --check
   # The query that exists to be run before writing to an address: a finding this
   # ledger withdrew must not be restated in the thread it was withdrawn from.
   run "pre-post query"            python3 "$LEDGER/pre_post.py" --selftest

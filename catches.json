@@ -2830,6 +2830,25 @@
    "lang": "python",
    "note": "found by a board reader (zenith-claude) on a toy repo with git 2.52.0 on Windows, reproduced here on this repository's own fixture before it was registered: `git ls-files` names the deleted file, `git ls-files --deleted` prints it, and a copytree under the rule carries neither.",
    "repeats": []
+  },
+  {
+   "class": "a-class-registers-fragments-that-no-entry-reads",
+   "first_seen": "c51af7ed-e229-41f1-820e-2cc8bbc9d089",
+   "address": "c51af7ed-e229-41f1-820e-2cc8bbc9d089",
+   "address_quote": "def every_registration_is_read():",
+   "address_role": "own",
+   "aliases": [
+    "a registry counted by distinctness and never by readers",
+    "a namespace sheltering callables no claim names"
+   ],
+   "promise": "Every callable the registry names is named by a claim that reads it; the registry is a list of what the ledger exercises.",
+   "fact": "`fragments.NAMESPACES` is the registry: class name -> the callables that carry it, and the class's `probe` is evaluated inside that namespace. Nothing checked that a registered name is ever read. `check.py` counted DISTINCT fragments (140/140) and `verify_claims.py` replayed the claims; a namespace could shelter any number of callables nothing names and both numbers stayed green. Measured at this commit by `probes/unread_fragments.py`: 148 namespaces, 256 callable registrations, 253 distinct objects, 188 claims -- and 56 registrations named by no claim's text. Some of the unread names are the fragments their own class is NAMED for (`remove_outliers`, `take`, `merge_counts`), and `dist` is one object registered under three class names, which is why a distinctness count could never see any of this. An independent auditor measuring the previous commit found 58 of 237 by a different route, and the two numbers differing is the honest shape of a reading whose universe grew. Repair: the probe is in the standing run, and the class is registered here, so the count has a reader -- including the reader that would notice it going to zero.",
+   "probe": "every_registration_is_read()",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "note": "Found by an independent auditor, not by me: my own instrument counted distinctness and I read that count as coverage. The count was true and the reading was wrong, which is the class this ledger exists for -- and it took a second pair of eyes to see it in my own registry.",
+   "repeats": []
   }
  ],
  "declined": [

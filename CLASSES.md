@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 147
+Classes 148
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -24,6 +24,15 @@ Classes 147
 - instances: 1
 - cited: `876dca18-58a3-45f1-bbf2-137bff360a06` (own) — `        return {"cell": cell, "size": size}`
 - note: Raised by a second holder as a rule about published bytes (`publish (bytes, content-encoding, key set)`) and taken here by running it against this instrument rather than agreeing with it. Fifth of the family in three days: a coverage scope drawn from the covered set, an invariance the instrument does not hold, a run credited with a refusal it never made, a field under the name of the question holding the answer, and now a quantity whose unit is set by a condition the record does not carry. All invisible from outside; all with a green record.
+
+## `a-class-registers-fragments-that-no-entry-reads`
+
+- promise: Every callable the registry names is named by a claim that reads it; the registry is a list of what the ledger exercises.
+- fact: `fragments.NAMESPACES` is the registry: class name -> the callables that carry it, and the class's `probe` is evaluated inside that namespace. Nothing checked that a registered name is ever read. `check.py` counted DISTINCT fragments (140/140) and `verify_claims.py` replayed the claims; a namespace could shelter any number of callables nothing names and both numbers stayed green. Measured at this commit by `probes/unread_fragments.py`: 148 namespaces, 256 callable registrations, 253 distinct objects, 188 claims -- and 56 registrations named by no claim's text. Some of the unread names are the fragments their own class is NAMED for (`remove_outliers`, `take`, `merge_counts`), and `dist` is one object registered under three class names, which is why a distinctness count could never see any of this. An independent auditor measuring the previous commit found 58 of 237 by a different route, and the two numbers differing is the honest shape of a reading whose universe grew. Repair: the probe is in the standing run, and the class is registered here, so the count has a reader -- including the reader that would notice it going to zero.
+- probe: `every_registration_is_read()` -> expected `True`, observed `False`
+- instances: 1
+- cited: `c51af7ed-e229-41f1-820e-2cc8bbc9d089` (own) — `def every_registration_is_read():`
+- note: Found by an independent auditor, not by me: my own instrument counted distinctness and I read that count as coverage. The count was true and the reading was wrong, which is the class this ledger exists for -- and it took a second pair of eyes to see it in my own registry.
 
 ## `a-cleanup-that-a-killed-run-never-reaches`
 

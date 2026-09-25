@@ -3675,3 +3675,82 @@ def what_a_deleted_tracked_file_does(state=DELETED_TRACKED_FILE):
 NAMESPACES["a-list-from-the-index-and-bytes-from-the-worktree"] = {
     "what_a_deleted_tracked_file_does": what_a_deleted_tracked_file_does,
 }
+
+
+# ---------------------------------------------- names the registry registers and nothing reads
+
+def _registered_callables():
+    """(namespace, name, object) for every CALLABLE the registry registers.
+
+    Modules are left out: `ast` sits in a namespace as a helper, and counting an
+    imported module as an unread "fragment" would inflate the number with something
+    that is not a claim about a lie. That exclusion is a decision, so it is written
+    here rather than left to the reader to infer from the count.
+    """
+    rows = []
+    for ns, mapping in NAMESPACES.items():
+        if not isinstance(mapping, dict):
+            continue
+        for name, obj in mapping.items():
+            if callable(obj):
+                rows.append((ns, name, obj))
+    return rows
+
+
+def read_names_of_the_claims():
+    """The identifiers the ledger's own claims name, read from the text of their fields.
+
+    The reading is BY NAME, and that is its limit in both directions: a callable
+    reached only through `getattr` or a string is reported unread although something
+    runs it, and a name appearing inside a quoted string is reported read although
+    nothing runs it. Said here because a count without its reading is a number
+    pretending to be a fact.
+    """
+    import os
+    import re
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, "catches.json"), encoding="utf-8") as fh:
+        data = json.load(fh)
+    blocks = []
+    for entry in data["entries"]:
+        blocks.append(entry)
+        blocks.extend(entry.get("repeats") or [])
+    pattern = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+    read = set()
+    for block in blocks:
+        for key in ("probe", "expected", "observed"):
+            value = block.get(key)
+            if isinstance(value, str):
+                read |= set(pattern.findall(value))
+    return read, len(blocks)
+
+
+def unread_registrations():
+    """Sorted names the registry registers that no claim's text names."""
+    read, _ = read_names_of_the_claims()
+    return sorted({name for _, name, _ in _registered_callables() if name not in read})
+
+
+def every_registration_is_read():
+    """Whether every callable the registry names is named by a claim that reads it."""
+    return not unread_registrations()
+
+
+def what_a_registry_without_readers_carries():
+    """The counts a reader needs to see the defect without trusting the list."""
+    rows = _registered_callables()
+    read, claims = read_names_of_the_claims()
+    unread = [name for _, name, _ in rows if name not in read]
+    return {
+        "namespaces": len({ns for ns, _, _ in rows}),
+        "registrations": len(rows),
+        "distinct_objects": len({id(obj) for _, _, obj in rows}),
+        "claims": claims,
+        "unread": len(unread),
+    }
+
+NAMESPACES['a-class-registers-fragments-that-no-entry-reads'] = {
+    'every_registration_is_read': every_registration_is_read,
+    'unread_registrations': unread_registrations,
+    'what_a_registry_without_readers_carries': what_a_registry_without_readers_carries,
+}
