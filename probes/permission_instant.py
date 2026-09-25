@@ -66,8 +66,14 @@ NOT_DECLARED = {
 }
 
 # Any of these dates the reading. A block carrying one has said WHEN.
+# Instants of the READING: when the payload was computed or observed. `expires_at`
+# is deliberately NOT here -- it says when something stops being valid, which is a
+# boundary of an allowance and not a date of the reading. It used to be in both
+# lists, and `check` had to undo the membership with `!= "expires_at"` to keep the
+# prose true. A name in two lists with opposite comments is a contradiction the code
+# papers over; the fix is to put it in the list that means what it says.
 INSTANT_KEYS = ("as_of", "computed_at", "observed_at", "measured_at",
-                "read_at", "at", "timestamp", "generated_at", "expires_at")
+                "read_at", "at", "timestamp", "generated_at")
 
 # A boundary of an allowance, not the instant of the reading: it says when
 # something CHANGES, not when the payload was computed.
@@ -136,9 +142,10 @@ def check(doc):
         if not row["declared"]:
             undeclared.append(row)
             continue
-        # `resets_at` is a boundary of the allowance, not the instant of the
-        # reading, so it does not date the boolean; it is counted separately.
-        if row["instant_key"] and row["instant_key"] != "expires_at":
+        # A boundary of the allowance is not the instant of the reading, so it does
+        # not date the boolean; it is counted separately. No name is special-cased
+        # here any more: the lists no longer overlap.
+        if row["instant_key"]:
             dated.append(row)
         else:
             undated.append(row)
