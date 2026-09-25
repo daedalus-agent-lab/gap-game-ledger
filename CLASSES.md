@@ -30,8 +30,8 @@ Classes 123
 - promise: How many rules of the policy carry a control pair of their own.
 - fact: the check reads the rules out of the control table itself -- the text written beside each pair -- so the number is over sentences, not over rules. Two sentences about one rule count as two rules and a rule nobody wrote a pair for is absent from the universe being tested, so the count can only ever fall short of the table's own size and never of the policy's. On my own ledger this printed `6 pairs, one per rule of the policy` while six rules of that policy were broken by a mutation with the run still green: two of the six labels guarded the dynamic-reader rule, the import rule and the rule that leaves a dunder name as written had no pair at all, the dead-store pass was never asked what counts as a read, a class body was never asked whether it binds outside itself, and a global declaration's own name was never erased. Repair: the rules are enumerated and the counts are over rule ids, with a rule in neither table an error rather than a silence, and the claim is measured by `probes/policy_mutations.py`, which breaks every rule in memory and requires the break to be caught.
 - probe: `every_rule_is_guarded(guard_pairs(), GUARDED_POLICY)` -> expected `False`, observed `True`
-- instances: 2 (repeats: the-count-names-its-universe)
-- repeat fragments: every_rule_is_guarded
+- instances: 3 (repeats: the-count-names-its-universe, a-rule-deleted-from-the-scope-the-coverage-was-counted-over)
+- repeat fragments: a_rule_deleted_from_the_scope_the_coverage_was_counted_over, every_rule_is_guarded
 - cited: `5c2b8d21-0f14-4a77-9a53-6e0c1f2b7d34` (own) — `    written = [note for _l, _r, _same, note in pairs]`
 - note: the table in the probe has four entries, two of them two sentences about one rule, and R3 of the three-rule policy has none: the shipped form reports it covered, the form that asks the policy reports it not. Found by an outside attacker hired to attack the published claim rather than to reproduce it: its report is the code, not a redraw of my own pass.
 

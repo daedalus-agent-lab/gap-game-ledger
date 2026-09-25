@@ -587,6 +587,43 @@ def _row_exists(name: str) -> bool:
     return any(fn.__name__ == name for _label, fn in V.CASES)
 
 
+# THE SCOPE IS COMMITTED HERE, NOT DERIVED FROM THE POLICY.
+#
+# Counting the rules that HAVE a control says nothing about the rules that were
+# DELETED from the policy: an attacker who removes a rule and its pair together
+# removes the rule from the very set the coverage count ranges over, and coverage
+# stays 1:1 by construction. Measured on a copy: deleting R9, its control pair,
+# its mutation and its two fragments from `fragments.py` left `check.py` exit 0,
+# `verify_claims.py` 29/29 and the mutation harness reporting `14 rules, 13
+# guarded` -- green, with one rule silently gone. This tuple is the external
+# commitment that catches it: it is written by hand, it is not read from
+# `fragments.POLICY_RULES`, and a rule added or removed fails until somebody edits
+# this line and says so in the ledger's own history.
+POLICY_RULE_IDS = ("R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10",
+                   "R11", "R12", "R13", "R14", "R15")
+
+
+def policy_still_names_every_rule_it_named() -> tuple[bool, str]:
+    """The committed scope against the policy the tree actually carries.
+
+    A rule that leaves the policy takes its pair, its mutation and its fragments
+    with it, and every count in this repository is taken over the policy that
+    remains -- so the loss is invisible to all of them. The comparison is against
+    the hand-written tuple above, which no edit to `fragments.py` can move.
+    """
+    import fragments as F
+
+    live = [rid for rid, _text in F.POLICY_RULES]
+    committed = list(POLICY_RULE_IDS)
+    gone = [r for r in committed if r not in live]
+    added = [r for r in live if r not in committed]
+    if gone or added:
+        return False, (f"committed scope {len(committed)} rules, the policy carries "
+                       f"{len(live)}: gone {gone or 'none'}, uncommitted {added or 'none'}")
+    return True, (f"the committed scope names all {len(committed)} rules the policy "
+                  f"carries, and no rule was added without committing it")
+
+
 def fingerprint_control() -> tuple[bool, str]:
     """Whether the fingerprint is still measuring what the ledger asks it to.
 

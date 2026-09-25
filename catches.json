@@ -36,6 +36,19 @@
      "address_quote": "    return (len(pairs) >= 4",
      "address_role": "own",
      "note": "the honest answer for these two entries is `every rule of the policy has a pair`, and the form answers no because its floor is four. The divergence is in the other direction from the class probe, which is why it is a repeat and not the class: the table is small and complete here, large and incomplete there."
+    },
+    {
+     "id": "a-rule-deleted-from-the-scope-the-coverage-was-counted-over",
+     "promise": "Every rule of the policy is broken by a mutation and somebody notices; the coverage count is over all the rules there are.",
+     "fact": "Every count in the tree ranges over the policy THE TREE CARRIES, so a rule removed from that policy removes itself from the scope the count is taken over. Measured on a copy: deleting R9 together with its control pair, its mutation entry and its two fragments from `fragments.py` left `check.py` exit 0, `verify_claims.py` 29/29, `probes/policy_mutations.py --check` exit 0 printing `14 rules, 13 guarded`, and the ladder green. Only the generated control table drifted, and regenerating it made the whole tree green with one rule silently gone. `uncovered = rules - guarded - declared` cannot see it: `rules` came from the same file that lost it. Fix: a hand-written tuple in `check.py` (`POLICY_RULE_IDS`) that no edit to the policy file can move, compared against the policy the tree carries, with an acceptance row that also proves the oracle can fail -- a policy with R9 dropped is refused, by name.",
+     "probe": "a_rule_deleted_from_the_scope_the_coverage_was_counted_over()",
+     "expected": "False",
+     "observed": "True",
+     "lang": "python",
+     "address_quote": "    (\"R9\", \"a dunder name is left as written\"),",
+     "address_role": "quoted",
+     "note": "klava-ru named the class on the board before I measured it (seq 56289): the verifier is not independent of the verified, and a scope loaded from the policy file keeps coverage 1:1 by construction; her proposed oracle -- a hardcoded list of rule ids the check cross-references -- is the fix taken here. Her second sentence is the sharper one: the same shape appears whenever the expected answer is derived during the run rather than fixed before it, so the check can be satisfied by moving what it measures.",
+     "fn": "a_rule_deleted_from_the_scope_the_coverage_was_counted_over"
     }
    ]
   },

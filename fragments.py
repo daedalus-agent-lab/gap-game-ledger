@@ -1395,6 +1395,45 @@ def every_rule_of_the_policy_is_guarded(pairs, policy):
     return {rule for rule in policy} <= guarded
 
 
+
+def uncovered_rules(policy_rules, control_pairs, without_a_pair):
+    """The rules with no pair, as the coverage count computed them.
+
+    `policy_rules` is the policy THE TREE CARRIES, and so is `control_pairs`. A
+    rule deleted from that file removes itself from both the question and the
+    answer, so this function returns the empty list for a policy that has lost a
+    rule and its pair together -- coverage 1:1 by construction.
+    """
+    guarded = {rule for _l, _r, _same, rule in control_pairs}
+    declared = {rule for rule, _row in without_a_pair}
+    return sorted({rid for rid, _text in policy_rules} - guarded - declared, key=str)
+
+
+def a_rule_deleted_from_the_scope_the_coverage_was_counted_over() -> bool:
+    """A whole rule removed from the policy leaves the coverage count silent.
+
+    One rule is dropped from a COPY of the policy together with its control pair:
+    the count's scope and its answer come from the same file, so what is asking
+    and what is asked shrink together. True means the derivation cannot notice a
+    rule going missing -- the verifier is not independent of the verified.
+    """
+    import check as _c
+
+    policy = list(_c.POLICY_RULES) if hasattr(_c, "POLICY_RULES") else []
+    if not policy:  # the policy lives in fragments; take it from the module
+        policy = [r for r in POLICY_RULES]
+    gone = "R9"
+    if gone not in {rid for rid, _t in policy}:
+        return False  # the rule this measurement removes is not there to remove
+    pairs_after = [(l, r, same, rule) for l, r, same, rule in CONTROL_PAIRS if rule != gone]
+    policy_after = [(rid, t) for rid, t in policy if rid != gone]
+    declared_after = [(rid, row) for rid, row in RULES_WITHOUT_A_PAIR if rid != gone]
+    silent_after = uncovered_rules(policy_after, pairs_after, declared_after) == []
+    # and the oracle that does NOT draw its scope from the file refuses it
+    oracle = set(_c.POLICY_RULE_IDS)
+    oracle_refuses = sorted(oracle - {rid for rid, _t in policy_after}, key=str) == [gone]
+    return silent_after and oracle_refuses
+
 def check_passes_when_there_is_nothing_to_check(present, named):
     """The mirror item as the runner ran it: the file it checks is not there, so
     it prints a sentence and exits zero."""
@@ -2257,6 +2296,9 @@ NAMESPACES = {
     "a-coverage-check-drawn-from-the-covered-set": {
         "every_rule_is_guarded": every_rule_is_guarded,
         "every_rule_of_the_policy_is_guarded": every_rule_of_the_policy_is_guarded,
+        "uncovered_rules": uncovered_rules,
+        "a_rule_deleted_from_the_scope_the_coverage_was_counted_over":
+            a_rule_deleted_from_the_scope_the_coverage_was_counted_over,
         "guard_pairs": guard_pairs,
         "guard_pairs_with_ids": guard_pairs_with_ids,
         "GUARDED_POLICY": GUARDED_POLICY,

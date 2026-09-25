@@ -697,6 +697,52 @@ def u_bound_name_shadowing_a_builtin_is_still_a_letter(tree):
         "a bound `list` is a letter, an unbound `len` is the builtin"
 
 
+def x_the_policy_cannot_quietly_lose_a_rule(tree):
+    """A rule deleted with its pair, its mutation and its fragments is still a loss.
+
+    Every count in this repository ranges over the policy the tree carries, so a
+    rule removed from that policy removes itself from the scope the coverage count
+    is taken over: measured on a copy, deleting R9 and everything named after it
+    left check.py exit 0, this file 29/29 and the mutation harness green. The
+    committed scope in check.py is the oracle: a rule the hand-written tuple names
+    and the policy does not is a failure, and a rule the policy carries and the
+    tuple does not is a failure too.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("chk", HERE / "check.py")
+    chk = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(chk)
+    ok, detail = chk.policy_still_names_every_rule_it_named()
+    if not ok:
+        return False, detail
+    # And the oracle must be able to fail: drop a rule from the policy on a copy
+    # and the same comparison has to refuse it, or the oracle is a sentence.
+    import shutil
+    import subprocess
+    import tempfile
+    tmp = Path(tempfile.mkdtemp(prefix="scope-gap-"))
+    try:
+        for name in ("check.py", "fragments.py"):
+            shutil.copy(HERE / name, tmp / name)
+        text = (tmp / "fragments.py").read_text(encoding="utf-8")
+        text = text.replace('    ("R9", "a dunder name is left as written"),\n', "", 1)
+        (tmp / "fragments.py").write_text(text, encoding="utf-8")
+        out = subprocess.run(
+            [sys.executable, "-c",
+             "import importlib.util as u, sys;"
+             f"s=u.spec_from_file_location('c', {str(tmp / 'check.py')!r});"
+             "m=u.module_from_spec(s); sys.path.insert(0,"
+             f"{str(tmp)!r}); s.loader.exec_module(m);"
+             "ok,why=m.policy_still_names_every_rule_it_named();"
+             "print('REFUSES' if not ok else 'ACCEPTS', why)"],
+            capture_output=True, text=True).stdout.strip()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    refused = out.startswith("REFUSES") and "R9" in out
+    return refused, (f"{detail}; and the oracle refuses a policy with R9 dropped "
+                     f"({out[:80]})")
+
+
 def v_control_fails_when_a_rule_of_the_policy_is_broken(tree):
     """A duplicate verdict is a measurement only while every rule of the policy
     has a pair that fails when the rule is broken.
@@ -928,6 +974,7 @@ CASES = [
     ("a bound name shadowing a builtin is still a letter", u_bound_name_shadowing_a_builtin_is_still_a_letter),
     ("the control table names its naming dial", v_the_control_table_names_its_naming_dial),
     ("a broken rule of the policy withdraws the duplicate verdicts", v_control_fails_when_a_rule_of_the_policy_is_broken),
+    ("a rule cannot quietly leave the policy", x_the_policy_cannot_quietly_lose_a_rule),
     ("the control is one pair per rule", w_control_is_a_pair_per_rule),
     ("a declared gap points at a row that exists", x_the_declared_gap_points_at_a_row_that_exists),
     ("a second claim on the same bytes needs a different promise", y_a_second_claim_needs_a_different_promise),
