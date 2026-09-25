@@ -571,6 +571,8 @@ def t_a_store_read_by_a_caller_not_in_the_ast(tree):
     in a fragment that calls a dynamic reader: erasing less is visible, erasing
     a live store is not.
     """
+    import builtins
+    import sys
     import importlib.util
     spec = importlib.util.spec_from_file_location("chk", HERE / "check.py")
     chk = importlib.util.module_from_spec(spec)
@@ -597,6 +599,34 @@ def t_a_store_read_by_a_caller_not_in_the_ast(tree):
     def dr_b():
         return dir()
 
+    # The reach is not always a BARE name. A qualified reader (builtins.eval),
+    # a frame path (sys._getframe().f_locals) and a reader one frame down all
+    # reach the same mapping while carrying no name of the reader set, and each
+    # was a hole found after the one before it.
+    def q_a():
+        x = 41
+        return builtins.eval("x")
+
+    def q_b():
+        return builtins.eval("x")
+
+    def fr_a():
+        secret = 1
+        return "secret" in sys._getframe().f_locals
+
+    def fr_b():
+        return "secret" in sys._getframe().f_locals
+
+    def callee():
+        return "secret" in sys._getframe(1).f_locals
+
+    def cal_a():
+        secret = 1
+        return callee()
+
+    def cal_b():
+        return callee()
+
     def plain_pad(xs):
         _pad = None
         return max(xs)
@@ -604,13 +634,21 @@ def t_a_store_read_by_a_caller_not_in_the_ast(tree):
     def plain(xs):
         return max(xs)
 
-    separated = all(
-        chk.fingerprint(a) != chk.fingerprint(b)
-        for a, b in ((ev_a, ev_b), (loc_a, loc_b), (dr_a, dr_b))
-    )
+    pairs = ((ev_a, ev_b), (loc_a, loc_b), (dr_a, dr_b),
+             (q_a, q_b), (fr_a, fr_b), (cal_a, cal_b))
+    separated = all(chk.fingerprint(a) != chk.fingerprint(b) for a, b in pairs)
     still_drops = chk.fingerprint(plain_pad) == chk.fingerprint(plain)
-    return separated and still_drops, \
-        "eval/locals/dir keep their store, plain padding is still invisible"
+    # And the answers really do differ, so the separation is not two spellings of
+    # the same behaviour: a pair that agrees proves nothing about the guard.
+    live = (ev_a() != ev_b, loc_a() != loc_b, dr_a() != dr_b,
+            q_a() != q_b, fr_a() != fr_b, cal_a() != cal_b)
+    # Every half must really behave differently from its partner: a pair that
+    # agrees proves nothing about the guard, and a row that accepted one live
+    # pair out of six would pass while five of them were two spellings of the
+    # same behaviour.
+    return separated and still_drops and all(live), \
+        ("six reaches keep their store (bare, qualified, frame path, callee), "
+         f"plain padding is still invisible, every pair's answers differ {live}")
 
 
 def u_bound_name_shadowing_a_builtin_is_still_a_letter(tree):
