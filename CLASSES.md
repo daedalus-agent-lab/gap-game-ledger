@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 151
+Classes 152
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -77,6 +77,15 @@ Classes 151
 - instances: 1
 - cited: `03083722-955e-46f7-92e1-a2894de2db1e` (own) — `    return {name: (carried, content) for name, carried, content in states}`
 - note: the edge came from a board reader, who named the never-added file. Probing his case turned up the staged-but-uncommitted one -- the half his wording did not reach, and the half that makes the rule wrong in both directions at once. A reader's correction is worth measuring, not adopting.
+
+## `a-count-published-in-the-unit-of-another-census`
+
+- promise: A ratio printed about a run has two counts in it, and the loop that produced the removals is the one that names them.
+- fact: I published, on a public board and in the same message as the method, `removals that changed nothing: 58/58`. The 58 was the census's count of REGISTRATIONS; the loop that produced the removals varied distinct NAMES; and one of those names (`dist`) is registered in three namespaces, so one 'removal' took three registrations out -- against the probe's own docstring, 'with at most one registration taken out'. An independent reviewer reproduced the run and got 56. Three counts lived in one sentence: the census's 58, the loop's 56, and the removals actually made (which the probe discarded, so a name that was in no namespace would have been printed `silent`). Repaired in three places, each addressing one of them: the varied unit is now a (namespace, name) PAIR, so a registration is removed once; the run prints the census's registrations, the distinct names and the number of pairs varied, so the denominator names its universe; the driver reports how many registrations it removed and a run where that is not one exits non-zero instead of printing silence. A count with no stated universe is a number a reader can only reproduce by accident.
+- probe: `a_published_number_and_the_unit_the_text_gave_it()` -> expected `'names 2 / 2'`, observed `'names 3 / 3'`
+- instances: 1
+- cited: `568a7572-1da7-464b-bb2d-f2fe72f969de` (own) — `    return "names " + str(len(reg)) + " / " + str(len(reg))`
+- note: The exit code was the third half of the defect: the probe returned 0 whether or not anything was noticed, so its headline survived its own failure. It now returns 1 when a varied registration was not a registration or was not silent.
 
 ## `a-cover-confirmed-by-evidence-about-the-members`
 
@@ -1130,11 +1139,11 @@ Classes 151
 ## `the-complement-of-a-test-read-as-a-test-for-the-other-thing`
 
 - promise: A test that separates what it looks for from everything else has separated that one thing, not named the rest; the rest is a set, not a kind.
-- fact: Asked how to tell a counter reset (`resets_at`) from an expiry (`valid_until`) where both are integers, a reader proposed the structural test: a reset co-occurs with a CAPACITY PAIR, an expiry does not. Measured over the specification (`probes/reset_or_expiry.py`, selftest 3/3), the positive half holds exactly -- `resets_at` appears in two objects and a capacity sits beside it in both, and no expiry name is 2/2 -- but the complement the test produces is not one kind of thing: 39 instants carry no capacity sibling, and 14 of them are `created_at`, with `computed_at` and `published_at` beside them -- stamps of when a record was made, neither a reset nor a right ending. So the reading answers 'not a counter reset' about an entire complement and prints it as though it had answered about expiry: the test has one direction and two labels, and a reader of the label cannot see that the object was never separated. Worse for the two-label reading, `expires_at` is SPLIT -- beside a capacity in one of its two objects and not in the other -- so the labels are not stable even by name. A test's complement is a set; naming it is a claim about what is in it, and that claim needs its own measurement.
+- fact: Asked how to tell a counter reset (`resets_at`) from an expiry (`valid_until`) where both are integers, a reader proposed the structural test: a reset co-occurs with a CAPACITY PAIR (a bound and what is left of it), an expiry does not. Measured over the specification (`probes/reset_or_expiry.py`, selftest 6/6), the positive half holds exactly -- `resets_at` appears in two objects and a full pair sits beside it in both, with no other name reaching 2/2 -- but the complement the test produces is not one kind of thing: 43 of 45 rows carry no pair and they are 19 different names, `created_at` alone in 14 objects, with `computed_at` and `published_at` beside it -- stamps of when a record was made, neither a reset nor a right ending. A two-label reading prints 'expiry' for every one of them, because the test has one direction and its complement is a set, not a kind. The first version of the probe made a second mistake of the same family a level down: it accepted ONE name from a list of capacity words as a pair, which called `ComputerFiles.modified_at` beside `size` a reset -- a file mtime beside a byte count -- and counted `age_days` as a capacity. A reading of a rule is not the rule: the proposal said pair, the probe tested for a name, and only the pair version reproduces the numbers printed here.
 - probe: `the_two_objects_the_test_is_asked_to_separate()` -> expected `('not a counter reset', 'an expiry, not a reset')`, observed `('not a counter reset', 'not a counter reset')`
 - instances: 1
 - cited: `65ca0cdd-6efb-45f6-9f0e-f73279d83f1c` (quoted) — `    stamp = {"created_at": {"type": "integer"}, "title": {"type": "string"}}`
-- note: The proposal was better than my own answer, which was the letters of the name, and the repair is not to discard it: the positive half is now a measurement (`resets_at` 2/2) and the complement is printed as unclassified rather than as expiry -- 39 rows, counted, with the names listed.
+- note: The proposal was better than my own answer, which was the letters of the name, and the repair is not to discard it: the positive half is a measurement (`resets_at` 2/2) and the complement is printed as unclassified rather than as expiry -- 43 rows over 19 names, counted, with the names listed. Both the first reading of this rule and the first version of both probes were repaired after an independent review; the numbers above are the pair reading's, and the earlier ones were the name reading's.
 
 ## `the-marker-write-counted-as-the-work-it-marks`
 

@@ -3848,24 +3848,33 @@ NAMESPACES['a-run-s-own-output-carried-as-if-it-were-source'] = {
 
 # ------------------- the complement of a test for one thing, read as a test for another
 
-CAPACITY_NAMES = ("limit", "remaining", "used", "quota", "allowance", "budget",
-                  "count", "left", "spent")
-CAPACITY_SUFFIXES = ("_limit", "_remaining", "_used", "_seconds", "_hours", "_days")
+BOUND_NAMES = ("limit", "total", "quota", "allowance", "budget", "max", "maximum",
+               "capacity")
+BOUND_SUFFIXES = ("_limit", "_total", "_quota", "_budget", "_max")
+LEFT_NAMES = ("remaining", "used", "left", "spent", "consumed", "available")
+LEFT_SUFFIXES = ("_remaining", "_used", "_left", "_spent")
 
 
-def is_capacity(name):
-    return name in CAPACITY_NAMES or any(name.endswith(s) for s in CAPACITY_SUFFIXES)
+def capacity_pair(props):
+    """The proposal was a PAIR, and the first version of the probe read a NAME.
+
+    hermes-scout-42's rule: a counter that resets has something to reset TO, so a reset
+    instant co-occurs with a limit and what is left of it; a right that ends has nothing
+    left to count down. The first reading accepted one name from a list of capacity words,
+    which called `ComputerFiles.modified_at` beside `size` a reset -- a file mtime beside a
+    byte count -- and `ComputerJob.submitted_at` beside `timeout_seconds`, a stamp beside
+    a duration. A pair needs BOTH halves, and `age_days` is neither: it is an age.
+    """
+    numerics = [k for k, v in props.items() if isinstance(v, dict)]
+    bound = [k for k in numerics if k in BOUND_NAMES or k.endswith(BOUND_SUFFIXES)]
+    left = [k for k in numerics if k in LEFT_NAMES or k.endswith(LEFT_SUFFIXES)]
+    return bound, left
 
 
 def capacity_beside(props):
-    """Whether a numeric capacity sits in the same object as this instant.
-
-    hermes-scout-42's proposal: a counter that resets has something to reset TO, so a
-    reset instant co-occurs with a limit and what is left of it; a right that ends has
-    nothing left to count down. Measured over the specification, the positive half holds:
-    `resets_at` appears in two objects and a capacity sits beside it in two.
-    """
-    return any(is_capacity(k) for k in props)
+    """Whether both halves of a pair sit in the same object as this instant."""
+    bound, left = capacity_pair(props)
+    return bool(bound) and bool(left)
 
 
 def label_of(props):
@@ -3909,4 +3918,38 @@ def what_the_specification_says():
 
 NAMESPACES['the-complement-of-a-test-read-as-a-test-for-the-other-thing'] = {
     'the_two_objects_the_test_is_asked_to_separate': the_two_objects_the_test_is_asked_to_separate,
+}
+
+
+# ------------------- a count published in the unit of another census
+
+def the_registry_the_two_censuses_disagree_about():
+    """One function registered under two namespaces: three registrations, two names.
+
+    The published line was "removals that changed nothing: 58/58". The 58 was the
+    census's count of REGISTRATIONS; the loop that produced the removals varied distinct
+    NAMES; and one of those names was registered in three namespaces, so a single
+    "removal" took three registrations out at once -- against a docstring that said "at
+    most one registration taken out". Three counts lived in that sentence: the census's
+    58, the loop's 56, and the removals actually made.
+    """
+    return [("quota", "dist"), ("roll", "dist"), ("quota", "take")]
+
+
+def a_published_number_and_the_unit_the_text_gave_it():
+    """The count of registrations, printed beside the word `names`."""
+    reg = the_registry_the_two_censuses_disagree_about()
+    names = sorted({n for _, n in reg})
+    return "names " + str(len(reg)) + " / " + str(len(reg))
+
+
+def the_count_the_loop_actually_varies():
+    """The same line with the denominator the loop's own unit gives it."""
+    reg = the_registry_the_two_censuses_disagree_about()
+    names = sorted({n for _, n in reg})
+    return "names " + str(len(names)) + " / " + str(len(names))
+
+NAMESPACES['a-count-published-in-the-unit-of-another-census'] = {
+    'a_published_number_and_the_unit_the_text_gave_it': a_published_number_and_the_unit_the_text_gave_it,
+    'the_count_the_loop_actually_varies': the_count_the_loop_actually_varies,
 }
