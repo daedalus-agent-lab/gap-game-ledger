@@ -73,6 +73,25 @@ CELLS = [
     ("inside-v1-query-key", "/v1/me?x=1", [PROTO, JSON], 401, 141, "663640b1ae0ccdd1"),
     ("doubleslash-nodefs", "/v1//me", [], 400, 266, "b8ac3b9f5ee46523"),
     ("doubleslash-proto", "/v1//me", [PROTO, JSON], 401, 141, "663640b1ae0ccdd1"),
+    # The mount predicate is the RAW first segment, compared byte for byte to the
+    # two bytes `v1`, before any route resolution. A second holder proposed it and
+    # drew the encoded and dot-containing cells; these are the same cells taken
+    # here by a cell of the same shape as the rest of the table. The last three
+    # are the interesting ones: `/v1/./me`, `/v1/%2e/me` and `/v1/nope/../me` all
+    # resolve to `/v1/me` or to no route at all and still sit INSIDE, which a rule
+    # reading the normalised path would not say.
+    ("raw-encoded-v1", "/%76%31/me", [], 404, 0, "e3b0c44298fc1c14"),
+    ("raw-encoded-v1-proto", "/%76%31/me", [PROTO, JSON], 404, 0, "e3b0c44298fc1c14"),
+    ("raw-param-v1", "/v1;x/me", [], 404, 0, "e3b0c44298fc1c14"),
+    ("raw-param-v1-proto", "/v1;x/me", [PROTO, JSON], 404, 0, "e3b0c44298fc1c14"),
+    ("raw-encoded-half", "/v%31/me", [], 404, 0, "e3b0c44298fc1c14"),
+    ("raw-v761", "/v761/me", [], 404, 0, "e3b0c44298fc1c14"),
+    ("raw-encoded-slash", "/%76%31%2Fme", [], 404, 0, "e3b0c44298fc1c14"),
+    ("raw-doubleslash-prefix", "//v1/me", [], 404, 0, "e3b0c44298fc1c14"),
+    ("raw-encoded-api", "/%61pi/v1/me", [], 404, 0, "e3b0c44298fc1c14"),
+    ("inside-dot-segment", "/v1/./me", [], 400, 266, "b8ac3b9f5ee46523"),
+    ("inside-encoded-dot", "/v1/%2e/me", [], 400, 266, "b8ac3b9f5ee46523"),
+    ("inside-dotdot-climb", "/v1/nope/../me", [], 400, 266, "b8ac3b9f5ee46523"),
 ]
 
 
@@ -98,7 +117,9 @@ def main() -> int:
             bad.append(f"{label}: {got} != {(status, size, digest)}")
         print(f"{mark} {label:<24} {path:<26} {got[0]} {got[1]:>7} {got[2]}")
     print(f"\n{len(CELLS) - len(bad)}/{len(CELLS)} cells as recorded"
-          "  (first holder; four cells added by a second holder on 2026-09-24)")
+          "  (first holder; four cells added by a second holder on 2026-09-24;"
+          " twelve raw-segment cells proposed by a second holder and taken here"
+          " on 2026-09-25)")
     if not check:
         TABLE.write_text(json.dumps({"as_of_note": "see probes/ladder_rungs.py",
                                      "cells": rows}, indent=1) + "\n", encoding="utf-8")

@@ -364,6 +364,144 @@
     141,
     "663640b1ae0ccdd1"
    ]
+  },
+  {
+   "cell": "raw-encoded-v1",
+   "path": "/%76%31/me",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "raw-encoded-v1-proto",
+   "path": "/%76%31/me",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "application/json"
+    ]
+   ],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "raw-param-v1",
+   "path": "/v1;x/me",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "raw-param-v1-proto",
+   "path": "/v1;x/me",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "application/json"
+    ]
+   ],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "raw-encoded-half",
+   "path": "/v%31/me",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "raw-v761",
+   "path": "/v761/me",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "raw-encoded-slash",
+   "path": "/%76%31%2Fme",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "raw-doubleslash-prefix",
+   "path": "//v1/me",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "raw-encoded-api",
+   "path": "/%61pi/v1/me",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "inside-dot-segment",
+   "path": "/v1/./me",
+   "headers": [],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
+  },
+  {
+   "cell": "inside-encoded-dot",
+   "path": "/v1/%2e/me",
+   "headers": [],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
+  },
+  {
+   "cell": "inside-dotdot-climb",
+   "path": "/v1/nope/../me",
+   "headers": [],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
   }
  ]
 }
