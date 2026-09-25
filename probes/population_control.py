@@ -55,6 +55,18 @@ POPULATION_CONTROL = {
     "politics": {"registered": True, "as_of": 1790340000},
 }
 
+# SEMANTIC_CONTROL: the block's boolean IS on the list, so neither count moves and
+# both readers agree -- the list produces the right count on a payload whose own
+# sibling refutes the boolean. This is the case a count-based packet cannot see,
+# and the reason "the list that produces the right count" is not yet "the right
+# list": nothing about a count decides whether a claim agrees with its block.
+SEMANTIC_CONTROL = {"voting": {"can_vote": True, "remaining": 0,
+                                "expires_at": 1790500000}}
+
+# The mutation of the contradiction reader: drop the sibling it reads and the
+# rule goes silent, so the rule is not vacuously true.
+NO_SIBLING = {"voting": {"can_vote": True, "expires_at": 1790500000}}
+
 
 def reader_that_uses_the_list(doc):
     """The blocks the instrument's list names. This is the filter at work."""
@@ -76,6 +88,22 @@ def predicate(doc):
 def counts(doc):
     return (len(reader_that_uses_the_list(doc)),
             len(reader_that_takes_every_boolean(doc)))
+
+
+def contradictions(doc):
+    """Blocks whose own sibling refutes a boolean the list names.
+
+    A count says which blocks are read. It says nothing about whether what they
+    claim agrees with what sits beside it in the same block, and that is the
+    question a list has to answer to be the RIGHT list rather than a list that
+    happens to produce the right count on today's payloads.
+    """
+    out = []
+    for name, block in doc.items():
+        if isinstance(block, dict) and block.get("can_vote") is True \
+                and block.get("remaining") == 0:
+            out.append(name)
+    return out
 
 
 def digest(doc):
@@ -115,6 +143,21 @@ def selftest() -> int:
     check("the list is printed with the packet",
           all(k in json.dumps(DECLARED) for k in DECLARED),
           "a list that is not in the packet is a list the reader cannot check")
+    check("SEMANTIC_CONTROL: the count does not move, so no count can see it",
+          counts(SEMANTIC_CONTROL) == counts(CANONICAL)
+          and predicate(SEMANTIC_CONTROL) is True,
+          f"counts {counts(SEMANTIC_CONTROL)} -- identical to the canonical payload")
+    check("SEMANTIC_CONTROL: a reader of the sibling catches what the count cannot",
+          contradictions(CANONICAL) == []
+          and contradictions(SEMANTIC_CONTROL) == ["voting"],
+          "can_vote True beside remaining 0: the block refutes its own boolean")
+    check("the contradiction reader is not vacuously true",
+          contradictions(NO_SIBLING) == [],
+          "the same boolean with no sibling is silent, so the rule reads the sibling")
+    check("so the count and the contradiction are two observables, not one",
+          (counts(NO_SIBLING) == counts(SEMANTIC_CONTROL))
+          and (contradictions(NO_SIBLING) != contradictions(SEMANTIC_CONTROL)),
+          "the count cannot separate these two; the contradiction reader does")
 
     width = max(len(n) for n, _, _ in checks)
     for name, ok, detail in checks:
@@ -134,10 +177,12 @@ def packet() -> int:
     print()
     for label, doc in (("canonical", CANONICAL),
                        ("RED_CONTROL", RED_CONTROL),
-                       ("POPULATION_CONTROL", POPULATION_CONTROL)):
+                       ("POPULATION_CONTROL", POPULATION_CONTROL),
+                       ("SEMANTIC_CONTROL", SEMANTIC_CONTROL),
+                       ("NO_SIBLING", NO_SIBLING)):
         a, b = counts(doc)
         print(f"{label:<19} sha16 {digest(doc)}  counts A={a} B={b}  "
-              f"predicate={predicate(doc)}")
+              f"predicate={predicate(doc)}  contradictions={contradictions(doc)}")
     print()
     print("red_control      the boolean is a string; B falls below A, so the "
           "payload is at fault")
@@ -145,6 +190,11 @@ def packet() -> int:
           "boolean the list does not name; B rises above A, so the list is at fault")
     print("invariant        A does not move under either control: the list's "
           "reader cannot see what the list left out")
+    print("semantic_control a block whose boolean the list DOES name, refuted by "
+          "its own sibling: count unchanged, predicate true, contradiction found")
+    print("second_observable  the count separates whole-population defects; a "
+          "sibling reader separates defects inside a block the population covers, "
+          "so a packet that records one number is recording one of two questions")
     print("result_origin    output, not typed: the counts above are printed by "
           "the run that computed them")
     print("status           PASS on this machine; a runner on another machine "
