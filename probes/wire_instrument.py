@@ -47,6 +47,7 @@ import hashlib
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 
 # (label, curl arguments after the command, the request line expected on the wire)
@@ -188,6 +189,46 @@ def size_reported_by_curl(args: list[str], reply: bytes | None = None) -> tuple[
     return int(out.strip() or 0), len(body)
 
 
+def decoding_point(args: list[str], where: str) -> tuple[int, str, int]:
+    """What the client WROTE for a gzipped answer: (size_download, sha16, bytes).
+
+    A size column addresses two objects here. `--compressed` asks for a coding
+    AND decodes on write; `-H 'Accept-Encoding: gzip'` asks for the same coding
+    and writes what arrived. The reported size is the same number in both, and
+    the bytes on disk are not: 1024 B of entity against the 29 B that carried it.
+    So a record holding a size and nothing else cannot tell the two apart, and
+    the ladder's `got` carries a digest of the body, which can. This was measured
+    on a live host by another holder first, and is reproduced here on a listener
+    so the reading does not depend on anyone's word.
+    """
+    import os
+    out = os.path.join(where, str(abs(hash(tuple(args)))) + ".bin")
+    encoded = _gzip(PLAIN_BODY)
+    reply = (b"HTTP/1.1 200 OK\r\ncontent-encoding: gzip\r\ncontent-length: "
+             + str(len(encoded)).encode() + b"\r\n\r\n" + encoded)
+    srv = socket.socket()
+    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    srv.bind(("127.0.0.1", 0))
+    port = srv.getsockname()[1]
+    srv.listen(1)
+
+    def serve():
+        conn, _ = srv.accept()
+        conn.recv(8192)
+        conn.sendall(reply)
+        conn.close()
+
+    t = threading.Thread(target=serve, daemon=True)
+    t.start()
+    cmd = (["curl", "-s", "-o", out, "-w", "%{size_download}"] + args
+           + [f"http://127.0.0.1:{port}/v1/me"])
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    t.join(timeout=5)
+    srv.close()
+    raw = open(out, "rb").read()
+    return int(res.stdout.strip() or 0), hashlib.sha256(raw).hexdigest()[:16], len(raw)
+
+
 def chunked_entity() -> bytes:
     """A 1024-byte entity framed one byte per chunk, which crosses as 6196 bytes."""
     return (b"".join(b"1\r\n" + PLAIN_BODY[i:i + 1] + b"\r\n"
@@ -195,10 +236,15 @@ def chunked_entity() -> bytes:
 
 
 def transfer_axis() -> list[tuple[str, str, str]]:
-    """Where on the decoding chain the client counts. `transfer-encoding` is
-    folded in, `content-encoding` is not -- so the condition the byte column
-    needs beside it is the content encoding, and the transfer encoding is not a
-    second one."""
+    """Where on the decoding chain the client counts.
+
+    Chunk framing IS folded in and a transfer coding curl leaves coded is NOT --
+    `transfer-encoding: gzip` reports the coded length for the same entity that
+    `chunked` reports whole. So the folding is curl's chunk handling and not a
+    general transfer decoding, and both codings belong in the record beside the
+    count. The earlier wording here ("the transfer encoding is not a second one")
+    read the chunked case as the general one and was refuted by the audit that
+    produced the gzip row."""
     plain_reply = (b"HTTP/1.1 200 OK\r\ncontent-length: "
                    + str(len(PLAIN_BODY)).encode() + b"\r\n\r\n" + PLAIN_BODY)
     framed = chunked_entity()
@@ -304,6 +350,24 @@ def main() -> int:
           " an object's length only for a complete one. Three conditions can put a"
           " different quantity in the same column, and the ladder refuses a row"
           " carrying any of them.")
+    # The DECODING POINT is a third axis the size column cannot see, and it was
+    # found on a live host before it was measured here. Same listener, same coded
+    # answer, two ways of asking for it: `--compressed` asks AND decodes on write,
+    # while `-H 'Accept-Encoding: gzip'` asks and writes what arrived.
+    dpm = tempfile.mkdtemp(prefix="decode-point-")
+    dec = decoding_point(["--compressed"], dpm)
+    coded = decoding_point(["-H", "Accept-Encoding: gzip"], dpm)
+    same_number = dec[0] == coded[0]
+    different_object = dec[1] != coded[1] and dec[2] != coded[2]
+    bad += [] if (same_number and different_object) else [
+        f"decoding point: {dec} vs {coded} -- expected one number and two objects"]
+    print(f"{'ok ' if same_number and different_object else 'MOVED'}  decoding point"
+          f"            {dec[0]} reported by both; {dec[1]} ({dec[2]} B) decoded on"
+          f" write against {coded[1]} ({coded[2]} B) as it arrived")
+    print("     so a size column addresses TWO objects and a digest column does not:"
+          " the ladder's `got` carries a digest of the body, which separates them, and"
+          " the guard refuses the row anyway -- not because the number would lie alone"
+          " but because a record with a size and no digest would")
     # What this probe does NOT measure, said here rather than left to be found:
     # the listener is the same machine, so it measures the client and nothing
     # about any wall; a client whose behaviour depends on the server's response
