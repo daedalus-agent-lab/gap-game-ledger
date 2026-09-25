@@ -525,8 +525,23 @@ def render(out, limit=3):
     unread = [r for r in out if r.verdict == "NO READER"]
     attr_only = [r for r in out if r.verdict == "READ?"]
     lines.append("")
+    # The count carries the set it was counted over. "0 have no reader" over an
+    # unstated set is a claim about records the report never opened, and an
+    # unopened record reads exactly like a clean one.
+    _ex, _decl, _uncl, _nc = repo_records()
     lines.append(f"{examined} fields examined; {len(unread)} have no reader; "
                  f"{len(attr_only)} rest only on an attribute site (READ?)")
+    # And the CRITERION carries its boundary too: this census answers "is there a
+    # reader in the code", not "was the field read". A reader that never executes
+    # counts as a reader here, so a green run is not evidence that any run read
+    # the column -- it is evidence that a reader exists to be executed.
+    lines.append("  criterion: a reader in the code, not a read in a run; a reader "
+                 "that never executes counts as a reader here")
+    lines.append(f"  of {len(_ex)} records this tree carries with rows: "
+                 f"{len(_decl)} declared out of scope, {len(_uncl)} unclassified"
+                 + (", " + ", ".join(_uncl) if _uncl else "")
+                 + f"; {len(_nc)} files under {', '.join(NOT_REPO_CONTENT[:2])}… "
+                   "were not opened (not repo content)")
     if unread:
         lines.append("no reader: " + ", ".join(f"{r.record}:{r.field}" for r in unread))
     return lines
@@ -603,23 +618,61 @@ def code_sources():
                 yield f"{rel_of(path)} (python heredoc)", offset, block
 
 
-def unlisted_records():
-    """JSON with rows that no producer in PRODUCERS claims: printed, not judged."""
-    found = []
+# Records the census does not examine, each with the reason it is not examined.
+# A record that is neither examined nor declared here is a failure, not a silence:
+# a report that says "0 fields have no reader" without saying which records it
+# never opened is a claim about a set it does not name, and the unopened record
+# reads exactly like a clean one. The set is declared so that a record appearing
+# in the tree is a red run until somebody says what it is.
+OUT_OF_SCOPE = {
+    "blind_grouping.json": "the grouping study's own output, superseded by this "
+                           "census; its three fields were read by hand when it was "
+                           "written and nothing reads them now",
+}
+
+# Paths that are not repo content: a package cache, the auditor's scratch, a test
+# copy of the ledger. Excluded by this rule rather than by being overlooked, and
+# the count they contribute is printed beside the rule.
+NOT_REPO_CONTENT = (".git", ".uvcache", ".audit", ".mutations", ".probe",
+                    "verify", "__pycache__")
+
+
+def repo_records():
+    """(examined, declared out of scope, unclassified, not-content) for this tree.
+
+    The examined set is `ALL_RECORDS`; everything else with rows is either declared
+    in `OUT_OF_SCOPE` or unclassified, and unclassified is a failure. The fourth
+    bucket is counted so the exclusion rule is visible: a rule that silently
+    swallowed a record would be the same defect one level up.
+    """
+    examined, declared, unclassified, not_content = [], [], [], []
     for path in sorted(ROOT.rglob("*.json")):
         parts = path.relative_to(ROOT).parts[:-1]
-        if any(part in SKIP_DIRS for part in parts):
-            continue
         rel = rel_of(path)
+        if any(part in NOT_REPO_CONTENT for part in parts):
+            not_content.append(rel)
+            continue
         if rel in ALL_RECORDS:
+            examined.append(rel)
             continue
         try:
             container, rows = load_record(path)
         except (OSError, ValueError):
             continue
-        if rows:
-            found.append(f"{rel} ({container!r}, {len(rows)} rows)")
-    return found
+        if not rows:
+            continue
+        if rel in OUT_OF_SCOPE:
+            declared.append(f"{rel} ({container!r}, {len(rows)} rows)")
+        else:
+            unclassified.append(f"{rel} ({container!r}, {len(rows)} rows)")
+    return examined, declared, unclassified, not_content
+
+
+def unlisted_records():
+    """JSON with rows that no producer in PRODUCERS claims: printed, not judged."""
+    return repo_records()[2] + [
+        f"{item}  [{OUT_OF_SCOPE[item.split(' ')[0]]}]"
+        for item in repo_records()[1]]
 
 
 def check_producers():
@@ -761,6 +814,31 @@ def run_control(sabotage):
         if extra:
             failures += 1
         total = len(CONTROL_CHECKS) + 1
+
+        # The boundary's own falsifier. The census reports "0 fields have no
+        # reader" over the records it was told about; a record that appears in the
+        # tree and is neither examined nor declared out of scope must not be
+        # silence. This plants one and requires `repo_records` to call it
+        # unclassified -- the same defect as an unread field, one level up.
+        probe = ROOT / "boundary_control.json"
+        try:
+            probe.write_text(json.dumps({"rows": [{"planted": 1}]}), encoding="utf-8")
+            _ex, _decl, unclassified, _nc = repo_records()
+            caught = any("boundary_control.json" in u for u in unclassified)
+        finally:
+            probe.unlink(missing_ok=True)
+        _ex, _decl, unclassified, _nc = repo_records()
+        leaked = any("boundary_control.json" in u for u in unclassified)
+        print(f"{'ok  ' if caught and not leaked else 'RED '} a record that appears "
+              "with rows is unclassified, not silence")
+        print("     planted a record with rows: "
+              + ("named as unclassified" if caught else "NOT NAMED -- the census "
+                 "would go green over a record it never opened")
+              + ("; and it is gone again" if not leaked else "; IT LEAKED"))
+        if not (caught and not leaked):
+            failures += 1
+        total += 1
+
         print(f"\n{total - failures}/{total} control checks hold")
         return 1 if failures else 0
     finally:
@@ -810,6 +888,14 @@ def main(argv=None):
         print("\nsources that could not be parsed (their readers are invisible "
               "to this census): " + ", ".join(sorted(skipped)))
 
+    _examined, _declared, unclassified, _not_content = repo_records()
+    if unclassified:
+        # A record with rows that is neither examined nor declared out of scope is
+        # the failure this whole boundary exists for: the census would have gone
+        # green over a record it never opened.
+        print("\nUNCLASSIFIED records with rows -- neither examined nor declared: "
+              + ", ".join(unclassified))
+        rc = rc or 1
     unlisted = unlisted_records()
     if unlisted:
         print("\nJSON with rows that no listed producer writes (out of scope, "
