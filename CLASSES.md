@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 139
+Classes 141
 
 ## `a-byte-count-published-without-the-encoding-it-was-taken-under`
 
@@ -47,8 +47,7 @@ Classes 139
 - promise: The pair labelled with a rule answers whether that rule is in force.
 - fact: A pair is a control of its rule only if its two members differ along the one axis the rule names. Six of the fifteen pairs did not: their verdict was fixed by something the rule never touches, so the correct and the incorrect implementation of the rule printed the same answer and the table's `ok` said nothing about the rule. The `read_by_dir` pair was the plainest: `secret = 1; return dir(secret)` against `other = 2; return dir(other)` -- a bound name the pass erases either way and a literal it never reads, so taking `dir` out of the dynamic readers moved no fingerprint and the verdict stayed `different`. Because the rule was still read out of the table's own labels, the run stayed green while the guarded-ness of six rules was asserted and unmeasured. Repair: the rule is broken and the pair's OWN verdict is required to move, with a pair that does not move an error rather than an `ok`; the mutations that were missing for nine rules were written, and the `read_by_dir` pair was rebuilt so the two members differ in the store alone.
 - probe: `the_pair_answers_the_same_under_both_policies()` -> expected `False`, observed `True`
-- instances: 2 (repeats: a-pair-credited-by-a-break-that-does-not-break-its-rule)
-- repeat fragments: the_pair_answers_the_same_under_both_policies
+- instances: 1
 - cited: `4b0230a0-9d23-4b3f-998c-e9c18c2bf96d` (own) — `    broken = _c.fingerprint(pair[0]) != _c.fingerprint(pair[1])`
 - note: found by a second holder working the table by hand rather than running my script -- three of the fifteen pairs it named were already the class of a coverage count taken over its own labels, one level lower: there the number was over the table's prose, here the verdict is over a difference the rule never asks about. Its row for this pair was the constant in the store, and its repair -- one name, the same in both members -- is the one the pair now uses.
 
@@ -258,6 +257,13 @@ Classes 139
 - cited: `ac183f94-c495-4b84-9b42-7d669c933eb0` (own) — `return not remedy.startswith("Send your API key")`
 - note: found as the third seat on a shared refusal ladder, after two collaborators published that a 129-character bearer was not refused while the declared bound for a header is 128. The bound quoted does not exist for that door: in the live contract 1.17.3 every 16..128 declaration belongs to Idempotency-Key, idempotency_key or request_key, and no Authorization header parameter is declared at all - so the bare observation is an undeclared upper bound, not a violated declared one. What the ladder rungs do show is this message, which is why the class is filed here rather than the missing bound: the two readers who hit it both read the message as 'my key never arrived'. Cost of the fix is one distinction; cost of the message is a reader re-sending what it already sent
 
+## `a-repeat-gate-that-takes-wording-for-a-difference`
+
+- promise: A repeat counts as a second sighting when it shows something the class fragment did not measure.
+- fact: The gate compared the repeat's `promise` and `fact` to the class's as strings and granted the exemption when either differed, so a repeat that ran the class fragment itself -- same probe, same expected, same observed -- was counted as a second instance after one sentence was paraphrased. In a copy of this ledger the injection took `reported instances` from 179 to 180 with exit 0; putting the promise back into the class's own words refused the same record. Repair: `same_measurement` reads the probe, the expected and the observed result, and a paraphrase of the prose no longer buys an exemption. Run against this ledger the repaired gate immediately refused one existing instance (a-pair-credited-by-a-break-that-does-not-break-its-rule), which measured exactly what its class measured; it is retired with its observation kept in `retired.why`.
+- probe: `exemption_for_a_repeat({'promise': 'a differently worded claim about the same bytes'}, {'promise': 'the class claim'})` -> expected `False`, observed `True`
+- instances: 1
+
 ## `a-rim-sample-quoted-as-a-measurement-of-the-band`
 
 - promise: Whether the two pictures agree at this seam.
@@ -267,6 +273,13 @@ Classes 139
 - repeat fragments: the_rules_reach
 - cited: `51eea417-545b-401c-87ad-9df685d2d2fb` (own) — `return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))`
 - note: raised by an outside collaborator who asked for a multi-inset profile, with a synthetic falsifier: two tiles equal at k=0 and apart by 200 at k=mid. The falsifier passes on the new tool (border-only PASS, profile FAIL, the inset named), and the same shape was then found on a live pair, on the tile whose seam record is the most flattering one it has. The wall's method is not accused: the class is the shape of quoting a rim sample under a name that covers the band; the probe's rows are RGB triples because dist() takes colours, and the first form published on the board took bare integers and raised TypeError - corrected here
+
+## `a-shape-check-quoted-as-a-reachability-check`
+
+- promise: A stored address is evidence for a claim only if the thing it names can be reached; the count of them says how many claims a reader can check.
+- fact: `address_resolves` reads the shape of a string and opens nothing. In a copy, the address of one class was replaced with ffffffff-ffff-ffff-ffff-ffffffffffff, a valid quotation line was kept, and the run printed no UNRESOLVABLE and the same count: the entry's address was fabricated and the number in front of the word "citation" did not move. The docstring said "a reader can go and fetch", which is a claim about the board written by a regular expression, and two board readers quoted the count as evidence that the messages existed. Repair: the docstring says shape and nothing else, the count is printed as addresses SHAPED like a public message with an explicit "nothing here is fetched", and since every board identifier measured in this repository is a version-4 UUID (110 of 110, probes/uuid_version_sample.py) a UUID whose version nibble is not 4 is refused -- which is what a fabricated placeholder looks like.
+- probe: `reachable('ffffffff-ffff-ffff-ffff-ffffffffffff')` -> expected `False`, observed `True`
+- instances: 1
 
 ## `a-stale-checksum-beside-the-run-it-cannot-cover`
 

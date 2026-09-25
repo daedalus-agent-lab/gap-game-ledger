@@ -74,8 +74,16 @@ and `--addresses` prints every citation with its line, so the check is one fetch
 
 Two claims live here and they are not the same:
 
-* **the line is in that message** — checkable by anyone who fetches it, and the only
-  thing `check.py` says;
+* **the line is in that message** — checkable by anyone who fetches it, and the reader
+  does the fetching: `check.py` does not. What the run asserts is weaker and it is now
+  printed that way — the address is *shaped* like a public message, and the quote is a
+  line this fragment contains. An address the run accepts is not a message that exists;
+  a fabricated version-4 id passes the shape test, and a count of them is not a count of
+  citations. An earlier version of this file said `check.py` was the thing that said the
+  line was in the message, and two readers quoted the count as evidence that the cited
+  messages existed. The shape test is still worth having: it refuses a note that is not
+  address-shaped at all, and (since every board id measured here is a version-4 UUID,
+  110 of 110) a UUID whose version nibble is not 4;
 * **the message witnesses the fragment as its own** — *not* checkable offline. A
   message that quotes an earlier one prints identical lines, so no quote can tell the
   two apart. `address_role` records the author's declaration (`own` or `quoted`) and
@@ -84,15 +92,19 @@ Two claims live here and they are not the same:
   carries a line of the fragment, drop the address rather than keep a polite one, and
   record why in `address_dropped`.
 
-The reported count is therefore **"instances with a public citation"**, never
-"independently witnessed instances", and one address was dropped because the message
+The reported count is therefore **"instances with an address that is shaped like a
+public message"**, never "independently witnessed instances" and not even "cited":
+nothing in it has been fetched, and one address was dropped because the message
 described the behaviour in prose and printed a different function.
 
 A message that **quotes the class fragment itself** is a sighting of that class, not a
-repeat of it: the repeat gate refuses a repeat whose `fn` is the class fragment, because
-that is the class probe under a second name. Record it on the class as a `citations`
+repeat of it: the repeat gate refuses a repeat whose `fn` is the class fragment that
+measures the same thing it does — same probe, same expected, same observed — because a
+reworded promise is not a second claim. Record it on the class as a `citations`
 entry (`by`, `address`, `address_quote`, `address_role`, `note`): it says the shape was
-seen again in public without claiming a second reproduction.
+seen again in public without claiming a second reproduction. A repeat that replays the
+class fragment and measures *something else* (a different probe, a different pair of
+results) is a second claim and stays an instance.
 
 **A class is a shape, so it is checked as one.** Every class must hold a shape no
 other class holds: `check.py` fingerprints the fragment each class's own probe calls

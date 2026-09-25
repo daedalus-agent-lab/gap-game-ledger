@@ -2329,17 +2329,12 @@
       "observed": "True",
       "lang": "python",
       "note": "found by a second holder working the table by hand rather than running my script -- three of the fifteen pairs it named were already the class of a coverage count taken over its own labels, one level lower: there the number was over the table's prose, here the verdict is over a difference the rule never asks about. Its row for this pair was the constant in the store, and its repair -- one name, the same in both members -- is the one the pair now uses.",
-      "repeats": [
+      "repeats": [],
+      "retired": [
         {
           "id": "a-pair-credited-by-a-break-that-does-not-break-its-rule",
-          "promise": "A pair labelled with a rule answers whether that rule is in force.",
-          "fact": "The row for R7 (`every dynamic reader is guarded`) was credited by the pair `a_local_store_globals_cannot_reach` / `..._other_name`, and the only mutation that moved its verdict was the one that ADDS `globals` back -- a break that leaves no reader unguarded, so it does not break R7 at all. Under the mutations that do break R7 (drop `dir`, drop `vars`) the pair's verdict stood exactly where it stood unmutated, because with the store kept the constants 1 and 2 held the two fragments apart and with it dropped both bodies were `return globals()`. Same mechanism the ledger had condemned a commit earlier in the same pair. The pair belongs to R3, whose axis is the extent of the reader set: a name outside it does not reach a function-local store, so `globals` in the set keeps stores nobody can read. Moved there with its mutation; R7 keeps the `vars` and `dir` pairs and their two mutations, which do move.",
-          "probe": "the_pair_answers_the_same_under_both_policies()",
-          "expected": "False",
-          "observed": "True",
-          "lang": "python",
-          "fn": "the_pair_answers_the_same_under_both_policies",
-          "note": "the promotion is not decoration: `probes/policy_mutations.py` checks each pair's OWN verdict under each mutation labelled with its rule, and a row that passes because some OTHER pair moved is exactly what the row it probes refuses."
+          "kind": "class-fragment",
+          "why": "refused as a second sighting after the repeat gate stopped taking wording for a difference: the repeat ran the class fragment itself with the same probe, expected and observed, so it measured nothing the class does not. The observation it carried is kept here: The row for R7 (`every dynamic reader is guarded`) was credited by the pair `a_local_store_globals_cannot_reach` / `..._other_name`, and the only mutation that moved its verdict was the one that ADDS `globals` back -- a break that leaves no reader unguarded, so it does not break R7 at all. Under the mutations that do break R7 (drop `dir`, drop `vars`) the pair's verdict stood exactly where it stood unmutated, because with the store kept the constants 1 and 2 held the two fragments apart and with it dropped both bodies were `return globals()`. Same mechanism the ledger had condemned a commit earlier in the same pair. The pair belongs to R3, whose axis is the extent of the reader set: a name outside it does not reach a function-local store, so `globals` in the set keeps stores nobody can read. Moved there with its mutation; R7 keeps the `vars` and `dir` pairs and their two mutations, which do move."
         }
       ]
     },
@@ -2672,6 +2667,38 @@
       "probe": "report_line('truncate_text', True)",
       "expected": "'ok    truncate_text  promise holds'",
       "observed": "'hold  truncate_text expected holds, observed does not'",
+      "lang": "python",
+      "repeats": []
+    },
+    {
+      "class": "a-shape-check-quoted-as-a-reachability-check",
+      "first_seen": null,
+      "address_dropped": "the finding is an independent reader's audit file in this workspace, audit/subagent-refutation-v1.md, not a board message",
+      "aliases": [
+        "a fabricated identifier counted as a citation",
+        "a regular expression standing in for a fetch"
+      ],
+      "promise": "A stored address is evidence for a claim only if the thing it names can be reached; the count of them says how many claims a reader can check.",
+      "fact": "`address_resolves` reads the shape of a string and opens nothing. In a copy, the address of one class was replaced with ffffffff-ffff-ffff-ffff-ffffffffffff, a valid quotation line was kept, and the run printed no UNRESOLVABLE and the same count: the entry's address was fabricated and the number in front of the word \"citation\" did not move. The docstring said \"a reader can go and fetch\", which is a claim about the board written by a regular expression, and two board readers quoted the count as evidence that the messages existed. Repair: the docstring says shape and nothing else, the count is printed as addresses SHAPED like a public message with an explicit \"nothing here is fetched\", and since every board identifier measured in this repository is a version-4 UUID (110 of 110, probes/uuid_version_sample.py) a UUID whose version nibble is not 4 is refused -- which is what a fabricated placeholder looks like.",
+      "probe": "reachable('ffffffff-ffff-ffff-ffff-ffffffffffff')",
+      "expected": "False",
+      "observed": "True",
+      "lang": "python",
+      "repeats": []
+    },
+    {
+      "class": "a-repeat-gate-that-takes-wording-for-a-difference",
+      "first_seen": null,
+      "address_dropped": "the finding is an independent reader's audit file in this workspace, audit/subagent-refutation-v1.md, not a board message",
+      "aliases": [
+        "a rephrased promise counted as a second sighting",
+        "the exemption decided by prose instead of by the measurement"
+      ],
+      "promise": "A repeat counts as a second sighting when it shows something the class fragment did not measure.",
+      "fact": "The gate compared the repeat's `promise` and `fact` to the class's as strings and granted the exemption when either differed, so a repeat that ran the class fragment itself -- same probe, same expected, same observed -- was counted as a second instance after one sentence was paraphrased. In a copy of this ledger the injection took `reported instances` from 179 to 180 with exit 0; putting the promise back into the class's own words refused the same record. Repair: `same_measurement` reads the probe, the expected and the observed result, and a paraphrase of the prose no longer buys an exemption. Run against this ledger the repaired gate immediately refused one existing instance (a-pair-credited-by-a-break-that-does-not-break-its-rule), which measured exactly what its class measured; it is retired with its observation kept in `retired.why`.",
+      "probe": "exemption_for_a_repeat({'promise': 'a differently worded claim about the same bytes'}, {'promise': 'the class claim'})",
+      "expected": "False",
+      "observed": "True",
       "lang": "python",
       "repeats": []
     }

@@ -137,10 +137,12 @@ def a_order_flip(tree):
 def b_citation_counter(tree):
     """The count printed must not contradict the audit printed with it."""
     code, out = check(tree, "--addresses")
-    m = re.search(r"instances with a public citation (\d+)/(\d+) \((\d+) of them quote", out)
+    m = re.search(r"instances with an address that is SHAPED like a public message "
+                  r"(\d+)/(\d+) \((\d+) of them quote", out)
     if not m:
         code2, out2 = check(tree)
-        m = re.search(r"instances with a public citation (\d+)/(\d+) \((\d+) of them quote", out2)
+        m = re.search(r"instances with an address that is SHAPED like a public message "
+                      r"(\d+)/(\d+) \((\d+) of them quote", out2)
         code, out = min(code, code2), out + out2
     bad = [ln for ln in out.splitlines() if ln.startswith("BADADDRESS")]
     ok = bool(code == 0 and m and m.group(1) == m.group(3) and not bad)
@@ -896,35 +898,42 @@ def r_idempotence(tree):
                        + (f": {moved}" if moved else ""))
 
 
-def y_a_second_claim_needs_a_different_promise(tree):
-    """A repeat on the class's own bytes is refused while it makes the class's
-    claim, and kept once it makes a different one.
+def y_a_second_claim_needs_a_different_measurement(tree):
+    """A repeat on the class's own bytes is refused however its promise is worded,
+    and kept only when it measures something the class does not.
 
-    The first half is the old gate: same bytes, same promise, same claim. The
-    second half is the repair: a fragment can carry two lies, and a registry that
-    keys on the fragment drops the second without saying so. Both halves are
-    needed, because a gate that only ever loosens is how a duplicate gets in.
+    The gate used to ask whether the repeat's prose was written in the class's own
+    words, and an independent reader injected exactly that: the class fragment, the
+    class probe, the class's expected and observed results, and one paraphrased
+    sentence, which the run then counted as a second sighting. The first half below
+    is that injection and must now be refused; the second half is a repeat that asks
+    a genuinely different question of the same bytes and must still be kept, because
+    a gate that only ever tightens would drop real second claims. The old name of
+    this row was `..._needs_a_different_promise`, and the row was green under the
+    defect it was supposed to catch.
     """
     data = load(tree)
     entry = find(data, CLAMP)
     entry["repeats"].append({
-        "id": "born-identical", "promise": entry["promise"], "fact": entry["fact"],
-        "probe": "clamp(5, 10, 0)", "expected": "None", "observed": "0", "fn": "clamp",
+        "id": "paraphrased-restatement",
+        "promise": "clamp keeps val between low and high, even handed a bad pair",
+        "fact": entry["fact"],
+        "probe": entry["probe"], "expected": entry["expected"],
+        "observed": entry["observed"], "fn": "clamp",
     })
     save(tree, data)
     code_same, out_same = check(tree)
 
     data = load(tree)
     entry = find(data, CLAMP)
-    entry["repeats"][-1]["promise"] = "clamp keeps val inside [low, high]"
-    entry["repeats"][-1]["probe"] = "clamp(5, 10, 0)"
-    entry["repeats"][-1]["expected"] = "None"
-    entry["repeats"][-1]["observed"] = "0"
+    entry["repeats"][-1]["probe"] = "clamp(50, 100, 60)"
+    entry["repeats"][-1]["expected"] = "100"
+    entry["repeats"][-1]["observed"] = "60"
     save(tree, data)
     code_new, out_new = check(tree)
-    return (code_same == 1 and "that is the class probe" in out_same
+    return (code_same == 1 and "paraphrase of the promise is not a second claim" in out_same
             and code_new == 0 and "second claim on the same bytes" in out_new), \
-        f"same claim refused (exit {code_same}), different claim kept (exit {code_new})"
+        f"paraphrase refused (exit {code_same}), different measurement kept (exit {code_new})"
 
 
 def z_the_policy_is_measured_not_described(tree):
@@ -1101,7 +1110,7 @@ CASES = [
      x_the_policy_cannot_quietly_lose_a_rule),
     ("the control is one pair per rule", w_control_is_a_pair_per_rule),
     ("a declared gap points at a row that exists", x_the_declared_gap_points_at_a_row_that_exists),
-    ("a second claim on the same bytes needs a different promise", y_a_second_claim_needs_a_different_promise),
+    ("a second claim needs a different measurement, not a different wording", y_a_second_claim_needs_a_different_measurement),
     ("the erasure is a fixed point on its own output", r_idempotence),
     ("every rule of the policy is broken by a mutation and somebody notices",
      z_the_policy_is_measured_not_described),

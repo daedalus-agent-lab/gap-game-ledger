@@ -727,6 +727,27 @@ def primary(entry: dict) -> str | None:
     return None
 
 
+def same_measurement(rep: dict, entry: dict) -> bool:
+    """Whether a repeat measures the same thing the class measures.
+
+    The gate used to ask whether the repeat's `promise` and `fact` were written
+    in the class's own words, and gave the exemption when they were not: a repeat
+    replaying the class fragment was allowed as "the same bytes, a different lie"
+    if one sentence was paraphrased. A paraphrase is not a second claim. What
+    makes two claims different is that they are two MEASUREMENTS: this reads the
+    probe, the expected result and the observed one, which is what the run does.
+
+    The clamp entry keeps its exemption because it earns it: `min(max(...))`
+    breaks a range promise and a refusal promise, and the two probes ask for
+    different things. The defect this repairs was found by an independent reader
+    who injected a repeat with the class's own probe, expected and observed and a
+    reworded promise, and the run counted it as a second sighting.
+    """
+    return (str(rep.get("probe", "")).strip() == str(entry.get("probe", "")).strip()
+            and str(rep.get("expected", "")).strip() == str(entry.get("expected", "")).strip()
+            and str(rep.get("observed", "")).strip() == str(entry.get("observed", "")).strip())
+
+
 def evaluate(entry: dict):
     """Run one probe. Returns (status, actual) with status ok|miss|skip."""
     if entry.get("lang") != "python" or entry.get("executable") is False:
@@ -797,14 +818,15 @@ def evaluate(entry: dict):
                 "(a mention is not a call)"
             )
         base = primary(entry)
-        same_shape = (rep.get("promise", "").strip() == entry.get("promise", "").strip()
-                      and rep.get("fact", "").strip() == entry.get("fact", "").strip())
+        same_shape = same_measurement(rep, entry)
         if base and fn_name == base:
             if same_shape:
                 return "miss", (
                     f"repeat {rep['id']!r} replays {base}, the class fragment itself, and "
-                    "makes the class's own claim: that is the class probe, not a second "
-                    "sighting"
+                    "measures the same thing it does -- same probe, expected, observed: "
+                    "that is the class probe, not a second sighting. A paraphrase of the "
+                    "promise is not a second claim; a second MEASUREMENT is. See "
+                    "`same_measurement`"
                 )
             # The same bytes can carry two different lies. `clamp` promises a range
             # and a refusal, and min(max(...)) breaks both: the swapped bounds are
@@ -814,7 +836,8 @@ def evaluate(entry: dict):
         elif base and fingerprint(ns[base]) == fingerprint(ns[fn_name]):
             if same_shape:
                 return "miss", (
-                    f"repeat {rep['id']!r}: {fn_name} fingerprints like {base}; "
+                    f"repeat {rep['id']!r}: {fn_name} fingerprints like {base} and "
+                    "carries the same probe, expected and observed; "
                     "that is the class probe again, not a second sighting"
                 )
         try:
@@ -971,15 +994,25 @@ ADDRESS_UUID = re.compile(
 
 
 def address_resolves(addr: str) -> bool:
-    """Whether a stored address names something a reader can go and fetch.
+    """Whether a stored address is SHAPED like an address a reader could fetch.
 
-    The count says "instances with a public citation". An address that is a
-    board message id or carries a `#<seq>` can be checked by a reader; anything
-    else is a private note in the export shape of an address, and counting it
-    puts a number in front of the word "citation" that no reader can act on.
+    This function fetches nothing. It reads the shape of the string and nothing
+    else, so an address it accepts is not a message that exists: a fabricated
+    UUIDv4 passes, and the nil and all-ones ids pass a bare pattern too. The
+    earlier docstring said "names something a reader can go and fetch", which is
+    a claim about the board made by a regular expression; it was read, by two
+    readers, as a check that the citation could be found. It is not one, and the
+    print below now says which of the two the number is.
+
+    What the pattern can honestly refuse: a note that is not address-shaped at
+    all, and (since every board id measured here is a version-4 UUID -- 110 of
+    110, `probes/uuid_version_sample.py`) a UUID whose version nibble is not 4,
+    which is what a fabricated placeholder looks like.
     """
     a = str(addr).strip()
-    return bool(ADDRESS_UUID.match(a)) or bool(re.search(r"#\d+", a))
+    if ADDRESS_UUID.match(a):
+        return a[14] == "4" and a[19] in "89ab"
+    return bool(re.search(r"#\d+", a))
 
 
 def addresses(data) -> int:
@@ -1294,18 +1327,20 @@ def main() -> int:
         cls = entry["class"]
         if entry.get("address"):
             rows.append((cls, "class", entry.get("address_quote", ""), cls,
-                         primary(entry), entry.get("address_role", "undeclared")))
+                         primary(entry), entry.get("address_role", "undeclared"),
+                         entry["address"]))
         for rep in entry.get("repeats") or []:
             if isinstance(rep, dict) and rep.get("address"):
                 rows.append((f"{cls}/{rep['id']}", "repeat", rep.get("address_quote", ""),
-                             cls, rep.get("fn"), rep.get("address_role", "undeclared")))
+                             cls, rep.get("fn"), rep.get("address_role", "undeclared"),
+                             rep["address"]))
         for cit in entry.get("citations") or []:
             rows.append((f"{cls} (cited by {cit.get('by', '?')})", "citation",
                          cit.get("address_quote", ""), cls, primary(entry),
-                         cit.get("address_role", "undeclared")))
+                         cit.get("address_role", "undeclared"), cit.get("address")))
 
     bad = []
-    for name, kind, quote, cls, fn, role in rows:
+    for name, kind, quote, cls, fn, role, _addr in rows:
         if not quote:
             bad.append((name, "has an address but no line from it"))
         elif "\n" in quote.strip():
@@ -1331,7 +1366,10 @@ def main() -> int:
     print(
         f"distinct class fragments {collision_count - len(collisions)}"
         f"/{collision_count}  (class fragments only: no class is another class"
-        " under a new name)"
+        " under a new name; "
+        f"{skip} entr{'y' if skip == 1 else 'ies'} with no reading here are outside "
+        "this universe, so the count is over what the fingerprint reached, not over "
+        "the ledger)"
     )
     if control_ok:
         print(f"fingerprint control ok  {control_why}")
@@ -1356,9 +1394,10 @@ def main() -> int:
             f"second claim on the same bytes {len(same_bytes)}: "
             + ", ".join(same_bytes)
             + "  (a repeat whose fragment IS the class fragment, carrying a different"
-              " promise: the registry is keyed by the shape of the lie, not by the"
+              " MEASUREMENT: the registry is keyed by the shape of the lie, not by the"
               " fragment, and a keyed-by-fragment registry drops the second claim"
-              " without saying so)"
+              " without saying so. Prose is not what separates them -- same probe,"
+              " expected and observed is the class probe however the promise is worded)"
         )
     print(
         f"reported instances {instances} "
@@ -1374,14 +1413,28 @@ def main() -> int:
         print(f"DUPE  {'':<50} {line}")
     for line in shared:
         print(f"SHARED{'':<49} {line}")
-    addressed = sum(1 for r in rows if r[1] in ("class", "repeat"))
+    addressed = sum(1 for r in rows
+                    if r[1] in ("class", "repeat") and address_resolves(r[6] or ""))
+    unshaped = [r[0] for r in rows
+                if r[1] in ("class", "repeat") and not address_resolves(r[6] or "")]
     quoted = sum(1 for r in rows
-                 if r[1] in ("class", "repeat") and r[2].strip() and r[0] not in refused)
+                 if r[1] in ("class", "repeat") and address_resolves(r[6] or "")
+                 and r[2].strip() and r[0] not in refused)
     print(
-        f"instances with a public citation {addressed}/{instances} "
+        f"instances with an address that is SHAPED like a public message "
+        f"{addressed}/{instances} "
         f"({quoted} of them quote a line of the fragment)"
-        "  (cited, not shown to be independent)"
+        "  (nothing here is fetched: the shape of an address is read, not the "
+        "message it names; a fabricated id of the right shape passes, so this is "
+        "not a citation count)"
     )
+    if unshaped:
+        print(
+            f"address(es) not shaped like a public message: {len(unshaped)} "
+            + ", ".join(unshaped)
+            + "  (counted nowhere above: a note in the export shape of an address "
+              "is not a message a reader can look for)"
+        )
     roles = Counter(r[5] for r in rows if r[0] not in refused)
     if sum(roles.values()):
         print(

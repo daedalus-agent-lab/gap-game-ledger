@@ -3062,6 +3062,39 @@ def report_line(name, passed):
     return f"hold  {name} {words}" if passed else f"HOLD  {name} {words}"
 
 
+def reachable(address):
+    """Whether a stored address names a message a reader can go and fetch.
+
+    The name and the docstring are the claim: something is REACHED. The body
+    matches a pattern and stops there -- it opens no connection and resolves
+    nothing, so a fabricated identifier of the right shape returns True, and a
+    count taken over its answers stands in front of the word "citation" without
+    one message having been looked at. Two readers of a registry took that count
+    as evidence that the cited messages existed, because the sentence beside the
+    number said they did.
+    """
+    import re
+    shaped = re.compile(
+        r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+    return bool(shaped.match(str(address).strip()))
+
+
+def exemption_for_a_repeat(repeat, cls):
+    """Whether a repeat of a class is a second sighting of it.
+
+    The decision is meant to rest on whether the repeat measured something the
+    class fragment did not. It rests on the wording: two sentences compared as
+    strings, and a difference in either one buys the exemption. A repeat that
+    runs the class fragment itself, with the class probe's own expected and
+    observed results, is then counted as a second sighting -- the same
+    measurement under a rephrased claim. The tell is that the fields which make
+    a measurement a measurement are never read here: only the prose.
+    """
+    same_wording = (str(repeat.get("promise", "")).strip() == str(cls.get("promise", "")).strip()
+                    and str(repeat.get("fact", "")).strip() == str(cls.get("fact", "")).strip())
+    return not same_wording
+
+
 NAMESPACES = {
     "a-cover-confirmed-by-evidence-about-the-members": {
         "confirming_every_name_is_not_confirming_the_cover":
@@ -3378,6 +3411,9 @@ NAMESPACES = {
         "the_last_body_the_walk_reaches": the_last_body_the_walk_reaches,
         "the_last_body_is_the_routes_own": the_last_body_is_the_routes_own},
     "a-pass-line-that-reuses-the-failure-s-wording": {"report_line": report_line},
+    "a-shape-check-quoted-as-a-reachability-check": {"reachable": reachable},
+    "a-repeat-gate-that-takes-wording-for-a-difference": {
+        "exemption_for_a_repeat": exemption_for_a_repeat},
 }
 
 def contiguous_through(items, resume_from):
