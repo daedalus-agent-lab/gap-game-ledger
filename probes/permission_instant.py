@@ -231,6 +231,32 @@ def correlation(doc):
     return with_instant, with_bool, both, witnesses
 
 
+def boundary_spans(doc):
+    """Every boundary name, the store it lives in, and the span it measures.
+
+    A boundary name says WHEN something changes; it does not say WHAT changes.
+    The word `boundary` answers a question about the SHAPE of the name, and one
+    shape can belong to several objects at once -- so the store and the span are
+    printed beside it. A span measured from the block's own instant is what tells
+    an envelope's freshness from an allowance's validity from a revision's
+    retention; without it the label is a classification a reader cannot act on.
+
+    A boundary in a block that carries no instant is reported with a span of None
+    rather than dropped: it is the case the span cannot speak about, and saying so
+    is the whole of what this reading knows there.
+    """
+    out = []
+    for path, block in blocks(doc):
+        bkey, bvalue = boundary_of(block)
+        if not bkey or not isinstance(bvalue, (int, float)):
+            continue
+        ikey, ivalue = instant_of(block)
+        span = bvalue - ivalue if isinstance(ivalue, (int, float)) else None
+        out.append({"store": f"{path}.{bkey}", "name": bkey, "value": bvalue,
+                    "from": ikey, "span": span})
+    return out
+
+
 def report(doc) -> int:
     dated, undated, undeclared = check(doc)
     rows = scan(doc)
@@ -263,6 +289,23 @@ def report(doc) -> int:
             reason = NOT_DECLARED.get(row["key"])
             note = f" -- {reason}" if reason else ""
             print(f"    {row['block']}.{row['key']}{note}")
+
+    spans = boundary_spans(doc)
+    print(f"\nBOUNDARY NAMES ({len(spans)}), with the store each one lives in and the "
+          "span it measures:")
+    for sp in spans:
+        if sp["span"] is None:
+            measures = (f"no instant in this block ({sp['store'].rsplit('.', 1)[0]}), "
+                        "so the span cannot be taken here")
+        else:
+            measures = (f"{sp['span']} s from {sp['from']}; the name gives the shape, "
+                        "this gives the object")
+        print(f"  {sp['store']:<44} {measures}")
+    if spans:
+        objects = {sp["span"] for sp in spans if sp["span"] is not None}
+        print(f"  distinct spans among them: {len(objects)}" + (
+            "  (one word, one shape, several objects: the label alone does not say "
+            "which)" if len(objects) > 1 else ""))
 
     wi, wb, both, witnesses = correlation(doc)
     print(f"  OBSERVATION, not a pass: blocks carrying a reading instant {wi}; blocks "
@@ -353,6 +396,29 @@ def selftest() -> int:
         ("a key that is not date-shaped is not reported as unclassified",
          lambda: scan({"p": {"can_vote": True, "karma": 5}})[0]["unclassified"] == [],
          True),
+        # One shape, several objects. All three of these names are placed as
+        # `boundary` and placed correctly by class -- the class answers "what kind
+        # of time is this", not "of what". The span is what separates them, so a
+        # reading that prints only the label is a reading a reader cannot act on.
+        # The third case was published as "exactly 30 days"; measured against its
+        # own two numbers it is 2591969 s, 31 s short of 2592000, and the test
+        # carries the measured value rather than the round one that was claimed.
+        ("one boundary label covers several objects, and the span separates them",
+         lambda: [sp["span"] for sp in boundary_spans({
+             "profile": {"computed_at": 100, "expires_at": 160},
+             "policy": {"as_of": 0, "valid_until": 1209600},
+             "revision": {"as_of": 1790346990, "expires_at": 1792938959},
+         })] == [60, 1209600, 2591969], True),
+        ("a span published as a round number is checked against its own two numbers",
+         lambda: (1792938959 - 1790346990) != 2592000
+         and (1792938959 - 1790346990) == 2591969, True),
+        ("a boundary in a block that carries no instant reports no span, not zero",
+         lambda: [sp["span"] for sp in boundary_spans(
+             {"p": {"can_vote": True, "resets_at": 5}})] == [None], True),
+        ("the store is printed with the name, so the label is not the whole reading",
+         lambda: boundary_spans({"viewer": {"meatproxy": {
+             "computed_at": 1, "expires_at": 61}}})[0]["store"]
+         == "viewer.meatproxy.expires_at", True),
     ]
     bad = []
     for label, probe, want in checks:
