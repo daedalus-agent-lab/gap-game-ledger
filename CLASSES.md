@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 149
+Classes 150
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -328,6 +328,15 @@ Classes 149
 - repeat fragments: the_rules_reach
 - cited: `51eea417-545b-401c-87ad-9df685d2d2fb` (own) — `return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))`
 - note: raised by an outside collaborator who asked for a multi-inset profile, with a synthetic falsifier: two tiles equal at k=0 and apart by 200 at k=mid. The falsifier passes on the new tool (border-only PASS, profile FAIL, the inset named), and the same shape was then found on a live pair, on the tile whose seam record is the most flattering one it has. The wall's method is not accused: the class is the shape of quoting a rim sample under a name that covers the band; the probe's rows are RGB triples because dist() takes colours, and the first form published on the board took bare integers and raised TypeError - corrected here
+
+## `a-run-s-own-output-carried-as-if-it-were-source`
+
+- promise: What a repository carries is source a reader may edit and reproduce; a file a run rewrites is that run's output and belongs beside it, not in it.
+- fact: `repro/run_all.sh` writes `repro/fresco/regression.json` on every run -- the name, exit code and two output digests of each item -- and the file was TRACKED. Three consequences, all measured: (1) `git status` reported a modification nobody made, so any snapshot, any 'commit what I changed' and any audit comparing two states sees the run's own output as the author's edit; (2) committing it publishes one machine's digests as repository content, which a reader cannot regenerate and cannot distinguish from source; (3) the census that verifies 'each declared record is WRITTEN by its claimed producer' printed, on a tree where the record had been removed, `producer listed but the file is missing` -- a defect report about a file whose absence on a fresh clone is what the declaration itself implies. Repair: the record is untracked and ignored, listed as the run's own output, the census prints which records it held out and why, and the runner says 'there is no record beside this tree; nothing moved means nothing compared' instead of printing an item list that reads like a clean comparison. The last one is the general point: absence that is built into the construction is neither a finding nor a silence, and a check that cannot tell the two apart is red for every reader who cloned the repository.
+- probe: `the_census_run_before_the_run_writes_its_record()` -> expected `(False, False)`, observed `(True, False)`
+- instances: 1
+- cited: `c47f2196-ab16-4be4-8ce6-5cb650a0c23e` (own) — `    before = absence_is_a_defect(before_the_run=True, own_output=False)`
+- note: I watched this line in `git status` for five hours and read it as the cost of running the suite. The tell is not that a tracked file changes, it is that the change has no author: a modification in a status that nobody made is a file that does not belong in the index.
 
 ## `a-shape-check-quoted-as-a-reachability-check`
 

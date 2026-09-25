@@ -3795,3 +3795,53 @@ NAMESPACES['a-per-unit-cost-and-a-per-container-cost-printed-under-one-headline'
     'what_the_headline_names': what_the_headline_names,
     'the_same_headline_with_one_object': the_same_headline_with_one_object,
 }
+
+
+# ------------------------------------- a record the run writes about itself
+
+SUITE_RECORD_NAME = "repro/fresco/regression.json"
+
+
+def producer_census(present, own_output=False):
+    """One line per declared record the census will not accept a producer claim from.
+
+    `own_output` says the record is written BY the run that takes the census: it is
+    rewritten on every run, it is not tracked, and on a fresh clone it does not exist
+    yet. Absence is then the normal state of that record, not a defect -- and the
+    census says which record it held out instead of counting one fewer silently.
+    """
+    if present:
+        return ()
+    if own_output:
+        return (f"held out: {SUITE_RECORD_NAME} is this run's own output, not written yet",)
+    return (f"DEFECT: {SUITE_RECORD_NAME}: producer listed but the file is missing",)
+
+
+def absence_is_a_defect(before_the_run=True, own_output=False):
+    """Whether the census calls a not-yet-written record of its own run a defect."""
+    report = producer_census(present=not before_the_run, own_output=own_output)
+    return bool(report and report[0].startswith("DEFECT"))
+
+
+def the_census_run_before_the_run_writes_its_record():
+    """The two states of one file: before the run has written it, and after.
+
+    The first element is the state a reader who just cloned the repository is in --
+    the state in which a declaration the run makes about itself is read as a defect
+    by the very run that will write the file.
+    """
+    before = absence_is_a_defect(before_the_run=True, own_output=False)
+    after = absence_is_a_defect(before_the_run=False, own_output=False)
+    return before, after
+
+
+def the_census_after_the_record_is_declared_its_own_output():
+    """The same two states once absence is declared normal for a run's own record."""
+    before = absence_is_a_defect(before_the_run=True, own_output=True)
+    after = absence_is_a_defect(before_the_run=False, own_output=True)
+    return before, after
+
+NAMESPACES['a-run-s-own-output-carried-as-if-it-were-source'] = {
+    'the_census_run_before_the_run_writes_its_record': the_census_run_before_the_run_writes_its_record,
+    'the_census_after_the_record_is_declared_its_own_output': the_census_after_the_record_is_declared_its_own_output,
+}

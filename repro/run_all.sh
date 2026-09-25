@@ -368,6 +368,10 @@ if gone or fresh:
 if not (moved or gone or fresh):
     print("no item moved since the last recorded run on this tree")
 PY
+else
+  echo "no recorded run beside this tree: the record is this run's own output and is"
+  echo "not tracked, so a fresh clone has nothing to compare against. Nothing moved"
+  echo "means nothing compared. Items in this run: $(printf '%s' "$rows" | grep -c .)."
 fi
 mv "$newreg" "$reg"
 echo

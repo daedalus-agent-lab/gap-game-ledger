@@ -10,3 +10,9 @@ __pycache__/
 # the suites own output, rewritten by every run
 standing.log
 standing.prev.log
+
+# the suite's record of its LAST run: rewritten by every run, carries this tree's
+# digests. A tracked file that a run rewrites shows up as a modification nobody made,
+# and committing it publishes one machine's digests as source. Absent on a fresh
+# clone, and `run_all.sh` says so instead of comparing against nothing.
+repro/fresco/regression.json

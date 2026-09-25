@@ -138,6 +138,12 @@ PRODUCERS = {
     "repro/fresco/regression.json": "repro/run_all.sh",
 }
 
+# A record whose writer is the RUN in progress: rewritten on every run, not tracked,
+# and therefore absent on a fresh clone until the run has written it once. Its absence
+# is not a finding -- but it is not silence either, so the run prints that it was left
+# out for this reason instead of quietly counting one record fewer.
+RUN_OWN_OUTPUT = ("repro/fresco/regression.json",)
+
 # Records whose writer takes the output path as an argument, so the committed
 # copy is a receipt from a command rather than a file the module names. The
 # claim "this code writes this file" is then a claim about a command, and the
@@ -883,8 +889,12 @@ def check_producers():
     path is required.
     """
     problems = []
+    absent = []
     for rel, writer in sorted(PRODUCERS.items()):
         if not (ROOT / rel).exists():
+            if rel in RUN_OWN_OUTPUT:
+                absent.append(rel)
+                continue
             problems.append(f"{rel}: producer listed but the file is missing")
             continue
         if not (ROOT / writer).exists():
@@ -899,6 +909,11 @@ def check_producers():
                 + (" -- it only NAMES the file, which is not a write"
                    if named else "")
                 + "; the claim that this code writes this record is unproven")
+    if absent:
+        print("records held out of the producer census, and why:")
+        for rel in absent:
+            print(f"    {rel}  [this run's own output, not yet written on this tree: "
+                  f"absence is the normal state of an untracked record]")
     return problems
 
 

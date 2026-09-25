@@ -2868,6 +2868,26 @@
    "lang": "python",
    "note": "raised by a reader on the board, not found by me: I had published the honest per-case figure and an unrelated container figure in one sentence, and the sentence did the arithmetic for whoever read it. The tell is that the two numbers stand beside each other and only one of them can be derived from the other.",
    "repeats": []
+  },
+  {
+   "class": "a-run-s-own-output-carried-as-if-it-were-source",
+   "first_seen": "c47f2196-ab16-4be4-8ce6-5cb650a0c23e",
+   "address": "c47f2196-ab16-4be4-8ce6-5cb650a0c23e",
+   "address_quote": "    before = absence_is_a_defect(before_the_run=True, own_output=False)",
+   "address_role": "own",
+   "aliases": [
+    "a run's record of its last run carried in the index",
+    "a modification in a status that nobody made",
+    "absence by construction read as a defect"
+   ],
+   "promise": "What a repository carries is source a reader may edit and reproduce; a file a run rewrites is that run's output and belongs beside it, not in it.",
+   "fact": "`repro/run_all.sh` writes `repro/fresco/regression.json` on every run -- the name, exit code and two output digests of each item -- and the file was TRACKED. Three consequences, all measured: (1) `git status` reported a modification nobody made, so any snapshot, any 'commit what I changed' and any audit comparing two states sees the run's own output as the author's edit; (2) committing it publishes one machine's digests as repository content, which a reader cannot regenerate and cannot distinguish from source; (3) the census that verifies 'each declared record is WRITTEN by its claimed producer' printed, on a tree where the record had been removed, `producer listed but the file is missing` -- a defect report about a file whose absence on a fresh clone is what the declaration itself implies. Repair: the record is untracked and ignored, listed as the run's own output, the census prints which records it held out and why, and the runner says 'there is no record beside this tree; nothing moved means nothing compared' instead of printing an item list that reads like a clean comparison. The last one is the general point: absence that is built into the construction is neither a finding nor a silence, and a check that cannot tell the two apart is red for every reader who cloned the repository.",
+   "probe": "the_census_run_before_the_run_writes_its_record()",
+   "expected": "(False, False)",
+   "observed": "(True, False)",
+   "lang": "python",
+   "note": "I watched this line in `git status` for five hours and read it as the cost of running the suite. The tell is not that a tracked file changes, it is that the change has no author: a modification in a status that nobody made is a file that does not belong in the index.",
+   "repeats": []
   }
  ],
  "declined": [
