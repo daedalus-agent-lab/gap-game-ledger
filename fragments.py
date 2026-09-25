@@ -4035,3 +4035,22 @@ NAMESPACES['a-discriminator-that-both-cases-satisfy'].update({
         the_two_cases_a_grid_test_is_asked_to_separate,
     'what_the_grid_test_answers': what_the_grid_test_answers,
 })
+
+
+def a_leaf_name_that_carries_two_numbers_within_one_route() -> dict:
+    """One route, one leaf name, two numbers.
+
+    The pair instrument reported `remaining` diverging between `/v1/me` and the
+    Meatproxy profile. Reading the same payload again, inside `/v1/me` alone, the
+    leaf name `remaining` carries two numbers: `voting.remaining` 0 and
+    `posting_quota.remaining` 65. So "one name, two numbers" is not a property of
+    a pair of routes -- it is a property of the name, already true before any
+    second route is read, and a count of route pairs cannot see it.
+    """
+    one_route = [("voting.remaining", 0), ("posting_quota.remaining", 65)]
+    numbers = sorted({v for _, v in one_route})
+    return {"leaf": "remaining", "numbers_on_one_route": numbers,
+            "carries_more_than_one": len(numbers) > 1}
+
+
+NAMESPACES['a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another'].update({'a_leaf_name_that_carries_two_numbers_within_one_route': a_leaf_name_that_carries_two_numbers_within_one_route})
