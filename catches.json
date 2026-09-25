@@ -2638,6 +2638,24 @@
       "observed": "31",
       "lang": "python",
       "note": "The claim under test is the storage lifetime of a submitted revision, and the defect is not the thirty-one seconds but the word \"exactly\": a measured span quoted as a divisor is a claim that one division settles, and the division was never done. It is registered as its own class rather than as an arithmetic slip because it changes an outcome -- the divisibility agreement that was proposed to name the store of `expires_at` holds on an invented span and fails on the real one, so a tool built to that rule answers confidently on a number nobody measured. The repair is in probes/permission_instant.py: which_boundary() reads the envelope, the policy and the retention agreements as relations between two names in one block, and raises instead of returning a boundary when none holds -- refusal here being a reading of the payload, not a third case of the lie."
+    },
+    {
+      "class": "a-cover-confirmed-by-evidence-about-the-members",
+      "first_seen": "833bd2ea-2587-42cc-8609-3f1590c97d03",
+      "address": "7b0da7c5-9433-4fcf-bbc6-2b937e774c50",
+      "address_quote": "    return r[\"each_confirmed\"] and not r[\"cover_confirmed\"]",
+      "address_role": "quoted",
+      "aliases": [
+        "each name in the list checked out, so the list was read as the world",
+        "an enumeration confirmed where an exhaustion was claimed"
+      ],
+      "promise": "The enumeration of names this repo publishes, confirmed name by name by a second reader, is a confirmation of the claim that no other cases exist.",
+      "fact": "The two confirmations are different questions and only the first was asked. Every published name is where the listing says it is -- that is a reading of the listing -- while the absence of other cases is a claim about the payload, and it needs a witness outside the listing. The witness is already in this repo and already printed: 13 of 134 schemas carry a date-shaped name the reader cannot place, modified_at and cast_at and membership_epoch among them. Those names are not in the listing, so no reader confirming the listing is asked about them, and `cover_confirmed` is False while `each_confirmed` is True. The author published the enumeration beside the claim, and the reader named the difference only after seeing it: 'what I confirmed was the shape as your tool enumerated it, not the claim that the enumeration was exhaustive.'",
+      "probe": "a_cover_confirmed_by_evidence_about_the_members()",
+      "expected": "False",
+      "observed": "True",
+      "lang": "python",
+      "note": "Adjacent to a-coverage-check-drawn-from-the-covered-set and not the same shape: there the count's scope is drawn from the file being checked, so the answer shrinks with the question; here the scope is a list that is fully confirmed, and the lie is in what the confirmation was read to cover. One is a verifier that is not independent of the verified; this one is a verifier that is independent and answering a narrower question than the one published above it. The repair is on the publisher's side, and it is a number rather than a promise: the instrument prints the names it could not place, so the size of its non-exhaustion is in the output instead of in a caveat. Registered after the count was corrected in the same thread from 137 to 134 -- the first number was the ledger's own entry count standing next to the word 'schemas'."
     }
   ],
   "declined": [

@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 137
+Classes 138
 
 ## `a-byte-count-published-without-the-encoding-it-was-taken-under`
 
@@ -51,6 +51,15 @@ Classes 137
 - repeat fragments: the_pair_answers_the_same_under_both_policies
 - cited: `4b0230a0-9d23-4b3f-998c-e9c18c2bf96d` (own) — `    broken = _c.fingerprint(pair[0]) != _c.fingerprint(pair[1])`
 - note: found by a second holder working the table by hand rather than running my script -- three of the fifteen pairs it named were already the class of a coverage count taken over its own labels, one level lower: there the number was over the table's prose, here the verdict is over a difference the rule never asks about. Its row for this pair was the constant in the store, and its repair -- one name, the same in both members -- is the one the pair now uses.
+
+## `a-cover-confirmed-by-evidence-about-the-members`
+
+- promise: The enumeration of names this repo publishes, confirmed name by name by a second reader, is a confirmation of the claim that no other cases exist.
+- fact: The two confirmations are different questions and only the first was asked. Every published name is where the listing says it is -- that is a reading of the listing -- while the absence of other cases is a claim about the payload, and it needs a witness outside the listing. The witness is already in this repo and already printed: 13 of 134 schemas carry a date-shaped name the reader cannot place, modified_at and cast_at and membership_epoch among them. Those names are not in the listing, so no reader confirming the listing is asked about them, and `cover_confirmed` is False while `each_confirmed` is True. The author published the enumeration beside the claim, and the reader named the difference only after seeing it: 'what I confirmed was the shape as your tool enumerated it, not the claim that the enumeration was exhaustive.'
+- probe: `a_cover_confirmed_by_evidence_about_the_members()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `7b0da7c5-9433-4fcf-bbc6-2b937e774c50` (quoted) — `    return r["each_confirmed"] and not r["cover_confirmed"]`
+- note: Adjacent to a-coverage-check-drawn-from-the-covered-set and not the same shape: there the count's scope is drawn from the file being checked, so the answer shrinks with the question; here the scope is a list that is fully confirmed, and the lie is in what the confirmation was read to cover. One is a verifier that is not independent of the verified; this one is a verifier that is independent and answering a narrower question than the one published above it. The repair is on the publisher's side, and it is a number rather than a promise: the instrument prints the names it could not place, so the size of its non-exhaustion is in the output instead of in a caveat. Registered after the count was corrected in the same thread from 137 to 134 -- the first number was the ledger's own entry count standing next to the word 'schemas'.
 
 ## `a-coverage-check-drawn-from-the-covered-set`
 

@@ -2955,6 +2955,53 @@ def does_the_retention_agreement_hold(block=None):
 
 RETENTION_AS_PUBLISHED = {"created_at": 1790346990, "expires_at": 1792938959}
 
+# -------------------------------------- a listing confirmed, a cover believed
+
+INSTANT_NAMES_AS_PUBLISHED = ("as_of", "at", "computed_at", "generated_at",
+                              "measured_at", "observed_at", "read_at", "timestamp")
+DATE_SHAPED_NAMES_UNPLACED = ("modified_at",)
+
+
+def confirming_every_name_is_not_confirming_the_cover(listing, confirmations,
+                                                     outside=None):
+    """What a reader has confirmed when every member of a listing checks out.
+
+    An enumeration published beside a claim about the world is read as one
+    statement. Confirming the members is evidence about the listing -- each name
+    is where the list says it is -- and it is evidence about the cover only if
+    something outside the list is also asked for. The witness is `outside`: names
+    that are date-shaped and that the enumeration does not contain.
+
+    Returning `cover_confirmed` False beside `each_confirmed` True is the whole
+    finding: the same reader, the same reading, two questions, and only one of
+    them was asked.
+    """
+    outside = DATE_SHAPED_NAMES_UNPLACED if outside is None else outside
+    each = all(confirmations.get(n) for n in listing)
+    cover = bool(outside) and all(confirmations.get(o) for o in outside)
+    return {"members": len(listing), "each_confirmed": each,
+            "cover_confirmed": cover,
+            "members_never_asked_about": [o for o in outside
+                                          if o not in confirmations]}
+
+
+def a_cover_confirmed_by_evidence_about_the_members() -> bool:
+    """True means the members were confirmed and the cover was never asked about.
+
+    The listing is the enumeration this repo publishes of the names it places,
+    and the confirmations are what a reader can honestly give when reading it:
+    every published name is where it says it is. The name outside the listing is
+    a date-shaped name the same file cannot place -- and it is not put to the
+    reader at all, because it is not in the listing.
+    """
+    listing = INSTANT_NAMES_AS_PUBLISHED
+    confirmations = {n: True for n in listing}
+    r = confirming_every_name_is_not_confirming_the_cover(listing, confirmations)
+    return r["each_confirmed"] and not r["cover_confirmed"]
+
+
+# -------------------------------------- a duration published as a round number
+
 # ------------------------------------------- what the wire carries, what the paper says
 
 REGISTRATION_AS_SERVED = {
@@ -3004,6 +3051,12 @@ def what_the_record_does_not_carry(record=None, declared=None):
 
 
 NAMESPACES = {
+    "a-cover-confirmed-by-evidence-about-the-members": {
+        "confirming_every_name_is_not_confirming_the_cover":
+            confirming_every_name_is_not_confirming_the_cover,
+        "a_cover_confirmed_by_evidence_about_the_members":
+            a_cover_confirmed_by_evidence_about_the_members,
+    },
     "a-duration-published-as-a-round-number-of-days-and-not-a-whole-one": {
         "the_round_duration_the_span_is_not": the_round_duration_the_span_is_not,
         "does_the_retention_agreement_hold": does_the_retention_agreement_hold,
