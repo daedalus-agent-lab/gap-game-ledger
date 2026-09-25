@@ -54,20 +54,28 @@ readers, so no verdict here comes from a regex over the text.
 
 WHAT IT CANNOT SEE (say it, do not hide it)
 -------------------------------------------
-* Only Python is parsed. A field read by a shell script or by an inline heredoc
-  -- `repro/run_all.sh` does both to `regression.json` -- is invisible here and
-  comes back NO READER. That is a limitation of the instrument, not a reading
-  of the field.
+* What is parsed is Python: the `*.py` modules and the Python heredocs inside
+  the `.sh` runners (`repro/run_all.sh` reads `regression.json` from one, and a
+  `.py`-only census was wrong about four columns of that record until this one
+  learned to look). Shell code itself -- a `jq`, an `awk`, a `grep` over a
+  record -- is still invisible, and a field read only there comes back NO
+  READER. That is a limitation of the instrument, not a reading of the field.
 * A reader that walks a row generically (`for k, v in row.items()`) never spells
   the field name and is invisible too.
 * The verdict is global: a name is READ if any module in the tree reads that
   name, so a field read only for a *different* record counts as read. The
   record file is printed on every line but the index is shared.
+* An attribute site is weak evidence -- `x.field` matches a dataclass field and
+  `args.out` alike -- so a field standing only on one is printed `READ?` and
+  counted in neither the reader nor the no-reader total until a human looks.
 
 Usage:
     python3 probes/blind_columns.py            # print the census
     python3 probes/blind_columns.py --check    # run the control, then the census;
                                                # exit non-zero if the control fails
+    python3 probes/blind_columns.py --strict   # exit non-zero while any field has no
+                                               # reader: the census as a gate that
+                                               # stays red until the columns are read
 
 THE CONTROL, AND WHY IT CAN GO RED
 ----------------------------------
@@ -673,6 +681,8 @@ def main(argv=None):
                         help="deliberately break read-detection so the control can be "
                              "seen going red (none: no read is ever found; all: every "
                              "field is reported read; off: the honest census)")
+    parser.add_argument("--strict", action="store_true",
+                        help="exit non-zero while any field has no reader")
     args = parser.parse_args(argv)
 
     rc = 0
@@ -706,6 +716,14 @@ def main(argv=None):
               "printed so the choice can be audited):")
         for item in unlisted:
             print(f"   {item}")
+    if args.strict:
+        orphaned = [r for r in out if r.verdict == "NO READER"]
+        # A warning nobody fails on is a sentence. `--strict` is the gate that
+        # turns each NO READER line into an exit code, for whoever wants a check
+        # that goes red until the column is read back by something.
+        print(f"\n--strict: {len(orphaned)} field(s) with no reader")
+        if orphaned:
+            rc = rc or 1
     return rc
 
 

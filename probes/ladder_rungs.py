@@ -668,8 +668,18 @@ def main(argv=None, cells=None, base=None, table_path=None, quiet=False,
                 # the column exists to prevent (a foreign authority's refusal counted
                 # as the wall's) went in through the record instead of the wire.
                 # A column whose only reader is a human reading it is not read.
+                # `got` is the last one and the worst, because it is the column the
+                # whole guard rests on: status, bytes and body digest are written
+                # into the record for every row and were read by NOTHING. `--check`
+                # compared a FRESH measurement against the expectation table and
+                # printed ok, so the record's own copy of the answer could be edited
+                # to `[599, 999999, "deadbeefdeadbeef"]` and the run stayed green --
+                # including for the row whose digest is the only thing separating
+                # "1024 decoded" from "29 as arrived". A column is read when a
+                # consumer can fail on it, and nothing could fail on this one.
                 for field, want in (("answerer", who),
-                                    ("headers", [list(h) for h in headers])):
+                                    ("headers", [list(h) for h in headers]),
+                                    ("got", list(got))):
                     if old.get(field) != want:
                         bad.append(f"{label}: recorded {field} {old.get(field)!r} "
                                    f"!= the run's {want!r}")

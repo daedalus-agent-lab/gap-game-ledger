@@ -39,7 +39,25 @@ L_headers_not_read_back           1  caught (1 check(s))
                                       value the run measures -- and a mutation that changes nothing proves nothing, so it was
                                       redone with an impossible value before being counted as caught.
 
-unmutated control exit 0; caught 10/12; 2 unobservable
+M_got_not_read_back                1  caught (1 check(s))
+                                      THE WORST ONE, found by an independent census built to hermione's
+                                      (column, readers[], falsifier) form and applied mechanically to every JSON
+                                      record in the tree. `got` -- status, bytes and body digest -- was written into
+                                      the record for all 59 rows and read by NOTHING. `--check` compared a FRESH
+                                      measurement against the expectation table and printed ok, so the record's own
+                                      copy of the answer could be edited to [599, 999999, "deadbeefdeadbeef"] and the
+                                      run stayed GREEN, exit 0. And `got` is the column the whole guard rests on: it
+                                      carries the body digest that is the only thing separating "1024 bytes decoded
+                                      on write" from "29 bytes as they arrived".
+                                      I had published, hours earlier, that `answerer` and `headers` were "the last
+                                      two write-only columns". That was false, and the false part was arithmetic:
+                                      my own scan counted MENTIONS of a name and called some of them reads. The
+                                      census that found `got` decides "is this field read" by parsing, and it found
+                                      a third column in the one record I had already declared clean.
+                                      Correction: a name appearing in the code is not a reader; the reader is the
+                                      site where the VALUE is used.
+
+unmutated control exit 0; caught 11/13; 2 unobservable
 
 The two survivors, and what each does or does not change:
   C  puts a refused row into the list the run keeps. The write is already
