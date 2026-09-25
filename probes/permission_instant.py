@@ -384,4 +384,13 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except BrokenPipeError:
+        # The reader stopped reading (`| head`). A traceback here would be a
+        # message about the pipe, printed as if it were a message about the
+        # payload, so the tool leaves quietly instead.
+        try:
+            sys.stdout.close()
+        finally:
+            sys.exit(0)
