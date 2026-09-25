@@ -1,0 +1,37 @@
+The control under test: `python3 probes/ladder_rungs.py --control`, 13 checks.
+
+Each mutation is applied to a copy beside the probe -- beside it, because a copy
+in another directory fails on the sibling import to `wire_instrument` and a crash
+is not a fired control. The control is run, the copy removed. A mutation is
+'caught' only when the control exits 1 AND names the check that moved.
+
+mutation                        exit  verdict
+----------------------------------------------------------------------------
+A_guard_call_removed               1  caught (3 check(s))
+                                      the run refuses an encoded row and exits non-zero: main() exit 0 on a gzipped answer
+B_predicate_never_refuses          1  caught (4 check(s))
+                                      the run refuses an encoded row and exits non-zero: main() exit 0 on a gzipped answer
+C_refused_row_into_rows            0  survived -- no observable difference
+D_run_never_fails                  1  caught (5 check(s))
+                                      the run refuses an encoded row and exits non-zero: main() exit 0 on a gzipped answer
+E_conditions_not_read_back         1  caught (2 check(s))
+                                      a record with a WRONG content coding is refused by --check: a record claiming gzip over a plain answer 
+F_no_regenerate_rule               0  survived -- no observable difference
+G_write_even_when_refused          1  caught (1 check(s))
+                                      the refused row is not written into the record: the refused row is absent from ladder-control-164y_83x/
+H_transfer_coding_unread           1  caught (1 check(s))
+                                      `transfer-encoding: gzip` is NOT folded into the count: 29 B reported for a 1024 B entity served as 29 
+I_curl_rc_unread                   1  caught (1 check(s))
+                                      a truncated transfer is refused, and curl says so: 100 B reported of a declared 1024, curl exit 18
+J_sent_not_read_back               1  caught (1 check(s))
+                                      a record with a WRONG request line is refused by --check: a record whose request line differs from the 
+----------------------------------------------------------------------------
+unmutated control exit 0; caught 8/10; 2 unobservable
+
+The two survivors, and what each does or does not change:
+  C  puts a refused row into the list the run keeps. The write is already
+     suppressed by `refused`, so the row is discarded either way and nothing
+     the control measures moves. Equivalent, not invisible.
+  F  removes the 'regenerate rather than read as agreement' rule. A tampered
+     record is still caught by the field comparison, because a deleted field
+     differs from the measured one. Redundant, not silent.

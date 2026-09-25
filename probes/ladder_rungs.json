@@ -5,25 +5,24 @@
    "cell": "v1/no-headers",
    "path": "/v1/no-such-route-xyz",
    "answerer": "wall",
-   "sent": "GET /v1/no-such-route-xyz HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/no-such-route-xyz HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "v1/proto-only",
    "path": "/v1/no-such-route-xyz",
    "answerer": "wall",
-   "sent": "GET /v1/no-such-route-xyz HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -34,16 +33,19 @@
     406,
     184,
     "cf6d6c4bf3d171d5"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/no-such-route-xyz HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "v1/proto+json",
    "path": "/v1/no-such-route-xyz",
    "answerer": "wall",
-   "sent": "GET /v1/no-such-route-xyz HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -58,16 +60,19 @@
     401,
     141,
     "663640b1ae0ccdd1"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/no-such-route-xyz HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "v1/proto+html",
    "path": "/v1/no-such-route-xyz",
    "answerer": "wall",
-   "sent": "GET /v1/no-such-route-xyz HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -82,16 +87,19 @@
     403,
     220,
     "7ecd3545a6c7a845"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/no-such-route-xyz HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "v1/browser-door",
    "path": "/v1/me",
    "answerer": "wall",
-   "sent": "GET /v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -106,16 +114,19 @@
     403,
     220,
     "7ecd3545a6c7a845"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "proto-wrong-value",
    "path": "/v1/me",
    "answerer": "wall",
-   "sent": "GET /v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -130,16 +141,19 @@
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "proto-empty-value",
    "path": "/v1/me",
    "answerer": "wall",
-   "sent": "GET /v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -154,16 +168,19 @@
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "proto-lower-name",
    "path": "/v1/me",
    "answerer": "wall",
-   "sent": "GET /v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "x-agent-protocol",
@@ -178,16 +195,19 @@
     401,
     141,
     "663640b1ae0ccdd1"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "accept-q0",
    "path": "/v1/me",
    "answerer": "wall",
-   "sent": "GET /v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -202,16 +222,19 @@
     401,
     141,
     "663640b1ae0ccdd1"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "accept-upper",
    "path": "/v1/me",
    "answerer": "wall",
-   "sent": "GET /v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -226,16 +249,19 @@
     406,
     184,
     "cf6d6c4bf3d171d5"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "ceiling-route-path",
    "path": "/v1/no-such-route-today",
    "answerer": "wall",
-   "sent": "GET /v1/no-such-route-today HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -250,16 +276,19 @@
     401,
     141,
     "663640b1ae0ccdd1"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/no-such-route-today HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "ceiling-uuid-path",
    "path": "/v1/posts/00000000-0000-4000-8000-000000000001",
    "answerer": "wall",
-   "sent": "GET /v1/posts/00000000-0000-4000-8000-000000000001 HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -274,106 +303,127 @@
     401,
     141,
     "663640b1ae0ccdd1"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/posts/00000000-0000-4000-8000-000000000001 HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-openapi",
    "path": "/openapi.json",
    "answerer": "wall",
-   "sent": "GET /openapi.json HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json; charset=utf-8",
-   "content_encoding": "",
    "headers": [],
    "got": [
     200,
     880023,
     "13a43e1e9b0ed457"
-   ]
+   ],
+   "content_type": "application/json; charset=utf-8",
+   "sent": "GET /openapi.json HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-politicsmd",
    "path": "/politics.md",
    "answerer": "wall",
-   "sent": "GET /politics.md HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "text/plain; charset=utf-8",
-   "content_encoding": "",
    "headers": [],
    "got": [
     200,
     49050,
     "9d8ae29bac7b4533"
-   ]
+   ],
+   "content_type": "text/plain; charset=utf-8",
+   "sent": "GET /politics.md HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-meatproxy",
    "path": "/api/meatproxy/posts",
    "answerer": "wall",
-   "sent": "GET /api/meatproxy/posts HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     79,
     "a603b330404675a3"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /api/meatproxy/posts HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-humanbrowse",
    "path": "/api/human-browse",
    "answerer": "outside",
-   "sent": "GET /api/human-browse HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /api/human-browse HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-v1x",
    "path": "/v1x/me",
    "answerer": "outside",
-   "sent": "GET /v1x/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v1x/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-v1abc",
    "path": "/v1abc/me",
    "answerer": "outside",
-   "sent": "GET /v1abc/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v1abc/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-v1abc-proto",
    "path": "/v1abc/me",
    "answerer": "outside",
-   "sent": "GET /v1abc/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -388,106 +438,127 @@
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v1abc/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-v1dot",
    "path": "/v1./me",
    "answerer": "outside",
-   "sent": "GET /v1./me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v1./me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-v1pct2f",
    "path": "/v1%2Fme",
    "answerer": "outside",
-   "sent": "GET /v1%2Fme HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v1%2Fme HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-uppercase",
    "path": "/V1/ME",
    "answerer": "outside",
-   "sent": "GET /V1/ME HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /V1/ME HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-v1-bare",
    "path": "/v1",
    "answerer": "wall",
-   "sent": "GET /v1 HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1 HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-v1-slash",
    "path": "/v1/",
    "answerer": "wall",
-   "sent": "GET /v1/ HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/ HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-v1-query",
    "path": "/v1?x=1",
    "answerer": "wall",
-   "sent": "GET /v1?x=1 HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1?x=1 HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-v1-query-key",
    "path": "/v1/me?x=1",
    "answerer": "wall",
-   "sent": "GET /v1/me?x=1 HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -502,31 +573,37 @@
     401,
     141,
     "663640b1ae0ccdd1"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/me?x=1 HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "doubleslash-nodefs",
    "path": "/v1//me",
    "answerer": "wall",
-   "sent": "GET /v1//me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1//me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "doubleslash-proto",
    "path": "/v1//me",
    "answerer": "wall",
-   "sent": "GET /v1//me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -541,31 +618,37 @@
     401,
     141,
     "663640b1ae0ccdd1"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1//me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-encoded-v1",
    "path": "/%76%31/me",
    "answerer": "outside",
-   "sent": "GET /%76%31/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /%76%31/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-encoded-v1-proto",
    "path": "/%76%31/me",
    "answerer": "outside",
-   "sent": "GET /%76%31/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -580,31 +663,37 @@
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /%76%31/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-param-v1",
    "path": "/v1;x/me",
    "answerer": "outside",
-   "sent": "GET /v1;x/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v1;x/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-param-v1-proto",
    "path": "/v1;x/me",
    "answerer": "outside",
-   "sent": "GET /v1;x/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -619,376 +708,451 @@
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v1;x/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-encoded-half",
    "path": "/v%31/me",
    "answerer": "outside",
-   "sent": "GET /v%31/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v%31/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-v761",
    "path": "/v761/me",
    "answerer": "outside",
-   "sent": "GET /v761/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v761/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-encoded-slash",
    "path": "/%76%31%2Fme",
    "answerer": "outside",
-   "sent": "GET /%76%31%2Fme HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /%76%31%2Fme HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-doubleslash-prefix",
    "path": "//v1/me",
    "answerer": "outside",
-   "sent": "GET //v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET //v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-encoded-api",
    "path": "/%61pi/v1/me",
    "answerer": "outside",
-   "sent": "GET /%61pi/v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /%61pi/v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-dot-segment",
    "path": "/v1/./me",
    "answerer": "wall",
-   "sent": "GET /v1/./me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/./me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-encoded-dot",
    "path": "/v1/%2e/me",
    "answerer": "wall",
-   "sent": "GET /v1/%2e/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/%2e/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-dotdot-climb",
    "path": "/v1/nope/../me",
    "answerer": "wall",
-   "sent": "GET /v1/nope/../me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/nope/../me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-hash-x",
    "path": "!/v1#x",
    "answerer": "wall",
-   "sent": "GET /v1#x HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1#x HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-hash-bare",
    "path": "!/v1#",
    "answerer": "wall",
-   "sent": "GET /v1# HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1# HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-hash-slash-me",
    "path": "!/v1#/me",
    "answerer": "wall",
-   "sent": "GET /v1#/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1#/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-hash-query",
    "path": "!/v1#?x=1",
    "answerer": "wall",
-   "sent": "GET /v1#?x=1 HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1#?x=1 HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-hash-encoded",
    "path": "!/v1#%2F",
    "answerer": "wall",
-   "sent": "GET /v1#%2F HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1#%2F HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-hash-tail",
    "path": "!/v1#x/me",
    "answerer": "wall",
-   "sent": "GET /v1#x/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1#x/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-hash-splice",
    "path": "!/v#1/me",
    "answerer": "outside",
-   "sent": "GET /v#1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v#1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "inside-dotdot-v1",
    "path": "/v1/../v1/me",
    "answerer": "wall",
-   "sent": "GET /v1/../v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/../v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "target-absolute-same-host",
    "path": "!http://getpostingboard.dev/v1/me",
    "answerer": "wall",
-   "sent": "GET http://getpostingboard.dev/v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET http://getpostingboard.dev/v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "target-absolute-foreign",
    "path": "!http://example.com/v1/me",
    "answerer": "edge",
-   "sent": "GET http://example.com/v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "text/html",
-   "content_encoding": "",
    "headers": [],
    "got": [
     403,
     151,
     "eed0b81a2fbdd1c5"
-   ]
+   ],
+   "content_type": "text/html",
+   "sent": "GET http://example.com/v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "target-no-scheme",
    "path": "!getpostingboard.dev/v1/me",
    "answerer": "edge",
-   "sent": "GET getpostingboard.dev/v1/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "text/html",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     155,
     "efca0895b4d88b27"
-   ]
+   ],
+   "content_type": "text/html",
+   "sent": "GET getpostingboard.dev/v1/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-hash-mid-segment",
    "path": "!/v1%23x/me",
    "answerer": "outside",
-   "sent": "GET /v1%23x/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v1%23x/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-hash-as-segment",
    "path": "!/v1%23x",
    "answerer": "outside",
-   "sent": "GET /v1%23x HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v1%23x HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-hash-in-the-tail",
    "path": "!/v1/me%23x",
    "answerer": "wall",
-   "sent": "GET /v1/me%23x HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1/me%23x HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "raw-slash-as-separator",
    "path": "!/v1%2Fx/me",
    "answerer": "outside",
-   "sent": "GET /v1%2Fx/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [],
    "got": [
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v1%2Fx/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "handshake-protocol",
    "path": "!/v1#/rules",
    "answerer": "wall",
-   "sent": "GET /v1#/rules HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [],
    "got": [
     400,
     266,
     "b8ac3b9f5ee46523"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1#/rules HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "handshake-json",
    "path": "!/v1#/rules",
    "answerer": "wall",
-   "sent": "GET /v1#/rules HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -999,16 +1163,19 @@
     406,
     184,
     "cf6d6c4bf3d171d5"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1#/rules HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "handshake-key",
    "path": "!/v1#/rules",
    "answerer": "wall",
-   "sent": "GET /v1#/rules HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "application/json",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -1023,16 +1190,19 @@
     401,
     141,
     "663640b1ae0ccdd1"
-   ]
+   ],
+   "content_type": "application/json",
+   "sent": "GET /v1#/rules HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   },
   {
    "cell": "outside-before-every-mask",
    "path": "!/v1%23x/me",
    "answerer": "outside",
-   "sent": "GET /v1%23x/me HTTP/1.1",
-   "sent_measured": true,
-   "content_type": "",
-   "content_encoding": "",
    "headers": [
     [
      "X-Agent-Protocol",
@@ -1047,7 +1217,14 @@
     404,
     0,
     "e3b0c44298fc1c14"
-   ]
+   ],
+   "content_type": "",
+   "sent": "GET /v1%23x/me HTTP/1.1",
+   "sent_measured": true,
+   "content_encoding": "",
+   "transfer_encoding": "",
+   "curl_rc": 0,
+   "conditions_measured": true
   }
  ]
 }

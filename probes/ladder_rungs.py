@@ -188,21 +188,58 @@ CELLS = [
 ]
 
 
-def byte_column_refusal(label: str, size: int, cencoding: str) -> str | None:
+CONDITIONS = ("content_encoding", "transfer_encoding", "curl_rc")
+
+
+def byte_column_refusal(label: str, answered: dict) -> str | None:
     """Why this row's byte count must not stand beside the plain ones, or None.
 
-    A byte column is not a number until the encoding beside it is read. The count
-    the ladder records is `%{size_download}`, measured on a loopback listener to
-    be a count of the WIRE -- a 1024-byte object served gzipped is reported as 29
-    -- so a row whose answer was encoded counts a different quantity from a plain
-    row and must not pass as one. The predicate is a function so that the control
-    below exercises the same test the run does, rather than a sentence about it.
+    A byte column is not a number until the conditions it was taken under are
+    read. The count is `%{size_download}`, and the conditions that move it were
+    measured on a loopback listener rather than named:
+
+      - a 1024-byte object served gzipped is reported as 29, and `--compressed`
+        reports the same 29 -- the flag decodes what is WRITTEN, not what is
+        COUNTED;
+      - the same object framed one byte per chunk is reported as 1024 while 6149
+        bytes cross, so `transfer-encoding: chunked` is folded in and does not
+        move the number -- but `transfer-encoding: gzip` is NOT folded in and
+        reports 29, so the folding is curl's chunk handling and not a general
+        transfer decoding;
+      - a truncated transfer reports the bytes that arrived, 100 of 1024, and
+        curl exits non-zero, so the number is a length only when the transfer
+        completed.
+
+    So the count is the bytes curl received after removing chunk framing and
+    before every other decoding, transfer or content. It is not "the wire" -- a
+    count taken before any framing is removed is a different quantity -- and it
+    is not the object's length, because a short read is not. Three conditions can
+    put a different quantity into the same column under the same name, so a row
+    carrying any of them is refused rather than folded in.
+
+    The predicate is a function of the conditions so that the controls below
+    exercise the same test the run does, rather than a sentence about it: the
+    first version asked about `content-encoding` alone, and every other condition
+    that moves the count passed it.
     """
-    if not cencoding:
+    problems = []
+    cencoding = answered.get("content_encoding") or ""
+    if cencoding:
+        problems.append(f"answered with content-encoding {cencoding!r}")
+    codings = [c.strip().lower()
+               for c in (answered.get("transfer_encoding") or "").split(",") if c.strip()]
+    unfolded = [c for c in codings if c != "chunked"]
+    if unfolded:
+        problems.append(f"answered with transfer-encoding {', '.join(unfolded)!r}, "
+                        "which curl does not fold into the count")
+    rc = answered.get("curl_rc", 0)
+    if rc:
+        problems.append(f"the transfer did not complete (curl exit {rc})")
+    if not problems:
         return None
-    return (f"{label}: answered with content-encoding {cencoding!r}; {size} B is a "
-            "content-coded length under a negotiated encoding, not comparable with "
-            "the plain rows")
+    return (f"{label}: " + "; ".join(problems)
+            + f". {answered.get('size')} B is then a different quantity from the "
+              "plain rows' and must not stand beside them in the same column")
 
 
 def what_was_sent(path: str, headers: list, base: str = "") -> str:
@@ -232,7 +269,7 @@ def what_was_sent(path: str, headers: list, base: str = "") -> str:
     return sent or "<nothing sent>"
 
 
-def one(path: str, headers: list, base: str = "") -> tuple[int, int, str, str, str, str]:
+def one(path: str, headers: list, base: str = "") -> dict:
     # `--path-as-is` is not decoration. curl removes dot segments on the client
     # by default: without the flag `GET /v1/./me` is sent as `GET /v1/me`, and a
     # cell recorded "inside" would be a reading of the path curl chose, not of
@@ -263,7 +300,8 @@ def one(path: str, headers: list, base: str = "") -> tuple[int, int, str, str, s
         cmd.append(target)
     for name, value in headers:
         cmd += ["-H", f"{name}: {value}"] if value else ["-H", f"{name};"]
-    raw = subprocess.run(cmd, capture_output=True, timeout=30).stdout
+    proc = subprocess.run(cmd, capture_output=True, timeout=30)
+    raw = proc.stdout
     head, _, rest = raw.partition(b"\r\n\r\n")
     body, _, meta = rest.rpartition(b"\n")
     parts = [part.decode("latin-1") for part in meta.split(maxsplit=2)] + ["", "", ""]
@@ -272,32 +310,29 @@ def one(path: str, headers: list, base: str = "") -> tuple[int, int, str, str, s
     # a trailing newline leaves the split with none. An empty field is a reading of
     # its own and is kept as one, never folded into the size.
     status, size, ctype = parts[0], parts[1], parts[2]
-    # The answer's `content-encoding`, read from the head that `-D -` already
-    # brings back and that this row had been throwing away. `%{size_download}` is
-    # the entity after transfer decoding and before content decoding: measured
-    # on a loopback listener, a 1024-byte entity is reported as 1024 whether it
-    # crosses as itself or framed one byte per chunk, and as 29 when gzipped;
-    # `--compressed` reports the same 29 -- the flag decodes what is WRITTEN,
-    # not what is COUNTED. This
-    # instrument sends no `Accept-Encoding` (a row's headers are its own, and the
-    # flag list carries no `--compressed`), so every cell here answers plain and
-    # its byte column is the object's own length. That was an accident of flags
-    # with nothing reading it: the field is now recorded and the check refuses a
-    # row that negotiated an encoding, because its count would sit in the same
-    # column as the plain ones under the same name.
-    cencoding = ""
+    # The answer's own conditions, read from the head `-D -` brings back and that
+    # this row had been throwing away. See `byte_column_refusal` for what each of
+    # them does to `%{size_download}`, measured rather than assumed: the first
+    # version of this field carried the content coding alone and let a chunked
+    # transfer coding, a short read and a `Range` answer through, three of which
+    # put a different quantity in the same column.
+    conditions = {"content_encoding": "", "transfer_encoding": ""}
     for line in head.split(b"\r\n")[1:]:
         key, _, value = line.partition(b":")
-        if key.strip().lower() == b"content-encoding":
-            cencoding = value.strip().decode("latin-1")
-    sent = what_was_sent(path, headers)
+        name = key.strip().lower()
+        if name == b"content-encoding":
+            conditions["content_encoding"] = value.strip().decode("latin-1")
+        elif name == b"transfer-encoding":
+            conditions["transfer_encoding"] = value.strip().decode("latin-1")
     # `sent` is the request line measured on a loopback listener by
     # `what_was_sent`, not the first line of the answer. The answer line is
     # derivable from `got`; what cannot be derived is what the client chose to
     # ask, and that is the quantity the row's reading rests on. An empty field
     # is a reading of its own -- "nothing was sent" -- kept as one.
-    sent = what_was_sent(path, headers, base)
-    return int(status), int(size), hashlib.sha256(body).hexdigest()[:16], ctype, sent, cencoding
+    return {"status": int(status), "size": int(size),
+            "digest": hashlib.sha256(body).hexdigest()[:16], "content_type": ctype,
+            "curl_rc": proc.returncode, "sent": what_was_sent(path, headers, base),
+            **conditions}
 
 
 def context() -> str:
@@ -316,65 +351,238 @@ def context() -> str:
             f"python {sys.version.split()[0]} on {sys.platform}")
 
 
-def control() -> int:
-    """Does the byte-column guard fire when a row's answer is encoded?
+def _listener(reply: bytes) -> tuple[int, callable]:
+    """A listener that answers the same fixed bytes to every connection.
 
-    The negative control for the guard above, and it goes through `one()` and
-    `byte_column_refusal` -- the same code the run uses -- rather than through a
-    sentence about them. Pointing a cell at this wall and giving it
-    `Accept-Encoding: gzip` proves nothing: the wall answers its 400 uncompressed,
-    so the guard never sees an encoding and a control that cannot fire is the
-    defect it was written to catch. The listener here always answers gzipped, so
-    the guard is asked the question it exists for.
-
-    Not part of the standing set: it measures this machine's client and its own
-    guard, touches nothing outside the loopback interface, and asserts no wall.
+    Not a stub of the wall: it is the client's behaviour under a named condition,
+    served on demand. The accept loop runs until stopped, because the run under
+    test asks twice per cell -- once for the answer and once for the request line
+    -- and a fixed accept count makes a control depend on how many connections the
+    instrument happens to open.
     """
-    import gzip
-    import io
     import socket
     import threading
 
-    body = b"x" * 1024
-    buf = io.BytesIO()
-    with gzip.GzipFile(fileobj=buf, mode="wb", mtime=0) as fh:
-        fh.write(body)
-    encoded = buf.getvalue()
-    reply = (b"HTTP/1.1 200 OK\r\ncontent-type: application/json\r\n"
-             b"content-encoding: gzip\r\ncontent-length: "
-             + str(len(encoded)).encode() + b"\r\n\r\n" + encoded)
     srv = socket.socket()
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     srv.bind(("127.0.0.1", 0))
     port = srv.getsockname()[1]
-    srv.listen(2)
+    srv.listen(8)
+    stopping = threading.Event()
 
     def serve():
-        for _ in range(2):
-            conn, _ = srv.accept()
-            conn.recv(8192)
-            conn.sendall(reply)
-            conn.close()
+        srv.settimeout(0.2)
+        while not stopping.is_set():
+            try:
+                conn, _ = srv.accept()
+            except (TimeoutError, socket.timeout, OSError):
+                continue
+            try:
+                conn.recv(8192)
+                conn.sendall(reply)
+            finally:
+                conn.close()
 
-    t = threading.Thread(target=serve, daemon=True)
-    t.start()
-    _status, size, _digest, _ctype, _sent, cencoding = one(
-        "/v1/me", [], base=f"http://127.0.0.1:{port}")
-    t.join(timeout=5)
-    srv.close()
-    problem = byte_column_refusal("control", size, cencoding)
-    plain = byte_column_refusal("control", len(body), "")
-    checks = [
-        ("the client read the answer's content-encoding", cencoding == "gzip",
-         f"content-encoding {cencoding!r}"),
-        ("the byte column is the wire, not the object",
-         size == len(encoded) and size < len(body),
-         f"{size} B reported for a {len(body)} B object served as {len(encoded)} B"),
-        ("the guard refuses an encoded row", problem is not None,
-         problem or "no refusal"),
-        ("the guard passes a plain row", plain is None,
-         plain or "no refusal, as it should be"),
-    ]
+    threading.Thread(target=serve, daemon=True).start()
+
+    def stop():
+        stopping.set()
+        srv.close()
+
+    return port, stop
+
+
+def _gz(payload: bytes) -> bytes:
+    import gzip
+    import io
+    buf = io.BytesIO()
+    with gzip.GzipFile(fileobj=buf, mode="wb", mtime=0) as fh:
+        fh.write(payload)
+    return buf.getvalue()
+
+
+def _html_200(body: bytes, headers: bytes = b"") -> bytes:
+    return (b"HTTP/1.1 200 OK\r\ncontent-type: application/json\r\n" + headers
+            + b"content-length: " + str(len(body)).encode() + b"\r\n\r\n" + body)
+
+
+def control() -> int:
+    """Does the byte-column guard actually run, can it fail, and on what?
+
+    The negative control for the guard above, and the first version of it was the
+    defect it was written to catch. It called `one()` and `byte_column_refusal`
+    directly, so it proved the PREDICATE and never its USE: deleting the guard
+    call from the run's loop left this control reporting 4/4 checks hold while
+    every refused row went into the record. So the checks here drive `main()`
+    itself, on a one-cell table pointed at a listener that always answers
+    gzipped, and they ask three separate questions:
+
+      - the run refuses an encoded row, exits non-zero, and does not publish it;
+      - with the predicate stubbed to return None the same run exits zero, so the
+        failure above is the guard and not the harness;
+      - the run calls the predicate for the row, so a run that never asks the
+        question is red even when the predicate is intact.
+
+    The conditions the guard stands on are then MEASURED on listeners rather than
+    quoted into it. The second version of this control passed the conditions
+    straight into the predicate -- `{"transfer_encoding": "gzip"}` as a literal --
+    which is a sentence about the client wearing the shape of a control. Each
+    shape is now served by a listener and read back through `one()`:
+
+      - `transfer-encoding: gzip` is not folded in: the coded length is reported;
+      - a truncated transfer reports the bytes that arrived and curl exits non-zero.
+
+    Not part of the standing set: it measures this machine's client, its own guard
+    and this machine's run loop, touches nothing outside the loopback interface,
+    and asserts no wall. The wall at `getpostingboard.dev` is not contacted, so
+    whether any live answer carries a transfer coding, a range or a short read
+    stays unverified here.
+    """
+    import hashlib
+    import tempfile
+
+    body = b"x" * 1024
+    cell_of = lambda label, payload: (label, "/v1/me", [], 200, len(payload),
+                                      hashlib.sha256(payload).hexdigest()[:16], "wall")
+    checks = []
+
+    # 1. the run's own loop refuses a content-encoded row, exits non-zero, and
+    #    publishes nothing. RECORDING mode, not `--check`: in `--check` nothing is
+    #    ever written, so "not published" would pass whatever the run did with it.
+    encoded = _gz(body)
+    port, stop = _listener(_html_200(encoded, b"content-encoding: gzip\r\n"))
+    base = f"http://127.0.0.1:{port}"
+    cell = cell_of("control-gzipped", encoded)
+    scratch = Path(tempfile.mkdtemp(prefix="ladder-control-")) / "record.json"
+    scratch.unlink(missing_ok=True)
+    intact = main(argv=[], cells=[cell], base=base, table_path=scratch,
+                  quiet=True, with_control=False)
+    checks.append(("the run refuses an encoded row and exits non-zero", intact == 1,
+                   f"main() exit {intact} on a gzipped answer"))
+    checks.append(("the refused row is not written into the record",
+                   not scratch.exists(),
+                   f"the refused row is absent from {scratch.parent.name}/record.json"))
+    stop()
+
+    # 2. the same run passes when the predicate says nothing, and 3. it asks at all
+    port, stop = _listener(_html_200(encoded, b"content-encoding: gzip\r\n"))
+    real = globals()["byte_column_refusal"]
+    calls = []
+
+    def stubbed(label, answered):
+        calls.append(label)
+        return None
+
+    try:
+        globals()["byte_column_refusal"] = stubbed
+        scratch.unlink(missing_ok=True)
+        stubbed_rc = main(argv=[], cells=[cell], base=f"http://127.0.0.1:{port}",
+                          table_path=scratch, quiet=True, with_control=False)
+        asked = list(calls)
+    finally:
+        globals()["byte_column_refusal"] = real
+    stop()
+    checks.append(("with the predicate silent the same run exits zero", stubbed_rc == 0,
+                   f"main() exit {stubbed_rc} with the predicate stubbed to None, so "
+                   "the refusal above is the guard and not the harness"))
+    checks.append(("the run's loop calls the predicate for the row",
+                   asked == ["control-gzipped"],
+                   f"the predicate was called with {asked!r}; a run that never asks it "
+                   "is red here however intact the predicate is"))
+
+    # 4. and the same recording run DOES publish a clean row, so "not published"
+    #    above is the refusal and not a run that never writes anything.
+    plain_cell = cell_of("control-plain", body)
+    port, stop = _listener(_html_200(body))
+    scratch.unlink(missing_ok=True)
+    plain_run = main(argv=[], cells=[plain_cell], base=f"http://127.0.0.1:{port}",
+                     table_path=scratch, quiet=True, with_control=False)
+    published = []
+    if scratch.exists():
+        published = [c["cell"] for c in
+                     json.loads(scratch.read_text(encoding="utf-8"))["cells"]]
+    checks.append(("a clean row IS published by the same recording run",
+                   plain_run == 0 and published == ["control-plain"],
+                   f"exit {plain_run}, record holds {published!r}"))
+
+    # 5. the published conditions are READ BACK, not written only. A column every
+    #    run writes and no check reads is the defect this file already registered
+    #    once for the request line; the same shape came back with the content
+    #    coding, so it is asked against a tampered record rather than promised.
+    def tampered(mutate):
+        scratch.unlink(missing_ok=True)
+        main(argv=[], cells=[plain_cell], base=f"http://127.0.0.1:{port}",
+             table_path=scratch, quiet=True, with_control=False)
+        rec = json.loads(scratch.read_text(encoding="utf-8"))
+        mutate(rec["cells"][0])
+        scratch.write_text(json.dumps(rec), encoding="utf-8")
+        return main(argv=["--check"], cells=[plain_cell],
+                    base=f"http://127.0.0.1:{port}", table_path=scratch,
+                    quiet=True, with_control=False)
+
+    def drop(c):
+        c.pop("content_encoding", None)
+        c.pop("conditions_measured", None)
+
+    checks.append(("a record with a WRONG content coding is refused by --check",
+                   tampered(lambda c: c.__setitem__("content_encoding", "gzip")) == 1,
+                   "a record claiming gzip over a plain answer is not agreement"))
+    checks.append(("a record with the conditions DELETED is refused by --check",
+                   tampered(drop) == 1,
+                   "a record with the field and its flag deleted is not agreement"))
+    checks.append(("a record with a wrong curl exit is refused by --check",
+                   tampered(lambda c: c.__setitem__("curl_rc", 18)) == 1,
+                   "a record claiming a truncated transfer is not agreement"))
+    checks.append(("a record with a WRONG request line is refused by --check",
+                   tampered(lambda c: c.__setitem__(
+                       "sent", c["sent"].replace("HTTP/1.1", "HTTP/1.0"))) == 1,
+                   "a record whose request line differs from the measured one is not "
+                   "agreement"))
+    stop()
+
+    # 6. and the conditions themselves, MEASURED on listeners and read back
+    #    through the run's own client, not quoted into the predicate.
+    port, stop = _listener(b"HTTP/1.1 200 OK\r\ncontent-type: application/json\r\n"
+                           b"transfer-encoding: gzip\r\n\r\n" + encoded)
+    te_gzip = one("/v1/me", [], f"http://127.0.0.1:{port}")
+    stop()
+    checks.append(("`transfer-encoding: gzip` is NOT folded into the count",
+                   te_gzip["curl_rc"] == 0 and te_gzip["size"] == len(encoded)
+                   and len(encoded) < len(body)
+                   and byte_column_refusal("control", te_gzip) is not None,
+                   f"{te_gzip['size']} B reported for a {len(body)} B entity served as "
+                   f"{len(encoded)} B coded bytes, curl exit {te_gzip['curl_rc']}"))
+
+    short = body[:100]
+    port, stop = _listener(b"HTTP/1.1 200 OK\r\ncontent-type: application/json\r\n"
+                           b"content-length: 1024\r\n\r\n" + short)
+    trunc = one("/v1/me", [], f"http://127.0.0.1:{port}")
+    stop()
+    checks.append(("a truncated transfer is refused, and curl says so",
+                   trunc["curl_rc"] != 0 and trunc["size"] == len(short)
+                   and byte_column_refusal("control", trunc) is not None,
+                   f"{trunc['size']} B reported of a declared 1024, curl exit "
+                   f"{trunc['curl_rc']}"))
+
+    port, stop = _listener(b"HTTP/1.1 200 OK\r\ncontent-type: application/json\r\n"
+                           b"transfer-encoding: chunked\r\n\r\n"
+                           + b"".join(b"1\r\n" + body[i:i+1] + b"\r\n" for i in range(len(body)))
+                           + b"0\r\n\r\n")
+    chunked = one("/v1/me", [], f"http://127.0.0.1:{port}")
+    stop()
+    checks.append(("`transfer-encoding: chunked` IS folded in",
+                   chunked["curl_rc"] == 0 and chunked["size"] == len(body)
+                   and byte_column_refusal("control", chunked) is None,
+                   f"{chunked['size']} B reported for the same entity framed one byte "
+                   "per chunk -- so the folding is chunk handling, not a general "
+                   "transfer decoding"))
+
+    checks.append(("the guard passes a plain, complete row",
+                   byte_column_refusal("control", {
+                       "size": len(body), "content_encoding": "",
+                       "transfer_encoding": "", "curl_rc": 0}) is None,
+                   "no refusal, as it should be"))
+
     bad = [f"{label}: {detail}" for label, ok, detail in checks if not ok]
     for label, ok, detail in checks:
         print(f"{'ok ' if ok else 'MOVED'} {label}")
@@ -385,42 +593,70 @@ def control() -> int:
     return 1 if bad else 0
 
 
-def main() -> int:
-    check = "--check" in sys.argv
+def main(argv=None, cells=None, base=None, table_path=None, quiet=False,
+         with_control=True) -> int:
+    """Take the ladder, refuse the rows whose byte column is another quantity.
+
+    The parameters exist for the control: it has to run THIS loop -- its guard
+    call, its refusal handling, its decision whether to publish a row -- against
+    a listener it owns, or it proves a predicate nothing calls.
+    """
+    argv = sys.argv if argv is None else argv
+    cells = CELLS if cells is None else cells
+    table = TABLE if table_path is None else Path(table_path)
+    check = "--check" in argv
     global RECORDED
     RECORDED = {}
-    if TABLE.exists():
+    if table.exists():
         RECORDED = {c["cell"]: c for c in
-                    json.loads(TABLE.read_text(encoding="utf-8")).get("cells", [])}
-    rows, bad = [], []
-    print(context())
-    print()
-    for label, path, headers, status, size, digest, who in CELLS:
-        got_status, got_size, got_digest, ctype, sent, cencoding = one(path, headers)
-        got = (got_status, got_size, got_digest)
+                    json.loads(table.read_text(encoding="utf-8")).get("cells", [])}
+    rows, bad, refused = [], [], []
+    if not quiet:
+        print(context())
+        print()
+    for label, path, headers, status, size, digest, who in cells:
+        answered = one(path, headers, base or "")
+        got = (answered["status"], answered["size"], answered["digest"])
         old = RECORDED.get(label) or {}
-        want_sent = old["sent"] if old.get("sent_measured") else None
-        rows.append({"cell": label, "path": path, "answerer": who, "sent": sent,
-                     "sent_measured": True,
-                     "content_type": ctype,
-                     "content_encoding": cencoding,
-                     "headers": [list(h) for h in headers], "got": list(got)})
-        # A byte column is not a number until the encoding beside it is read. The
-        # count in `got` is of the wire, so a row whose answer was encoded counts
-        # a different quantity from a plain row and must not pass as one. Every
-        # cell here sends no `Accept-Encoding`; an answer that encodes anyway is a
-        # different reading and is refused rather than folded in.
-        if cencoding:
-            bad.append(byte_column_refusal(label, got_size, cencoding))
-        mark = "ok " if got == (status, size, digest) else "MOVED"
-        if got != (status, size, digest):
-            bad.append(f"{label}: {got} != {(status, size, digest)}")
+        row = {"cell": label, "path": path, "answerer": who, "headers": [list(h) for h in headers],
+               "got": list(got), "content_type": answered["content_type"],
+               "sent": answered["sent"], "sent_measured": True,
+               "content_encoding": answered["content_encoding"],
+               "transfer_encoding": answered["transfer_encoding"],
+               "curl_rc": answered["curl_rc"], "conditions_measured": True}
+        # A byte column is not a number until the conditions beside it are read:
+        # see `byte_column_refusal`. A refused row is not published and the run
+        # fails, in the recording mode as well -- the refusal is a refusal, not a
+        # note about a row that goes into the record anyway.
+        refusal = byte_column_refusal(label, answered)
+        if refusal:
+            refused.append(refusal)
+        else:
+            rows.append(row)
         # What the client sent is compared too, and only when the record already
         # carries a measured request line: a tree whose record still holds an
         # answer line there is told to regenerate rather than passing on a field
-        # nobody has ever read.
-        if want_sent is not None and sent != want_sent:
-            bad.append(f"{label}: sent {sent!r} != {want_sent!r}")
+        # nobody has ever read. The same applies to the conditions the byte
+        # column is taken under -- a record that has none is told to regenerate.
+        if old:
+            if not (old.get("sent_measured") and old.get("conditions_measured")):
+                # A record that exists but carries no measured request line and no
+                # conditions is not agreement. Skipping the comparison there is how
+                # a column became write-only: the field was added, every run wrote
+                # it, and `--check` compared the row's answer only. A record that
+                # cannot be compared is told to regenerate.
+                bad.append(f"{label}: the record carries no measured request line "
+                           "and conditions for this row; regenerate it rather than "
+                           "reading it as agreement")
+            else:
+                for field in ("sent", "content_encoding", "transfer_encoding",
+                              "curl_rc"):
+                    if answered[field] != old.get(field):
+                        bad.append(f"{label}: {field} {answered[field]!r} "
+                                   f"!= {old.get(field)!r}")
+        mark = "ok " if got == (status, size, digest) else "MOVED"
+        if got != (status, size, digest):
+            bad.append(f"{label}: {got} != {(status, size, digest)}")
         # Which instrument answered is part of the reading, not a comment on it.
         # The edge refuses some target shapes before the wall sees them, and its
         # refusals are its own HTML error page: a cell labelled `edge` whose
@@ -428,35 +664,48 @@ def main() -> int:
         # same row, and it fails here rather than passing as agreement. The
         # outside miss is an empty body with no content-type, and a row that
         # brings bytes back under that label is not the same reading either.
+        ctype = answered["content_type"]
         if who == "edge":
             attribution = not ctype.startswith("application/json")
         elif who == "outside":
-            attribution = got_size == 0 and not ctype
+            attribution = got[1] == 0 and not ctype
         else:
             attribution = not ctype.startswith("text/html")
         if not attribution:
             bad.append(f"{label}: {who} labelled, answered with {ctype!r} "
-                       f"and {got_size} bytes")
-        print(f"{mark} {label:<26} {who:<8} {got[0]} {got[1]:>7} {got[2]}"
-              f"  {path[:38]:<38} {ctype}{' ' + cencoding if cencoding else ''}")
-    print(f"\n{len(CELLS) - len(bad)}/{len(CELLS)} cells as recorded"
-          "  (first holder; four cells added by a second holder on 2026-09-24;"
-          " twelve raw-segment cells proposed by a second holder and taken here"
-          " on 2026-09-25; the verbatim-target and terminator cells taken"
-          " on 2026-09-25 from a third host, each with the instrument that"
-          " answered it; two rows added on 2026-09-25 expecting them to part two"
-          " readings of the `#`, kept as readings after the search showed the two"
-          " readings are one function; each row now carries the answer's"
-          " content-encoding, because the byte count in it is the content-coded"
-          " length and a row taken under a negotiated one is a different quantity)")
-    if not check:
-        TABLE.write_text(json.dumps({"as_of_note": "see probes/ladder_rungs.py",
+                       f"and {got[1]} bytes")
+        if not quiet:
+            print(f"{mark} {label:<26} {who:<8} {got[0]} {got[1]:>7} {got[2]}"
+                  f"  {path[:38]:<38} {ctype}"
+                  f"{' ' + answered['content_encoding'] if answered['content_encoding'] else ''}")
+    if not quiet:
+        print(f"\n{len(cells) - len(bad) - len(refused)}/{len(cells)} cells as recorded"
+              "  (first holder; four cells added by a second holder on 2026-09-24;"
+              " twelve raw-segment cells proposed by a second holder and taken here"
+              " on 2026-09-25; the verbatim-target and terminator cells taken"
+              " on 2026-09-25 from a third host, each with the instrument that"
+              " answered it; two rows added on 2026-09-25 expecting them to part two"
+              " readings of the `#`, kept as readings after the search showed the two"
+              " readings are one function; a byte-column row is published only with"
+              " its content coding, its transfer coding and curl's exit status"
+              " beside it, because a count under any of them is another quantity)")
+    # The record is written when the run is clean. A refused row is never written,
+    # and a moved or drifted row does not get silently rewritten into the
+    # baseline: to regenerate after a deliberate change, remove the record first,
+    # which is a decision somebody makes rather than one the run makes for them.
+    if not (bad or refused):
+        table.parent.mkdir(parents=True, exist_ok=True)
+        table.write_text(json.dumps({"as_of_note": "see probes/ladder_rungs.py",
                                      "cells": rows}, indent=1) + "\n", encoding="utf-8")
-    print("\n-- the byte column's own control (loopback, this machine only) --")
-    control_rc = control()
-    for line in bad:
-        print(f"MOVED  {line}")
-    return 1 if (check and bad) or control_rc else 0
+    if with_control:
+        print("\n-- the byte column's own control (loopback, this machine only) --")
+    control_rc = control() if with_control else 0
+    if not quiet:
+        for line in refused:
+            print(f"REFUSED  {line}")
+        for line in bad:
+            print(f"MOVED  {line}")
+    return 1 if (bad or refused or control_rc) else 0
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ reported as 1024; the same entity framed one byte per chunk crosses as 6196 byte
 and is STILL reported as 1024, so transfer decoding is folded in and
 `transfer-encoding` cannot move the number. The same entity served gzipped is
 reported as 29, because content decoding is NOT folded in. So the number is the
-entity after transfer decoding and before content decoding, and the one condition
+entity after chunk framing is removed and before any other decoding, and the one condition
 beside it that changes it is `content-encoding` -- which the ladder never read.
 
 What `curl` sends by default, what `--compressed` adds, and what the byte column
@@ -292,12 +292,18 @@ def main() -> int:
     for label, reported, served in transfer:
         print(f"{'ok ' if transfer_folded_in else 'MOVED'}  transfer {label:<20}"
               f" {reported:<14} {served}")
-    print(f"the byte column is the entity AFTER transfer decoding and BEFORE content"
-          f" decoding: {plain_row[2]} and {chunk_row[2]} are the same entity and both"
-          f" report {plain_row[1].split()[0]}, while the same entity served gzipped"
-          f" reports {gz_size} for a body that content-decodes to {len(PLAIN_BODY)} B."
-          " So the condition the ladder's `content_encoding` column must carry is the"
-          " CONTENT coding; the transfer coding is folded in and is not a second one")
+    print(f"the byte column is the entity after curl removes CHUNK framing and before"
+          f" every other decoding: {plain_row[2]} and {chunk_row[2]} are the same entity"
+          f" and both report {plain_row[1].split()[0]}, while the same entity served"
+          f" gzipped reports {gz_size} for a body that content-decodes to"
+          f" {len(PLAIN_BODY)} B. \"After transfer decoding\" would be the wrong wording:"
+          " chunk framing is folded in, but the same entity served with"
+          " `transfer-encoding: gzip` reports the coded length, so the folding is"
+          " curl's chunk handling and not a general transfer decoding -- and a"
+          " truncated transfer reports only the bytes that arrived, so the number is"
+          " an object's length only for a complete one. Three conditions can put a"
+          " different quantity in the same column, and the ladder refuses a row"
+          " carrying any of them.")
     # What this probe does NOT measure, said here rather than left to be found:
     # the listener is the same machine, so it measures the client and nothing
     # about any wall; a client whose behaviour depends on the server's response
