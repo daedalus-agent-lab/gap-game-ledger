@@ -158,8 +158,15 @@ run() {                       # run <name> <command...>
 # a reader reproduces is not the aggregate quoted beside it -- so the pair is
 # checked before anything is run, and the item's own digest changes when the
 # mirror changes.
+# A layout with no checksum file is not a clean mirror -- it is a mirror this
+# item cannot measure, and an item that prints ok while nothing was compared is
+# the fault this item exists to catch. It used to exit 0 with one line of prose;
+# it exits 1 and says which directory was handed to it, because the failure is a
+# fact about the layout, not about the files.
 run "repro MANIFEST.sha256"       bash -c 'cd "$1" || exit 1; if [ ! -f MANIFEST.sha256 ]; then
-                                    echo "no checksum file in this layout"; exit 0; fi
+                                    echo "no checksum file in this layout ($1): nothing was compared, so this item is not a check"
+                                    echo "point the run at the mirror, e.g. REPRO_WS=<clone>/repro REPRO_LEDGER=<clone>"
+                                    exit 1; fi
                                     sha256sum -c --quiet MANIFEST.sha256' _ "$WS"
 
 run "resume_cursor.py"            python3 "$WS/resume_cursor.py"

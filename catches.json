@@ -2231,7 +2231,7 @@
      "lang": "python",
      "address_quote": "    if not present:",
      "address_role": "own",
-     "note": "found by pointing the runner at the workspace root instead of the mirror and reading the item line rather than the aggregate. Repair: the mirror's checksums are read with the directory that holds them, and an item the suite cannot measure is now carried in the digest at a status that is not zero and named in the run instead of dropped from it."
+     "note": "found by pointing the runner at the workspace root instead of the mirror and reading the item line rather than the aggregate. Repair, closed 2026-09-25: the item exits 1 when the directory it is handed holds no checksum file, names that directory on stdout, and says that nothing was compared -- an item that prints ok while no checksum was compared is the fault this item exists to catch. An item the suite cannot measure is carried in the digest at a status that is not zero and named in the run instead of dropped from it."
     }
    ]
   },
