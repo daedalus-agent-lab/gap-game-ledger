@@ -131,7 +131,7 @@ line is stale.
 
 Current tree, `bash repro/run_all.sh --net --stable` from the mirror with
 `REPRO_WS=$PWD REPRO_LEDGER=<the ledger>`:
-**aggregate `fdc1489026b9abfd`**, 11 items, all pass (receipt v1197; the run before
+**aggregate `0e34d36efcc32918`**, 11 items, all pass (receipt v1199; the run before
 that, over the same code with the mirror check pointed at the workspace root instead
 of the mirror, was `f8b61f83e774f09d`, and the run before
 it was `05073907b9e4f921` over 10 items, receipt v1183; the run before that was
@@ -139,20 +139,21 @@ it was `05073907b9e4f921` over 10 items, receipt v1183; the run before that was
 aggregate `bd6cd0800a424ad7`, receipt v1180; the runs before
 it were `bf7971f570b644d4`, receipt v1179, and `3beeea5ee3b8ac12`, receipt v1177). The run
 names what moved against the recorded tree instead of leaving a stranger to guess:
-`ledger check.py: out d3e64d2232dc9d15->1f2213961848ce36` and `ledger
-verify_claims.py: out adba7d744558bc9e->3a0a82016b4e3236`, and it reports the item added:
+`ledger check.py: out f7a964f3ab298476` and `ledger verify_claims.py: out
+980dbc734b3dbb5f`, against `1f2213961848ce36` and `3a0a82016b4e3236` in the run
+before this one on the same tree), and it reports the item added:
 `policy mutations --check`. The mirror's own checksums are read as its first item
 again: with `REPRO_WS` pointing at the mirror it returns `out=e3b0c44298fc1c14`
 (silent when every file matches), and against the workspace root it can only say
 `no checksum file in this layout` — which is what it said in the run quoted
 before this one, so that run did not in fact check the mirror.
-`--expect fdc1489026b9abfd` exits 0 and `--expect 4444444444444444` exits 2 with
+`--expect 0e34d36efcc32918` exits 0 and `--expect 4444444444444444` exits 2 with
 `digest MISMATCH`.
-`check.py`: 118 entries, 116 ok, 0 miss, 2 skipped, 116/116 distinct, with a
+`check.py`: 119 entries, 117 ok, 0 miss, 2 skipped, 117/117 distinct, with a
 fingerprint control of **15 pairs over 14 enumerated rules of the policy** (13
 guarded by a pair, 1 declared with no pair and covered by a row the mutation
 harness runs), policy `ed1ffda14c79272e` (the classes page's digest at that commit
-is `d37540fb3550e85a`); `verify_claims.py`: **27 cases, 0 failed**; and
+is `c604f1848464ad30`); `verify_claims.py`: **27 cases, 0 failed**; and
 `probes/policy_mutations.py --check` breaks every rule of the policy in memory and
 requires each break to be caught — by the control naming that rule's pair, or by
 the declared row failing on a copy.
@@ -166,4 +167,5 @@ erasure was false), and adds the mutation harness.
 Tips: `5922ce7` → `5013bab` → `8c17a1d` → `9cccff0` → `179082` → `89014de` →
 `2891eb6` → `5670881` → `b3df1d0` → `f167c27` → `36544e1` → `a319a79` →
 `30a7f40` → `8401042` → `fa1d02c` → `4f87143` → `b994aee` → `0d02259` →
-`ca0ebcb` → `10feb20` → `107a302` → `90ef203` (HEAD).
+`ca0ebcb` → `10feb20` → `107a302` → `90ef203` → `3cdb618` → `c2ebc15` →
+`f406dd9` → `b34ac67` (HEAD).
