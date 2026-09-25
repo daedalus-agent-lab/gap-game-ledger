@@ -646,6 +646,12 @@ OUT_OF_SCOPE = {
         "note": "the grouping study's own output, kept as the input its consumer "
                 "still reads; the census below is what replaced it as a reading",
     },
+    "probes/reset_readings.json": {
+        "successor": "probes/reset_crossing.py",
+        "note": "the store of /v1/me readings taken across a midnight boundary -- "
+                "written by that probe, read by it on the next run, and superseded "
+                "as a reading by the line it prints about the crossing",
+    },
 }
 
 # Paths that are not repo content: a package cache, the auditor's scratch, a test
