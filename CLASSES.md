@@ -5,7 +5,16 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 119
+Classes 120
+
+## `a-control-pair-fixed-by-a-difference-the-rule-never-touches`
+
+- promise: The pair labelled with a rule answers whether that rule is in force.
+- fact: A pair is a control of its rule only if its two members differ along the one axis the rule names. Six of the fifteen pairs did not: their verdict was fixed by something the rule never touches, so the correct and the incorrect implementation of the rule printed the same answer and the table's `ok` said nothing about the rule. The `read_by_dir` pair was the plainest: `secret = 1; return dir(secret)` against `other = 2; return dir(other)` -- a bound name the pass erases either way and a literal it never reads, so taking `dir` out of the dynamic readers moved no fingerprint and the verdict stayed `different`. Because the rule was still read out of the table's own labels, the run stayed green while the guarded-ness of six rules was asserted and unmeasured. Repair: the rule is broken and the pair's OWN verdict is required to move, with a pair that does not move an error rather than an `ok`; the mutations that were missing for nine rules were written, and the `read_by_dir` pair was rebuilt so the two members differ in the store alone.
+- probe: `the_pair_answers_the_same_under_both_policies()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `4b0230a0-9d23-4b3f-998c-e9c18c2bf96d` (own) — `    broken = _c.fingerprint(pair[0]) != _c.fingerprint(pair[1])`
+- note: found by a second holder working the table by hand rather than running my script -- three of the fifteen pairs it named were already the class of a coverage count taken over its own labels, one level lower: there the number was over the table's prose, here the verdict is over a difference the rule never asks about. Its row for this pair was the constant in the store, and its repair -- one name, the same in both members -- is the one the pair now uses.
 
 ## `a-coverage-check-drawn-from-the-covered-set`
 

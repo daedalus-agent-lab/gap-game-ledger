@@ -56,6 +56,29 @@ def fingerprints(ns: dict, names) -> dict:
     return out
 
 
+def pair_verdict(fps: dict, left: str, right: str) -> bool:
+    """Do the two fragments answer `yes, one piece of logic` under these prints?"""
+    return fps[left] == fps[right]
+
+
+def own_axis_flip(base_fps, mutated_fps, left, right, rule) -> tuple[bool, str]:
+    """Does THIS pair's own verdict move when THIS rule is broken?
+
+    A pair is a control of its rule only if the two members differ along that one
+    axis and nothing else. If the verdict is already fixed by some other
+    difference -- two different source names, two fragments that both raise
+    before the rule is ever consulted -- then the correct and the incorrect
+    implementation of the rule print the same verdict, and the pair is a label
+    standing where a guard is claimed. Counting pairs is not counting controls;
+    this returns what the pair itself does under the break, not what some other
+    fragment in the table does.
+    """
+    before = pair_verdict(base_fps, left, right)
+    after = pair_verdict(mutated_fps, left, right)
+    return (before != after,
+            f"{'same' if before else 'different'} -> {'same' if after else 'different'}")
+
+
 def names_in_the_table() -> list:
     seen = []
     for left, right, _same, _rule in F.CONTROL_PAIRS:
@@ -115,6 +138,7 @@ def main() -> int:
     baseline = fingerprints(base, table)
 
     problems, lines = [], []
+    by_rule: dict[str, list] = {}
     for rule, old, new in F.POLICY_MUTATIONS:
         src = (ROOT / "check.py").read_text(encoding="utf-8")
         hits = src.count(old)
@@ -122,6 +146,7 @@ def main() -> int:
             problems.append(f"{rule}: the mutation text occurs {hits} times, not once: {old!r}")
             continue
         mutated = load_check(src.replace(old, new, 1))
+        by_rule.setdefault(rule, []).append(fingerprints(mutated, table))
         moved = [n for n in table if fingerprints(mutated, [n])[n] != baseline[n]]
         ok, detail = mutated["fingerprint_control"]()
         pair = pair_names_for(rule)
@@ -163,6 +188,25 @@ def main() -> int:
     for rid in guarded_rules | declared_rules:
         if rid not in rules:
             problems.append(f"{rid}: guarded or declared, but not a rule of the policy")
+
+    # The pairs' own axis. A pair whose verdict is fixed by a difference the rule
+    # never touches sits in the table as a guard and measures nothing.
+    for left, right, _same, rid in F.CONTROL_PAIRS:
+        runs = by_rule.get(rid, [])
+        if not runs:
+            problems.append(f"pair {left}/{right} ({rid}): the rule has no mutation, "
+                            "so whether the pair controls anything is unmeasured")
+            continue
+        flips = [own_axis_flip(baseline, m, left, right, rid) for m in runs]
+        if not any(f for f, _ in flips):
+            problems.append(
+                f"pair {left}/{right} ({rid}): the pair's own verdict does not move when "
+                f"the rule is broken ({'; '.join(d for _f, d in flips)}) -- the verdict is "
+                "fixed by a difference the rule never touches, so the pair is a label, "
+                "not a control")
+        else:
+            lines.append(f"ok   {left}/{right} ({rid})  own verdict flips: "
+                         f"{next(d for f, d in flips if f)}  ({len(runs)} mutation(s))")
 
     for line in lines:
         print(line)

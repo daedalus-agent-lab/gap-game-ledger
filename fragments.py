@@ -1494,15 +1494,16 @@ def read_by_vars_renamed():
 
 
 def read_by_dir():
-    """A store read through dir()."""
-    secret = 1
-    return dir(secret)
+    """A store read by a caller that carries no name: `dir()` with no argument
+    lists the local names, so the reader is in the fragment and nothing in the
+    tree refers to the store. The pair differs in the store alone."""
+    pad = 1
+    return dir()
 
 
-def read_by_dir_renamed():
-    """The same, with the store under another letter."""
-    other = 2
-    return dir(other)
+def read_by_dir_no_store():
+    """The other half: the same fragment without the store."""
+    return dir()
 
 
 def import_as_j(text):
@@ -1633,7 +1634,7 @@ CONTROL_PAIRS = (
     ("added_over_a_shadowing_name", "added_over_another_shadowing_name", True, "R6"),
     ("read_by_globals", "read_by_globals_renamed", False, "R7"),
     ("read_by_vars", "read_by_vars_renamed", False, "R7"),
-    ("read_by_dir", "read_by_dir_renamed", False, "R7"),
+    ("read_by_dir", "read_by_dir_no_store", False, "R7"),
     ("import_as_j", "import_as_k", True, "R8"),
     ("dunder_letters", "plain_letters", False, "R9"),
     ("read_in_a_nested_scope", "no_store_for_the_nested_read", False, "R10"),
@@ -1660,7 +1661,27 @@ RULES_WITHOUT_A_PAIR = (
 # must leave the control passing (that is the blind spot, measured) and make the
 # row the declaration points at fail on a copy.
 POLICY_MUTATIONS = (
+    ("R1", "        if isinstance(node.ctx, ast.Load) and not self._bound(node.id):",
+     "        if False:"),
+    ("R2", "        if name not in self.seen:\n"
+           "            self.seen[name] = f\"{BOUND_PREFIX}{len(self.seen)}\"\n"
+           "        return self.seen[name]",
+     "        return name"),
+    ("R3", '    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir", "globals"}',
+     '    DYNAMIC_READERS = {"locals", "vars", "dir", "globals"}'),
+    ("R4", "            if targets and all(t.id not in reads for t in targets):\n"
+           "                continue",
+     "            if False:\n                continue"),
+    ("R5", "        if self._reads_by_a_caller(node):\n"
+           "            self.generic_visit(node)\n"
+           "            return node",
+     "        if all(self._reads_by_a_caller(s) for s in node.body):\n"
+     "            self.generic_visit(node)\n"
+     "            return node"),
+    ("R6", "        if name in BUILTINS and not self._bound(name):",
+     "        if name in BUILTINS:"),
     ("R7", '"dir", "globals"}', '"dir"}'),
+    ("R7", '"locals", "vars", "dir"', '"locals", "vars"'),
     ("R7", '"locals", "vars", "dir"', '"locals", "dir"'),
     ("R8", "elif isinstance(child, ast.alias) and child.asname:",
      "elif False:"),
@@ -1826,7 +1847,53 @@ def serves_its_own_digest(item, heading):
 
 
 
+
+# --- the pair that answered the same under both policies --------------------
+# Kept as it stood in the table when a second holder attacked it by hand: the
+# members differ in a bound name (which the pass erases, so it cannot separate
+# them) and in a literal (which the pass never reads), and the reader is called
+# with the store's own name, so the store is never dead and the dead-store pass
+# has nothing to drop whatever the reader set says. Breaking the rule -- taking
+# `dir` out of the dynamic readers -- therefore leaves the verdict where it was.
+
+def _a_label_read_by_dir():
+    secret = 1
+    return dir(secret)
+
+
+def _a_label_read_by_dir_other_name():
+    other = 2
+    return dir(other)
+
+
+def the_pair_answers_the_same_under_both_policies() -> bool:
+    """True when the pair's verdict is the same under the rule and under its
+    break: the pair cannot tell the two policies apart, so it is a label stood
+    where a control is claimed.
+
+    The rule is broken the way a wrong implementation would break it -- `dir` is
+    no longer a dynamic reader -- and the pair is fingerprinted under both. A
+    control answers `different` under one and `same` under the other; a pair
+    whose verdict never moves is counting a difference the rule never touches.
+    """
+    import check as _c
+    pair = (_a_label_read_by_dir, _a_label_read_by_dir_other_name)
+    base = _c.fingerprint(pair[0]) != _c.fingerprint(pair[1])
+    readers = _c._DropDeadStores.DYNAMIC_READERS
+    try:
+        _c._DropDeadStores.DYNAMIC_READERS = readers - {"dir"}
+        broken = _c.fingerprint(pair[0]) != _c.fingerprint(pair[1])
+    finally:
+        _c._DropDeadStores.DYNAMIC_READERS = readers
+    return bool(base and broken)
+
+
 NAMESPACES = {
+    "a-control-pair-fixed-by-a-difference-the-rule-never-touches": {
+        "the_pair_answers_the_same_under_both_policies":
+            the_pair_answers_the_same_under_both_policies,
+        "_a_label_read_by_dir": _a_label_read_by_dir,
+        "_a_label_read_by_dir_other_name": _a_label_read_by_dir_other_name},
     "a-coverage-check-drawn-from-the-covered-set": {
         "every_rule_is_guarded": every_rule_is_guarded,
         "every_rule_of_the_policy_is_guarded": every_rule_of_the_policy_is_guarded,

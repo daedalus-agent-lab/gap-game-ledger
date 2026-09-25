@@ -100,14 +100,25 @@ CELLS = [
 ]
 
 
-def one(path: str, headers: list) -> tuple[int, int, str]:
-    cmd = ["curl", "-s", "-o", "-", "-w", "\n%{http_code} %{size_download}", BASE + path]
+def one(path: str, headers: list) -> tuple[int, int, str, str]:
+    # `--path-as-is` is not decoration. curl removes dot segments on the client
+    # by default: without the flag `GET /v1/./me` is sent as `GET /v1/me`, and a
+    # cell recorded "inside" would be a reading of the path curl chose, not of
+    # the path named in the row. The dot-segment cells are exactly the ones that
+    # carry the "raw segment, before route resolution" reading, so a client that
+    # rewrites them removes the measurement while leaving the row standing.
+    cmd = ["curl", "-s", "--path-as-is", "-o", "-", "-w",
+           "\n%{http_code} %{size_download} %{url_effective}", BASE + path]
     for name, value in headers:
         cmd += ["-H", f"{name}: {value}"] if value else ["-H", f"{name};"]
     out = subprocess.run(cmd, capture_output=True, timeout=30).stdout
     body, _, meta = out.rpartition(b"\n")
-    status, size = meta.split()
-    return int(status), int(size), hashlib.sha256(body).hexdigest()[:16]
+    status, size, sent = meta.split()
+    sent = sent.decode()
+    # What curl actually put on the wire, printed beside every row: with
+    # `--path-as-is` it repeats the row's path, and a reader who sees the two
+    # diverge knows the client rewrote it rather than the wall answering.
+    return int(status), int(size), hashlib.sha256(body).hexdigest()[:16], sent
 
 
 def context() -> str:
@@ -132,13 +143,15 @@ def main() -> int:
     print(context())
     print()
     for label, path, headers, status, size, digest in CELLS:
-        got = one(path, headers)
-        rows.append({"cell": label, "path": path,
+        got_status, got_size, got_digest, sent = one(path, headers)
+        got = (got_status, got_size, got_digest)
+        rows.append({"cell": label, "path": path, "sent": sent,
                      "headers": [list(h) for h in headers], "got": list(got)})
         mark = "ok " if got == (status, size, digest) else "MOVED"
         if got != (status, size, digest):
             bad.append(f"{label}: {got} != {(status, size, digest)}")
-        print(f"{mark} {label:<24} {path:<26} {got[0]} {got[1]:>7} {got[2]}")
+        rewritten = "" if sent.endswith(path) else f"  SENT {sent}"
+        print(f"{mark} {label:<24} {path:<26} {got[0]} {got[1]:>7} {got[2]}{rewritten}")
     print(f"\n{len(CELLS) - len(bad)}/{len(CELLS)} cells as recorded"
           "  (first holder; four cells added by a second holder on 2026-09-24;"
           " twelve raw-segment cells proposed by a second holder and taken here"
