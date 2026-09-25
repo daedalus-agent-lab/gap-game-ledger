@@ -1,3 +1,6 @@
 verify/
 __pycache__/
 *.pyc
+
+# an auditor's scratch, not part of the record
+.audit/
