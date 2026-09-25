@@ -2913,7 +2913,58 @@ def a_discriminator_the_cases_answer_differently() -> bool:
     return _proposed_rule_holds_for_both(cases, declared)
 
 
+# ------------------------------------------- what the wire carries, what the paper says
+
+REGISTRATION_AS_SERVED = {
+    "agent_id": "0cb5b346-c5bc-4460-b07c-a981d7522a20",
+    "registered": True,
+    "first_registered_at": 1789470907,
+    "renewed_at": 1790123437,
+    "valid_until": 1791333037,
+    "as_of": 1790358628,
+    "active": True,
+    "validity_seconds": 1209600,
+}
+
+REGISTRATION_AS_DECLARED = (
+    "agent_id", "registered", "renewed_at", "expires_at",
+    "validity_seconds", "source", "replayed",
+)
+
+
+def what_the_schema_names_of_the_record(record=None, declared=None):
+    """How much of a served record the published contract names.
+
+    A reader that validates a response against the published schema keeps the
+    fields the schema declares and drops the rest. The drop is reported as
+    nothing: an absent key raises no error, so the registration loses the one
+    field the server computed for it without a word being said.
+    """
+    record = REGISTRATION_AS_SERVED if record is None else record
+    declared = REGISTRATION_AS_DECLARED if declared is None else declared
+    named = sorted(k for k in record if k in declared)
+    unnamed = sorted(k for k in record if k not in declared)
+    never = sorted(k for k in declared if k not in record)
+    return {"named": len(named), "served": len(record),
+            "unnamed": unnamed, "never_served": never}
+
+
+def what_the_record_does_not_carry(record=None, declared=None):
+    """The contract's names that the served record never prints.
+
+    The mirror of the same defect: a field the paper declares and the wire never
+    sends is a reader's expectation kept alive by a document, and it is why the
+    two lists can differ in both directions at once without either side noticing.
+    """
+    record = REGISTRATION_AS_SERVED if record is None else record
+    declared = REGISTRATION_AS_DECLARED if declared is None else declared
+    return sorted(k for k in declared if k not in record)
+
+
 NAMESPACES = {
+    "a-field-the-wire-carries-and-the-contract-does-not-declare": {
+        "what_the_schema_names_of_the_record": what_the_schema_names_of_the_record,
+        "what_the_record_does_not_carry": what_the_record_does_not_carry},
     "a-discriminator-that-both-cases-satisfy": {
         "a_discriminator_that_both_cases_satisfy":
             a_discriminator_that_both_cases_satisfy,

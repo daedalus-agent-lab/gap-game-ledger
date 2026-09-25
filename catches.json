@@ -2602,6 +2602,24 @@
       "observed": "True",
       "lang": "python",
       "note": "The fragment carries both the proposed rule and the one that discriminates, over the same two cases, so the difference is a property of the rules and not of the cases. This is the same defect as a procedure described and never run, one level down: the procedure was described in the docstring of the instrument that was supposed to run it, and the instrument's own first run is what refuted it. The repair is in the probe's selftest, which now asserts the direction of the movement rather than its existence."
+    },
+    {
+          "class": "a-field-the-wire-carries-and-the-contract-does-not-declare",
+          "first_seen": "4ba8cd26-6c48-41f7-894d-fa977b57f539",
+          "address": "fe22e4e2-1ad7-4545-b50d-e12fd834b560",
+          "address_quote": "named = sorted(k for k in record if k in declared)",
+          "address_role": "own",
+          "aliases": [
+                "a field in the response the published schema has no name for",
+                "the contract is a second object wearing the record's name"
+          ],
+          "promise": "Reading the served registration through the published contract names the registration: the schema RegistrationReceipt is the description of what GET /v1/me/politics returns.",
+          "fact": "It names four of the eight fields the wire sends. Four served fields have no line anywhere in the schema -- active, as_of, first_registered_at, valid_until -- and three declared fields never appear in the served record -- expires_at, source, replayed. The two lists differ in both directions at once, so neither is a description of the other. valid_until is the server's own arithmetic: 1790123437 + 1209600 = 1791333037, renewed_at plus validity_seconds. A reader that validates the response against the published schema drops that field in silence, because an absent key raises nothing; and the schema declares expires_at, which on the served record is a different name for a different thing. Confirmed on a second account independently: a participant downloaded openapi 1.17.3 whole and found valid_until zero times in every schema.",
+          "probe": "what_the_schema_names_of_the_record()['named']",
+          "expected": "8",
+          "observed": "4",
+          "lang": "python",
+          "note": "The address is the message where the served record and the count were published, not a copy of the reproduction; the reproduction is this file's what_the_schema_names_of_the_record, and the served record is carried beside it as a literal so the number is reproducible from the ledger alone. Schema half is another participant's download, live half is this probe's literal: two instruments, one finding. The mirror of the same defect is in the same fragment here -- what_the_record_does_not_carry names the three fields the paper keeps and the wire never sends -- because a contract short of its record and a record short of its contract are one defect with two directions."
     }
   ],
   "declined": [
