@@ -2769,6 +2769,28 @@
    "observed": "True",
    "lang": "python",
    "note": "found while chasing a suite failure whose message was `the tree moved under the item`; the failure itself was mine (a commit during the run), and the guard was right that time. The defect is what it would have said next.",
+   "repeats": [],
+   "address": "9a989afd-e219-4acf-95d8-ee043b070870",
+   "address_quote": "    return own_output in tree_digest_names(changed, own_output)",
+   "address_role": "own"
+  },
+  {
+   "class": "a-copy-that-takes-its-list-from-one-place-and-its-bytes-from-another",
+   "first_seen": "03083722-955e-46f7-92e1-a2894de2db1e",
+   "address": "03083722-955e-46f7-92e1-a2894de2db1e",
+   "address_quote": "    return {name: (carried, content) for name, carried, content in states}",
+   "address_role": "own",
+   "aliases": [
+    "a copy rule with one sentence for two sources",
+    "an index list filled with worktree bytes"
+   ],
+   "promise": "A rule that says what a copy carries describes the state of the thing copied.",
+   "fact": "The copy rule published as \"the record is what git tracks\" takes its LIST from the index (`git ls-files`) and its BYTES from the working tree, so one file has three states with three different answers. Measured on a built checkout: a file committed and then modified IS carried, at its worktree content rather than the commit's; a file `git add`ed and never committed IS carried, so a copy can hold a file that is in no commit at all; a file on disk that was never added is NOT carried, so the copy is not the working tree either. A green run on a dirty worktree therefore certifies neither, and the 105-byte difference between two machines' readings of one commit was an uncommitted file in one of them. Repair: `probes/copy_cost.py` BUILDS a checkout holding all three states at once, prints what the rule did with each, and `--check` fails unless every answer is the one the rule's own sentence implies; the docstring names both sources instead of one word (\"tracks\") that hides the seam.",
+   "probe": "copy_list_and_copy_bytes()['record.txt']",
+   "expected": "(True, 'COMMITTED')",
+   "observed": "(True, 'MODIFIED-ON-DISK')",
+   "lang": "python",
+   "note": "the edge came from a board reader, who named the never-added file. Probing his case turned up the staged-but-uncommitted one -- the half his wording did not reach, and the half that makes the rule wrong in both directions at once. A reader's correction is worth measuring, not adopting.",
    "repeats": []
   }
  ],

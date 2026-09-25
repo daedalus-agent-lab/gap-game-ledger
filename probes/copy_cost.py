@@ -41,6 +41,13 @@ reading is reproducible from a clone because the probe manufactures its subject.
 WHAT THIS DOES NOT DO: it measures bytes and file counts and it compares the rule
 with git's index; it does not show that a case NEEDS the files it carries. A copy
 can be small, exact and still the wrong copy; that is what the cases test.
+
+THE RULE HAS TWO SOURCES, and the probe reads both rather than the sentence. The
+LIST of what a copy is taken over comes from the index (`git ls-files`); the BYTES
+come from the working tree. So a file that git has added and never committed IS in
+the copy, at its worktree content, while a file on disk that was never `git add`ed
+is NOT -- three states of one file, three different answers, and a green run on a
+dirty worktree certifies neither the commit nor the tree.
 """
 import argparse
 import importlib.util
@@ -107,6 +114,46 @@ def plant_fixture(root: Path) -> Path:
     for i in range(PLANTED_FILES):
         (cache / f"blob{i}").write_bytes(b"\0" * per_file)
     return root
+
+
+def source_outcomes(root: Path, ignore) -> dict:
+    """What the rule does with each of the three states one file can be in.
+
+    Read from disk, not described: a file whose name is in the index is carried
+    with the bytes the working tree holds; a file the index does not name is left
+    out whatever is on disk.
+    """
+    result = {}
+    for name in ("record.txt", "staged.py", "new-probe.py"):
+        carried = name not in set(ignore(root, [name]))
+        result[name] = (carried,
+                        (root / name).read_text().strip() if carried else None)
+    return result
+
+
+def plant_source_fixture(root: Path) -> Path:
+    """A checkout holding the three states side by side, built here and thrown away."""
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "record.txt").write_text("COMMITTED\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "add", "--", "record.txt"], cwd=root,
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-c", "user.email=probe@invalid", "-c", "user.name=probe",
+                    "-c", "commit.gpgsign=false", "commit", "-qm", "fixture"],
+                   cwd=root, check=True, capture_output=True)
+    (root / "record.txt").write_text("MODIFIED-ON-DISK\n", encoding="utf-8")
+    (root / "staged.py").write_text("print('staged')\n", encoding="utf-8")
+    subprocess.run(["git", "add", "--", "staged.py"], cwd=root,
+                   check=True, capture_output=True)
+    (root / "new-probe.py").write_text("print('new')\n", encoding="utf-8")
+    return root
+
+
+SOURCE_EXPECTED = {
+    "record.txt": (True, "MODIFIED-ON-DISK"),      # in the index, bytes from disk
+    "staged.py": (True, "print('staged')"),        # added, never committed, still carried
+    "new-probe.py": (False, None),                 # on disk, never added, dropped
+}
 
 
 def load_runner():
@@ -257,7 +304,22 @@ def main() -> int:
         print(f"    the two rules differ by exactly the planted cache: "
               f"{'yes' if planted_ok else 'NO'}  ({difference:,} B, planted {PLANTED_BYTES:,} B)")
 
-    if args.check and (not ok or wrong or not planted_ok):
+    # The two sources of one copy, measured. The list is the index, the bytes are the
+    # working tree: a rule stated as "what git tracks" is one sentence about two
+    # answers, and this is where the difference between them is read.
+    sources_ok = None
+    with tempfile.TemporaryDirectory(prefix="copy-cost-sources-") as td:
+        fx = plant_source_fixture(Path(td) / "checkout")
+        seen = source_outcomes(fx, runner.ignore_for_the_record(fx))
+        sources_ok = seen == SOURCE_EXPECTED
+        print("the list comes from the index, the bytes from the working tree -- "
+              "three states of one file, read here rather than described:")
+        for name, (carried, content) in seen.items():
+            want = SOURCE_EXPECTED[name]
+            print(f"    {name:<14} carried: {str(carried):<5} content: {content!r}"
+                  f"   {'as this rule requires' if (carried, content) == want else 'NOT AS REQUIRED'}")
+
+    if args.check and (not ok or wrong or not planted_ok or not sources_ok):
         return 1
     return 0
 

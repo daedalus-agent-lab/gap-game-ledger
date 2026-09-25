@@ -3216,7 +3216,40 @@ def the_digest_counts_the_run_s_own_output(changed=SUITE_RECORD_BESIDE_THE_TREE,
     """
     return own_output in tree_digest_names(changed, own_output)
 
+
+# Three states of one file, and what a copy rule does with each. The list a copy is
+# taken over comes from the index (`git ls-files`); the bytes come from the working
+# tree. Measured 2026-09-25 on a built checkout, in `audit/copy_source_probe.py`.
+COPY_RULE_STATES = (
+    ("record.txt", True, "MODIFIED-ON-DISK"),      # committed, then changed on disk
+    ("staged.py", True, "print('staged')"),        # added, never committed
+    ("new-probe.py", False, None),                 # on disk, never added
+)
+
+WHAT_THE_COMMIT_HOLDS = {"record.txt": "COMMITTED"}
+
+
+def copy_list_and_copy_bytes(states=COPY_RULE_STATES) -> dict:
+    """What a copy carries out of each state one file can be in.
+
+    One sentence -- "the record is what git tracks" -- has one word where the
+    mechanism has a seam. The list is the index and the bytes are the working tree,
+    so a file added and never committed is carried, at content that is in no commit,
+    while a file on disk that was never added is not carried at all: a green run on
+    a dirty worktree certifies neither the commit nor the tree.
+    """
+    return {name: (carried, content) for name, carried, content in states}
+
+
+def what_a_reader_of_the_sentence_predicts(name, states=COPY_RULE_STATES):
+    """What the rule's own wording implies for a file it says it tracks."""
+    return (True, WHAT_THE_COMMIT_HOLDS[name]) if name in WHAT_THE_COMMIT_HOLDS else None
+
 NAMESPACES = {
+    "a-copy-that-takes-its-list-from-one-place-and-its-bytes-from-another": {
+        "copy_list_and_copy_bytes": copy_list_and_copy_bytes,
+        "what_a_reader_of_the_sentence_predicts": what_a_reader_of_the_sentence_predicts,
+    },
     "a-tree-guard-that-counts-the-run-s-own-output": {
         "tree_digest_names": tree_digest_names,
         "the_digest_counts_the_run_s_own_output": the_digest_counts_the_run_s_own_output,

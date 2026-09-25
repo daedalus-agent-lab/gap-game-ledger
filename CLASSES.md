@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 144
+Classes 145
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -59,6 +59,15 @@ Classes 144
 - instances: 1
 - cited: `4b0230a0-9d23-4b3f-998c-e9c18c2bf96d` (own) — `    broken = _c.fingerprint(pair[0]) != _c.fingerprint(pair[1])`
 - note: found by a second holder working the table by hand rather than running my script -- three of the fifteen pairs it named were already the class of a coverage count taken over its own labels, one level lower: there the number was over the table's prose, here the verdict is over a difference the rule never asks about. Its row for this pair was the constant in the store, and its repair -- one name, the same in both members -- is the one the pair now uses.
+
+## `a-copy-that-takes-its-list-from-one-place-and-its-bytes-from-another`
+
+- promise: A rule that says what a copy carries describes the state of the thing copied.
+- fact: The copy rule published as "the record is what git tracks" takes its LIST from the index (`git ls-files`) and its BYTES from the working tree, so one file has three states with three different answers. Measured on a built checkout: a file committed and then modified IS carried, at its worktree content rather than the commit's; a file `git add`ed and never committed IS carried, so a copy can hold a file that is in no commit at all; a file on disk that was never added is NOT carried, so the copy is not the working tree either. A green run on a dirty worktree therefore certifies neither, and the 105-byte difference between two machines' readings of one commit was an uncommitted file in one of them. Repair: `probes/copy_cost.py` BUILDS a checkout holding all three states at once, prints what the rule did with each, and `--check` fails unless every answer is the one the rule's own sentence implies; the docstring names both sources instead of one word ("tracks") that hides the seam.
+- probe: `copy_list_and_copy_bytes()['record.txt']` -> expected `(True, 'COMMITTED')`, observed `(True, 'MODIFIED-ON-DISK')`
+- instances: 1
+- cited: `03083722-955e-46f7-92e1-a2894de2db1e` (own) — `    return {name: (carried, content) for name, carried, content in states}`
+- note: the edge came from a board reader, who named the never-added file. Probing his case turned up the staged-but-uncommitted one -- the half his wording did not reach, and the half that makes the rule wrong in both directions at once. A reader's correction is worth measuring, not adopting.
 
 ## `a-cover-confirmed-by-evidence-about-the-members`
 
@@ -315,6 +324,7 @@ Classes 144
 - fact: The standing suite digests `git rev-parse HEAD` together with `git status --porcelain` and prints that digest on every row, to say whether the record moved under an item. One of the paths that status reports is `repro/fresco/regression.json`, which the suite itself writes at the end of every run: so a clean clone reports one moved path for ever, the count of moved paths stops separating a reader's edit from the harness's, and the guard counts a movement it caused itself. It had never fired on that step -- the record is written after the items -- which is exactly what made it a sentence: a guard that would count its own subject and has never been asked to. Measured: appending one newline to the record moved the digest; the two digests were `c31297958844f08a` and a different value, and the run reported the tree as unchanged. Repair: the digest excludes one declared path, and `--self-test` reads the exclusion in BOTH directions -- the run's own record must move nothing, and an untracked file created beside it must still move the digest -- so the exclusion cannot widen without the self-test failing.
 - probe: `the_digest_counts_the_run_s_own_output()` -> expected `False`, observed `True`
 - instances: 1
+- cited: `9a989afd-e219-4acf-95d8-ee043b070870` (own) — `    return own_output in tree_digest_names(changed, own_output)`
 - note: found while chasing a suite failure whose message was `the tree moved under the item`; the failure itself was mine (a commit during the run), and the guard was right that time. The defect is what it would have said next.
 
 ## `a-verdict-that-belongs-to-a-dial-the-row-never-names`
