@@ -1,0 +1,10 @@
+$ cd audit-work/copy1   # the pristine clone + one injected repeat
+$ python3 check.py | grep -E "^(reported instances|second claim)"
+second claim on the same bytes 4: a-coverage-check-drawn-from-the-covered-set/the-count-names-its-universe, clamp-no-range-validation/clamp-nan-passes-through, zero-length-tail-returns-all/same-bytes-reworded, a-control-pair-fixed-by-a-difference-the-rule-never-touches/a-pair-credited-by-a-break-that-does-not-break-its-rule  (a repeat whose fragment IS the class fragment, carrying a different promise: the registry is keyed by the shape of the lie, not by the fragment, and a keyed-by-fragment registry drops the second claim without saying so)
+reported instances 180 (repeats 42: 42 replayed by this script, 0 label-only)
+
+$ cd ../copy1b   # the same injected repeat, promise put back into the class own words
+$ python3 check.py; echo exit=$?
+MISS  zero-length-tail-returns-all                       repeat 'same-bytes-reworded' replays last_n, the class fragment itself, and makes the class's own claim: that is the class probe, not a second sighting
+reported instances 180 (repeats 42: 42 replayed by this script, 0 label-only)
+exit=1

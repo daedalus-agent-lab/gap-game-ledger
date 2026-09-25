@@ -1,0 +1,11 @@
+$ cd audit-work/attack1 && python3 collision_through_check.py
+answer(lie_with_the_store)    = 41
+answer(lie_without_the_store) = NameError
+fingerprint(a) == fingerprint(b): True
+class_collisions -> 2 primaries; ['probe-class-b.lie_without_the_store has the logic of probe-class-a.lie_with_the_store']
+
+$ cd audit-work/attack1 && python3 repeat_gate.py
+answer(lie_read_by_a_caller) = ['secret']
+answer(lie_nothing_reads)    = []
+fingerprint equal: True
+evaluate -> ('miss', "repeat 'second-sighting': lie_nothing_reads fingerprints like lie_read_by_a_caller; that is the class probe again, not a second sighting")

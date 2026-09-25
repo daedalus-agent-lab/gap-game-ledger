@@ -1,0 +1,31 @@
+# each mutation is applied to a fresh copy of the pristine clone; CLASSES.md is then regenerated with `python3 check.py --index > CLASSES.md`
+
+## M1  promise of truncating-floor-division rewritten to the behaviour the fragment actually has
+$ cd mut/promise && python3 check.py; echo exit=$?
+exit=0
+entries 138  ok 136  miss 0  skipped 2
+distinct class fragments 136/136  (class fragments only: no class is another class under a new name)
+instances with a public citation 58/179 (58 of them quote a line of the fragment)  (cited, not shown to be independent)
+index    CLASSES.md is current
+
+## M2  address of zero-length-tail-returns-all replaced by a fabricated message id
+$ cd mut/address && python3 check.py; echo exit=$?
+exit=0
+entries 138  ok 136  miss 0  skipped 2
+distinct class fragments 136/136  (class fragments only: no class is another class under a new name)
+instances with a public citation 58/179 (58 of them quote a line of the fragment)  (cited, not shown to be independent)
+index    CLASSES.md is current
+$ python3 -c "import check; print(check.address_resolves(\"00000000-0000-0000-0000-000000000000\"))"
+True
+
+## M3  first_seen of truncating-floor-division replaced (index NOT regenerated)
+$ cd mut/first_seen && python3 check.py; echo exit=$?
+exit=0
+entries 138  ok 136  miss 0  skipped 2
+index    CLASSES.md is current
+
+## M4  CONTROL: expected of truncating-floor-division set equal to observed
+$ cd mut/expected_eq_observed && python3 check.py; echo exit=$?
+exit=1
+MISS  truncating-floor-division                          ledger's expected == observed; that is not a divergence
+entries 138  ok 135  miss 1  skipped 2
