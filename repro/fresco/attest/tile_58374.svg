@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <title>The light turns and comes down</title>
+  <desc>The last cell of the Plateau. The light that climbed the eastern border of the tile to the west crosses into this one, turns at the edge, and steps down along the western side to the stone that waits at the south, where the first tile of the Plateau lets it sit on the ground. The rest of the sky is left quiet.</desc>
+  <!-- EDGE NOTES (viewBox 300 square). WEST: the same sky gradient, the same corner glow (cx=0 cy=1), the same stone at y=150 (circle r=26 and a #fff3cf ellipse), the dark ridge line leaving at y=200 and the pool at y=244..260, each mirrored across the border from the east edge of tile 55476. SOUTH: the stone at x=14 drawn as the mirror of the one on the north edge of tile 41187, sky ending at #0b0f1e. NORTH and EAST: plain sky, nothing drawn within 15 units, left open for the next ring. These are geometry notes, not seam scores. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#141a3a"/>
+      <stop offset="1" stop-color="#0b0f1e"/>
+    </linearGradient>
+    <radialGradient id="whitenight" cx="0" cy="1" r="0.9">
+      <stop offset="0" stop-color="#ffe9a8" stop-opacity="0.55"/>
+      <stop offset="0.35" stop-color="#e6c96a" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="stone" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffd97a" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffd97a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="300" height="300" fill="url(#sky)"/>
+  <rect width="300" height="300" fill="url(#whitenight)"/>
+  <g fill="#fff3cf">
+    <circle cx="90" cy="34" r="1.1" opacity="0.5"/>
+    <circle cx="160" cy="48" r="1.2" opacity="0.45"/>
+    <circle cx="230" cy="30" r="1" opacity="0.4"/>
+    <circle cx="120" cy="88" r="0.9" opacity="0.35"/>
+    <circle cx="200" cy="96" r="1.1" opacity="0.4"/>
+    <circle cx="262" cy="120" r="0.9" opacity="0.35"/>
+    <circle cx="150" cy="140" r="1" opacity="0.4"/>
+  </g>
+  <g fill="#1c2540" opacity="0.5">
+    <ellipse cx="150" cy="118" rx="58" ry="7"/>
+    <ellipse cx="226" cy="152" rx="44" ry="6"/>
+  </g>
+  <path d="M0 200 L60 190 L128 204 L200 188 L250 196" fill="none" stroke="#2a1e4a" stroke-width="2" opacity="0.6"/>
+  <ellipse cx="14" cy="150" rx="8" ry="3" fill="#fff3cf" opacity="0.9"/>
+  <circle cx="14" cy="150" r="26" fill="url(#stone)"/>
+  <ellipse cx="34" cy="180" rx="8" ry="3" fill="#ffe9a8" opacity="0.8"/>
+  <circle cx="34" cy="180" r="20" fill="url(#stone)"/>
+  <ellipse cx="50" cy="208" rx="7" ry="2.6" fill="#ffd97a" opacity="0.5"/>
+  <ellipse cx="44" cy="234" rx="6.5" ry="2.4" fill="#e6c96a" opacity="0.38"/>
+  <ellipse cx="-8" cy="252" rx="26" ry="8" fill="#fff3cf" opacity="0.3"/>
+  <ellipse cx="14" cy="260" rx="9" ry="3.2" fill="#fff3cf" opacity="0.9"/>
+  <circle cx="14" cy="260" r="26" fill="url(#stone)" opacity="0.5"/>
+</svg>

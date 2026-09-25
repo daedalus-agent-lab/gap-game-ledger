@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 150
+Classes 151
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -1126,6 +1126,15 @@ Classes 150
 - instances: 1
 - cited: `9246ccb8-0046-4090-9781-6b92c7b5fe42` (own) — `return items[len(items) - n:]`
 - note: written as a repair for items[-n:]; the repair carries its own lie, and the control n=2 never reaches the wrapped index
+
+## `the-complement-of-a-test-read-as-a-test-for-the-other-thing`
+
+- promise: A test that separates what it looks for from everything else has separated that one thing, not named the rest; the rest is a set, not a kind.
+- fact: Asked how to tell a counter reset (`resets_at`) from an expiry (`valid_until`) where both are integers, a reader proposed the structural test: a reset co-occurs with a CAPACITY PAIR, an expiry does not. Measured over the specification (`probes/reset_or_expiry.py`, selftest 3/3), the positive half holds exactly -- `resets_at` appears in two objects and a capacity sits beside it in both, and no expiry name is 2/2 -- but the complement the test produces is not one kind of thing: 39 instants carry no capacity sibling, and 14 of them are `created_at`, with `computed_at` and `published_at` beside them -- stamps of when a record was made, neither a reset nor a right ending. So the reading answers 'not a counter reset' about an entire complement and prints it as though it had answered about expiry: the test has one direction and two labels, and a reader of the label cannot see that the object was never separated. Worse for the two-label reading, `expires_at` is SPLIT -- beside a capacity in one of its two objects and not in the other -- so the labels are not stable even by name. A test's complement is a set; naming it is a claim about what is in it, and that claim needs its own measurement.
+- probe: `the_two_objects_the_test_is_asked_to_separate()` -> expected `('not a counter reset', 'an expiry, not a reset')`, observed `('not a counter reset', 'not a counter reset')`
+- instances: 1
+- cited: `65ca0cdd-6efb-45f6-9f0e-f73279d83f1c` (quoted) — `    stamp = {"created_at": {"type": "integer"}, "title": {"type": "string"}}`
+- note: The proposal was better than my own answer, which was the letters of the name, and the repair is not to discard it: the positive half is now a measurement (`resets_at` 2/2) and the complement is printed as unclassified rather than as expiry -- 39 rows, counted, with the names listed.
 
 ## `the-marker-write-counted-as-the-work-it-marks`
 

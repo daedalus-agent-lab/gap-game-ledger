@@ -3843,5 +3843,70 @@ def the_census_after_the_record_is_declared_its_own_output():
 
 NAMESPACES['a-run-s-own-output-carried-as-if-it-were-source'] = {
     'the_census_run_before_the_run_writes_its_record': the_census_run_before_the_run_writes_its_record,
-    'the_census_after_the_record_is_declared_its_own_output': the_census_after_the_record_is_declared_its_own_output,
+}
+
+
+# ------------------- the complement of a test for one thing, read as a test for another
+
+CAPACITY_NAMES = ("limit", "remaining", "used", "quota", "allowance", "budget",
+                  "count", "left", "spent")
+CAPACITY_SUFFIXES = ("_limit", "_remaining", "_used", "_seconds", "_hours", "_days")
+
+
+def is_capacity(name):
+    return name in CAPACITY_NAMES or any(name.endswith(s) for s in CAPACITY_SUFFIXES)
+
+
+def capacity_beside(props):
+    """Whether a numeric capacity sits in the same object as this instant.
+
+    hermes-scout-42's proposal: a counter that resets has something to reset TO, so a
+    reset instant co-occurs with a limit and what is left of it; a right that ends has
+    nothing left to count down. Measured over the specification, the positive half holds:
+    `resets_at` appears in two objects and a capacity sits beside it in two.
+    """
+    return any(is_capacity(k) for k in props)
+
+
+def label_of(props):
+    """Two labels, and only two: the test has one direction and this is it."""
+    return "counter reset" if capacity_beside(props) else "not a counter reset"
+
+
+def the_two_objects_the_test_is_asked_to_separate():
+    """An expiry, and a record's own timestamp. The test answers both.
+
+    The answer it gives about `created_at` is not an answer about expiry -- a timestamp
+    of when a record was made is neither a counter reset nor a right ending -- but the
+    test produces one label for the whole complement, so a reader of the label has no
+    way to see that the second object was never separated from the first.
+    """
+    expiry = {"valid_until": {"type": "integer"}, "grant": {"type": "string"}}
+    stamp = {"created_at": {"type": "integer"}, "title": {"type": "string"}}
+    return label_of(expiry), label_of(stamp)
+
+
+def the_positive_half_the_test_does_support():
+    """A reset with its capacity pair, and the same name without one."""
+    with_pair = {"limit": {"type": "integer"}, "remaining": {"type": "integer"},
+                 "resets_at": {"type": "integer"}}
+    without = {"resets_at": {"type": "integer"}}
+    return label_of(with_pair), label_of(without)
+
+
+def what_the_specification_says():
+    """The specification's own rows, counted: which names the positive half reaches.
+
+    Read from spec/openapi-1.17.3.json: `resets_at` 2 objects, capacity beside it in 2.
+    The complement holds 39 instants in objects with no capacity sibling, and it is not
+    one kind of thing: `created_at` (14 objects), `computed_at`, `published_at` are
+    stamps of when a record was made, `opens_at`/`closes_at` are window edges and
+    `expires_at` is SPLIT -- beside a capacity in one of its two objects and not in
+    the other -- so even the two labels the test does produce are not stable by name.
+    """
+    return ("resets_at 2/2 beside a capacity", "39 in the complement, of which 14 are "
+            "created_at and 1 of 2 expires_at", "expires_at: SPLIT")
+
+NAMESPACES['the-complement-of-a-test-read-as-a-test-for-the-other-thing'] = {
+    'the_two_objects_the_test_is_asked_to_separate': the_two_objects_the_test_is_asked_to_separate,
 }

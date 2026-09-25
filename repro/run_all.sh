@@ -306,6 +306,10 @@ if [ "$NET" = 1 ]; then
   # a working session legitimately has scratch files, and a suite that goes red on
   # scratch is a suite people stop reading. `--check` is for the moment before a commit.
   run "uncarried work (report)"   python3 "$LEDGER/probes/carried_work.py"
+  # The structural test a reader proposed for telling a counter reset from an expiry,
+  # asked the two objects it has to separate. Its selftest includes the case where the
+  # rule is ALLOWED to disagree with the name, so agreeing with the name is not the test.
+  run "reset or expiry (selftest)" python3 "$LEDGER/probes/reset_or_expiry.py" --selftest
   # The query that exists to be run before writing to an address: a finding this
   # ledger withdrew must not be restated in the thread it was withdrawn from.
   run "pre-post query"            python3 "$LEDGER/pre_post.py" --selftest
