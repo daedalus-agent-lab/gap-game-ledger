@@ -1469,14 +1469,19 @@ def padded_max_of(xs):
 # now has a pair, and `POLICY_MUTATIONS` below is the table that measures the
 # instrument rather than describing it.
 
-def read_by_globals():
-    """A store read through globals(): the pass must keep it, not drop it."""
+def a_local_store_globals_cannot_reach():
+    """One of a pair that must share a fingerprint: `globals()` inside a function
+    returns the MODULE's dict, so the store in front of it is not reachable
+    through the reader the pair names. The pass drops it, and the two members --
+    which differ in a name the pass erases and in a constant it deletes with the
+    store -- become one fingerprint. The guard's name set used to include
+    `globals()`, and this pair was the reason given for it."""
     secret = 1
     return globals()
 
 
-def read_by_globals_renamed():
-    """The same, with the store under another letter."""
+def a_local_store_globals_cannot_reach_other_name():
+    """The other half, spelled with another name and another constant."""
     other = 2
     return globals()
 
@@ -1632,7 +1637,8 @@ CONTROL_PAIRS = (
     ("plain_max_of", "padded_max_of", True, "R4"),
     ("read_by_eval_and_one_dead_store", "read_by_eval_only", False, "R5"),
     ("added_over_a_shadowing_name", "added_over_another_shadowing_name", True, "R6"),
-    ("read_by_globals", "read_by_globals_renamed", False, "R7"),
+    ("a_local_store_globals_cannot_reach",
+     "a_local_store_globals_cannot_reach_other_name", True, "R7"),
     ("read_by_vars", "read_by_vars_renamed", False, "R7"),
     ("read_by_dir", "read_by_dir_no_store", False, "R7"),
     ("import_as_j", "import_as_k", True, "R8"),
@@ -1667,8 +1673,8 @@ POLICY_MUTATIONS = (
            "            self.seen[name] = f\"{BOUND_PREFIX}{len(self.seen)}\"\n"
            "        return self.seen[name]",
      "        return name"),
-    ("R3", '    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir", "globals"}',
-     '    DYNAMIC_READERS = {"locals", "vars", "dir", "globals"}'),
+    ("R3", '    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}',
+     '    DYNAMIC_READERS = {"locals", "vars", "dir"}'),
     ("R4", "            if targets and all(t.id not in reads for t in targets):\n"
            "                continue",
      "            if False:\n                continue"),
@@ -1680,7 +1686,8 @@ POLICY_MUTATIONS = (
      "            return node"),
     ("R6", "        if name in BUILTINS and not self._bound(name):",
      "        if name in BUILTINS:"),
-    ("R7", '"dir", "globals"}', '"dir"}'),
+    ("R7", '    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}',
+     '    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir", "globals"}'),
     ("R7", '"locals", "vars", "dir"', '"locals", "vars"'),
     ("R7", '"locals", "vars", "dir"', '"locals", "dir"'),
     ("R8", "elif isinstance(child, ast.alias) and child.asname:",
@@ -1888,7 +1895,23 @@ def the_pair_answers_the_same_under_both_policies() -> bool:
     return bool(base and broken)
 
 
+
+# --- the guard that named a reader which cannot read the store --------------
+# The name set was the reason given for keeping a function's dead stores, and one
+# of its names cannot reach a function-local store at all.
+
+def a_store_the_guard_keeps_for_a_reader_that_cannot_read_it():
+    """The store the guard keeps, asked the question the guard's own reason
+    answers: `globals()` inside a function returns the MODULE's dict, so
+    `"secret" in globals()` is False and nothing can read this store through it.
+    True would mean the reader the guard names can read the store."""
+    secret = 1
+    return "secret" in globals()
+
 NAMESPACES = {
+    "a-guard-justified-by-a-reader-that-cannot-reach-the-store": {
+        "a_store_the_guard_keeps_for_a_reader_that_cannot_read_it":
+            a_store_the_guard_keeps_for_a_reader_that_cannot_read_it},
     "a-control-pair-fixed-by-a-difference-the-rule-never-touches": {
         "the_pair_answers_the_same_under_both_policies":
             the_pair_answers_the_same_under_both_policies,

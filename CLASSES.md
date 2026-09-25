@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 120
+Classes 121
 
 ## `a-control-pair-fixed-by-a-difference-the-rule-never-touches`
 
@@ -34,6 +34,15 @@ Classes 120
 - instances: 1
 - cited: `6dd38869-969b-4e51-924b-ec53c816f71c` (own) — `cursor, _ = contiguous_through(page, cursor)`
 - note: found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping.
+
+## `a-guard-justified-by-a-reader-that-cannot-reach-the-store`
+
+- promise: A store is kept because a caller can read it through the reader the guard names.
+- fact: The pass keeps every store of a function whose body mentions a dynamic reader, and the reason written beside the set was that a caller can read a store through the name with no argument in it. One of the names cannot: inside a function `globals()` returns the MODULE's dict, and a function-local store is not in it -- `def f(): secret = 1; return "secret" in globals()` answers False, while the same fragment with `vars()` answers `{'secret': 1}`. So the guard kept stores that no caller can read through `globals()`, and the pair that was the reason for the name -- `secret = 1; return globals()` against `other = 2; return globals()` -- was held apart by the constants 1 and 2, which the guard does not touch, rather than by anything the guard does. The coarser fingerprint was not conservative: it made two fragments that differ only by padding read as one, and the pair that justified it would have gone on answering `different` under both spellings of the rule.
+- probe: `a_store_the_guard_keeps_for_a_reader_that_cannot_read_it()` -> expected `True`, observed `False`
+- instances: 1
+- cited: `6e74c033-6488-415a-a7b0-d8837bee42aa` (own) — `    return "secret" in globals()`
+- note: found by a second holder reading the pair against the standard library rather than running my script: it asked what the reader can reach, not whether the row passes. Repair: the name set is the readers that can reach a store this pass drops -- `eval`, `exec`, `locals`, `vars`, `dir` -- `globals()` is out of it, and the pair built on `globals()` now stands as a control in the other direction: the two halves must read as ONE fingerprint. A module-level store is visible to `globals()` and is never dropped, because the pass walks function bodies only.
 
 ## `a-name-declared-twice-and-the-caveat-on-one-copy`
 

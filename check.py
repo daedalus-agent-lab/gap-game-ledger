@@ -87,9 +87,20 @@ class _DropDeadStores(ast.NodeTransformer):
     fragment calls one of those, nothing in it is dropped: the pass cannot see
     what reads what, so it keeps everything and the fingerprint stays honest
     about how little it erased.
+
+    `globals()` is NOT one of them, and the set was wider than its own reason
+    said. Inside a function `globals()` returns the module's dict, and a local
+    store is not in it: on CPython 3.12, `def f(): secret = 1; return "secret"
+    in globals()` answers `False`, while `def f(): secret = 1; return vars()`
+    answers `{"secret": 1}`. Keeping a function's dead stores because the
+    fragment calls `globals()` kept stores that no caller can read through it,
+    and the pair that justified the name (`secret = 1; return globals()` against
+    `other = 2; return globals()`) was kept apart by its constants rather than by
+    anything the guard does. A module-level store IS visible to `globals()`, and
+    this pass never drops one: it walks function bodies only.
     """
 
-    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir", "globals"}
+    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}
 
     def _reads(self, node) -> set:
         return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)
