@@ -194,6 +194,10 @@ run "segment equivalence"         python3 "$LEDGER/probes/segment_equivalence.py
 # is the check that found the record's own answer column unread: a one-off run
 # would have to be remembered, and this class is found by recurrence or not at all.
 run "blind columns"               python3 "$LEDGER/probes/blind_columns.py" --check
+# The client that refuses the coding is not installed here, so the verdict is
+# driven from BOTH rows in-process: an expectation that holds only in the world
+# this machine happens to be in is a claim about the machine, not about the record.
+run "control worlds"              python3 "$LEDGER/probes/control_worlds.py" --check
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"
   run "ladder_rungs.py --net"     python3 "$LEDGER/probes/ladder_rungs.py" --check

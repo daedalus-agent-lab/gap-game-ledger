@@ -329,7 +329,17 @@ def one(path: str, headers: list, base: str = "") -> dict:
     # derivable from `got`; what cannot be derived is what the client chose to
     # ask, and that is the quantity the row's reading rests on. An empty field
     # is a reading of its own -- "nothing was sent" -- kept as one.
-    return {"status": int(status), "size": int(size),
+    # A client that got NO response leaves both fields empty, and `int("")` used
+    # to end the run there instead of ending the row. That is the row shape this
+    # record exists to separate -- a row whose subject does not exist read as a
+    # verdict -- living inside the control, and it made the exit code unable to
+    # tell two worlds apart: with modern curl REFUSING an unsolicited transfer
+    # coding, the control's own gzip cell has no answer, so `--check` exited 1
+    # both with and without a tampered record, and the published command no
+    # longer exercised the falsifier at all. An absent answer is a reading of its
+    # own: `None`, compared as `None`, never raised.
+    return {"status": int(status) if status else None,
+            "size": int(size) if size else None,
             "digest": hashlib.sha256(body).hexdigest()[:16], "content_type": ctype,
             "curl_rc": proc.returncode, "sent": what_was_sent(path, headers, base),
             **conditions}
@@ -552,12 +562,29 @@ def control() -> int:
                            b"transfer-encoding: gzip\r\n\r\n" + encoded)
     te_gzip = one("/v1/me", [], f"http://127.0.0.1:{port}")
     stop()
+    # The claim is about the COUNT, and two clients answer it in two different
+    # worlds: curl 8.5.0 takes the unsolicited coding and reports the coded 29
+    # bytes; curl 8.18.0 REFUSES the same answer (exit 61) and reports nothing.
+    # A check written as "exit 0 and 29 bytes" is therefore not a claim about the
+    # count but a claim about which curl is installed -- and on the newer one it
+    # moved, so `--check` exited 1 for a reason belonging to neither the record
+    # nor this row. The verdict is a function of the row, and the control drives
+    # it with BOTH worlds, so the one it is not running in is still exercised.
+    def gzip_not_folded(row):
+        return (row["size"] != len(body)                       # never the entity length
+                and byte_column_refusal("control", row) is not None
+                and len(encoded) < len(body))                  # the coding did shrink it
+    took = {"size": len(encoded), "curl_rc": 0, "content_encoding": "",
+            "transfer_encoding": "gzip"}
+    refused = {"size": None, "curl_rc": 61, "content_encoding": "",
+               "transfer_encoding": "gzip"}
     checks.append(("`transfer-encoding: gzip` is NOT folded into the count",
-                   te_gzip["curl_rc"] == 0 and te_gzip["size"] == len(encoded)
-                   and len(encoded) < len(body)
-                   and byte_column_refusal("control", te_gzip) is not None,
-                   f"{te_gzip['size']} B reported for a {len(body)} B entity served as "
-                   f"{len(encoded)} B coded bytes, curl exit {te_gzip['curl_rc']}"))
+                   gzip_not_folded(te_gzip) and gzip_not_folded(took)
+                   and gzip_not_folded(refused),
+                   f"this client reported {te_gzip['size']!r} B for a {len(body)} B entity "
+                   f"served as {len(encoded)} B coded bytes, curl exit {te_gzip['curl_rc']}; "
+                   "the client that takes the coding (29, exit 0) and the client that "
+                   "refuses it (nothing, exit 61) both give a refused, non-entity count"))
 
     short = body[:100]
     port, stop = _listener(b"HTTP/1.1 200 OK\r\ncontent-type: application/json\r\n"
@@ -582,6 +609,25 @@ def control() -> int:
                    f"{chunked['size']} B reported for the same entity framed one byte "
                    "per chunk -- so the folding is chunk handling, not a general "
                    "transfer decoding"))
+
+    # 7. a row whose subject does not exist is a REFUSAL, not the end of the run.
+    #    A client that gets no answer at all leaves both numeric fields empty, and
+    #    an int() over the empty string ended the whole run inside the control --
+    #    so on any curl that REFUSES an unsolicited transfer coding, `--check`
+    #    exited 1 both with and without a tampered record, for a reason belonging
+    #    to neither, and the exit code stopped separating the two worlds. The
+    #    listener accepts and hangs up: the shape is measured, not simulated.
+    port, stop = _listener(b"")
+    silent = one("/v1/me", [], f"http://127.0.0.1:{port}")
+    stop()
+    checks.append(("a row with no answer at all is refused, not raised",
+                   silent["status"] is None and silent["size"] is None
+                   and silent["curl_rc"] != 0
+                   and byte_column_refusal("control", silent) is not None,
+                   f"status {silent['status']!r}, size {silent['size']!r}, curl exit "
+                   f"{silent['curl_rc']}: the row refuses and the run continues, so a "
+                   "crash inside the control cannot be read as a verdict about the "
+                   "record"))
 
     checks.append(("the guard passes a plain, complete row",
                    byte_column_refusal("control", {
