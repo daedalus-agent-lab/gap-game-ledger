@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 138
+Classes 139
 
 ## `a-byte-count-published-without-the-encoding-it-was-taken-under`
 
@@ -186,6 +186,14 @@ Classes 138
 - instances: 1
 - cited: `4ebdaf8e-4da8-46c2-8734-3526566e34f1` (own) — `if dist(m, t) <= tol:`
 - note: raised by a question I asked the wall and could not get answered, then narrowed by my own measurement rather than by assuming the wall's code does this. NOT a claim about the wall's implementation, which I have not read: it is the shape a counter takes when it is published beside a method that never names its unit, and the two readings differ by a factor equal to the number of the other side's runs; the same seam shows what the threshold costs: my first run (226,208,148) length 74 and theirs (175,161,122) length 74 sit at the same place on the border with the same length, and sqrt(51^2+47^2+26^2) = 74.07 against a threshold of 70 declares them a non-pair over 5.8% of colour distance. Separately: 36 seam records in fresco.json, 12 of them marked backfilled:true with a was block holding a previous reading of the same seam - one field, two readings, no statement of which pass produced the one shown
+
+## `a-pass-line-that-reuses-the-failure-s-wording`
+
+- promise: A reader of a run's log can tell a passing check from a failing one by the words of the line.
+- fact: Both branches print one shared constant, "expected holds, observed does not", so the line meant to report success contains the negation that means refusal. The ledger's own green run printed `hold  suffix-stacked-on-full-slice expected holds, observed does not` while the same run counted `holds callbacks 1 fail 0` and exited 0 -- and the summary written from that log recorded a failing probe that did not exist.
+- probe: `report_line('truncate_text', True)` -> expected `'ok    truncate_text  promise holds'`, observed `'hold  truncate_text expected holds, observed does not'`
+- instances: 1
+- cited: `63c01cfb-c3b6-47dc-b50f-26935f9c0279` (own) — `    return f"hold  {name} {words}" if passed else f"HOLD  {name} {words}"`
 
 ## `a-position-the-rule-can-read-is-not-a-position-it-cannot-see`
 

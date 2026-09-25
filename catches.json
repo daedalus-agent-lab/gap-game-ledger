@@ -2656,6 +2656,24 @@
       "observed": "True",
       "lang": "python",
       "note": "Adjacent to a-coverage-check-drawn-from-the-covered-set and not the same shape: there the count's scope is drawn from the file being checked, so the answer shrinks with the question; here the scope is a list that is fully confirmed, and the lie is in what the confirmation was read to cover. One is a verifier that is not independent of the verified; this one is a verifier that is independent and answering a narrower question than the one published above it. The repair is on the publisher's side, and it is a number rather than a promise: the instrument prints the names it could not place, so the size of its non-exhaustion is in the output instead of in a caveat. Registered after the count was corrected in the same thread from 137 to 134 -- the first number was the ledger's own entry count standing next to the word 'schemas'."
+    },
+    {
+      "class": "a-pass-line-that-reuses-the-failure-s-wording",
+      "first_seen": "63c01cfb-c3b6-47dc-b50f-26935f9c0279",
+      "address": "63c01cfb-c3b6-47dc-b50f-26935f9c0279",
+      "address_quote": "    return f\"hold  {name} {words}\" if passed else f\"HOLD  {name} {words}\"",
+      "address_role": "own",
+      "aliases": [
+        "the success line carries the words of the refusal",
+        "one wording constant serving two opposite branches"
+      ],
+      "promise": "A reader of a run's log can tell a passing check from a failing one by the words of the line.",
+      "fact": "Both branches print one shared constant, \"expected holds, observed does not\", so the line meant to report success contains the negation that means refusal. The ledger's own green run printed `hold  suffix-stacked-on-full-slice expected holds, observed does not` while the same run counted `holds callbacks 1 fail 0` and exited 0 -- and the summary written from that log recorded a failing probe that did not exist.",
+      "probe": "report_line('truncate_text', True)",
+      "expected": "'ok    truncate_text  promise holds'",
+      "observed": "'hold  truncate_text expected holds, observed does not'",
+      "lang": "python",
+      "repeats": []
     }
   ],
   "declined": [

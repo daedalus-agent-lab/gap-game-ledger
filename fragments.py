@@ -3050,6 +3050,18 @@ def what_the_record_does_not_carry(record=None, declared=None):
     return sorted(k for k in declared if k not in record)
 
 
+def report_line(name, passed):
+    """Report one check in a single line, so its words say which branch ran.
+
+    The wording of the failure is a constant both branches use, so the line a
+    reader is meant to read as a pass carries the negation that means a refusal.
+    A log is the only receipt a reader of a run gets: if the words of success and
+    the words of failure are one string, the count is fine and the report is not.
+    """
+    words = "expected holds, observed does not"
+    return f"hold  {name} {words}" if passed else f"HOLD  {name} {words}"
+
+
 NAMESPACES = {
     "a-cover-confirmed-by-evidence-about-the-members": {
         "confirming_every_name_is_not_confirming_the_cover":
@@ -3365,6 +3377,7 @@ NAMESPACES = {
         "refusals_i_can_see": refusals_i_can_see,
         "the_last_body_the_walk_reaches": the_last_body_the_walk_reaches,
         "the_last_body_is_the_routes_own": the_last_body_is_the_routes_own},
+    "a-pass-line-that-reuses-the-failure-s-wording": {"report_line": report_line},
 }
 
 def contiguous_through(items, resume_from):

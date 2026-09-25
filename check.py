@@ -1277,7 +1277,7 @@ def main() -> int:
         exp = fn(*prefix, expected_val)
         obs = fn(*prefix, observed_val)
         if exp is True and obs is False:
-            print(f"hold  {name:<50} expected holds, observed does not")
+            print(f"hold  {name:<50} satisfied: True on expected, False on observed")
         else:
             holds_fail += 1
             print(
