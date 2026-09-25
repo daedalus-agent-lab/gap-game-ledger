@@ -814,6 +814,43 @@ def z_the_policy_is_measured_not_described(tree):
                                  + (f": {tail[:2]}" if tail else ""))
 
 
+def zz_the_control_table_is_current(tree):
+    """The published control table is generated from the tree, never edited.
+
+    A reader who will not run my script works the table by hand, so the table is
+    a deliverable and has to be the same bytes the tree produces -- otherwise the
+    hand-play is played against a table no longer in force. And the row that
+    matters is the one the class is about: for every rule, the verdict under the
+    policy and the verdict under the broken policy must differ, because a pair
+    that answers the same thing about both is a label. The `as_of` line is the
+    one line dropped before comparing: it is the time of the reading, not of the
+    table.
+    """
+    import subprocess
+    gen = tree / "probes" / "policy_mutations.py"
+    out = subprocess.run([sys.executable, str(gen), "--table"],
+                         capture_output=True, text=True, cwd=str(tree))
+    if out.returncode != 0:
+        return False, f"the table generator exited {out.returncode}: {out.stderr.strip()[:120]}"
+
+    def without_as_of(text):
+        return "\n".join(l for l in text.splitlines()
+                         if not l.startswith("as_of ")).strip()
+
+    published = (tree / "probes" / "control_table.md").read_text(encoding="utf-8")
+    if without_as_of(out.stdout) != without_as_of(published):
+        return False, ("the published table does not match the one the tree generates: "
+                       "regenerate with `python3 probes/policy_mutations.py --table "
+                       "> probes/control_table.md`")
+    rows = [l for l in out.stdout.splitlines() if l.startswith("| R")]
+    fields = [l.split("|") for l in rows]
+    frozen = [f[1].strip() for f in fields if f[4].strip() == f[5].strip()]
+    if frozen:
+        return False, (f"{len(frozen)} pair(s) answer the same under the policy and "
+                       f"under its break, so they are labels: {frozen}")
+    return True, f"{len(rows)} rows, current, every one moving when its rule is broken"
+
+
 CASES = [
     ("order flip keeps the answer", a_order_flip),    ("citation counter agrees with its audit", b_citation_counter),
     ("a class with no fragment is refused", c_ghost_class),
@@ -842,6 +879,8 @@ CASES = [
     ("the erasure is a fixed point on its own output", r_idempotence),
     ("every rule of the policy is broken by a mutation and somebody notices",
      z_the_policy_is_measured_not_described),
+    ("the published control table is current and every row moves",
+     zz_the_control_table_is_current),
 ]
 
 

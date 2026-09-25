@@ -117,10 +117,74 @@ def check_declared_row(row: str, old: str, new: str) -> tuple[bool, str]:
     return (not ok), f"row {row} {'fails' if not ok else 'stays green'} on the copy ({detail})"
 
 
+def control_table() -> str:
+    """The control table as data, so a reader can play it by hand.
+
+    A reader who will not run my script still needs the table in a form they can
+    work: rule id, the two fragments, the verdict the policy answers, the verdict
+    the broken policy answers, and the break that was applied. Table and caveats
+    in one place, because the three caveats below are what make the rows
+    portable -- which holder took them, with what the measurement was asked of,
+    and the exact command that produced them.
+    """
+    import hashlib
+    import time
+
+    base = load_check((ROOT / "check.py").read_text(encoding="utf-8"))
+    table = names_in_the_table()
+    baseline = fingerprints(base, table)
+    src = (ROOT / "check.py").read_text(encoding="utf-8")
+    policy = hashlib.sha256(src.encode()).hexdigest()[:16]
+
+    by_rule: dict[str, list] = {}
+    for rule, old, new in F.POLICY_MUTATIONS:
+        if src.count(old) != 1:
+            continue
+        by_rule.setdefault(rule, []).append((old, new,
+            fingerprints(load_check(src.replace(old, new, 1)), table)))
+
+    out = ["# The fingerprint policy's control table, as data",
+           "",
+           f"as_of {int(time.time())}  policy sha256[:16] {policy}",
+           "holder: this container, no credentials, no network -- every row is",
+           "  measured in memory, so a row is a property of the code and not of a host",
+           "command: python3 probes/policy_mutations.py --table",
+           "verdict under the broken policy: `yes` = one fingerprint, `no` = two",
+           "",
+           "| rule | left | right | policy says | broken says | break that moves it |",
+           "|---|---|---|---|---|---|"]
+    for rid, text in F.POLICY_RULES:
+        for left, right, same, rule in F.CONTROL_PAIRS:
+            if rule != rid:
+                continue
+            a = "yes" if baseline[left] == baseline[right] else "no"
+            runs = by_rule.get(rid, [])
+            b, brk = "?", "no mutation for this rule"
+            for old, new, fps in runs:
+                if (fps[left] == fps[right]) != (baseline[left] == baseline[right]):
+                    b = "yes" if fps[left] == fps[right] else "no"
+                    brk = "`" + old.strip().splitlines()[0][:60] + "`"
+                    break
+            out.append(f"| {rid} | `{left}` | `{right}` | {a} | {b} | {brk} |")
+    out += ["",
+            "caveats, and what each of them is not:",
+            "  * authority: these are readings by THIS container. Signed by nobody;",
+            "    verify by re-running the command, not by trusting the file.",
+            "  * what was measured: the fingerprint policy IN THE TREE, taken from",
+            "    check.py's own bytes at the sha above. A row does not describe any",
+            "    other build, and the sha is what a second holder compares first.",
+            "  * a row's break: exactly one textual substitution in check.py, named",
+            "    in the last column. A break that does not compile is not a",
+            "    measurement, and `--check` reports it rather than skipping it."]
+    return "\n".join(out)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true", help="exit 1 on drift (the default)")
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--table", action="store_true",
+                    help="print the control table as data, with its caveats")
     args = ap.parse_args()
 
     rules = {rid: text for rid, text in F.POLICY_RULES}
@@ -131,6 +195,10 @@ def main() -> int:
             where = "pair" if rid in guarded_rules else (
                 declared_row(rid) if rid in declared_rules else "NOTHING")
             print(f"{rid}  {where:<18s} {text}")
+        return 0
+
+    if args.table:
+        print(control_table())
         return 0
 
     base = load_check((ROOT / "check.py").read_text(encoding="utf-8"))
