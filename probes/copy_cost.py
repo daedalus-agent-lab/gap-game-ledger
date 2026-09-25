@@ -14,12 +14,20 @@ uses -- it imports `ignore_for_the_record` from `verify_claims.py` instead of
 restating it, so a probe and the runner cannot drift apart.
 
     python3 probes/copy_cost.py            # what a copy carries now
-    python3 probes/copy_cost.py --check    # exit 1 if a copy exceeds the budget
+    python3 probes/copy_cost.py --check    # exit 1 on a budget breach or any rule error
     python3 probes/copy_cost.py --verbose  # the largest things a copy carries
 
-WHAT THIS DOES NOT DO: it measures bytes and file counts, not whether a case
-needs a file. A copy can be small and still wrong; that is what the cases
-themselves test.
+`--check` reads two things and refuses on either. The budget is a number I chose:
+a case must carry the record, not the tooling, and the record is a few megabytes
+while a cache is three orders of magnitude larger, so a line between them catches
+a cache without tripping on ordinary growth. The second reading is the property
+itself, and needs no number from me: **every file a copy carries is tracked, and
+every file it leaves out is not**, name by name over the whole tree. The first
+version of this probe printed only the budget and called that a check.
+
+WHAT THIS DOES NOT DO: it measures bytes and file counts and it compares the rule
+with git's index; it does not show that a case NEEDS the files it carries. A copy
+can be small, exact and still the wrong copy; that is what the cases test.
 """
 import argparse
 import importlib.util
@@ -81,6 +89,43 @@ def measure(root: Path, ignore) -> tuple[int, int, list[tuple[int, str]]]:
     return total, files, largest
 
 
+def rule_errors(root: Path, ignore, tracked: set[str] | None) -> list[tuple[str, bool, bool]]:
+    """Where the rule disagrees with the trackedness of what it was asked about.
+
+    A budget is a number I chose; `rel not in tracked` is the property the rule is
+    supposed to have, and it can be read directly. Every name the rule is asked
+    about under `root` is compared with the one answer the record defines: a file
+    git does not track must be left out, and a file git tracks must be carried.
+
+    Returns (relative path, should be left out, was left out) for each disagreement.
+
+    A directory is carried when anything under it is tracked, so the comparison
+    uses the directory prefixes of the tracked paths as well as the paths
+    themselves.
+    """
+    if tracked is None:
+        return []
+    prefixes = set()
+    for t in tracked:
+        parts = t.split("/")
+        for i in range(1, len(parts)):
+            prefixes.add("/".join(parts[:i]))
+    wrong = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        for names in (dirnames, filenames):
+            left_out = set(ignore(dirpath, names))
+            for name in names:
+                rel = (Path(dirpath) / name).relative_to(root).as_posix()
+                below = rel in tracked or rel in prefixes
+                should = not below
+                was = name in left_out
+                if should != was:
+                    wrong.append((rel, should, was))
+        drop = set(ignore(dirpath, dirnames))
+        dirnames[:] = [d for d in dirnames if d not in drop]
+    return wrong
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true")
@@ -90,7 +135,10 @@ def main() -> int:
     runner = load_runner()
     cases = len(runner.CASES)
 
-    now_bytes, now_files, largest = measure(LEDGER, runner.ignore_for_the_record(LEDGER))
+    rule = runner.ignore_for_the_record(LEDGER)
+    tracked = runner.tracked_files(LEDGER)
+    now_bytes, now_files, largest = measure(LEDGER, rule)
+    wrong = rule_errors(LEDGER, rule, tracked)
     old_rule = runner.FALLBACK_IGNORE[:3]
     old_bytes, old_files, _ = measure(
         LEDGER, lambda _d, names, keep=old_rule: [n for n in names if n in keep])
@@ -112,7 +160,18 @@ def main() -> int:
     if old_bytes > BUDGET_BYTES:
         print(f"the rule it replaced would have failed this budget by "
               f"{old_bytes / BUDGET_BYTES:.1f}x")
-    if args.check and not ok:
+    # The stronger reading, and the one that needs no number from me: every file a
+    # copy carries is tracked, and every file it leaves out is untracked.
+    if tracked is None:
+        print("the copy root is not the top of a checkout: git cannot say what the record is")
+    else:
+        print(f"every file a copy carries is tracked, and every one it leaves out is not: "
+              f"{'yes' if not wrong else f'NO, {len(wrong)} disagree'}"
+              f"  (over {len(tracked)} tracked paths)")
+        for rel, should, was in wrong[:5]:
+            print(f"    {rel}: should {'be left out' if should else 'be carried'}, "
+                  f"was {'left out' if was else 'carried'}")
+    if args.check and (not ok or wrong):
         return 1
     return 0
 
