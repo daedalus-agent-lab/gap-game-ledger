@@ -8,6 +8,7 @@ kept, not the spelling.
 """
 
 import ast
+import builtins
 import datetime
 import hashlib
 import json
@@ -1422,6 +1423,25 @@ def store_read_by_no_one():
     return eval("x + 1")
 
 
+def store_read_by_a_qualified_reader():
+    """A store a caller reads through a QUALIFIED reader.
+
+    `builtins.eval("secret")` reaches the frame's own mapping while containing no
+    Name of the reader set: the reader is an attribute of an expression. Answers
+    `41` here; the other half of the pair, without the store, raises NameError,
+    and the two were merged into one fingerprint by a guard that matched the set
+    against a Name's `id` only. `builtins.vars()` is the sharper form of the same
+    reach, because it IS a path to the scope's own mapping.
+    """
+    secret = 41
+    return builtins.eval("secret")
+
+
+def no_store_read_by_a_qualified_reader():
+    """The other half: the same qualified reader, no store to reach."""
+    return builtins.eval("secret")
+
+
 def store_read_through_a_frame():
     """One of a pair that must never share a fingerprint, and one no list of
     reader NAMES can tell apart from its other half: the store is read through
@@ -1483,6 +1503,23 @@ def padded_max_of(xs):
 # class body was never asked whether it binds outside itself. Each of those rules
 # now has a pair, and `POLICY_MUTATIONS` below is the table that measures the
 # instrument rather than describing it.
+
+def padded_beside_a_mention_of_eval():
+    """Padding survives beside a mere MENTION of a reader.
+
+    `eval` is named and never called, so nothing is read through it; the store is
+    kept all the same, because the guard asks whether the fragment mentions a
+    reader. The price of that caution, made visible: the pair with the same body
+    and no padding reads as a DIFFERENT piece of logic.
+    """
+    _pad = None
+    return eval
+
+
+def bare_beside_a_mention_of_eval():
+    """The same body without the dead store."""
+    return eval
+
 
 def a_local_store_globals_cannot_reach():
     """One of a pair that must share a fingerprint: `globals()` inside a function
@@ -1625,7 +1662,7 @@ POLICY_RULES = (
     ("R2", "a bound letter is erased: a function renamed and its argument renamed "
            "are one piece of logic"),
     ("R3", "a store a caller reaches through a dynamic reader is kept -- by a name in the reader set or by a path to a scope mapping, since a read is not always a name"),
-    ("R4", "a store nobody reads is removed"),
+    ("R4", "a store nobody reads is removed -- except that a fragment which merely MENTIONS a dynamic reader has nothing removed, and padding beside such a mention survives as a difference"),
     ("R5", "the dynamic-reader guard is a property of the fragment, not of one store"),
     ("R6", "a bound name is erased even when its letter spells a builtin"),
     ("R7", "every dynamic reader is guarded, not only the one a pair calls"),
@@ -1650,11 +1687,15 @@ CONTROL_PAIRS = (
     ("max_of", "biggest_of", True, "R2"),
     ("store_read_by_eval", "store_read_by_no_one", False, "R3"),
     ("store_read_through_a_frame", "no_store_read_through_a_frame", False, "R3"),
+    ("padded_beside_a_mention_of_eval", "bare_beside_a_mention_of_eval",
+     False, "R4"),
     ("plain_max_of", "padded_max_of", True, "R4"),
     ("read_by_eval_and_one_dead_store", "read_by_eval_only", False, "R5"),
     ("added_over_a_shadowing_name", "added_over_another_shadowing_name", True, "R6"),
+    ("store_read_by_a_qualified_reader", "no_store_read_by_a_qualified_reader",
+     False, "R3"),
     ("a_local_store_globals_cannot_reach",
-     "a_local_store_globals_cannot_reach_other_name", True, "R7"),
+     "a_local_store_globals_cannot_reach_other_name", True, "R3"),
     ("read_by_vars", "read_by_vars_renamed", False, "R7"),
     ("read_by_dir", "read_by_dir_no_store", False, "R7"),
     ("import_as_j", "import_as_k", True, "R8"),
@@ -1704,8 +1745,16 @@ POLICY_MUTATIONS = (
      "            return node"),
     ("R6", "        if name in BUILTINS and not self._bound(name):",
      "        if name in BUILTINS:"),
-    ("R7", '    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}',
+    ("R3", '    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}',
      '    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir", "globals"}'),
+    ("R3", "            if (isinstance(n, ast.Attribute)\n"
+           "                    and n.attr in self.DYNAMIC_READERS | self.DYNAMIC_READER_PATHS):",
+     "            if (isinstance(n, ast.Attribute)\n"
+     "                    and n.attr in self.DYNAMIC_READER_PATHS):"),
+    ("R4", "            if (isinstance(n, ast.Name) and n.id in self.DYNAMIC_READERS\n"
+           "                    and isinstance(n.ctx, ast.Load)):",
+     "            if (isinstance(n, ast.Name) and n.id in self.DYNAMIC_READERS\n"
+     "                    and isinstance(n.ctx, ast.Load) and isinstance(n, ast.Call)):"),
     ("R7", '"locals", "vars", "dir"', '"locals", "vars"'),
     ("R7", '"locals", "vars", "dir"', '"locals", "dir"'),
     ("R8", "elif isinstance(child, ast.alias) and child.asname:",
@@ -1928,26 +1977,51 @@ def a_store_the_guard_keeps_for_a_reader_that_cannot_read_it():
 
 
 
-def fingerprint_under_a_name_only_reader_guard(fn) -> str:
-    """The fingerprint of a fragment when the guard knows only reader NAMES.
 
-    This is the pass as it stood: `_reads_by_a_caller` asked whether any
-    identifier in the reader set appears in the tree, and a store reached through
-    `sys._getframe().f_locals` -- a path, not a name -- was invisible to that
-    question, so the store was dropped. The reconstruction is the pass itself with
-    the path pattern removed, applied here so the lie can be reproduced without
-    reverting the repair.
+def fingerprint_under_a_simpler_reader_guard(fn, *, paths=True, attributes=True) -> str:
+    """The fingerprint of a fragment under an earlier, weaker reader guard.
+
+    `paths=False` removes the pattern set: the guard knows reader names only, and
+    a store reached through `sys._getframe().f_locals` is invisible to it.
+    `attributes=False` removes the attribute position: the set is matched against
+    a bare `Name` only, so `builtins.eval("x")` reads nothing as far as the guard
+    is concerned. Both are the pass as it stood, rebuilt here by swapping the
+    reader test out on the class rather than by reverting the repair, so the lie
+    stays reproducible in a tree that no longer commits it.
     """
     import ast as _ast
-    import inspect as _inspect
     import check as _c
-    paths = _c._DropDeadStores.DYNAMIC_READER_PATHS
+
+    cls = _c._DropDeadStores
+    saved_paths = cls.DYNAMIC_READER_PATHS
+    saved_test = cls._reads_by_a_caller
+
+    def name_only(self, node):
+        for n in _ast.walk(node):
+            if (isinstance(n, _ast.Name) and n.id in self.DYNAMIC_READERS
+                    and isinstance(n.ctx, _ast.Load)):
+                return True
+        return False
+
     try:
-        _c._DropDeadStores.DYNAMIC_READER_PATHS = set()
+        if not paths:
+            cls.DYNAMIC_READER_PATHS = set()
+        if not attributes:
+            cls._reads_by_a_caller = name_only
         return _c.fingerprint(fn)
     finally:
-        _c._DropDeadStores.DYNAMIC_READER_PATHS = paths
+        cls.DYNAMIC_READER_PATHS = saved_paths
+        cls._reads_by_a_caller = saved_test
 
+
+def fingerprint_under_a_name_only_reader_guard(fn) -> str:
+    """The pass as it stood when a reader could only be a bare name.
+
+    `_reads_by_a_caller` asked whether any identifier in the reader set appears in
+    the tree; a store reached through `sys._getframe().f_locals` -- a path, not a
+    name -- was invisible to that question, so the store was dropped.
+    """
+    return fingerprint_under_a_simpler_reader_guard(fn, paths=False)
 
 def a_store_read_through_a_path_is_erased() -> bool:
     """Two fragments whose ANSWERS differ are erased into one fingerprint.
@@ -1974,7 +2048,65 @@ def a_store_read_through_a_path_is_erased() -> bool:
     return (fingerprint_under_a_name_only_reader_guard(store_read_through_a_frame)
             == fingerprint_under_a_name_only_reader_guard(no_store_read_through_a_frame))
 
+def a_store_read_by_a_qualified_reader_is_erased() -> bool:
+    """The store is erased although a qualified reader reaches it.
+
+    `builtins.eval("secret")` is the same reach as `eval("secret")` and carries no
+    Name of the reader set: the reader is an attribute of an expression, so a
+    guard matching the set against a `Name.id` saw nothing and dropped the store.
+    The two halves answer `41` and NameError and were merged into one fingerprint.
+    `builtins.vars()` is the sharper form of the same reach, since it IS a path to
+    the scope's own mapping. True means the lie is present under the earlier guard.
+    """
+    def store_read_by_a_qualified_reader():
+        secret = 41
+        return builtins.eval("secret")
+
+    def no_store_read_by_a_qualified_reader():
+        return builtins.eval("secret")
+
+    def answer(fn):
+        try:
+            return repr(fn())
+        except Exception as exc:  # the half without the store raises here
+            return type(exc).__name__
+
+    if answer(store_read_by_a_qualified_reader) == answer(no_store_read_by_a_qualified_reader):
+        return False  # the halves agree, so the pair proves nothing
+    old = fingerprint_under_a_simpler_reader_guard
+    return (old(store_read_by_a_qualified_reader, attributes=False)
+            == old(no_store_read_by_a_qualified_reader, attributes=False))
+
+
+def padding_survives_beside_a_mere_mention_of_a_reader() -> bool:
+    """A dead store survives because a reader is MENTIONED and never called.
+
+    `def f(): pad = None; return eval` reads nothing through `eval`, so the store
+    is padding by R4's promise; the guard asks whether the fragment mentions a
+    reader, keeps every store, and the padded fragment and the bare one read as
+    two pieces of logic. The caution is deliberate -- a reader reached through a
+    local alias is mentioned but never called directly, so a call-site test would
+    drop a store a caller does read -- which is why the promise was narrowed to
+    name it instead of the guard being made stricter. True means the divergence is
+    present.
+    """
+    import check as _c
+
+    def padded_beside_a_mention_of_eval():
+        _pad = None
+        return eval
+
+    def bare_beside_a_mention_of_eval():
+        return eval
+
+    return _c.fingerprint(padded_beside_a_mention_of_eval) != \
+        _c.fingerprint(bare_beside_a_mention_of_eval)
+
+
 NAMESPACES = {
+    "a-comment-that-narrows-the-condition-the-code-tests": {
+        "padding_survives_beside_a_mere_mention_of_a_reader":
+            padding_survives_beside_a_mere_mention_of_a_reader},
     "a-guard-justified-by-a-reader-that-cannot-reach-the-store": {
         "a_store_the_guard_keeps_for_a_reader_that_cannot_read_it":
             a_store_the_guard_keeps_for_a_reader_that_cannot_read_it},
@@ -2022,6 +2154,8 @@ NAMESPACES = {
             two_logics_read_as_one_by_the_dead_store_pass,
         "a_store_read_through_a_path_is_erased":
             a_store_read_through_a_path_is_erased,
+        "a_store_read_by_a_qualified_reader_is_erased":
+            a_store_read_by_a_qualified_reader_is_erased,
         "fingerprint_under_a_name_only_reader_guard":
             fingerprint_under_a_name_only_reader_guard,
     },

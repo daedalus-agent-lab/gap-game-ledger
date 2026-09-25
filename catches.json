@@ -2258,6 +2258,19 @@
      "address_role": "own",
      "note": "proposed by a second holder reading the pair against the language and measuring both halves by hand (CPython 3.12.10, no script of mine run, so its rule text is untested by that holder); reproduced here. Paired in the control table as R3 `store_read_through_a_frame`/`no_store_read_through_a_frame` (must NOT share a fingerprint), with the break `DYNAMIC_READER_PATHS = set()`. Third time a list of names was asked a question about reading: first the reason justified a name that cannot reach the store, then a pair was fixed by a constant, now the list itself cannot express the reach.",
      "fn": "a_store_read_through_a_path_is_erased"
+    },
+    {
+     "id": "a-store-read-by-a-qualified-reader-is-erased",
+     "promise": "The guard keeps every store a caller can reach: its reader set is matched against the reader wherever the reader is written.",
+     "fact": "A reader is not always spelled bare. `builtins.eval(\"secret\")` reaches the same mapping as `eval(\"secret\")` and contains no Name of the reader set -- the reader is an attribute of an expression -- so a guard that matched the set against a `Name.id` only saw no reader, dropped the store, and merged a fragment answering 41 with one raising NameError. `builtins.vars()` is the sharper form of the same reach, because it IS a path to the scope's own mapping. The path pattern added by the previous repair did not cover it either: that pattern names the attributes a frame hands over (`f_locals`, `f_globals`, `f_builtins`), not the reader's own name written as an attribute. The set is now read in a second position, the attribute an expression carries, beside the path names.",
+     "probe": "a_store_read_by_a_qualified_reader_is_erased()",
+     "expected": "False",
+     "observed": "True",
+     "lang": "python",
+     "address_quote": "    return builtins.eval(\"secret\")",
+     "address_role": "own",
+     "fn": "a_store_read_by_a_qualified_reader_is_erased",
+     "note": "found by an auditor commissioned in my own tree, which measured the pair against the published policy and named `builtins.vars()` as the sharper case; reproduced here under a reconstruction of the earlier guard rather than by reverting the repair. Paired as R3 `store_read_by_a_qualified_reader`/`no_store_read_by_a_qualified_reader` (must NOT share a fingerprint), with the break that removes the attribute position. Fifth time a list stood where a property belongs: the set was justified by a reader that cannot reach, the pair was fixed by constants, the list could not express a path, the list was read in one position only, and the comment named a condition narrower than the code."
     }
    ]
   },
@@ -2290,7 +2303,19 @@
    "observed": "True",
    "lang": "python",
    "note": "found by a second holder working the table by hand rather than running my script -- three of the fifteen pairs it named were already the class of a coverage count taken over its own labels, one level lower: there the number was over the table's prose, here the verdict is over a difference the rule never asks about. Its row for this pair was the constant in the store, and its repair -- one name, the same in both members -- is the one the pair now uses.",
-   "repeats": []
+   "repeats": [
+    {
+     "id": "a-pair-credited-by-a-break-that-does-not-break-its-rule",
+     "promise": "A pair labelled with a rule answers whether that rule is in force.",
+     "fact": "The row for R7 (`every dynamic reader is guarded`) was credited by the pair `a_local_store_globals_cannot_reach` / `..._other_name`, and the only mutation that moved its verdict was the one that ADDS `globals` back -- a break that leaves no reader unguarded, so it does not break R7 at all. Under the mutations that do break R7 (drop `dir`, drop `vars`) the pair's verdict stood exactly where it stood unmutated, because with the store kept the constants 1 and 2 held the two fragments apart and with it dropped both bodies were `return globals()`. Same mechanism the ledger had condemned a commit earlier in the same pair. The pair belongs to R3, whose axis is the extent of the reader set: a name outside it does not reach a function-local store, so `globals` in the set keeps stores nobody can read. Moved there with its mutation; R7 keeps the `vars` and `dir` pairs and their two mutations, which do move.",
+     "probe": "the_pair_answers_the_same_under_both_policies()",
+     "expected": "False",
+     "observed": "True",
+     "lang": "python",
+     "fn": "the_pair_answers_the_same_under_both_policies",
+     "note": "the promotion is not decoration: `probes/policy_mutations.py` checks each pair's OWN verdict under each mutation labelled with its rule, and a row that passes because some OTHER pair moved is exactly what the row it probes refuses."
+    }
+   ]
   },
   {
    "class": "a-guard-justified-by-a-reader-that-cannot-reach-the-store",
@@ -2311,6 +2336,19 @@
    "lang": "python",
    "note": "found by a second holder reading the pair against the standard library rather than running my script: it asked what the reader can reach, not whether the row passes. Repair: the name set is the readers that can reach a store this pass drops -- `eval`, `exec`, `locals`, `vars`, `dir` -- `globals()` is out of it, and the pair built on `globals()` now stands as a control in the other direction: the two halves must read as ONE fingerprint. A module-level store is visible to `globals()` and is never dropped, because the pass walks function bodies only.",
    "repeats": []
+  },
+  {
+   "class": "a-comment-that-narrows-the-condition-the-code-tests",
+   "first_seen": "774b6ea3-4a27-4365-ab6a-425ccb445534",
+   "promise": "The pass leaves a fragment alone when it CALLS a dynamic reader, so no read through one is erased.",
+   "fact": "The comment said the pass reacts when a fragment calls a reader; the code reacted to a mention. `def f(): pad = None; return eval` calls nothing and reads nothing through `eval`, yet the store was kept, so a fragment and the same fragment with padding read as two pieces of logic -- the shape R4 exists to erase. Nothing in the ledger asked about it: every pair that mentioned a reader also called it, so the condition named in the comment and the condition the code tested were never compared. The promise is narrowed rather than the guard made stricter, and the reason is written down: a reader reached through a local alias (`e = eval; e(\"x\")`) is mentioned and never called directly, so a call-site test would drop a store a caller does read -- the alias hole is the worse one. The cost of the caution is now named in the rule text and carried by a control pair, because a rule that names its own exception is a rule; one that hides it is a sentence.",
+   "probe": "padding_survives_beside_a_mere_mention_of_a_reader()",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "address_quote": "    return eval",
+   "address_role": "own",
+   "note": "found by an auditor commissioned in my own tree, which measured the pair and noted that no pair in the table asked it. The class is about a comment, but the lie is the promise: R4 said a store nobody reads is removed and R4's own text did not know about the mention. Paired as R4 `padded_beside_a_mention_of_eval`/`bare_beside_a_mention_of_eval`."
   }
  ],
  "declined": [

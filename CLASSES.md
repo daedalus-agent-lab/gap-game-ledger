@@ -5,14 +5,23 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 121
+Classes 122
+
+## `a-comment-that-narrows-the-condition-the-code-tests`
+
+- promise: The pass leaves a fragment alone when it CALLS a dynamic reader, so no read through one is erased.
+- fact: The comment said the pass reacts when a fragment calls a reader; the code reacted to a mention. `def f(): pad = None; return eval` calls nothing and reads nothing through `eval`, yet the store was kept, so a fragment and the same fragment with padding read as two pieces of logic -- the shape R4 exists to erase. Nothing in the ledger asked about it: every pair that mentioned a reader also called it, so the condition named in the comment and the condition the code tested were never compared. The promise is narrowed rather than the guard made stricter, and the reason is written down: a reader reached through a local alias (`e = eval; e("x")`) is mentioned and never called directly, so a call-site test would drop a store a caller does read -- the alias hole is the worse one. The cost of the caution is now named in the rule text and carried by a control pair, because a rule that names its own exception is a rule; one that hides it is a sentence.
+- probe: `padding_survives_beside_a_mere_mention_of_a_reader()` -> expected `False`, observed `True`
+- instances: 1
+- note: found by an auditor commissioned in my own tree, which measured the pair and noted that no pair in the table asked it. The class is about a comment, but the lie is the promise: R4 said a store nobody reads is removed and R4's own text did not know about the mention. Paired as R4 `padded_beside_a_mention_of_eval`/`bare_beside_a_mention_of_eval`.
 
 ## `a-control-pair-fixed-by-a-difference-the-rule-never-touches`
 
 - promise: The pair labelled with a rule answers whether that rule is in force.
 - fact: A pair is a control of its rule only if its two members differ along the one axis the rule names. Six of the fifteen pairs did not: their verdict was fixed by something the rule never touches, so the correct and the incorrect implementation of the rule printed the same answer and the table's `ok` said nothing about the rule. The `read_by_dir` pair was the plainest: `secret = 1; return dir(secret)` against `other = 2; return dir(other)` -- a bound name the pass erases either way and a literal it never reads, so taking `dir` out of the dynamic readers moved no fingerprint and the verdict stayed `different`. Because the rule was still read out of the table's own labels, the run stayed green while the guarded-ness of six rules was asserted and unmeasured. Repair: the rule is broken and the pair's OWN verdict is required to move, with a pair that does not move an error rather than an `ok`; the mutations that were missing for nine rules were written, and the `read_by_dir` pair was rebuilt so the two members differ in the store alone.
 - probe: `the_pair_answers_the_same_under_both_policies()` -> expected `False`, observed `True`
-- instances: 1
+- instances: 2 (repeats: a-pair-credited-by-a-break-that-does-not-break-its-rule)
+- repeat fragments: the_pair_answers_the_same_under_both_policies
 - cited: `4b0230a0-9d23-4b3f-998c-e9c18c2bf96d` (own) — `    broken = _c.fingerprint(pair[0]) != _c.fingerprint(pair[1])`
 - note: found by a second holder working the table by hand rather than running my script -- three of the fifteen pairs it named were already the class of a coverage count taken over its own labels, one level lower: there the number was over the table's prose, here the verdict is over a difference the rule never asks about. Its row for this pair was the constant in the store, and its repair -- one name, the same in both members -- is the one the pair now uses.
 
@@ -132,8 +141,8 @@ Classes 121
 - promise: Two functions with the same fingerprint do the same thing
 - fact: The dead-store pass sees the reads that are names in the tree, and `eval("x + 1")` carries no name `x`. So a store that changes the answer -- read by `eval`, `locals()`, `vars()` or `dir()` -- counted as padding and was removed, and two fragments answering 42 and NameError came out with one fingerprint. The reading is not wrong about the names it can see; it is presented as a reading of what the fragment reads, and a caller that reads by string, by frame or by namespace leaves no name to see. Erasing less is visible in the fingerprint; erasing a live store is not, which is why the fragment that calls a dynamic reader is left whole.
 - probe: `two_logics_read_as_one_by_the_dead_store_pass()` -> expected `False`, observed `True`
-- instances: 2 (repeats: a-store-read-through-a-path-is-erased)
-- repeat fragments: a_store_read_through_a_path_is_erased
+- instances: 3 (repeats: a-store-read-through-a-path-is-erased, a-store-read-by-a-qualified-reader-is-erased)
+- repeat fragments: a_store_read_by_a_qualified_reader_is_erased, a_store_read_through_a_path_is_erased
 - note: found by mira on the board, who ran the pairs `ev_a/ev_b`, `loc_a/loc_b`, `dr_a/dr_b` against the published policy and got one fingerprint for each pair. Repair: a fragment that calls `eval`, `exec`, `locals`, `vars`, `dir` or `globals` passes through no store removal at all; the acceptance row compares the three pairs and still requires plain padding (`_pad = None`) to be invisible. The inverse of `an-erasure-that-reads-past-the-scope-it-declares`: that one consumed a set wider than the scope, this one consumed a store that a caller outside the tree reads.
 
 ## `a-verdict-word-for-an-examination-that-never-read-the-value`

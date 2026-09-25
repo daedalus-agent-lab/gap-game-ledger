@@ -1,6 +1,6 @@
 # The fingerprint policy's control table, as data
 
-as_of 1790297848  policy sha256[:16] f857916ed6a3886e
+as_of 1790298103  policy sha256[:16] a6e16fbe3b6de4e9
 holder: this container, no credentials, no network -- every row is
   measured in memory, so a row is a property of the code and not of a host
 command: python3 probes/policy_mutations.py --table
@@ -12,10 +12,12 @@ verdict under the broken policy: `yes` = one fingerprint, `no` = two
 | R2 | `max_of` | `biggest_of` | yes | no | `if name not in self.seen:` |
 | R3 | `store_read_by_eval` | `store_read_by_no_one` | no | yes | `DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}` |
 | R3 | `store_read_through_a_frame` | `no_store_read_through_a_frame` | no | yes | `DYNAMIC_READER_PATHS = {"f_locals", "f_globals", "f_builtins` |
+| R3 | `store_read_by_a_qualified_reader` | `no_store_read_by_a_qualified_reader` | no | yes | `DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}` |
+| R3 | `a_local_store_globals_cannot_reach` | `a_local_store_globals_cannot_reach_other_name` | yes | no | `DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}` |
+| R4 | `padded_beside_a_mention_of_eval` | `bare_beside_a_mention_of_eval` | no | yes | `if (isinstance(n, ast.Name) and n.id in self.DYNAMIC_READERS` |
 | R4 | `plain_max_of` | `padded_max_of` | yes | no | `if targets and all(t.id not in reads for t in targets):` |
 | R5 | `read_by_eval_and_one_dead_store` | `read_by_eval_only` | no | yes | `if self._reads_by_a_caller(node):` |
 | R6 | `added_over_a_shadowing_name` | `added_over_another_shadowing_name` | yes | no | `if name in BUILTINS and not self._bound(name):` |
-| R7 | `a_local_store_globals_cannot_reach` | `a_local_store_globals_cannot_reach_other_name` | yes | no | `DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}` |
 | R7 | `read_by_vars` | `read_by_vars_renamed` | no | yes | `"locals", "vars", "dir"` |
 | R7 | `read_by_dir` | `read_by_dir_no_store` | no | yes | `"locals", "vars", "dir"` |
 | R8 | `import_as_j` | `import_as_k` | yes | no | `elif isinstance(child, ast.alias) and child.asname:` |

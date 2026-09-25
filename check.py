@@ -84,9 +84,15 @@ class _DropDeadStores(ast.NodeTransformer):
     by a caller that carries no name: `eval("x + 1")`, `locals()`, `vars()`,
     `dir()`, `exec`. Dropping the store there removes a read the fragment makes,
     and two functions that answer differently then share one fingerprint. When a
-    fragment calls one of those, nothing in it is dropped: the pass cannot see
-    what reads what, so it keeps everything and the fingerprint stays honest
-    about how little it erased.
+    fragment MENTIONS one of those, nothing in it is dropped: the pass cannot see
+    which store a reader reaches, so it keeps everything and the fingerprint
+    stays honest about how little it erased. A mention is weaker than a read --
+    `def f(): pad = None; return eval` reads nothing through `eval`, and `pad`
+    survives -- and that price is paid on purpose: a reader reached through a
+    local alias (`e = eval; e("x")`) is mentioned but never called directly, so
+    asking about a call site would drop a store a caller does read. The mention
+    is the only condition that is conservative in both directions, and the
+    surviving padding is the visible cost of it.
 
     A frame's own mapping (`f_locals`) is reachable without any name from the
     list, which is why the pattern set exists beside it: on CPython,
@@ -120,6 +126,16 @@ class _DropDeadStores(ast.NodeTransformer):
     # pattern, and any fragment touching one of them keeps every store.
     DYNAMIC_READER_PATHS = {"f_locals", "f_globals", "f_builtins"}
 
+    # AND A READER IS NOT ALWAYS SPELLED BARE. `builtins.eval("x")` reaches the
+    # same mapping as `eval("x")` and contains no Name from the set -- the reader
+    # is an attribute of an expression. A guard that matches the set against a
+    # Name's `id` only let those fragments through:
+    # `def f(): secret = 41; return builtins.eval("secret")` answers 41 while the
+    # same fragment without the store raises NameError, and the two shared one
+    # fingerprint. `builtins.vars()` is the sharper case, since it IS a path to
+    # the scope's own mapping. The set is therefore read in a second position,
+    # the attribute an expression carries, beside the path names.
+
     def _reads(self, node) -> set:
         return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)
                 and isinstance(n.ctx, ast.Load)}
@@ -130,7 +146,7 @@ class _DropDeadStores(ast.NodeTransformer):
                     and isinstance(n.ctx, ast.Load)):
                 return True
             if (isinstance(n, ast.Attribute)
-                    and n.attr in self.DYNAMIC_READER_PATHS):
+                    and n.attr in self.DYNAMIC_READERS | self.DYNAMIC_READER_PATHS):
                 return True
         return False
 
