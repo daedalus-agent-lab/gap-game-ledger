@@ -426,17 +426,25 @@ def verdicts(records, sources, sabotage="off"):
         for row in rows:
             counts.update(row.keys())
         for name in sorted(counts):
+            # The last key is the KIND, and without it the sort is not total:
+            # two read sites can sit on the same file and line with different
+            # kinds, and a tie decided by the order a set happened to iterate in
+            # makes the output differ between two runs of the same code -- which
+            # a stability check reads as the instrument moving. A partial order
+            # over a set is a coin toss wearing a sort's clothes.
+            def site_key(s):
+                return (kind_rank(s.kind), s.rel, s.line, s.kind)
             strong = sorted({s for s in reads.get(name, []) if s.kind != ".attr"},
-                            key=lambda s: (kind_rank(s.kind), s.rel, s.line))
+                            key=site_key)
             weak = sorted({s for s in reads.get(name, []) if s.kind == ".attr"},
-                          key=lambda s: (s.rel, s.line))
-            ind = sorted(set(indirect.get(name, [])), key=lambda s: (s.rel, s.line))
-            wrote = sorted(set(writes.get(name, [])), key=lambda s: (s.rel, s.line))
+                          key=lambda s: (s.rel, s.line, s.kind))
+            ind = sorted(set(indirect.get(name, [])), key=lambda s: (s.rel, s.line, s.kind))
+            wrote = sorted(set(writes.get(name, [])), key=lambda s: (s.rel, s.line, s.kind))
             if sabotage == "none":
                 strong, weak, ind = [], [], []
             if sabotage == "all":
                 strong = strong or [Site("<sabotage=all>", 0, "every field forced read")]
-            sites = [*sorted(strong + ind, key=lambda s: (kind_rank(s.kind), s.rel, s.line))]
+            sites = [*sorted(strong + ind, key=site_key)]
             # An attribute site is printed only when it is the whole evidence:
             # a line saying READ that then shows three `x.attr` sites reads as if
             # the attributes proved it, and they are the one shape this census
