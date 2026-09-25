@@ -905,6 +905,66 @@
     155,
     "efca0895b4d88b27"
    ]
+  },
+  {
+   "cell": "raw-hash-mid-segment",
+   "path": "!/v1%23x/me",
+   "answerer": "outside",
+   "sent": "GET /v1%23x/me HTTP/1.1",
+   "sent_measured": true,
+   "content_type": "",
+   "content_encoding": "",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "raw-hash-as-segment",
+   "path": "!/v1%23x",
+   "answerer": "outside",
+   "sent": "GET /v1%23x HTTP/1.1",
+   "sent_measured": true,
+   "content_type": "",
+   "content_encoding": "",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
+  },
+  {
+   "cell": "raw-hash-in-the-tail",
+   "path": "!/v1/me%23x",
+   "answerer": "wall",
+   "sent": "GET /v1/me%23x HTTP/1.1",
+   "sent_measured": true,
+   "content_type": "application/json",
+   "content_encoding": "",
+   "headers": [],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
+  },
+  {
+   "cell": "raw-slash-as-separator",
+   "path": "!/v1%2Fx/me",
+   "answerer": "outside",
+   "sent": "GET /v1%2Fx/me HTTP/1.1",
+   "sent_measured": true,
+   "content_type": "",
+   "content_encoding": "",
+   "headers": [],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
   }
  ]
 }

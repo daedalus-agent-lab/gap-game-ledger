@@ -1527,6 +1527,64 @@ def the_request_line_is_not_an_argument_of_the_record() -> bool:
     return kept["sent"] == dropped["sent"] and kept["sent"] != kept["asked"]
 
 
+def a_probe_that_cannot_separate_the_two_readings_a_row_claims_to_part() -> bool:
+    """A row that looks like a discriminator and is one spelling of one claim.
+
+    The wall decides membership by ONE BIT: the raw bytes of the first segment
+    equal `v1`. Two targets that look like the same claim written two ways --
+    `/v1#x/me` and its percent-encoded twin `/v1%23x/me` -- land on opposite
+    sides of that bit, and only one model can explain both. Measured keyless:
+    `/v1#x/me` 400/266 inside, the encoded twin 404/0 outside, and
+    `/v1/me%23x` 400/266 inside, so `%23` never ends a segment while the literal
+    `#` does.
+
+    True means the pair DOES part the two models, on both of which the reading
+    was computed:
+
+      percent-decoded before segmentation: `/v1%23x` -> `/v1#x` -> segment `v1`
+        -> INSIDE   (refuted: measured outside)
+      raw bytes:                            `/v1%23x` -> segment `v1%23x`
+        -> OUTSIDE  (holds)
+
+    The contrast with the retracted pair is the point: there the two models gave
+    the SAME segment and the row parted nothing, here they give different ones.
+    A pair is a discriminator when the readings differ on it, and that is a
+    computation on the pair, not a sentence about it.
+    """
+    def segment_by_raw_bytes(target):
+        body = target[1:] if target.startswith("/") else target
+        for i, ch in enumerate(body):
+            if ch in "/?#":
+                return body[:i]
+        return body
+
+    def segment_after_percent_decoding(target):
+        import urllib.parse
+        decoded = urllib.parse.unquote(target)
+        body = decoded[1:] if decoded.startswith("/") else decoded
+        for i, ch in enumerate(body):
+            if ch in "/?#":
+                return body[:i]
+        return body
+
+    pair = ("/v1#x/me", "/v1%23x/me")
+    plain, encoded = pair
+    # Both models on the plain row: `#` ends the segment (raw) or the fragment
+    # is cut (decoded) -- `v1` either way, and both agree the row is inside.
+    plain_agrees = (segment_by_raw_bytes(plain) == segment_after_percent_decoding(plain)
+                    == "v1")
+    # The encoded row is where they part: raw says `v1%23x` and outside, decoded
+    # says `v1` and inside, and the measurement says outside.
+    raw_says = segment_by_raw_bytes(encoded)
+    decoded_says = segment_after_percent_decoding(encoded)
+    measured_inside = False  # 404/0 against 400/266 for the plain twin
+    return (plain_agrees
+            and raw_says != decoded_says
+            and raw_says == "v1%23x"
+            and decoded_says == "v1"
+            and (raw_says == "v1") == measured_inside)
+
+
 def two_readings_that_agree_on_the_row_that_was_said_to_part_them() -> bool:
     """A row published as parting two readings, with only one of them computed on it.
 
@@ -2553,6 +2611,8 @@ NAMESPACES = {
     "a-discriminator-adopted-without-evaluating-the-models-on-it": {
         "two_readings_that_agree_on_the_row_that_was_said_to_part_them":
             two_readings_that_agree_on_the_row_that_was_said_to_part_them,
+        "a_probe_that_cannot_separate_the_two_readings_a_row_claims_to_part":
+            a_probe_that_cannot_separate_the_two_readings_a_row_claims_to_part,
     },
     "a-byte-count-published-without-the-encoding-it-was-taken-under": {
         "a_byte_count_published_without_the_encoding_it_was_taken_under":

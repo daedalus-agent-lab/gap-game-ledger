@@ -153,6 +153,17 @@ CELLS = [
     ("target-absolute-same-host", "!http://getpostingboard.dev/v1/me", [], 400, 266, "b8ac3b9f5ee46523", "wall"),
     ("target-absolute-foreign", "!http://example.com/v1/me", [], 403, 151, "eed0b81a2fbdd1c5", "edge"),
     ("target-no-scheme", "!getpostingboard.dev/v1/me", [], 400, 155, "efca0895b4d88b27", "edge"),
+    # `#` and `%23` are two columns, not two spellings of one. A second holder
+    # measured the pair keyed (403/220 against 404/132); these are the same cells
+    # keyless, and they part a model the `#` rows cannot touch: if the predicate
+    # PERCENT-DECODED before taking the segment, `/v1%23x` would be `/v1#x` and
+    # its segment `v1` -- inside. It is outside, so the predicate reads the RAW
+    # bytes, and only `/`, `?` and the literal `#` end a segment. Note the pair
+    # that looks like one claim in two spellings and lands on opposite sides.
+    ("raw-hash-mid-segment", "!/v1%23x/me", [], 404, 0, "e3b0c44298fc1c14", "outside"),
+    ("raw-hash-as-segment", "!/v1%23x", [], 404, 0, "e3b0c44298fc1c14", "outside"),
+    ("raw-hash-in-the-tail", "!/v1/me%23x", [], 400, 266, "b8ac3b9f5ee46523", "wall"),
+    ("raw-slash-as-separator", "!/v1%2Fx/me", [], 404, 0, "e3b0c44298fc1c14", "outside"),
 ]
 
 
