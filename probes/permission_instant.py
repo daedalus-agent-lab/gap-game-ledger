@@ -77,7 +77,14 @@ INSTANT_KEYS = ("as_of", "computed_at", "observed_at", "measured_at",
 
 # A boundary of an allowance, not the instant of the reading: it says when
 # something CHANGES, not when the payload was computed.
-BOUNDARY_KEYS = ("resets_at", "eligible_at", "expires_at")
+BOUNDARY_KEYS = ("resets_at", "eligible_at", "expires_at", "valid_until")
+
+# Keys the live board carries that the schema registry does not declare. They are
+# named here so the instrument does not call a block undated when it carries a
+# boundary under a name this file has not heard of. The list is a reading of the
+# live payload, and it will lag it too -- which is why an unclassified key is
+# REPORTED rather than silently counted as absent.
+LIVE_ONLY_KEYS = ("valid_until", "first_registered_at")
 
 
 def blocks(doc, prefix=""):
@@ -105,6 +112,26 @@ def boundary_of(block):
     return None, None
 
 
+def unclassified(block):
+    """Keys in the block that look like a date and that this file cannot place.
+
+    A block whose only timestamp is a name the instrument does not know would
+    otherwise be reported as carrying "no instant, no boundary" -- a false
+    negative of exactly the kind the declared list produced, one level over. The
+    reader can only see it if the key is named, so it is named.
+    """
+    out = []
+    for key, value in block.items():
+        if key in INSTANT_KEYS or key in BOUNDARY_KEYS:
+            continue
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            continue
+        if any(w in key for w in ("_at", "_until", "_after", "_since", "_on",
+                                  "_date", "_epoch", "_time", "_ts", "timestamp")):
+            out.append(key)
+    return out
+
+
 def scan(doc):
     """Every boolean in the payload, with its block, its date and its boundary.
 
@@ -124,6 +151,7 @@ def scan(doc):
                 "declared": key in DECLARED,
                 "instant_key": ikey, "instant_value": ivalue,
                 "boundary_key": bkey, "boundary_value": bvalue,
+                "unclassified": unclassified(block),
             })
     return rows
 
@@ -182,7 +210,10 @@ def report(doc) -> int:
         when = (f"{row['instant_key']}={row['instant_value']}"
                 if row["instant_key"] else
                 (f"{row['boundary_key']}={row['boundary_value']} (a boundary, not an "
-                 f"instant)" if row["boundary_key"] else "no instant, no boundary"))
+                 f"instant)" if row["boundary_key"] else
+                 (f"no RECOGNISED instant or boundary; unclassified: "
+                  f"{', '.join(row['unclassified'])}" if row["unclassified"]
+                  else "no instant, no boundary")))
         print(f"  {row['block']:<28} {row['key']:<22} {str(row['value']):<5} "
               f"{mark:<10} {when}")
 
@@ -280,6 +311,17 @@ def selftest() -> int:
                                   "viewer.meatproxy"), True),
         ("the live meatproxy fixture keeps a block carrying both",
          lambda: correlation(_load("permission_instant_meatproxy.json"))[2] == 1, True),
+        # The false negative a reader found: a block whose only boundary is a name
+        # this file had not heard of was reported as carrying no boundary at all.
+        ("a boundary under an unlisted name is not reported as absent",
+         lambda: scan({"p": {"can_vote": True, "valid_until": 1}})[0]["boundary_key"]
+         == "valid_until", True),
+        ("a date-shaped key the file cannot place is named, not dropped",
+         lambda: scan({"p": {"can_vote": True, "renewed_on": 1}})[0]["unclassified"]
+         == ["renewed_on"], True),
+        ("a key that is not date-shaped is not reported as unclassified",
+         lambda: scan({"p": {"can_vote": True, "karma": 5}})[0]["unclassified"] == [],
+         True),
     ]
     bad = []
     for label, probe, want in checks:
