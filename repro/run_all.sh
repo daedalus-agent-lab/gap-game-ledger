@@ -26,8 +26,15 @@
 #
 # Exit 0 only when every item passes (and the digest matches, if expected).
 set -u
-cd "$(dirname "$0")"
-WS="${REPRO_WS:-$(cd "$(dirname "$0")/.." && pwd)}"
+# The runner is invoked both ways -- `bash run_all.sh` from inside this directory
+# and `bash repro/run_all.sh` from the tree above it -- and the second one used to
+# walk out of a path that only exists in the first: `cd "$(dirname "$0")"` lands
+# in repro/ and then `cd repro/..` is asked from inside it, so the suite ran with
+# an empty workspace and every item that names one failed for a reason that was
+# neither the code nor the wall. The directory is resolved once, absolutely.
+HERE="$(cd "$(dirname "$0")" && pwd)"
+cd "$HERE"
+WS="${REPRO_WS:-$(cd "$HERE/.." && pwd)}"
 LEDGER="${REPRO_LEDGER:-$WS/gap-game-ledger}"
 export UV_CACHE_DIR="${UV_CACHE_DIR:-$WS/.uvcache}"
 REQUIRE=""; NET=0; SELFTEST=0; STABLE=0
@@ -42,6 +49,15 @@ while [ $# -gt 0 ]; do
 done
 
 sha16() { sha256sum | cut -c1-16; }
+# Two digests per item, because a receipt is over a PAIR (the bytes, the harness)
+# and one of the two nearly-undeclared inputs is the order of the lines. A
+# measurement taken with stdout on a file and the same measurement with stdout on
+# a pipe can print the same SET of lines in two orders -- a second holder
+# measured exactly that, two stable digests over one byte-identical line set --
+# and then a reader comparing two ordered digests is comparing two harnesses.
+# So the set digest rides beside the ordered one: `out` is what this harness
+# printed in this order, `set` is the multiset of lines, and `out` moving while
+# `set` stands still is a statement about the pipe, not about the code.
 # The one declared field: a stream key minted at read time. Its shape is fixed
 # (16 hex), and the count of substitutions is reported so a change in how many
 # there are is itself a difference.
@@ -77,16 +93,29 @@ run() {                       # run <name> <command...>
   local n; n="$(declared_lines < "$log")"
   norm="$(normalise < "$log")"
   local d; d="$(printf '%s' "$norm" | sha16)"
+  local sd; sd="$(printf '%s' "$norm" | sort | sha16)"
   local last; last="$(tail -1 "$log" | cut -c1-46)"
 
   if [ "$STABLE" = 1 ]; then
     local log2="/tmp/run_all.$$.log2"
     "$@" > "$log2" 2>&1 || true
     if [ "$(normalise < "$log2")" != "$norm" ]; then
-      printf 'FAIL %-34s unstable beyond the declared field\n' "$name"
+      local d2; d2="$(normalise < "$log2" | sha16)"
+      local sd2; sd2="$(normalise < "$log2" | sort | sha16)"
+      if [ "$sd" = "$sd2" ]; then
+        # The same lines in another order: an input the declaration does not
+        # name, and one a harness decides. Named, digested, and still a failure,
+        # because the suite cannot tell a harness reordering from a listing that
+        # really changed its order.
+        printf 'FAIL %-34s unstable in the ORDER of its lines only (set %s)\n' "$name" "$sd"
+        printf '     out %s -> %s  (set unchanged)\n' "$d" "$d2"
+      else
+        printf 'FAIL %-34s unstable beyond the declared field\n' "$name"
+        printf '     out %s -> %s  set %s -> %s\n' "$d" "$d2" "$sd" "$sd2"
+      fi
       diff <(normalise < "$log") <(normalise < "$log2") | sed -n '1,8p' | sed 's/^/       /'
       fails=$((fails + 1)); rm -f "$log" "$log2"
-      rows="${rows}${name}|2|${d}|${n}
+      rows="${rows}${name}|2|${d}|${n}|${sd}
 "
       return
     fi
@@ -115,12 +144,12 @@ run() {                       # run <name> <command...>
   fi
 
   if [ $st = 0 ]; then
-    printf 'ok   %-34s out=%s norm=%d  %s\n' "$name" "$d" "$n" "$last"
+    printf 'ok   %-34s out=%s set=%s norm=%d  %s\n' "$name" "$d" "$sd" "$n" "$last"
   else
-    printf 'FAIL %-34s out=%s norm=%d\n' "$name" "$d" "$n"; sed -n '1,12p' "$log" | sed 's/^/       /'
+    printf 'FAIL %-34s out=%s set=%s norm=%d\n' "$name" "$d" "$sd" "$n"; sed -n '1,12p' "$log" | sed 's/^/       /'
     fails=$((fails + 1))
   fi
-  rows="${rows}${name}|${st}|${d}|${n}
+  rows="${rows}${name}|${st}|${d}|${n}|${sd}
 "
   rm -f "$log"
 }
@@ -167,28 +196,30 @@ skipped="$(printf '%s' "$rows" | awk -F'|' '$2 != 0 {print $1}' | tr '\n' ' ')"
 reg="$WS/fresco/regression.json"
 newreg="$(mktemp)"
 cat > "$newreg" <<EOF
-{"aggregate": "$aggregate", "net": $NET, "normalised_field": "minted stream keys of the form 'key <16 hex>'", "items": $(printf '%s' "$rows" | python3 -c '
+{"aggregate": "$aggregate", "net": $NET, "normalised_field": "minted stream keys of the form 'key <16 hex>'", "digests": "out = the item's normalised output in order; set = the same lines sorted", "items": $(printf '%s' "$rows" | python3 -c '
 import sys, json
 out = []
 for line in sys.stdin.read().splitlines():
     if not line: continue
-    name, st, d, n = line.rsplit("|", 3)
-    out.append({"name": name, "exit": int(st), "out": d, "normalised": int(n)})
+    name, st, d, n, sd = line.rsplit("|", 4)
+    out.append({"name": name, "exit": int(st), "out": d, "set": sd,
+                "normalised": int(n)})
 print(json.dumps(out))')}
 EOF
 if [ -f "$reg" ]; then
   python3 - "$reg" "$newreg" <<'PY'
 import json, sys
 prev, new = (json.load(open(p)) for p in sys.argv[1:3])
-a = {i["name"]: (i["exit"], i["out"], i["normalised"]) for i in prev.get("items", [])}
-b = {i["name"]: (i["exit"], i["out"], i["normalised"]) for i in new["items"]}
+a = {i["name"]: (i["exit"], i["out"], i.get("set"), i["normalised"]) for i in prev.get("items", [])}
+b = {i["name"]: (i["exit"], i["out"], i.get("set"), i["normalised"]) for i in new["items"]}
 moved = [n for n in b if n in a and a[n] != b[n]]
 gone = [n for n in a if n not in b]
 fresh = [n for n in b if n not in a]
 if moved:
     print("moved since the last recorded run on this tree:")
     for n in moved:
-        print(f"    {n}: exit {a[n][0]}->{b[n][0]}  out {a[n][1]}->{b[n][1]}  norm {a[n][2]}->{b[n][2]}")
+        print(f"    {n}: exit {a[n][0]}->{b[n][0]}  out {a[n][1]}->{b[n][1]}  "
+              f"set {a[n][2]}->{b[n][2]}  norm {a[n][3]}->{b[n][3]}")
 if gone or fresh:
     print(f"items added {fresh or 'none'}, removed {gone or 'none'}")
 if not (moved or gone or fresh):
