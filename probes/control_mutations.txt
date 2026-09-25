@@ -26,7 +26,20 @@ I_curl_rc_unread                   1  caught (1 check(s))
 J_sent_not_read_back               1  caught (1 check(s))
                                       a record with a WRONG request line is refused by --check: a record whose request line differs from the 
 ----------------------------------------------------------------------------
-unmutated control exit 0; caught 8/10; 2 unobservable
+K_answerer_not_read_back           1  caught (1 check(s))
+                                      the record is edited to say `wall` where the run measured `edge`, on a cell whose own
+                                      attribution rule is a function of the answer. The PROPERTY was already checked against
+                                      the live answer; the stored COLUMN was not read, so the one thing the column exists to
+                                      prevent -- a foreign authority's refusal counted as the wall's -- went in through the
+                                      record instead of the wire.
+L_headers_not_read_back           1  caught (1 check(s))
+                                      the record is edited to carry a request the run cannot have sent. A row is reproducible
+                                      only together with the headers it went out with; the column held them and nothing compared
+                                      them. The first mutation written for this cell was a no-op -- it wrote back exactly the
+                                      value the run measures -- and a mutation that changes nothing proves nothing, so it was
+                                      redone with an impossible value before being counted as caught.
+
+unmutated control exit 0; caught 10/12; 2 unobservable
 
 The two survivors, and what each does or does not change:
   C  puts a refused row into the list the run keeps. The write is already

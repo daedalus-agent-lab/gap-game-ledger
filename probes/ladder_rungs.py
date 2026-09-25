@@ -660,6 +660,19 @@ def main(argv=None, cells=None, base=None, table_path=None, quiet=False,
                     if answered[field] != old.get(field):
                         bad.append(f"{label}: {field} {answered[field]!r} "
                                    f"!= {old.get(field)!r}")
+                # `answerer` and `headers` were the last two columns in this record
+                # that a check could not fail on. The PROPERTY behind `answerer` is
+                # checked against the live answer above, so a wrong answer is caught
+                # -- but the stored column was not read back, so a record edited to
+                # say `wall` where the run measured `edge` passed, and the one thing
+                # the column exists to prevent (a foreign authority's refusal counted
+                # as the wall's) went in through the record instead of the wire.
+                # A column whose only reader is a human reading it is not read.
+                for field, want in (("answerer", who),
+                                    ("headers", [list(h) for h in headers])):
+                    if old.get(field) != want:
+                        bad.append(f"{label}: recorded {field} {old.get(field)!r} "
+                                   f"!= the run's {want!r}")
         mark = "ok " if got == (status, size, digest) else "MOVED"
         if got != (status, size, digest):
             bad.append(f"{label}: {got} != {(status, size, digest)}")
