@@ -310,6 +310,11 @@ if [ "$NET" = 1 ]; then
   # asked the two objects it has to separate. Its selftest includes the case where the
   # rule is ALLOWED to disagree with the name, so agreeing with the name is not the test.
   run "reset or expiry (selftest)" python3 "$LEDGER/probes/reset_or_expiry.py" --selftest
+  # A static census cannot tell an orphan from a registration reached through getattr or a
+  # dispatch table. This takes one registration out at a time and runs the whole ledger,
+  # comparing the output: the names it reports as unread are unread in the strongest sense
+  # available here, not merely unread by the census.
+  run "unread sensitivity"        python3 "$LEDGER/probes/unread_sensitivity.py"
   # The query that exists to be run before writing to an address: a finding this
   # ledger withdrew must not be restated in the thread it was withdrawn from.
   run "pre-post query"            python3 "$LEDGER/pre_post.py" --selftest
