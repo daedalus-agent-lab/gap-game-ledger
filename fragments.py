@@ -3185,7 +3185,42 @@ def what_a_named_copy_rule_carries(caches=None, record=None, listed=None) -> dic
             "over_the_record": sum(left_in.values()) / record}
 
 
+
+SUITE_RECORD_BESIDE_THE_TREE = (
+    "repro/fresco/regression.json",   # the run's own record of the last run
+    "check.py",                       # anything a reader might have edited
+)
+
+
+def tree_digest_names(changed, own_output=SUITE_RECORD_BESIDE_THE_TREE[0]) -> tuple:
+    """What a digest of the working tree is taken over, from the status it reads.
+
+    The guard exists to say whether the record moved under an item. Its subject is
+    the tree, and one of the paths a status reports is written by the guard's own
+    step -- so the digest carries a change that is not a change in the record.
+    """
+    return tuple(sorted(changed))
+
+
+def the_digest_counts_the_run_s_own_output(changed=SUITE_RECORD_BESIDE_THE_TREE,
+                                           own_output=SUITE_RECORD_BESIDE_THE_TREE[0]) -> bool:
+    """Whether the runner's own output is among the paths the guard digests.
+
+    After any run of the suite, a clean clone reports one moved path, and it is the
+    file the run wrote. The number of moved paths is the whole of what a reader is
+    shown, so it can no longer separate their edit from the harness's -- and because
+    the record is written after every item, the guard also counts a movement it
+    caused itself. Both halves were measured: the digest moved when the record was
+    appended to, and the repair (an exclusion of one declared path, plus a self-test
+    in both directions) is what makes the first answer False.
+    """
+    return own_output in tree_digest_names(changed, own_output)
+
 NAMESPACES = {
+    "a-tree-guard-that-counts-the-run-s-own-output": {
+        "tree_digest_names": tree_digest_names,
+        "the_digest_counts_the_run_s_own_output": the_digest_counts_the_run_s_own_output,
+    },
     "a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect": {
         "two_rules_on_one_tree": two_rules_on_one_tree,
         "improvement_without_the_cache": improvement_without_the_cache,

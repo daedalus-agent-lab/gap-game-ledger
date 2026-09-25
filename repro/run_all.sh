@@ -74,9 +74,24 @@ sha16() { sha256sum | cut -c1-16; }
 normalise() { sed -E 's/\bkey [0-9a-f]{16}\b/key <minted>/g'; }
 declared_lines() { grep -cE '\bkey [0-9a-f]{16}\b'; }
 
+SUITE_RECORD="$WS/fresco/regression.json"   # this run's own output, declared once
+record_rel="$SUITE_RECORD"
+case "$record_rel" in "$LEDGER"/*) record_rel="${record_rel#"$LEDGER"/}";; *) record_rel="";; esac
+
 tree_state() {                # a digest of the tree every item is reading
   { git -C "$LEDGER" rev-parse HEAD 2>/dev/null
-    git -C "$LEDGER" status --porcelain 2>/dev/null
+    # The suite writes its own record inside the tree it certifies. Counted here,
+    # that file makes the digest answer a question about the harness in the voice
+    # of a question about the record: after any run a clean clone shows one moved
+    # path, so "how many paths moved" no longer separates a reader's edit from this
+    # script's. The exclusion is one declared path, and --self-test measures it in
+    # BOTH directions -- its own record must not move the digest, and an untracked
+    # file beside it must -- so it cannot widen without the self-test saying so.
+    if [ -n "$record_rel" ]; then
+      git -C "$LEDGER" status --porcelain 2>/dev/null | grep -vF -e " $record_rel" || true
+    else
+      git -C "$LEDGER" status --porcelain 2>/dev/null
+    fi
   } | sha16
 }
 
@@ -97,6 +112,27 @@ if [ "$SELFTEST" = 1 ]; then
   echo "tree before $t0  with one untracked file $t1"
   [ "$t0" = "$t1" ] && { echo "self-test FAILED: the tree guard cannot see the tree"; exit 1; }
   echo "self-test: the tree guard reads the tree it certifies"
+  # The other direction. A guard that counts the file the run itself writes has a
+  # number that cannot separate the harness from the record, and -- because the
+  # record is written after every item -- a guard that would fire on its own step.
+  # Both halves are read here: the declared output path moves nothing; a file that
+  # is not that path moves it.
+  keep="$(mktemp)"; t2="$(tree_state)"
+  if [ -n "$record_rel" ] && [ -f "$SUITE_RECORD" ]; then
+    cp "$SUITE_RECORD" "$keep"
+    printf '\n' >> "$SUITE_RECORD"
+    t3="$(tree_state)"
+    cp "$keep" "$SUITE_RECORD"
+    rm -f "$keep"
+    if [ "$t2" != "$t3" ]; then
+      echo "self-test FAILED: the digest counts this run's own record ($record_rel)"
+      echo "     $t2 -> $t3"
+      exit 1
+    fi
+    echo "self-test: the run's own record ($record_rel) moves nothing in the digest"
+  else
+    echo "self-test: SKIPPED the record half, this run writes its record outside $LEDGER"
+  fi
   exit 0
 fi
 

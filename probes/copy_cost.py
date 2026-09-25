@@ -25,6 +25,19 @@ itself, and needs no number from me: **every file a copy carries is tracked, and
 every file it leaves out is not**, name by name over the whole tree. The first
 version of this probe printed only the budget and called that a check.
 
+**The `before` column must not be a property of the machine that ran it.** The first
+version of this report printed, as its headline, the two rules measured on whatever
+tree it happened to be standing in. On the author's tree the old rule carried
+130,008,502 B per case and the new one 1,254,875 B -- a 100x improvement. On a clean
+clone of the same commit a second machine measured the old rule at 1,254,770 B: the
+same as the new one, to the byte. The 130 MB was not a property of either rule; it was
+the owner's untracked `.uvcache`, present in his tree and absent from the clone. A
+reader reproducing the report got `1,254,770 -> 1,254,770` and could not tell "the
+repair was unnecessary" from "the repair is already done". The probe therefore now
+BUILDS the difference it reports: it makes a tiny git checkout, plants an untracked
+cache-shaped directory of a declared size in it, and measures both rules there. That
+reading is reproducible from a clone because the probe manufactures its subject.
+
 WHAT THIS DOES NOT DO: it measures bytes and file counts and it compares the rule
 with git's index; it does not show that a case NEEDS the files it carries. A copy
 can be small, exact and still the wrong copy; that is what the cases test.
@@ -32,7 +45,9 @@ can be small, exact and still the wrong copy; that is what the cases test.
 import argparse
 import importlib.util
 import os
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -45,6 +60,53 @@ LEDGER = HERE.parent
 BUDGET_BYTES = 24 * 1024 * 1024
 
 OLD_RULE = ("verify", "__pycache__", ".git")
+
+# The planted cache, declared here and not read off any tree. Small enough to build in
+# milliseconds, large enough that the two rules cannot agree about it by accident.
+PLANTED_DIR = ".uvcache"
+PLANTED_FILES = 8
+PLANTED_BYTES = 4 * 1024 * 1024
+
+
+def tree_state(root: Path) -> str:
+    """Which commit this reading was taken on, and how far the worktree has moved.
+
+    A copy carries the CONTENT of the worktree, not the index: a tracked file modified
+    and not committed changes the byte count of the copy while the commit id stands
+    still. Two readings of the same commit differing by 105 bytes were exactly that.
+    """
+    def git(*args: str) -> str:
+        try:
+            out = subprocess.run(["git", *args], cwd=root, capture_output=True,
+                                 text=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            return ""
+        return out.stdout.strip() if out.returncode == 0 else ""
+
+    head = git("rev-parse", "--short", "HEAD") or "not a checkout"
+    dirty = [ln for ln in git("status", "--porcelain").splitlines() if ln.strip()]
+    return f"{head}, {len(dirty)} path(s) moved in the worktree"
+
+
+def plant_fixture(root: Path) -> Path:
+    """A tiny checkout that carries an untracked cache -- the difference, manufactured.
+
+    Built here rather than found in the working tree, so that the comparison between
+    the two rules reproduces from a clean clone. The fixture lives in the system
+    temporary directory on purpose: it is a git repository of its own, and a second
+    checkout inside the ledger root would appear in every other probe's file walk.
+    """
+    (root / "record").mkdir(parents=True)
+    (root / "record" / "a.py").write_text("a = 1\n", encoding="utf-8")
+    (root / "record" / "b.json").write_text('{"b": 2}\n', encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "add", "--", "record"], cwd=root, check=True, capture_output=True)
+    cache = root / PLANTED_DIR
+    cache.mkdir()
+    per_file = PLANTED_BYTES // PLANTED_FILES
+    for i in range(PLANTED_FILES):
+        (cache / f"blob{i}").write_bytes(b"\0" * per_file)
+    return root
 
 
 def load_runner():
@@ -144,8 +206,11 @@ def main() -> int:
         LEDGER, lambda _d, names, keep=old_rule: [n for n in names if n in keep])
 
     print(f"cases declared by the runner: {cases}")
-    print(f"per case, rule now in use:  {now_bytes:>12,} B  {now_files:>6} files")
-    print(f"per case, the rule it replaced: {old_bytes:>8,} B  {old_files:>6} files")
+    print(f"this reading was taken on: {tree_state(LEDGER)}")
+    print(f"on this tree, rule now in use:  {now_bytes:>12,} B  {now_files:>6} files")
+    print(f"on this tree, the rule it replaced: {old_bytes:>8,} B  {old_files:>6} files")
+    print(f"    (both numbers above move with this worktree, not with the commit: a copy "
+          f"carries the content it finds)")
     print(f"one full run:  {now_bytes * cases / 1e9:.2f} GB now, "
           f"{old_bytes * cases / 1e9:.2f} GB before")
     if largest:
@@ -171,7 +236,28 @@ def main() -> int:
         for rel, should, was in wrong[:5]:
             print(f"    {rel}: should {'be left out' if should else 'be carried'}, "
                   f"was {'left out' if was else 'carried'}")
-    if args.check and (not ok or wrong):
+    # The reproducible comparison: the same two rules on a fixture the probe builds.
+    planted_ok = None
+    with tempfile.TemporaryDirectory(prefix="copy-cost-fixture-") as td:
+        fx = plant_fixture(Path(td))
+        fx_rule = runner.ignore_for_the_record(fx)
+        fx_tracked = runner.tracked_files(fx)
+        fx_now_b, fx_now_f, _ = measure(fx, fx_rule)
+        fx_old_b, fx_old_f, _ = measure(
+            fx, lambda _d, names, keep=old_rule: [n for n in names if n in keep])
+        difference = fx_old_b - fx_now_b
+        planted_ok = (difference == PLANTED_BYTES
+                      and fx_tracked is not None and len(fx_tracked) == 2
+                      and fx_now_f == 2
+                      and fx_old_f == 2 + PLANTED_FILES)
+        print(f"fixture built by this probe, {PLANTED_BYTES:,} B in {PLANTED_FILES} "
+              f"files under {PLANTED_DIR}/ (untracked, cache-shaped):")
+        print(f"    rule now in use:       {fx_now_b:>12,} B  {fx_now_f:>6} files")
+        print(f"    the rule it replaced:  {fx_old_b:>12,} B  {fx_old_f:>6} files")
+        print(f"    the two rules differ by exactly the planted cache: "
+              f"{'yes' if planted_ok else 'NO'}  ({difference:,} B, planted {PLANTED_BYTES:,} B)")
+
+    if args.check and (not ok or wrong or not planted_ok):
         return 1
     return 0
 

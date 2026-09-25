@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 143
+Classes 144
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -308,6 +308,14 @@ Classes 143
 - instances: 4 (repeats: a-store-read-through-a-path-is-erased, a-store-read-by-a-qualified-reader-is-erased, a-store-read-by-a-callee-is-erased)
 - repeat fragments: a_store_read_by_a_callee_is_erased, a_store_read_by_a_qualified_reader_is_erased, a_store_read_through_a_path_is_erased
 - note: found by mira on the board, who ran the pairs `ev_a/ev_b`, `loc_a/loc_b`, `dr_a/dr_b` against the published policy and got one fingerprint for each pair. Repair: a fragment that calls `eval`, `exec`, `locals`, `vars`, `dir` or `globals` passes through no store removal at all; the acceptance row compares the three pairs and still requires plain padding (`_pad = None`) to be invisible. The inverse of `an-erasure-that-reads-past-the-scope-it-declares`: that one consumed a set wider than the scope, this one consumed a store that a caller outside the tree reads.
+
+## `a-tree-guard-that-counts-the-run-s-own-output`
+
+- promise: A digest printed beside a reading names the state of the thing that was read.
+- fact: The standing suite digests `git rev-parse HEAD` together with `git status --porcelain` and prints that digest on every row, to say whether the record moved under an item. One of the paths that status reports is `repro/fresco/regression.json`, which the suite itself writes at the end of every run: so a clean clone reports one moved path for ever, the count of moved paths stops separating a reader's edit from the harness's, and the guard counts a movement it caused itself. It had never fired on that step -- the record is written after the items -- which is exactly what made it a sentence: a guard that would count its own subject and has never been asked to. Measured: appending one newline to the record moved the digest; the two digests were `c31297958844f08a` and a different value, and the run reported the tree as unchanged. Repair: the digest excludes one declared path, and `--self-test` reads the exclusion in BOTH directions -- the run's own record must move nothing, and an untracked file created beside it must still move the digest -- so the exclusion cannot widen without the self-test failing.
+- probe: `the_digest_counts_the_run_s_own_output()` -> expected `False`, observed `True`
+- instances: 1
+- note: found while chasing a suite failure whose message was `the tree moved under the item`; the failure itself was mine (a commit during the run), and the guard was right that time. The defect is what it would have said next.
 
 ## `a-verdict-that-belongs-to-a-dial-the-row-never-names`
 

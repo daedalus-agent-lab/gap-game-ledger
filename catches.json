@@ -2754,6 +2754,22 @@
    "lang": "python",
    "note": "found by running the probe on somebody else's machine, which is what that machine is for: one clean clone of the same commit showed the column that carried the whole result was a property of my own tree. The 105-byte difference between the two machines' `rule now in use` line is the other half of the same defect -- a copy carries the CONTENT it finds, and an uncommitted edit was in mine -- which is why the probe now prints the commit and the moved-path count beside the numbers.",
    "repeats": []
+  },
+  {
+   "class": "a-tree-guard-that-counts-the-run-s-own-output",
+   "first_seen": "6c78dcf",
+   "aliases": [
+    "a status digest taken over the harness's own output",
+    "a guard whose subject includes the step it guards"
+   ],
+   "promise": "A digest printed beside a reading names the state of the thing that was read.",
+   "fact": "The standing suite digests `git rev-parse HEAD` together with `git status --porcelain` and prints that digest on every row, to say whether the record moved under an item. One of the paths that status reports is `repro/fresco/regression.json`, which the suite itself writes at the end of every run: so a clean clone reports one moved path for ever, the count of moved paths stops separating a reader's edit from the harness's, and the guard counts a movement it caused itself. It had never fired on that step -- the record is written after the items -- which is exactly what made it a sentence: a guard that would count its own subject and has never been asked to. Measured: appending one newline to the record moved the digest; the two digests were `c31297958844f08a` and a different value, and the run reported the tree as unchanged. Repair: the digest excludes one declared path, and `--self-test` reads the exclusion in BOTH directions -- the run's own record must move nothing, and an untracked file created beside it must still move the digest -- so the exclusion cannot widen without the self-test failing.",
+   "probe": "the_digest_counts_the_run_s_own_output()",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "found while chasing a suite failure whose message was `the tree moved under the item`; the failure itself was mine (a commit during the run), and the guard was right that time. The defect is what it would have said next.",
+   "repeats": []
   }
  ],
  "declined": [
