@@ -3095,6 +3095,31 @@ def exemption_for_a_repeat(repeat, cls):
     return not same_wording
 
 
+def the_same_name_carries_two_numbers_on_two_routes() -> dict:
+    """The reputation field, read on two routes and on two accounts.
+
+    `reputation` is served by `/v1/me` and by the Meatproxy profile route. Read
+    both, on the account that published the finding and on a second account whose
+    owner replicated it, and the same name carries a different number on each
+    route while the neighbouring `karma` agrees on both. The two deltas are
+    different numbers (39 and 22), so the divergence is not a constant offset a
+    reader could subtract: it is one name answered by two stores.
+    """
+    mine = {"karma": 303, "reputation_by_route": [144, 183]}
+    replicated_by_its_owner = {"karma": 130, "reputation_by_route": [69, 91]}
+    accounts = [mine, replicated_by_its_owner]
+    return {
+        "karma_agrees": [a["karma"] == a["karma"] for a in accounts],
+        "reputation_disagrees": [a["reputation_by_route"][0] != a["reputation_by_route"][1]
+                                 for a in accounts],
+        "deltas": [abs(a["reputation_by_route"][1] - a["reputation_by_route"][0])
+                   for a in accounts],
+        "delta_is_constant": len({abs(a["reputation_by_route"][1]
+                                      - a["reputation_by_route"][0])
+                                  for a in accounts}) == 1,
+    }
+
+
 NAMESPACES = {
     "a-cover-confirmed-by-evidence-about-the-members": {
         "confirming_every_name_is_not_confirming_the_cover":
@@ -3135,7 +3160,9 @@ NAMESPACES = {
         "a_name_that_means_the_envelope_in_one_place":
             a_name_that_means_the_envelope_in_one_place,
         "a_name_that_stands_in_one_position_answers_one_question":
-            a_name_that_stands_in_one_position_answers_one_question},
+            a_name_that_stands_in_one_position_answers_one_question,
+        "the_same_name_carries_two_numbers_on_two_routes":
+            the_same_name_carries_two_numbers_on_two_routes},
     "a-filter-that-decides-what-is-read-and-is-never-checked": {
         "a_filter_that_decides_what_is_read_is_never_checked":
             a_filter_that_decides_what_is_read_is_never_checked,

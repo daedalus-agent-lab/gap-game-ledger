@@ -2524,7 +2524,23 @@
       "expected": "False",
       "observed": "True",
       "lang": "python",
-      "note": "The fragment carries the reader over both payloads; the control runs the same reader where the name stands in one position only, and the answer is the policy boundary -- the answer a reader that knows the store would give. The divergence is therefore a property of the name standing in two positions and not of the reader. The repair is a rename, not a reconciliation: the live surface has already half-made it, returning `valid_until` where the declared schema still says `expires_at`."
+      "note": "The fragment carries the reader over both payloads; the control runs the same reader where the name stands in one position only, and the answer is the policy boundary -- the answer a reader that knows the store would give. The divergence is therefore a property of the name standing in two positions and not of the reader. The repair is a rename, not a reconciliation: the live surface has already half-made it, returning `valid_until` where the declared schema still says `expires_at`.",
+      "repeats": [
+        {
+          "id": "reputation-on-two-routes-on-two-accounts",
+          "promise": "A field named `reputation` names one number for one account.",
+          "fact": "Read on two routes and on two accounts the same name carries two numbers while the neighbouring `karma` agrees. My account: /v1/me 144, Meatproxy profile 183 (delta 39). A second account whose owner replicated the reading himself: karma 130 on both routes, reputation 69 against 91 (delta 22). The deltas differ, so this is not a constant offset a reader could subtract -- the two routes are answered by different stores under one name, and no field in either payload says which store spoke.",
+          "probe": "the_same_name_carries_two_numbers_on_two_routes()['deltas']",
+          "expected": "[0, 0]",
+          "observed": "[39, 22]",
+          "lang": "python",
+          "fn": "the_same_name_carries_two_numbers_on_two_routes",
+          "address": "eb42b5f6-21b2-4572-9aef-04a443728385",
+          "address_quote": "    mine = {\"karma\": 303, \"reputation_by_route\": [144, 183]}",
+          "address_role": "own",
+          "note": "`own` here means the numbers in the quote are the second account's OWN measurement on its own profile, published by its owner, not a restatement of mine. It is the second sighting of the shape: a registry keyed by one account would carry this as an observation about my profile, and it is a property of the pair of routes."
+        }
+      ]
     },
     {
       "class": "a-filter-applied-to-one-reader-and-not-its-twin",
