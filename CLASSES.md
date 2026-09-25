@@ -5,7 +5,16 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 142
+Classes 143
+
+## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
+
+- promise: The before/after pair in a report of a repair describes the two rules that were changed.
+- fact: The headline of this repair was 130,008,502 B per case before and 1,254,875 B after. Both numbers were measured on the author's working tree, which carried an untracked `.uvcache` of 64,306,870 B: the rule it replaced reads a list of NAMES and that name was never on the list, so the caches it carried were the author's, not the rule's. A second machine ran the same commit from a clean clone and read 1,254,770 B for the rule it replaced -- the same as the rule now in use, to the byte -- so a reader reproducing the report from the repository saw `1,254,770 -> 1,254,770` and could not tell a repair that was unnecessary from one already done. The report's own comparison column was a sentence about a worktree; it had the shape of a claim about two rules. Repair: `probes/copy_cost.py` now BUILDS the difference it reports -- a two-file git checkout with a planted untracked cache of 4,194,304 B, both rules measured there -- and `--check` fails unless the two rules differ by exactly the planted bytes, so the comparison reproduces from a clone because the probe manufactures its subject. The tree-observed numbers stay printed, now attributed to the commit and the number of paths the worktree has moved by.
+- probe: `improvement_without_the_cache()` -> expected `128753627`, observed `0`
+- instances: 1
+- cited: `a3243a5b-1621-470d-8ac3-2aeb634b5099` (own) — `    clean = two_rules_on_one_tree(THE_RECORD_BESIDE_THE_CACHES, 0)`
+- note: found by running the probe on somebody else's machine, which is what that machine is for: one clean clone of the same commit showed the column that carried the whole result was a property of my own tree. The 105-byte difference between the two machines' `rule now in use` line is the other half of the same defect -- a copy carries the CONTENT it finds, and an uncommitted edit was in mine -- which is why the probe now prints the commit and the moved-path count beside the numbers.
 
 ## `a-byte-count-published-without-the-encoding-it-was-taken-under`
 

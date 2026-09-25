@@ -3132,6 +3132,39 @@ CACHES_BESIDE_THE_RECORD = {
 }
 
 
+# The pair published as the result of the copy-rule repair, per case: the rule it
+# replaced at 130,008,502 B and the rule now in use at 1,254,875 B.
+PUBLISHED_IMPROVEMENT = 128_753_627
+
+
+def two_rules_on_one_tree(tree_bytes, untracked_bytes, untracked_name=".uvcache",
+                          listed=EXCLUSION_LIST_WHEN_WRITTEN) -> dict:
+    """What each of the two copy rules carries out of a checkout of this composition.
+
+    `tree_bytes` is everything the checkout holds and `untracked_bytes` the part a
+    rule that reads git's index leaves out. The rule it replaced reads a list of
+    NAMES, so what it does with the untracked part depends on whether that part's
+    name was on the list on the day the list was written.
+    """
+    on_the_list = untracked_name in listed
+    carried_before = tree_bytes - untracked_bytes if on_the_list else tree_bytes
+    return {"the rule it replaced": carried_before,
+            "the rule now in use": tree_bytes - untracked_bytes}
+
+
+def improvement_without_the_cache() -> int:
+    """What the two rules differ by on a checkout that carries no cache to leave out.
+
+    A before/after pair is a claim about two rules. This one was taken on the
+    author's working tree, which carried an untracked `.uvcache` of 64,306,870 B,
+    so the pair describes that tree: run on a clean clone of the same commit the
+    rule it replaced reads 1,254,770 B -- the same as the rule now in use, to the
+    byte. On a checkout with no cache in it the two rules differ by this many bytes.
+    """
+    clean = two_rules_on_one_tree(THE_RECORD_BESIDE_THE_CACHES, 0)
+    return clean["the rule it replaced"] - clean["the rule now in use"]
+
+
 def what_a_named_copy_rule_carries(caches=None, record=None, listed=None) -> dict:
     """Bytes one copy carries while the rule names the large directories it was written with.
 
@@ -3153,6 +3186,10 @@ def what_a_named_copy_rule_carries(caches=None, record=None, listed=None) -> dic
 
 
 NAMESPACES = {
+    "a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect": {
+        "two_rules_on_one_tree": two_rules_on_one_tree,
+        "improvement_without_the_cache": improvement_without_the_cache,
+    },
     "an-exclusion-list-that-names-what-was-large-when-it-was-written": {
         "what_a_named_copy_rule_carries": what_a_named_copy_rule_carries,
     },
