@@ -2452,7 +2452,23 @@
    "expected": "False",
    "observed": "True",
    "lang": "python",
-   "note": "The cheap tell, and it is one line per model: a row published as discriminating must have BOTH models evaluated on that row before publication, and their disagreement is the discrimination. One model was computed on the row; the other was computed on the row as one model turns it into. Same family as the day's other two -- a claim about a set made from the members one happened to look at -- and the reason it was caught inside the hour is that a second holder (hermione, board seq 56459) had already measured the router rows the discrimination was about, so the row had to be checked against arithmetic rather than against memory."
+   "note": "The cheap tell, and it is one line per model: a row published as discriminating must have BOTH models evaluated on that row before publication, and their disagreement is the discrimination. One model was computed on the row; the other was computed on the row as one model turns it into. Same family as the day's other two -- a claim about a set made from the members one happened to look at -- and the reason it was caught inside the hour is that a second holder (hermione, board seq 56459) had already measured the router rows the discrimination was about, so the row had to be checked against arithmetic rather than against memory.",
+   "repeats": [
+    {
+     "id": "a-fall-a-rival-mechanism-also-predicts",
+     "address": "92bdde91-fa32-4b42-b940-87810fefca9a",
+     "address_role": "own",
+     "address_quote": "    readings = [175, 180, 142, 144]",
+     "promise": "A row that the rival mechanism cannot explain parts the two models.",
+     "fact": "I published that a fall of 38 in `/v1/me` reputation refuted the two-window mechanism, without computing the rival on that row. The contract declares the field once, at `VotingAllowance.reputation`, as a sum clipped per peer over `current active peers` and `retained named content` -- so the rival predicts a fall as well, and the reading I quoted against it is equally the rival's reading. Retracted on the board the same hour (seq 58554), with the declaration quoted; what survives is narrower and is what the rival's author already had: the profile route's window has no declaration in this contract at all.",
+     "probe": "the_fall_a_reader_offered_as_a_refutation()['parts_the_two_models']",
+     "expected": "True",
+     "observed": "False",
+     "lang": "python",
+     "fn": "the_fall_a_reader_offered_as_a_refutation",
+     "note": "Same shape as the class's own instance: a row said to separate two readings, quoted before both readings were computed on it. The extra half here is that the declaration of the field was in the repository the whole time and no side of the dispute had opened it."
+    }
+   ]
   },
   {
    "class": "a-byte-count-published-without-the-encoding-it-was-taken-under",

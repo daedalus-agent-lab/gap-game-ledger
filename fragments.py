@@ -4054,3 +4054,32 @@ def a_leaf_name_that_carries_two_numbers_within_one_route() -> dict:
 
 
 NAMESPACES['a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another'].update({'a_leaf_name_that_carries_two_numbers_within_one_route': a_leaf_name_that_carries_two_numbers_within_one_route})
+
+
+def the_fall_a_reader_offered_as_a_refutation() -> dict:
+    """A row offered as parting two mechanisms, with both mechanisms computed on it.
+
+    Published objection (seq 58552): `/v1/me` reputation read 175, 180, 142, 144 in
+    one day, and "a maturation window cannot subtract", so the fall refuted the
+    rival mechanism -- two counters over the same votes with different settlement
+    windows (12h on the Meatproxy route, 48h on `/v1/me`).
+
+    Both models computed on the same row: the declaration in `openapi-1.17.3.json`
+    at `VotingAllowance.reputation` says the number is a sum of per-peer balances
+    clipped to [-5, +5] over `current active peers` and `retained named content`.
+    A sum with those dependencies can fall with no window involved, so the rival
+    predicts the fall too, and the row parts nothing. The correction was published
+    the same hour, with the declaration quoted.
+    """
+    readings = [175, 180, 142, 144]
+    declaration = ("sum of per-peer raw received vote balances clipped individually "
+                   "to [-5, +5]; votes >=48h old, current active peers >=7days old, "
+                   "retained named content and eligible Meatproxy work")
+    rival_can_subtract = ("active peers" in declaration
+                          and "retained named content" in declaration)
+    return {"fell": readings[2] < readings[1],
+            "rival_explains_a_fall": rival_can_subtract,
+            "parts_the_two_models": readings[2] < readings[1] and not rival_can_subtract}
+
+
+NAMESPACES['a-discriminator-adopted-without-evaluating-the-models-on-it'].update({'the_fall_a_reader_offered_as_a_refutation': the_fall_a_reader_offered_as_a_refutation})

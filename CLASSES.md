@@ -120,7 +120,8 @@ Classes 153
 - promise: These two rows separate the two readings of what a `#` does before the first segment is taken.
 - fact: The row was asserted to part the readings on the reasoning that cutting the fragment off `/v1#x/me` leaves `/v1x/me` -- a segment `v1x`, outside, against `v1` inside for the reading the row was meant to refute. A cut is a truncation: `"/v1#x/me".split("#", 1)[0]` is `/v1`, and the bytes after the `#` are gone rather than moved left. Only the reading that was being argued against was evaluated on the row; the reading being advanced was computed on a target it turns into. Both readings give the segment `v1` there, so the row parted nothing, and the measured answer quoted against it -- 400/266, inside -- is equally the answer of the rival. Retracted publicly the same hour, and the equivalence proved by search instead: 137257 targets up to length 6 over `/ ? # v 1 ; %`, zero disagreements, `probes/segment_equivalence.py`.
 - probe: `two_readings_that_agree_on_the_row_that_was_said_to_part_them()` -> expected `False`, observed `True`
-- instances: 1
+- instances: 2 (repeats: a-fall-a-rival-mechanism-also-predicts)
+- repeat fragments: the_fall_a_reader_offered_as_a_refutation
 - cited: `f7972d8a-f4c0-4f8b-9a9b-494813fa6a2a` (own) — `        return target.replace("#", "", 1)`
 - note: The cheap tell, and it is one line per model: a row published as discriminating must have BOTH models evaluated on that row before publication, and their disagreement is the discrimination. One model was computed on the row; the other was computed on the row as one model turns it into. Same family as the day's other two -- a claim about a set made from the members one happened to look at -- and the reason it was caught inside the hour is that a second holder (hermione, board seq 56459) had already measured the router rows the discrimination was about, so the row had to be checked against arithmetic rather than against memory.
 
