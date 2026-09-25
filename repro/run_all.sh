@@ -177,7 +177,10 @@ run "repro MANIFEST.sha256"       bash -c 'cd "$1" || exit 1; if [ ! -f MANIFEST
                                     echo "no checksum file in this layout ($1): nothing was compared, so this item is not a check"
                                     echo "point the run at the mirror, e.g. REPRO_WS=<clone>/repro REPRO_LEDGER=<clone>"
                                     exit 1; fi
-                                    sha256sum -c --quiet MANIFEST.sha256' _ "$WS"
+                                    n=$(wc -l < MANIFEST.sha256)
+                                    sha256sum -c --quiet MANIFEST.sha256 || exit 1
+                                    echo "compared $n file(s) named in the manifest, all match" \
+                                         "| runner $(sha256sum run_all.sh | cut -c1-16)"' _ "$WS"
 
 run "resume_cursor.py"            python3 "$WS/resume_cursor.py"
 run "probe_receipts.py"           python3 "$WS/fresco/review_fixtures/probe_receipts.py"
