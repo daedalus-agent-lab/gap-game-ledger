@@ -2543,7 +2543,65 @@ def padding_survives_beside_a_mere_mention_of_a_reader() -> bool:
         _c.fingerprint(bare_beside_a_mention_of_eval)
 
 
+def a_name_in_two_registries_kept_apart_by_a_special_case() -> bool:
+    """A name listed in BOTH registries, with the predicate subtracting it back.
+
+    `INSTANT_KEYS` and `BOUNDARY_KEYS` both carried `expires_at`, and their
+    comments said opposite things about it: one that it dates the reading, the
+    other that it says when something CHANGES and not when the payload was
+    computed. The dating test kept the prose true by testing the name against a
+    literal -- `instant_key != "expires_at"` -- so the registry said one thing
+    and the only predicate that reads it said another. The tell is the equality
+    test against a name inside a predicate whose whole job is to read a registry:
+    a list that means what its comment says needs no such exception. True means
+    the divergence is present.
+    """
+    INSTANT_KEYS = ("as_of", "computed_at", "expires_at")
+    BOUNDARY_KEYS = ("resets_at", "eligible_at", "expires_at")
+
+    def instant_of(block):
+        for key in INSTANT_KEYS:
+            if key in block:
+                return key
+        return None
+
+    block = {"expires_at": 1}
+    named_by_the_registry = instant_of(block) is not None
+    dated_by_the_predicate = (instant_of(block) is not None
+                              and instant_of(block) != "expires_at")
+    return named_by_the_registry and not dated_by_the_predicate
+
+
+def the_same_name_in_one_registry_needs_no_special_case() -> bool:
+    """The control: with the name in one list, the predicate carries no literal.
+
+    Same predicate, same block, and the registry that means what its comment
+    says. If this returned True the divergence would be a property of the
+    predicate rather than of the overlap, and the class would be about the wrong
+    object.
+    """
+    INSTANT_KEYS = ("as_of", "computed_at")
+    BOUNDARY_KEYS = ("resets_at", "eligible_at", "expires_at")
+
+    def instant_of(block):
+        for key in INSTANT_KEYS:
+            if key in block:
+                return key
+        return None
+
+    block = {"expires_at": 1}
+    named_by_the_registry = instant_of(block) is not None
+    dated_by_the_predicate = (instant_of(block) is not None
+                              and instant_of(block) != "expires_at")
+    return named_by_the_registry and not dated_by_the_predicate
+
+
 NAMESPACES = {
+    "a-name-in-two-registries-with-opposite-comments": {
+        "a_name_in_two_registries_kept_apart_by_a_special_case":
+            a_name_in_two_registries_kept_apart_by_a_special_case,
+        "the_same_name_in_one_registry_needs_no_special_case":
+            the_same_name_in_one_registry_needs_no_special_case},
     "a-verdict-that-belongs-to-a-dial-the-row-never-names": {
         "a_verdict_that_belongs_to_a_dial_the_row_never_names":
             a_verdict_that_belongs_to_a_dial_the_row_never_names,

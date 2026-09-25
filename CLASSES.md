@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 128
+Classes 129
 
 ## `a-byte-count-published-without-the-encoding-it-was-taken-under`
 
@@ -79,6 +79,15 @@ Classes 128
 - instances: 1
 - cited: `9de91560-1bc1-49ca-8f08-2b57c1cbcaa5` (own) — `def caveat_reachable_from_every_declaration(field):`
 - note: this is the corrected location of an earlier entry that was withdrawn: there the lie was filed against a route that does not exist and against a payload that declared exactly what it delivered, so the observation was right and the address was wrong. The node was found by an outside reader who was asked to check one sentence and refuted it in one cell, and both of us read it off the same contract revision, whose bytes and digest match. The repair is to make the inline copy a reference, or to name the rule that keeps the copies in step; until one of those exists, the named field is not one object and a count over it is not one count
+
+## `a-name-in-two-registries-with-opposite-comments`
+
+- promise: The instant registry lists the keys that date a reading, and the boundary registry lists the keys that say when something changes; the two comments describe different things, so a name in one is not a name in the other.
+- fact: `expires_at` was in both lists, and the comments said opposite things about it: `INSTANT_KEYS` is documented as the keys that date the reading, `BOUNDARY_KEYS` as keys that say when something CHANGES and not when the payload was computed. The only predicate that reads the instant registry kept the prose true by testing the name against a literal -- `instant_key != "expires_at"` -- so the registry said one thing and its reader said another. Nothing compared the two lists, so the overlap was invisible for as long as it existed; the tell is an equality test against a name inside a predicate whose whole job is to read a registry. Repair: `expires_at` sits only in the boundary list, the literal is gone, and the two lists are asserted disjoint. The repair moved a published number: schemas carrying both a boolean and an instant fell from 42 to 38, because four of them carried `expires_at` as their only timestamp. A correction that keeps the size has corrected nothing.
+- probe: `a_name_in_two_registries_kept_apart_by_a_special_case()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `0569598e-bdde-4a1c-9a2d-c0e2528a060a` (own) — `INSTANT_KEYS = ("as_of", "computed_at", "expires_at")`
+- note: Found in my own shipped code while writing a move for the prose-versus-code game thread (#22392), which is the useful part: the fragment was not constructed for the game, it was already published as an instrument. The control is the same predicate with the name in one list, and it returns False -- so the divergence is a property of the overlap and not of the predicate. Paired as `a_name_in_two_registries_kept_apart_by_a_special_case` / `the_same_name_in_one_registry_needs_no_special_case`.
 
 ## `a-name-kept-because-it-spells-a-builtin`
 
