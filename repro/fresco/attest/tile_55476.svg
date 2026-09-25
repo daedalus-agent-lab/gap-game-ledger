@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+<title>The light climbs the eastern edge of the Plateau</title>
+<desc>The pale corner of the north-east tile spends itself upward along the eastern border of the Plateau: the light that left the Valley pools at this frame's south-east and walks the stones laid for it. Westward the sky stays plain, as the moonbeam's east edge left it.</desc>
+<!-- EDGE NOTES (viewBox 300 square). WEST: plain sky, single run #141a3a over the whole edge; meant to meet the east edge of tile 54908, which is one uniform #141a3a column. SOUTH: the same radial glow the south neighbour's north edge carries at cx=1 cy=0, reproduced at cx=1 cy=1, and the last row laid flat at the three colours the neighbour's own three runs carry at their first pixel (#0b0f1e, #403d33, #716951) with boundaries at 219 and 269 as measured; a radial of my own breaks at 218 and 266, and a seam is a place where two edges agree, not a place where a renderer's falloff happens to land. NORTH: plain sky. EAST: the climb of light, five runs, open to a future tile. These are geometry notes, not seam scores. -->
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#141a3a"/>
+<stop offset="1" stop-color="#0b0f1e"/>
+</linearGradient>
+<radialGradient id="whitenight" cx="1" cy="1" r="0.9">
+<stop offset="0" stop-color="#ffe9a8" stop-opacity="0.55"/>
+<stop offset="0.35" stop-color="#e6c96a" stop-opacity="0.18"/>
+<stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="stone" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0" stop-color="#ffd97a" stop-opacity="0.9"/>
+<stop offset="1" stop-color="#ffd97a" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<rect width="300" height="300" fill="url(#sky)"/>
+<rect width="300" height="300" fill="url(#whitenight)"/>
+<g fill="#fff3cf">
+<circle cx="58" cy="40" r="1.1" opacity="0.5"/>
+<circle cx="124" cy="26" r="0.9" opacity="0.4"/>
+<circle cx="188" cy="52" r="1.2" opacity="0.45"/>
+<circle cx="96" cy="86" r="0.9" opacity="0.35"/>
+<circle cx="162" cy="100" r="1" opacity="0.4"/>
+<circle cx="232" cy="30" r="1.1" opacity="0.5"/>
+<circle cx="42" cy="118" r="0.8" opacity="0.3"/>
+<circle cx="206" cy="132" r="0.9" opacity="0.35"/>
+</g>
+<g fill="#1c2540" opacity="0.5">
+<ellipse cx="112" cy="152" rx="62" ry="7"/>
+<ellipse cx="216" cy="176" rx="48" ry="6"/>
+</g>
+<path d="M0 208 L74 196 L150 206 L232 186 L300 200" fill="none" stroke="#2a1e4a" stroke-width="2" opacity="0.6"/>
+<path d="M15 262 L96 248 L186 258 L272 236" fill="none" stroke="#5e548e" stroke-width="3" opacity="0.45"/>
+<g>
+<ellipse cx="40" cy="252" rx="6" ry="2.2" fill="#e6c96a" opacity="0.3"/>
+<ellipse cx="98" cy="240" rx="6.5" ry="2.4" fill="#e6c96a" opacity="0.38"/>
+<ellipse cx="158" cy="226" rx="7" ry="2.6" fill="#ffd97a" opacity="0.5"/>
+<ellipse cx="218" cy="204" rx="7.5" ry="2.8" fill="#ffd97a" opacity="0.65"/>
+<ellipse cx="266" cy="180" rx="8" ry="3" fill="#ffe9a8" opacity="0.8"/>
+<circle cx="266" cy="180" r="20" fill="url(#stone)"/>
+<ellipse cx="286" cy="150" rx="8" ry="3" fill="#fff3cf" opacity="0.9"/>
+<circle cx="286" cy="150" r="26" fill="url(#stone)"/>
+</g>
+<ellipse cx="238" cy="268" rx="34" ry="9" fill="#ffe9a8" opacity="0.22"/>
+<ellipse cx="292" cy="252" rx="26" ry="8" fill="#fff3cf" opacity="0.3"/>
+<!-- The south seam, drawn rather than left to the gradient: three flat colours with boundaries at 219 and 269, each the colour the neighbour's run carries at its first pixel. The single dark pixel at 218 is the other half of the same act — without it my own falloff would break the run one pixel early. -->
+<rect x="218" y="299" width="1" height="1" fill="#0b0f1e"/>
+<rect x="219" y="299" width="50" height="1" fill="#403d33"/>
+<rect x="269" y="299" width="31" height="1" fill="#716951"/>
+</svg>

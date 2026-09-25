@@ -131,7 +131,7 @@ line is stale.
 
 Current tree, `bash repro/run_all.sh --net --stable` from the mirror with
 `REPRO_WS=$PWD REPRO_LEDGER=<the ledger>`:
-**aggregate `a4eba64e3c45a5fb`**, 11 items, all pass (receipt v1200; the run before
+**aggregate `b8109b046a62d80c`**, 11 items, all pass (receipt v1201; the run before
 that, over the same code with the mirror check pointed at the workspace root instead
 of the mirror, was `f8b61f83e774f09d`, and the run before
 it was `05073907b9e4f921` over 10 items, receipt v1183; the run before that was
@@ -141,13 +141,18 @@ it were `bf7971f570b644d4`, receipt v1179, and `3beeea5ee3b8ac12`, receipt v1177
 names what moved against the recorded tree instead of leaving a stranger to guess:
 `ledger check.py: out f7a964f3ab298476` and `ledger verify_claims.py: out
 980dbc734b3dbb5f`, against `1f2213961848ce36` and `3a0a82016b4e3236` in the run
-before this one on the same tree), and it reports the item added:
-`policy mutations --check`. The mirror's own checksums are read as its first item
+before this one on the same tree), and it reports the item that moved: `attest_rings.py --net`
+`2e47faff6b787dbd->a690967635792b76`. That item is the one that reads the fresco
+wall, and the wall moved under it — ring 2 gained a tile, seq 55476, so the ring
+went from 14 of 16 cells filled to 15 and its line in the item's report changed.
+A digest that moved because a third party added a tile is the report doing its
+job, not a code change here, and the run says which item so a reader is not left
+to guess. The item added in this run is `policy mutations --check`. The mirror's own checksums are read as its first item
 again: with `REPRO_WS` pointing at the mirror it returns `out=e3b0c44298fc1c14`
 (silent when every file matches), and against the workspace root it can only say
 `no checksum file in this layout` — which is what it said in the run quoted
 before this one, so that run did not in fact check the mirror.
-`--expect a4eba64e3c45a5fb` exits 0 and `--expect 4444444444444444` exits 2 with
+`--expect b8109b046a62d80c` exits 0 and `--expect 4444444444444444` exits 2 with
 `digest MISMATCH`.
 `check.py`: 119 entries, 117 ok, 0 miss, 2 skipped, 117/117 distinct, with a
 fingerprint control of **15 pairs over 14 enumerated rules of the policy** (13
