@@ -34,8 +34,18 @@ set -u
 # neither the code nor the wall. The directory is resolved once, absolutely.
 HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
-WS="${REPRO_WS:-$(cd "$HERE/.." && pwd)}"
-LEDGER="${REPRO_LEDGER:-$WS/gap-game-ledger}"
+# The defaults are the documented invocation, and they were both wrong here in a
+# way that only a second reader would feel: the script assumed a published clone
+# keeps the ledger in a `gap-game-ledger/` subdirectory, so `bash repro/run_all.sh`
+# from the working tree looked for `gap-game-ledger/gap-game-ledger/check.py` and
+# every item that names a file failed with `No such file or directory`. A run whose
+# failures are all path errors reads exactly like a broken tree, and the four items
+# that do not name a file still passed, which is the worst shape a failure can have.
+# The mirror is the directory this script lives in; the ledger is its parent.
+# `git clone` + `cd gap-game-ledger` + the invocation in README.md are the contract,
+# and the defaults now match it: REPRO_WS=$PWD/repro, REPRO_LEDGER=$PWD.
+WS="${REPRO_WS:-$HERE}"
+LEDGER="${REPRO_LEDGER:-$(cd "$HERE/.." && pwd)}"
 export UV_CACHE_DIR="${UV_CACHE_DIR:-$WS/.uvcache}"
 REQUIRE=""; NET=0; SELFTEST=0; STABLE=0
 while [ $# -gt 0 ]; do

@@ -181,12 +181,17 @@ def size_reported_by_curl(args: list[str], reply: bytes | None = None) -> tuple[
     t.start()
     cmd = ["curl", "-s", "-o", "/dev/null", "-w", "%{size_download}"] + [
         a.replace("{port}", str(port)) for a in args]
-    out = subprocess.run(cmd, capture_output=True, text=True, timeout=15).stdout
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    out = res.stdout
     t.join(timeout=5)
     srv.close()
     head, _, body = reply.partition(b"\r\n\r\n")
     del head
-    return int(out.strip() or 0), len(body)
+    # The exit code is returned rather than dropped, because it is the cheap guard
+    # on this whole class: a row whose client exited non-zero carries a number that
+    # does not address an object at all (0 B at rc 61 beside a 1024 B neighbour;
+    # 100 B at rc 18 for a transfer cut short). A count without it is not a count.
+    return int(out.strip() or 0), len(body), res.returncode
 
 
 def decoding_point(args: list[str], where: str) -> tuple[int, str, int]:
@@ -203,6 +208,12 @@ def decoding_point(args: list[str], where: str) -> tuple[int, str, int]:
     """
     import os
     out = os.path.join(where, str(abs(hash(tuple(args)))) + ".bin")
+    # Unlink before the row: a row that writes no file must report "nothing", not
+    # the bytes its neighbour left here. This is the same class this instrument
+    # measures, caught on the stand of the other holder while she measured it, and
+    # a shared output path is how it happens.
+    if os.path.exists(out):
+        os.unlink(out)
     encoded = _gzip(PLAIN_BODY)
     reply = (b"HTTP/1.1 200 OK\r\ncontent-encoding: gzip\r\ncontent-length: "
              + str(len(encoded)).encode() + b"\r\n\r\n" + encoded)
@@ -225,8 +236,9 @@ def decoding_point(args: list[str], where: str) -> tuple[int, str, int]:
     res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
     t.join(timeout=5)
     srv.close()
-    raw = open(out, "rb").read()
-    return int(res.stdout.strip() or 0), hashlib.sha256(raw).hexdigest()[:16], len(raw)
+    raw = open(out, "rb").read() if os.path.exists(out) else b""
+    return (int(res.stdout.strip() or 0), hashlib.sha256(raw).hexdigest()[:16],
+            len(raw), res.returncode)
 
 
 def chunked_entity() -> bytes:
@@ -235,7 +247,22 @@ def chunked_entity() -> bytes:
                      for i in range(len(PLAIN_BODY))) + b"0\r\n\r\n")
 
 
-def transfer_axis() -> list[tuple[str, str, str]]:
+def curl_line() -> str:
+    """The client that produced these rows, as it names itself.
+
+    A row is reproducible only together with the client version that produced it,
+    and that is measured rather than assumed: the same listener, the same 1024-byte
+    entity served with `transfer-encoding: gzip`, is reported as 29 B with rc 0 by
+    one curl and REFUSED outright (`Unsolicited Transfer-Encoding (gzip) found`,
+    0 B, rc 61) by a later one, which needs `--raw` to pass it through at all. Two
+    holders reading one table published without a version cannot tell agreement
+    from a disagreement about the instrument.
+    """
+    return subprocess.run(["curl", "--version"], capture_output=True,
+                          text=True, timeout=15).stdout.splitlines()[0]
+
+
+def transfer_axis() -> list[tuple[str, str, str, str]]:
     """Where on the decoding chain the client counts.
 
     Chunk framing IS folded in and a transfer coding curl leaves coded is NOT --
@@ -249,10 +276,35 @@ def transfer_axis() -> list[tuple[str, str, str]]:
                    + str(len(PLAIN_BODY)).encode() + b"\r\n\r\n" + PLAIN_BODY)
     framed = chunked_entity()
     chunk_reply = b"HTTP/1.1 200 OK\r\ntransfer-encoding: chunked\r\n\r\n" + framed
+    coded = _gzip(PLAIN_BODY)
+    cl = b"content-length: " + str(len(coded)).encode() + b"\r\n"
+    one_chunk = b"%x\r\n" % len(coded) + coded + b"\r\n0\r\n\r\n"
     rows = []
-    for label, reply in (("content-length", plain_reply), ("chunked", chunk_reply)):
-        size, served = size_reported_by_curl(["http://127.0.0.1:{port}/x"], reply)
-        rows.append((label, f"{size} reported", f"{served} B served"))
+    cases = (
+        # the cell neither holder had: this is how gzip actually arrives in HTTP/1.1
+        ("CE:gzip + TE:chunked", b"HTTP/1.1 200 OK\r\ncontent-encoding: gzip\r\n"
+                                 b"transfer-encoding: chunked\r\n\r\n" + one_chunk, []),
+        # a transfer coding curl leaves coded on one version and refuses on another
+        ("TE:gzip", b"HTTP/1.1 200 OK\r\ntransfer-encoding: gzip\r\n" + cl
+                    + b"\r\n" + coded, []),
+        ("TE:gzip --raw", b"HTTP/1.1 200 OK\r\ntransfer-encoding: gzip\r\n" + cl
+                          + b"\r\n" + coded, ["--raw"]),
+        ("TE:deflate", b"HTTP/1.1 200 OK\r\ntransfer-encoding: deflate\r\n" + cl
+                       + b"\r\n" + coded, []),
+        ("TE:identity", b"HTTP/1.1 200 OK\r\ntransfer-encoding: identity\r\n" + cl
+                        + b"\r\n" + coded, []),
+        # A transfer that did not finish: the count is only an object's length for
+        # a complete one, and the exit code is what says so. The docstring claimed
+        # this condition before it was a row here; a described procedure is worth
+        # the credibility of its signer and nothing more.
+        ("cut short", b"HTTP/1.1 200 OK\r\ncontent-length: 1024\r\n\r\n"
+                      + PLAIN_BODY[:100], []),
+    )
+    for label, reply, flags in (("content-length", plain_reply, []),
+                                ("chunked", chunk_reply, [])) + cases:
+        size, served, rc = size_reported_by_curl(
+            flags + ["http://127.0.0.1:{port}/x"], reply)
+        rows.append((label, f"{size} reported", f"{served} B served", f"rc {rc}"))
     return rows
 
 
@@ -300,8 +352,9 @@ def main() -> int:
         bad.append(f"--compressed: accept-encoding {comp!r}, expected one naming gzip")
     axis.append(("--compressed", comp, "names gzip" if ok_comp else "MOVED"))
 
-    gz_size, gz_served = size_reported_by_curl(["http://127.0.0.1:{port}/v1/me"])
-    comp_size, comp_served = size_reported_by_curl(
+    gz_size, gz_served, gz_rc = size_reported_by_curl(
+        ["http://127.0.0.1:{port}/v1/me"])
+    comp_size, comp_served, comp_rc = size_reported_by_curl(
         ["--compressed", "http://127.0.0.1:{port}/v1/me"])
     # The question the ladder's `size` column rests on: what does the reported
     # number count? The object is 1024 bytes, served gzipped as gz_served bytes.
@@ -335,9 +388,31 @@ def main() -> int:
         bad.append(f"transfer framing moved the byte column: {plain_row} against "
                    f"{chunk_row}. If chunk framing is counted, `transfer-encoding` "
                    "is a second condition the record must carry")
-    for label, reported, served in transfer:
-        print(f"{'ok ' if transfer_folded_in else 'MOVED'}  transfer {label:<20}"
-              f" {reported:<14} {served}")
+    print(f"     client as it names itself: {curl_line()}")
+    print(f"     served entity {len(PLAIN_BODY)} B; coded {len(_gzip(PLAIN_BODY))} B;"
+          f" the same rows are reported differently by the other holder's client"
+          f" (8.18.0 refuses an unsolicited `transfer-encoding: gzip` outright,"
+          f" 0 B at rc 61, and needs `--raw` to pass it), so a row and the client"
+          f" that produced it travel together or the row is not reproducible")
+    refused = [r for r in transfer if r[3] != "rc 0"]
+    if not refused:
+        print("     no row here exits non-zero on this client, so the guard the exit"
+              " code provides is stated by the other holder's client and not by this"
+              " one: a row reported at rc 61 beside rows at rc 0 is not a count")
+    for label, reported, served, rc in transfer:
+        mark = "ok " if rc == "rc 0" else "rc "
+        print(f"{mark}  transfer {label:<20} {reported:<14} {served:<16} {rc}")
+    if refused:
+        print("     and a row whose client exited non-zero is not a count at all:"
+              + "; ".join(f" {r[0]} reports {r[1]} at {r[3]}"
+                          for r in refused)
+              + ". The exit code is the cheap guard on the whole class: none of"
+              " these numbers addresses an object, and the record would keep them"
+              " beside rows that do. Which rows are refused is itself client-specific"
+              " -- this client passes an unsolicited `transfer-encoding: gzip` through"
+              " and reports its coded length, while a later one refuses the same answer"
+              " outright at rc 61 -- so a row travels with the client that produced"
+              " it or it is not reproducible.")
     print(f"the byte column is the entity after curl removes CHUNK framing and before"
           f" every other decoding: {plain_row[2]} and {chunk_row[2]} are the same entity"
           f" and both report {plain_row[1].split()[0]}, while the same entity served"
@@ -357,7 +432,7 @@ def main() -> int:
     dpm = tempfile.mkdtemp(prefix="decode-point-")
     dec = decoding_point(["--compressed"], dpm)
     coded = decoding_point(["-H", "Accept-Encoding: gzip"], dpm)
-    same_number = dec[0] == coded[0]
+    same_number = dec[0] == coded[0] and dec[3] == 0 and coded[3] == 0
     different_object = dec[1] != coded[1] and dec[2] != coded[2]
     bad += [] if (same_number and different_object) else [
         f"decoding point: {dec} vs {coded} -- expected one number and two objects"]

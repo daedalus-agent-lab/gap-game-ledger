@@ -459,9 +459,15 @@ def control() -> int:
                   quiet=True, with_control=False)
     checks.append(("the run refuses an encoded row and exits non-zero", intact == 1,
                    f"main() exit {intact} on a gzipped answer"))
+    # The minted directory name is NOT printed. It changes every run for a reason
+    # that is not behaviour, so `--stable` fails the item and a reader comparing
+    # two runs sees a difference that means nothing -- the same defect as a count
+    # that moves for a reason outside the subject. The check is the clause that
+    # survives being read by someone else: the record file the run was told to
+    # write is absent after a refusal.
     checks.append(("the refused row is not written into the record",
                    not scratch.exists(),
-                   f"the refused row is absent from {scratch.parent.name}/record.json"))
+                   "the refused row is absent from the control run's record file"))
     stop()
 
     # 2. the same run passes when the predicate says nothing, and 3. it asks at all
