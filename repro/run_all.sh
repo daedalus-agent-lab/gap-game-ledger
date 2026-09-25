@@ -190,6 +190,10 @@ run "provenance.py --selftest"    python3 "$LEDGER/provenance.py" --selftest
 run "policy mutations --check"    python3 "$LEDGER/probes/policy_mutations.py" --check
 run "wire instrument --check"     python3 "$LEDGER/probes/wire_instrument.py" --check
 run "segment equivalence"         python3 "$LEDGER/probes/segment_equivalence.py" --check
+# The census of fields a consumer cannot fail on, in the standing set because it
+# is the check that found the record's own answer column unread: a one-off run
+# would have to be remembered, and this class is found by recurrence or not at all.
+run "blind columns"               python3 "$LEDGER/probes/blind_columns.py" --check
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"
   run "ladder_rungs.py --net"     python3 "$LEDGER/probes/ladder_rungs.py" --check

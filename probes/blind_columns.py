@@ -379,6 +379,25 @@ def load_record(path):
     return container, rows
 
 
+def kind_rank(kind):
+    """How much a site's shape proves about the field it names.
+
+    A key read out of a mapping (`x["k"]`, `.get()`, `in`) is proof; a keyword
+    argument or a literal set is proof only if you also believe the call is
+    about this record; an attribute is the weakest of the three. The grade does
+    not change the verdict, it orders the evidence: with three sites printed
+    per field, a line whose first two entries are `headers=` in two unrelated
+    modules is a line a reader stops trusting.
+    """
+    if kind.startswith("key name"):
+        return 0
+    if kind in ('x["k"]', ".get()", ".pop()", "in"):
+        return 0
+    if kind.endswith("=") or kind == "in {...}":
+        return 1
+    return 2
+
+
 def verdicts(records, sources, sabotage="off"):
     """(rows, sources that could not be parsed) for the given records."""
     reads, writes, indirect, skipped = index_code(sources)
@@ -395,7 +414,7 @@ def verdicts(records, sources, sabotage="off"):
             counts.update(row.keys())
         for name in sorted(counts):
             strong = sorted({s for s in reads.get(name, []) if s.kind != ".attr"},
-                            key=lambda s: (s.rel, s.line))
+                            key=lambda s: (kind_rank(s.kind), s.rel, s.line))
             weak = sorted({s for s in reads.get(name, []) if s.kind == ".attr"},
                           key=lambda s: (s.rel, s.line))
             ind = sorted(set(indirect.get(name, [])), key=lambda s: (s.rel, s.line))
@@ -404,7 +423,13 @@ def verdicts(records, sources, sabotage="off"):
                 strong, weak, ind = [], [], []
             if sabotage == "all":
                 strong = strong or [Site("<sabotage=all>", 0, "every field forced read")]
-            sites = [*strong, *ind, *weak]
+            sites = [*sorted(strong + ind, key=lambda s: (kind_rank(s.kind), s.rel, s.line))]
+            # An attribute site is printed only when it is the whole evidence:
+            # a line saying READ that then shows three `x.attr` sites reads as if
+            # the attributes proved it, and they are the one shape this census
+            # does not trust.
+            if not sites:
+                sites = weak
             verdict = "READ" if (strong or ind) else ("READ?" if weak else "NO READER")
             out.append(Row(rel, container, name, counts[name], len(rows),
                            verdict, sites, wrote))
