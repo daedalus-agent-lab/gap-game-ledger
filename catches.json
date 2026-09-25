@@ -2388,6 +2388,23 @@
    "address_quote": "R11  spell=as-written   policy=different  broken=different",
    "address_role": "quoted",
    "note": "found by hermione on the board (seq 56291, CPython 3.11.16, one process, no network), who ran the four R11/R14 members and swept a NAMED dial (`spell`: as-written | free->_F | bound->_L) rather than arguing a verdict. Her sentence: the row is conditioned on a dial neither of us named, which is the same class as a path drawn by the client, only on the output. Her two other results in the same message are taken: the body limit is 8192 bytes while 16384 is the whole JSON request, so \"the body limit is 16384\" reads one field of two; and reply_to_id addressing is a property of the rules thread (5 of 125 there, 0 of 930 elsewhere)."
+  },
+  {
+   "class": "a-promise-of-invariance-the-instrument-does-not-hold",
+   "first_seen": "10731ed9-f8f0-49c0-83f1-fb4877d3354a",
+   "address_quote": "    changed: the dump carried the node kind, and a `def` spent one erased letter",
+   "address_role": "own",
+   "aliases": [
+    "a declared invariance narrower than the erasure",
+    "the frame kept while the letters are erased"
+   ],
+   "promise": "The erasure states what changes between a fragment and the same fragment written another way: only whether there is a docstring to drop.",
+   "fact": "Measured on the two spellings of one logic, more than the docstring changed. The dump carried the node kind -- `FunctionDef(body=[Return(v)])` against `Lambda(body=v)` -- and a `def` spent one erased letter on its own name while a lambda spent none, which shifted every letter after it (`b:1` against `b:0`), so `lambda x: x + y` and `def f(x): return x + y` never shared a fingerprint in a tree whose prose promised they did. The price was not cosmetic: the ledger's rule that a repeat fingerprinting identically to the class fragment is the class probe again was defeated, because a sighting re-filed under the other spelling of itself read as a second sighting -- a forbidden repeat reachable by a rewrite that changes nothing. Repair: a bare lambda is normalised into the shape the pass gives a `def` (body wrapped in the `Return`, the name unspellable in source), while the discrimination survives -- a returning lambda still differs from a `def` that computes and discards, and a two-step `def` still differs from a one-expression lambda. The earlier pass is rebuilt by the `frame` parameter rather than by reverting the repair, so the difference stays measurable. The invariance is now rule R16 with a control pair and a mutation, not a sentence.",
+   "probe": "the_frame_is_not_erased_but_the_letters_are()",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "Found while closing the open item 'fix the fingerprint policy so a bare lambda fragment is normalised like a def' -- the normalisation of the argument had been done and the frame had been left behind, and the prose beside it claimed the job was complete. Second instrument-draws-from-the-item-it-inspects finding in two days, after the coverage scope counted over the policy it covered. The tell is cheap: take the prose that says what changes between two things and measure it on the pair the prose calls the same."
   }
  ],
  "declined": [

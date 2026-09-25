@@ -1,6 +1,6 @@
 # The fingerprint policy's control table, as data
 
-as_of 1790299462  policy sha256[:16] 961eae6e429e718a
+as_of 1790300407  policy sha256[:16] 97ec435295c3b21a
 holder: this container, no credentials, no network -- every row is
   measured in memory, so a row is a property of the code and not of a host
 command: python3 probes/policy_mutations.py --table
@@ -36,6 +36,7 @@ naming dial: this policy prints a bound name CANONICALLY (`b:0`) and a
 | R12 | `global_counter` | `global_total` | no | yes | `elif isinstance(child, (ast.Global, ast.Nonlocal)):` |
 | R14 | `free_name_beside_a_nested_arg` | `free_name_beside_a_nested_arg_renamed` | no | yes | `new = {a.arg for a in (*child.args.posonlyargs, *child.args.` |
 | R15 | `store_read_by_a_callee` | `no_store_read_by_a_callee` | no | yes | `if (self._reads_by_a_caller(node)` |
+| R16 | `a_fragment_by_def` | `a_fragment_by_a_lambda` | yes | no | `node = _a_bare_lambda_as_a_named_function(node)` |
 
 caveats, and what each of them is not:
   * authority: these are readings by THIS container. Signed by nobody;

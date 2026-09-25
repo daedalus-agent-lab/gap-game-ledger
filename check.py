@@ -499,7 +499,35 @@ class _Normalise(ast.NodeTransformer):
         return node
 
 
-def fingerprint(fn) -> str:
+def _a_bare_lambda_as_a_named_function(node):
+    """A bare lambda, in the shape the pass gives a `def`.
+
+    Erasing the argument made a lambda's letters go away and left everything else
+    about it as it was written, so `lambda x: x + y` and `def f(x): return x + y`
+    -- one piece of logic by any reading of it, the second the first written out
+    -- never shared a fingerprint: the dump carried the node kind, and the `def`
+    spent one erased letter on its own name while the lambda spent none, which
+    shifted every letter after it. The frame is not the author's choice of letter;
+    the letter is. A fragment re-filed under the other spelling of itself must
+    still read as the fragment it is, or a repeat can be laundered by a rewrite
+    that changes nothing.
+
+    The body is wrapped in the `Return` a `def` of the same logic would carry --
+    not to say the lambda returns and the expression does not, which is what the
+    wrapper exists for, but so that the two spellings of one logic dump alike. The
+    name is unspellable in Python source, so no identifier a fragment really uses
+    can collide with it, and the pass erases it like any other bound letter.
+    """
+    return ast.FunctionDef(
+        name="<lambda>",
+        args=node.args,
+        body=[ast.Return(value=node.body)],
+        decorator_list=[],
+        type_params=[],
+    )
+
+
+def fingerprint(fn, *, frame: bool = True) -> str:
     """The logic of a function with the names it binds thrown away.
 
     Bound names -- arguments, locals -- are the author's choice of letter and are
@@ -516,6 +544,12 @@ def fingerprint(fn) -> str:
     `_calls_a_name_the_fragment_does_not_bind`), the first is not. A repeat whose
     fragment fingerprints identically to the class fragment is the class probe
     again, not a second sighting.
+
+    `frame=False` is the pass as it stood before the frame was normalised: a
+    lambda's bound letters are erased and everything else about it is dumped as
+    it was written, so one logic under the two spellings of itself reads as two.
+    The earlier pass is rebuilt here by a parameter rather than by reverting the
+    repair, so the difference stays measurable in a tree that no longer takes it.
     """
     tree = ast.parse(inspect.getsource(fn).lstrip())
     node = tree.body[0]
@@ -525,7 +559,8 @@ def fingerprint(fn) -> str:
     # the argument. The policy below is the one every fragment gets; what changes
     # is only whether there is a docstring to drop, which there is when the node
     # has a body of statements.
-    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+    named = isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    if named:
         if (
             node.body
             and isinstance(node.body[0], ast.Expr)
@@ -541,7 +576,11 @@ def fingerprint(fn) -> str:
         # A lambda read through inspect.getsource arrives as the assignment that
         # binds it: the target names the fragment, the lambda is the fragment.
         node = node.value
-    elif not isinstance(node, (ast.Lambda, ast.ClassDef)):
+    if isinstance(node, ast.Lambda):
+        named = True
+        if frame:
+            node = _a_bare_lambda_as_a_named_function(node)
+    elif not named and not isinstance(node, ast.ClassDef):
         # A call, a bare expression, any other assignment: statements around it
         # are the author's scaffolding and ast.dump of the node as it stands is
         # the whole reading. An async def is one of the named functions.
@@ -600,7 +639,7 @@ def _row_exists(name: str) -> bool:
 # `fragments.POLICY_RULES`, and a rule added or removed fails until somebody edits
 # this line and says so in the ledger's own history.
 POLICY_RULE_IDS = ("R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10",
-                   "R11", "R12", "R13", "R14", "R15")
+                   "R11", "R12", "R13", "R14", "R15", "R16")
 
 
 def policy_still_names_every_rule_it_named() -> tuple[bool, str]:

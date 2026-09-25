@@ -1434,6 +1434,35 @@ def a_rule_deleted_from_the_scope_the_coverage_was_counted_over() -> bool:
     oracle_refuses = sorted(oracle - {rid for rid, _t in policy_after}, key=str) == [gone]
     return silent_after and oracle_refuses
 
+
+def the_frame_is_not_erased_but_the_letters_are() -> bool:
+    """A promise of invariance that the instrument it describes does not hold.
+
+    The erasure's own account said that what changes between a fragment and the
+    same fragment written another way is *only* whether there is a docstring to
+    drop. Measured on the two spellings of one logic, more than the docstring
+    changed: the dump carried the node kind, and a `def` spent one erased letter
+    on its own name while a lambda spent none, which shifted every letter after
+    it. So `lambda x: x + y` and `def f(x): return x + y` -- one logic, the second
+    the first written out -- never shared a fingerprint, while the account
+    promised that they did.
+
+    True means the promise does not hold on the pass as it stood. That pass is
+    rebuilt here by the `frame` parameter rather than by reverting the repair, so
+    the difference stays measurable in a tree that no longer takes it.
+
+    The price of the lie is not cosmetic. The ledger's own rule is that a repeat
+    which fingerprints identically to the class fragment is the class probe again
+    and not a second sighting; with the frame kept, a sighting re-filed under the
+    other spelling of itself read as a second sighting, so a repeat the ledger
+    forbids was reachable by a rewrite that changes nothing.
+    """
+    import check as _c
+
+    by_def = _c.fingerprint(a_fragment_by_def, frame=False)
+    by_lambda = _c.fingerprint(a_fragment_by_a_lambda, frame=False)
+    return by_def != by_lambda
+
 def check_passes_when_there_is_nothing_to_check(present, named):
     """The mirror item as the runner ran it: the file it checks is not there, so
     it prints a sentence and exits zero."""
@@ -1449,6 +1478,14 @@ def covered_by_the_checksums(present, named):
 
 
 
+
+
+def a_fragment_by_def(x, y):
+    """One piece of logic, written as a named function."""
+    return x * y + 1
+
+
+a_fragment_by_a_lambda = lambda a, b: a * b + 1
 
 def store_read_by_eval():
     """One of a pair that must never share a fingerprint: the store is read, and
@@ -1739,6 +1776,9 @@ POLICY_RULES = (
     ("R14", "a nested local binds nothing in the enclosing scope"),
     ("R15", "a fragment that calls a name it does not bind keeps its stores: the callee is "
             "outside the fragment and may read them through the caller's frame"),
+    ("R16", "a fragment written under the other spelling of itself is the same fragment: "
+            "a `def` and a bare lambda of one logic share a fingerprint, so a repeat "
+            "cannot be laundered by a rewrite that changes nothing"),
 )
 
 # The control table: (left, right, must they share one fingerprint?, rule id).
@@ -1750,6 +1790,7 @@ POLICY_RULES = (
 CONTROL_PAIRS = (
     ("parsed_by_json", "parsed_by_pickle", False, "R1"),
     ("max_of", "biggest_of", True, "R2"),
+    ("a_fragment_by_def", "a_fragment_by_a_lambda", True, "R16"),
     ("store_read_by_eval", "store_read_by_no_one", False, "R3"),
     ("store_read_through_a_frame", "no_store_read_through_a_frame", False, "R3"),
     ("padded_beside_a_mention_of_eval", "bare_beside_a_mention_of_eval",
@@ -1856,6 +1897,8 @@ POLICY_MUTATIONS = (
      "                                   *child.args.kwonlyargs)}",
      "            new = {a.arg for a in (*child.args.posonlyargs, *child.args.args,\n"
      "                                   *child.args.kwonlyargs)}\n            cur |= new"),
+    ("R16", "            node = _a_bare_lambda_as_a_named_function(node)",
+     "            pass"),
 )
 
 
@@ -2297,6 +2340,7 @@ NAMESPACES = {
         "every_rule_is_guarded": every_rule_is_guarded,
         "every_rule_of_the_policy_is_guarded": every_rule_of_the_policy_is_guarded,
         "uncovered_rules": uncovered_rules,
+
         "a_rule_deleted_from_the_scope_the_coverage_was_counted_over":
             a_rule_deleted_from_the_scope_the_coverage_was_counted_over,
         "guard_pairs": guard_pairs,
@@ -2328,7 +2372,11 @@ NAMESPACES = {
     "a-name-declared-twice-and-the-caveat-on-one-copy": {
         "caveat_reachable_from_every_declaration": caveat_reachable_from_every_declaration,
     },
-    "a-store-erased-though-the-fragment-reads-it": {
+
+    "a-promise-of-invariance-the-instrument-does-not-hold": {
+        "the_frame_is_not_erased_but_the_letters_are":
+            the_frame_is_not_erased_but_the_letters_are,
+    },    "a-store-erased-though-the-fragment-reads-it": {
         "stores_no_name_reads": stores_no_name_reads,
         "a_store_only_a_caller_reads": a_store_only_a_caller_reads,
         "two_logics_read_as_one_by_the_dead_store_pass":

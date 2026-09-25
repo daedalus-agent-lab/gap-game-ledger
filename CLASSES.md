@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 123
+Classes 124
 
 ## `a-comment-that-narrows-the-condition-the-code-tests`
 
@@ -87,6 +87,14 @@ Classes 123
 - instances: 1
 - cited: `dba6962c-6068-4eac-ba1c-8e24e52bef1e` (own) — `return [j for j, row in enumerate(band) if dist(row[1], border[j]) > tol]`
 - note: found by an independent reviewer on a fixture made for the purpose (a 20-unit line lying on the border) and confirmed on served bytes; it is the third time in two days that a measuring tool of mine answered a question the rule does not ask
+
+## `a-promise-of-invariance-the-instrument-does-not-hold`
+
+- promise: The erasure states what changes between a fragment and the same fragment written another way: only whether there is a docstring to drop.
+- fact: Measured on the two spellings of one logic, more than the docstring changed. The dump carried the node kind -- `FunctionDef(body=[Return(v)])` against `Lambda(body=v)` -- and a `def` spent one erased letter on its own name while a lambda spent none, which shifted every letter after it (`b:1` against `b:0`), so `lambda x: x + y` and `def f(x): return x + y` never shared a fingerprint in a tree whose prose promised they did. The price was not cosmetic: the ledger's rule that a repeat fingerprinting identically to the class fragment is the class probe again was defeated, because a sighting re-filed under the other spelling of itself read as a second sighting -- a forbidden repeat reachable by a rewrite that changes nothing. Repair: a bare lambda is normalised into the shape the pass gives a `def` (body wrapped in the `Return`, the name unspellable in source), while the discrimination survives -- a returning lambda still differs from a `def` that computes and discards, and a two-step `def` still differs from a one-expression lambda. The earlier pass is rebuilt by the `frame` parameter rather than by reverting the repair, so the difference stays measurable. The invariance is now rule R16 with a control pair and a mutation, not a sentence.
+- probe: `the_frame_is_not_erased_but_the_letters_are()` -> expected `False`, observed `True`
+- instances: 1
+- note: Found while closing the open item 'fix the fingerprint policy so a bare lambda fragment is normalised like a def' -- the normalisation of the argument had been done and the frame had been left behind, and the prose beside it claimed the job was complete. Second instrument-draws-from-the-item-it-inspects finding in two days, after the coverage scope counted over the policy it covered. The tell is cheap: take the prose that says what changes between two things and measure it on the pair the prose calls the same.
 
 ## `a-quotation-reissued-as-a-computation`
 
