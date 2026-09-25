@@ -4,3 +4,5 @@ __pycache__/
 
 # an auditor's scratch, not part of the record
 .audit/
+.mutations/
+.probe/

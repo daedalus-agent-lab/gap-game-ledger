@@ -44,11 +44,14 @@ Usage:
 from __future__ import annotations
 
 import hashlib
+import http.client
+import os
 import socket
 import subprocess
 import sys
 import tempfile
 import threading
+import urllib.request
 
 # (label, curl arguments after the command, the request line expected on the wire)
 #
@@ -308,6 +311,166 @@ def transfer_axis() -> list[tuple[str, str, str, str]]:
     return rows
 
 
+def falsify_cross_client(by_coding: dict) -> list[str]:
+    """What would make the cross-client axis wrong, as a function of its own table.
+
+    A function rather than a paragraph inside the run, because a claim about what
+    a table would show if it changed has to be executable to be worth anything:
+    this one is driven with a doctored table below, where a client reports a
+    count other than the wire's, and it must name the row.
+    """
+    bad: list[str] = []
+    # For a row whose body is a transfer coding the clients must report exactly
+    # what the wire carried, because none of these clients interprets a coding --
+    # and for the chunk row the clients must report LESS, because all of them fold
+    # the framing in.
+    for label, seen in by_coding.items():
+        wire = [(c, int(g.split()[0])) for c, g, _ in seen if c == "raw socket"
+                and g.split()[0].isdigit()]
+        counted = [(c, int(g.split()[0])) for c, g, _ in seen
+                   if c != "raw socket" and g.split()[0].isdigit()]
+        if not wire or not counted:
+            bad.append(f"{label}: the cross-client axis did not get both a client count"
+                       " and a wire count, so it asserts nothing")
+            continue
+        wire_n = wire[0][1]
+        framing = label.startswith("chunk")
+        same = all(n == wire_n for _, n in counted)
+        if framing and same:
+            bad.append(f"{label}: every client reported {wire_n}, the whole framed body, "
+                       "so the framing is NOT being folded in and this row says nothing "
+                       "about where the byte column sits")
+        if not framing and not same:
+            bad.append(f"{label}: a client reported a count other than the wire's "
+                       f"{wire_n} ({counted}), so that client interprets the transfer "
+                       "coding -- the row is then about that client and not about the "
+                       "coding, and the row must name it")
+    return bad
+
+
+def cross_client_axis() -> tuple[list[tuple[str, str, str, str]], list[str]]:
+    """The same answer read by four clients, and what the server actually wrote.
+
+    One listener, one entity, one coding per row, and a separate connection per
+    client with a thread per connection. Two things are measured that a single
+    client cannot show:
+
+    * the SERVER's write is hashed and must be constant across the clients of a
+      row. Without that column a row cannot be told from a row where the stand
+      answered nobody -- and that is not hypothetical: a holder's first run
+      accepted four connections for five clients, so one client got no bytes at
+      all and recorded it as rc 4, a verdict about the coding that was a fact
+      about her stand. A row whose server wrote nothing is not a reading.
+    * the four clients disagree about the same bytes, and the disagreement is
+      the finding rather than noise. One curl passes an unsolicited
+      `transfer-encoding: gzip` through and reports its coded length; another
+      refuses it outright; python's http.client, python's urllib and a raw
+      socket report the coded length in both cases, because none of them
+      interprets the coding at all. The number moves with the client while the
+      bytes on the wire do not, so the refusal lives in the client and not in
+      the wall -- a claim only a second and third client can make.
+
+    A fixture without chunk framing cannot measure a chunked row -- the row would
+    be about the fixture -- which is why the chunked row here is served with real
+    framing and the entity is 1024 bytes rather than the coded length.
+    """
+    notes: list[str] = []
+    body = b"x" * 1024
+    coded = _gzip(body)
+    framed = b"%x\r\n" % len(body) + body + b"\r\n0\r\n\r\n"
+    rows: list[tuple[str, str, str, str]] = []
+    for label, header, entity in (("transfer coding gzip", b"gzip", coded),
+                                  ("transfer coding deflate", b"deflate", coded),
+                                  ("transfer coding identity", b"identity", coded),
+                                  ("chunk framing", b"chunked", framed)):
+        reply = (b"HTTP/1.1 200 OK\r\ncontent-type: text/plain\r\ntransfer-encoding: "
+                 + header + b"\r\nconnection: close\r\n\r\n" + entity)
+        srv = socket.socket()
+        srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        srv.bind(("127.0.0.1", 0))
+        srv.listen(8)
+        port = srv.getsockname()[1]
+        writes: list[tuple[str, int]] = []
+
+        def handle(conn, port=port):
+            # A thread per connection. A serial accept loop is what turned one
+            # client that never sent its request into three empty rows on a
+            # holder's stand and would do the same here.
+            try:
+                if not conn.recv(8192).strip():
+                    return                      # asked for nothing, wrote nothing
+                conn.sendall(reply)
+                writes.append((hashlib.sha256(reply).hexdigest()[:16], len(reply)))
+            except OSError:
+                pass
+            finally:
+                conn.close()
+
+        def serve(srv=srv):
+            while True:
+                try:
+                    conn, _ = srv.accept()
+                except OSError:
+                    return
+                threading.Thread(target=handle, args=(conn,), daemon=True).start()
+
+        threading.Thread(target=serve, daemon=True).start()
+        url = f"http://127.0.0.1:{port}/x"
+        seen: list[tuple[str, str]] = []
+
+        def client(name: str, got: str, note: str):
+            # This client's OWN write, by the count of writes before it ran: the
+            # last write overall belongs to a neighbour as soon as one client
+            # fails, and a row reading its neighbour is the defect this whole
+            # file exists to measure.
+            written = writes[len(seen)] if len(writes) > len(seen) else ("-", 0)
+            seen.append((name, got))
+            rows.append((label, name, got, f"{written[0]} {written[1]}B {note}"))
+
+        before = len(writes)
+        del before
+        res = subprocess.run(["curl", "-s", "-o", os.devnull, "-w", "%{size_download}",
+                              "--max-time", "10", url], capture_output=True, text=True,
+                             timeout=20)
+        client("curl", f"{res.stdout.strip() or 0} reported", f"rc {res.returncode}")
+        try:
+            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+            conn.request("GET", "/x")            # the request, not just the socket:
+            resp = conn.getresponse()            # a connect with no request hangs
+            client("python http.client", f"{len(resp.read())} reported", f"rc {resp.status}")
+        except Exception as exc:
+            client("python http.client", "no bytes", type(exc).__name__)
+        try:
+            client("python urllib", f"{len(urllib.request.urlopen(url, timeout=10).read())}"
+                   " reported", "rc 200")
+        except Exception as exc:
+            client("python urllib", "no bytes", type(exc).__name__)
+        try:
+            conn = socket.create_connection(("127.0.0.1", port), timeout=10)
+            conn.sendall(b"GET /x HTTP/1.1\r\nhost: x\r\n\r\n")
+            raw = b""
+            while True:
+                chunk = conn.recv(65536)
+                if not chunk:
+                    break
+                raw += chunk
+            conn.close()
+            carried = len(raw.split(b"\r\n\r\n", 1)[1])
+            client("raw socket", f"{carried} on the wire", "no client at all")
+        except Exception as exc:
+            client("raw socket", "no bytes", type(exc).__name__)
+        srv.close()
+        shapes = {r[3].split()[0] for r in rows if r[0] == label}
+        if shapes != {"-"} and len(shapes) != 1:
+            notes.append(f"{label}: the server wrote {sorted(shapes)} across its clients, "
+                         "so the rows disagree about what was served and none of them "
+                         "is a reading of the coding")
+        if len(writes) != len(seen):
+            notes.append(f"{label}: {len(writes)} writes for {len(seen)} clients -- a row "
+                         "here has no server write of its own")
+    return rows, notes
+
+
 def context() -> str:
     version = subprocess.run(["curl", "--version"], capture_output=True,
                              text=True).stdout.splitlines()[0]
@@ -429,6 +592,32 @@ def main() -> int:
     # found on a live host before it was measured here. Same listener, same coded
     # answer, two ways of asking for it: `--compressed` asks AND decodes on write,
     # while `-H 'Accept-Encoding: gzip'` asks and writes what arrived.
+    print()
+    cross, cross_notes = cross_client_axis()
+    bad += cross_notes
+    by_coding: dict[str, list[tuple[str, str, str]]] = {}
+    for label, client, got, written in cross:
+        by_coding.setdefault(label, []).append((client, got, written))
+    for label, seen in by_coding.items():
+        writes = {w.split()[0] for _, _, w in seen}
+        mark = "ok " if len(writes) == 1 and writes != {"-"} else "MOVED"
+        print(f"{mark} cross-client {label:<24} server wrote "
+              f"{sorted(writes)[0] if len(writes) == 1 else sorted(writes)}")
+        for client, got, written in seen:
+            print(f"       {client:<18} {got:<16} its own write: {written}")
+    bad += falsify_cross_client(by_coding)
+    print(f"     the checks above are the axis's falsifiers: coding rows must report the"
+          f" wire's own count (nobody decodes a coding here), the chunk row must report"
+          f" less than the wire (everybody folds framing) -- so a client changing either"
+          f" behaviour turns this paragraph into a failure")
+    moved = [c for c, seen in by_coding.items()
+             for _, got, _ in seen if got == "no bytes"]
+    if moved:
+        print(f"     and the clients that report no bytes ({len(moved)} row(s)) are not a"
+              " verdict about the coding: the server wrote its answer for every row of"
+              " this axis, in a hashed constant per row, so a client that got nothing got"
+              " nothing from the stand or refused what it was sent -- and only the row's"
+              " own write column can tell those apart.")
     dpm = tempfile.mkdtemp(prefix="decode-point-")
     dec = decoding_point(["--compressed"], dpm)
     coded = decoding_point(["-H", "Accept-Encoding: gzip"], dpm)
