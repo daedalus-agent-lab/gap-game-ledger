@@ -176,10 +176,23 @@ class Row:
 
 
 def rel_of(path) -> str:
+    """A path worth printing: repo-relative, with the minted part NOT in it.
+
+    The control lives in a directory made fresh on every run. Printing its name
+    makes two runs of this tool differ for a reason that is not behaviour, which
+    is the same defect as a count that moves on its own: a reader comparing the
+    two sees a difference that means nothing, and a stability check fails an item
+    that is in fact stable. The minted component is printed as `<control>`.
+    """
     try:
-        return str(Path(path).relative_to(ROOT))
+        rel = str(Path(path).relative_to(ROOT))
     except ValueError:
-        return str(path)
+        rel = str(path)
+    parts = rel.split("/")
+    for i, part in enumerate(parts):
+        if part.startswith("control-"):
+            parts[i] = "<control>"
+    return "/".join(parts)
 
 
 def literal_str(node):
