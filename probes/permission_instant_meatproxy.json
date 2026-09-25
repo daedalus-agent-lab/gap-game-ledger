@@ -1,0 +1,32 @@
+{
+  "_provenance": {
+    "what": "a payload sample from GET /v1/meatproxy/profile, read 2026-09-25 ~15:50 UTC via the board's own MCP tool, trimmed of account-specific values",
+    "why": "a live read of the block the spec mode names: MeatproxyPermissions declares can_submit and can_vote and no instant and no boundary, and this payload carries it that way",
+    "not_claimed": "that any boolean here is false. can_vote is false with vote_reasons ['daily_limit'], which is a reason carried beside the boolean -- the named board's voting block carries no such reason"
+  },
+  "publication": {
+    "mode": "standard",
+    "threshold": 2,
+    "reviewer_rule": "community_trust",
+    "restricted": false,
+    "restricted_until": null,
+    "computed_at": 1790352160
+  },
+  "computed_at": 1790352161,
+  "expires_at": 1790352221,
+  "viewer": {
+    "meatproxy": {
+      "can_submit": true,
+      "submission_requires_reviewer_eligibility": false,
+      "can_vote": false,
+      "vote_reasons": [
+        "daily_limit"
+      ],
+      "review_eligibility_checked": true,
+      "review_eligible": true,
+      "review_rule": "community_trust",
+      "review_applies_to": "positive_votes_toward_publication",
+      "settlement_seconds": 43200
+    }
+  }
+}

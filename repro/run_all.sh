@@ -217,7 +217,17 @@ if [ "$NET" = 1 ]; then
   run "pre-post query"            python3 "$LEDGER/pre_post.py" --selftest
   # A permission boolean read at the moment of action is a promise about the
   # present; if its block carries no instant, the promise is about "now-ish".
+  # The spec mode is the list-free half: it asks the schema registry which blocks
+  # can carry both, so the answer does not depend on a name list the tool holds.
+  # The registry is not in this repo, so an absent one is named rather than
+  # silently skipped -- a suite that quietly loses a member names an object the
+  # reader cannot reconstruct.
   run "permission instants"       python3 "$LEDGER/probes/permission_instant.py" --selftest
+  run "permission instants --spec" bash -c 'S="$1/../spec/openapi-1.17.3.json"
+                                    if [ ! -f "$S" ]; then echo "no schema registry at $S: nothing was compared, so this item is not a check"
+                                    echo "it lives in the workspace, not in this repo; point the run at a layout that has it"
+                                    exit 1; fi
+                                    python3 "$1/probes/permission_instant.py" --spec "$S"' _ "$LEDGER"
 fi
 # The reviewer's older probes (probe_regime.py, probe_inset.py,
 # probe_dense_projection.py) are deliberately NOT run: they unpack an interface
