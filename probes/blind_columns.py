@@ -718,10 +718,16 @@ def _path_like(value) -> bool:
 
 
 def _module_paths(tree, rel: str) -> set:
-    """Module-level names bound to a path that IS this record."""
+    """Names bound, in any scope, to a path that IS this record.
+
+    Any scope, not only the module: `out = Path(__file__).with_name("x.json")`
+    inside the function that writes the record is the same binding as a
+    module-level constant, and a check that only reads module assignments calls
+    that writer innocent.
+    """
     want = _targets(rel)
     names = set()
-    for node in tree.body if isinstance(tree, ast.Module) else []:
+    for node in ast.walk(tree):
         if not isinstance(node, ast.Assign) or len(node.targets) != 1:
             continue
         t = node.targets[0]
@@ -850,6 +856,12 @@ def write_sites(text: str, rel: str):
             if not node.args:
                 continue
             target = _strings(node.args[0])
+            # `open(out, "w")` where `out` is a module constant holding this path
+            # is a write to this file; without this the check flags a writer that
+            # does exactly what it claims.
+            for n in ast.walk(node.args[0]):
+                if isinstance(n, ast.Name) and n.id in consts:
+                    target.add(rel)
             mode = ""
             if len(node.args) > 1:
                 mode = "".join(sorted(_strings(node.args[1])))
@@ -1034,6 +1046,10 @@ def run_control(sabotage):
             ("a local alias of that constant",
              'import pathlib\nT = pathlib.Path(__file__).with_name("x.json")\n'
              't = T\nt.write_text("1")\n', True),
+            ("a binding made inside the writing function",
+             'import pathlib\ndef main():\n'
+             '    out = pathlib.Path(__file__).with_name("x.json")\n'
+             '    with open(out, "w") as f:\n        f.write("1")\n', True),
             ("a shell variable and a move onto it",
              'reg="$WS/x.json"\nnewreg="$(mktemp)"\nmv "$newreg" "$reg"\n', True),
         ]
