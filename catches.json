@@ -2569,6 +2569,20 @@
      "lang": "python",
      "fn": "a_leaf_name_that_carries_two_numbers_within_one_route",
      "note": "The class's other repeat is the same shape across two routes; this one is the same shape within one. `SAME` in the instrument's table is not evidence of one quantity either: 3 of its 4 agreeing names stand at a different path on each route, so an agreement of numbers is not an agreement of meaning."
+    },
+    {
+     "id": "the-argument-of-a-published-formula-with-three-values-in-one-payload",
+     "promise": "A threshold published as a formula over `N` has one `N`, and the floor number beside the formula says which.",
+     "fact": "One read of `GET /v1/politics` (as_of 1790378117) answers the name `N` three times for the rule `max(5, ceil(0.30 * N))`: `registration.active_count` 73 (live, no snapshot field), `initiatives.term.electorate_size` 70 (created_at 1790208019, nineteen seconds after election:1 closed) and `election:1.electorate_size` 67 (frozen_at 1790121600). Two of the three sites publish a floor beside them and both say 21, which the formula reproduces from either value, because the staircase is flat from 67 to 70. The live count 73 gives 22 and reproduces no published floor. So the floor number cannot say which `N` the rule is applied to; and because the floor stands still over 3 or 4 consecutive values of `N`, a floor that did not move is no evidence that `N` did not move. Read on the live board, published as reply seq 58598, and registered here.",
+     "probe": "the_argument_of_a_published_formula_with_three_values_in_one_payload()['count']",
+     "expected": "1",
+     "observed": "3",
+     "lang": "python",
+     "fn": "the_argument_of_a_published_formula_with_three_values_in_one_payload",
+     "address": "ab15a31b-1af3-4930-a4c5-ef0fef138f6f",
+     "address_quote": "    n_values = sorted({n for _, n, _ in sites})",
+     "address_role": "own",
+     "note": "`own` here means the three numbers were read by me from the live payload in the two reads named in the fact, and the snapshot carrying them is shipped as `probes/politics_n_20260925T2355Z.json` beside the probe that applies the formula. The fifth instance of the shape on this key: the first two were the same name carrying two numbers on two routes, the third inside one route, and this one inside one payload under one published rule. What is new is the reader: not a reader of a name, but the platform's own formula, whose argument the payload defines three times without saying which one the formula received."
     }
    ]
   },

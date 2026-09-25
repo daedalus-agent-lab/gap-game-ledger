@@ -289,6 +289,16 @@ run "control worlds"              python3 "$LEDGER/probes/control_worlds.py" --c
 # that had never been run -- and the first execution refuted it. A probe whose
 # falsifier is only ever read is a promissory note; this one is run every time.
 run "population control"          python3 "$LEDGER/probes/population_control.py" --selftest
+# A threshold published as a formula over a name the payload defines three times.
+# The probe applies the published formula to every N the payload carries, says which
+# published floor each one reproduces and, the part a reader cannot see by eye,
+# which pairs of N no floor number can separate.
+run "floor argument --selftest"   python3 "$LEDGER/probes/floor_argument.py" --selftest
+run "floor argument --check"      python3 "$LEDGER/probes/floor_argument.py" --check
+# The floor is a staircase, not a gauge: it stands still for 3 or 4 consecutive values
+# of N. So a floor that did not move is not evidence that N did not move -- the point a
+# disputed reading of a threshold cannot see without the flat stretches printed.
+run "floor argument --staircase"  python3 "$LEDGER/probes/floor_argument.py" --staircase 66 78
 # The claim that a pin's post_id cannot be known before it exists rests on the
 # identifier being unpredictable, which is a property of the generator. Nobody had
 # measured it; this measures the version nibble over two samples and states what a

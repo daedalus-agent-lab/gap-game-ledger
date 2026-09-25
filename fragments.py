@@ -4083,3 +4083,33 @@ def the_fall_a_reader_offered_as_a_refutation() -> dict:
 
 
 NAMESPACES['a-discriminator-adopted-without-evaluating-the-models-on-it'].update({'the_fall_a_reader_offered_as_a_refutation': the_fall_a_reader_offered_as_a_refutation})
+
+
+def the_argument_of_a_published_formula_with_three_values_in_one_payload() -> dict:
+    """One name, three values, one payload, one published formula over it.
+
+    The platform publishes its election threshold as a formula and not a number:
+    `max(5, ceil(0.30 * N))`. One read of `GET /v1/politics` answers the name `N`
+    three times: `registration.active_count` 73 (live, no snapshot field),
+    `initiatives.term.electorate_size` 70 (created_at 1790208019, nineteen seconds
+    after election:1 closed) and `election:1.electorate_size` 67 (frozen_at
+    1790121600). A reader that knows the rule and not the position takes the
+    nearest number; here the nearest one gives a floor no published floor carries,
+    and the two floors that ARE published (21 beside 70, 21 beside 67) cannot
+    separate those two values, because the staircase is flat from 67 to 70. So the
+    published number cannot settle which N the rule is applied to, and a floor that
+    did not move is not evidence that N did not move.
+    """
+    sites = [("registration.active_count", 73, None),
+             ("initiatives.term.electorate_size", 70, 1790208019),
+             ("election:1.electorate_size", 67, 1790121600)]
+    n_values = sorted({n for _, n, _ in sites})
+    floors = sorted({max(5, -(-3 * n // 10)) for n in n_values})
+    flat = [(n, max(5, -(-3 * n // 10))) for n in (67, 68, 69, 70)]
+    return {"name": "N", "sites": len(sites), "values_of_N": n_values,
+            "count": len(n_values), "floors": floors,
+            "two_values_share_one_floor": len(floors) < len(n_values),
+            "flat_stretch_67_to_70": len({f for _, f in flat}) == 1}
+
+
+NAMESPACES['a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another'].update({'the_argument_of_a_published_formula_with_three_values_in_one_payload': the_argument_of_a_published_formula_with_three_values_in_one_payload})

@@ -652,6 +652,14 @@ OUT_OF_SCOPE = {
                 "written by that probe, read by it on the next run, and superseded "
                 "as a reading by the line it prints about the crossing",
     },
+    "probes/politics_n_20260925T2355Z.json": {
+        "successor": "probes/floor_argument.py",
+        "input_not_written": True,
+        "note": "the captured numbers standing for N in the governance payload, kept "
+                "as the input that probe reads. Not superseded and not an output: no "
+                "run in this tree writes it, because capturing it needs the board "
+                "credential, and the read that produced it is named in the file",
+    },
 }
 
 # Paths that are not repo content: a package cache, the auditor's scratch, a test
@@ -720,6 +728,12 @@ def out_of_scope_claims():
         if successor not in runner_text:
             problems.append(f"{rel}: successor {successor} exists but no standing run "
                             f"names it; a successor nobody runs supersedes nothing")
+        # 'Nothing in this tree writes it' is a clause the census CAN settle: the
+        # producers are a table in this file, so an input claimed unwritten must not
+        # appear in it. Without this the clause is prose beside a checked successor.
+        if claim.get("input_not_written") and rel in ALL_RECORDS:
+            problems.append(f"{rel}: declared an input that nothing writes, but the "
+                            f"producer table names {ALL_RECORDS[rel]}")
     return problems
 
 
@@ -750,6 +764,12 @@ def selftest_out_of_scope():
         OUT_OF_SCOPE = {"blind_grouping.json": {"note": "no successor"}}
         problems = out_of_scope_claims()
         checks.append(("a reason with no successor is a problem", bool(problems)))
+        OUT_OF_SCOPE = {"catches.json": {"successor": "probes/blind_columns.py",
+                                         "input_not_written": True,
+                                         "note": "x"}}
+        problems = out_of_scope_claims()
+        checks.append(("an input claimed unwritten that a producer names is a problem",
+                       bool(problems) and "producer table names" in problems[-1]))
     finally:
         OUT_OF_SCOPE = honest
 
