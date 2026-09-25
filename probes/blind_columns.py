@@ -675,8 +675,201 @@ def unlisted_records():
         for item in repo_records()[1]]
 
 
+WRITE_METHODS = {"write_text", "write_bytes", "dump", "dump_text", "writelines"}
+WRITE_MODES = set("wax+")
+
+
+def _strings(node) -> set:
+    """Every string literal in a subtree."""
+    return {n.value for n in ast.walk(node) if isinstance(n, ast.Constant)
+            and isinstance(n.value, str)}
+
+
+def _targets(rel: str) -> set:
+    """The spellings of a record's path that a write to it could carry.
+
+    A writer may reach the file as the whole relative path, as the basename beside
+    a directory it already stands in, or through `Path(__file__).with_name(...)`.
+    All three are the same file; `spec/refusal_doors.json` is not, although it
+    shares the basename -- and that is exactly what the old check accepted.
+    """
+    base = Path(rel).name
+    parent = Path(rel).parent
+    out = {rel, base}
+    if str(parent) != ".":
+        out.add(str(parent))
+    return out
+
+
+def _path_like(value) -> bool:
+    """Does this expression build a filesystem path?"""
+    for n in ast.walk(value):
+        if isinstance(n, ast.BinOp) and isinstance(n.op, ast.Div):
+            return True
+        if isinstance(n, ast.Call):
+            f = n.func
+            nm = f.attr if isinstance(f, ast.Attribute) else (
+                f.id if isinstance(f, ast.Name) else "")
+            if nm in ("Path", "with_name", "with_suffix", "joinpath", "resolve"):
+                return True
+        if isinstance(n, ast.Name) and n.id in ("__file__",):
+            return True
+    return False
+
+
+def _module_paths(tree, rel: str) -> set:
+    """Module-level names bound to a path that IS this record."""
+    want = _targets(rel)
+    names = set()
+    for node in tree.body if isinstance(tree, ast.Module) else []:
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+            continue
+        t = node.targets[0]
+        if not isinstance(t, ast.Name):
+            continue
+        if _path_like(node.value) and (_strings(node.value) & want):
+            names.add(t.id)
+    return names
+
+
+def _arg_defaults(tree) -> dict:
+    """argparse dest -> default string, for defaults that name a file."""
+    defaults = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        f = node.func
+        nm = f.attr if isinstance(f, ast.Attribute) else (
+            f.id if isinstance(f, ast.Name) else "")
+        if nm != "add_argument":
+            continue
+        dest = None
+        default = None
+        for kw in node.keywords:
+            if kw.arg == "dest" and isinstance(kw.value, ast.Constant):
+                dest = kw.value.value
+            if kw.arg == "default" and isinstance(kw.value, ast.Constant):
+                default = kw.value.value
+        if dest is None:
+            for arg in node.args:
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str) \
+                        and arg.value.startswith("--"):
+                    dest = arg.value[2:].replace("-", "_")
+                    break
+        if dest and isinstance(default, str):
+            defaults[dest] = default
+    return defaults
+
+
+def _shell_write_sites(text: str, rel: str):
+    """Redirects, moves and copies that land on this record, in a shell runner.
+
+    A shell writer reaches the file through a variable: `reg="$WS/fresco/x.json"`
+    and later `mv "$newreg" "$reg"`. Parsing the shell is not the point; the point
+    is that the record's path is assigned to a name and that name is the target of
+    a command that puts bytes there.
+    """
+    want = _targets(rel)
+    vars_ = set()
+    for m in re.finditer(r'^\s*([A-Za-z_][A-Za-z0-9_]*)=("[^"]*"|\S+)', text, re.M):
+        val = m.group(2).strip('"')
+        if any(w in val for w in want):
+            vars_.add(m.group(1))
+    hits = []
+    if not vars_:
+        return hits
+    for i, line in enumerate(text.splitlines(), 1):
+        for v in vars_:
+            if re.search(r'(>>?|\bmv\b|\bcp\b|\btee\b)[^\n]*"\$' + re.escape(v) + r'"', line):
+                hits.append((i, "shell redirect/move"))
+    return hits
+
+
+def write_sites(text: str, rel: str):
+    """Calls in `text` that write the record at `rel`, as (line, how).
+
+    The claim under test is "this code writes this file", and the old test was
+    `basename in text` -- satisfied by a docstring, by an argparse default, by a
+    shell variable, and by a write to a DIFFERENT path that happens to share the
+    basename. `doors/refusal_doors.py` writes `spec/refusal_doors.json`, a path
+    that does not exist, and the claim that it writes `doors/refusal_doors.json`
+    passed on the shared basename for weeks. A name in a file is not a write.
+    """
+    try:
+        tree = ast.parse(text)
+    except (SyntaxError, ValueError):
+        return _shell_write_sites(text, rel)
+    want = _targets(rel)
+    base = Path(rel).name
+    parent = str(Path(rel).parent)
+    consts = _module_paths(tree, rel)
+    # A local alias of a constant is the constant: `table = TABLE if p is None
+    # else Path(p)` then `table.write_text(...)` writes the same file, and a
+    # check that only follows module-level names calls that writer innocent.
+    for _ in range(3):                       # a short closure over alias chains
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+                continue
+            t = node.targets[0]
+            if isinstance(t, ast.Name) and any(
+                    isinstance(n, ast.Name) and n.id in consts
+                    for n in ast.walk(node.value)):
+                consts.add(t.id)
+    defaults = _arg_defaults(tree)
+    hits = _shell_write_sites(text, rel)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        fn = node.func
+        name = fn.attr if isinstance(fn, ast.Attribute) else (
+            fn.id if isinstance(fn, ast.Name) else "")
+        # Path(...).write_text / .write_bytes / json.dump(..., fh)
+        if name in WRITE_METHODS:
+            recv = fn.value if isinstance(fn, ast.Attribute) else None
+            seen = _strings(recv) if recv is not None else set()
+            for arg in node.args:
+                seen |= _strings(arg)
+            # A receiver that is a module constant holding this path, or an
+            # argparse value whose default is this file, is this file.
+            for n in ast.walk(recv) if recv is not None else []:
+                if isinstance(n, ast.Name) and n.id in consts:
+                    seen.add(rel)
+                if (isinstance(n, ast.Attribute) and n.attr in defaults
+                        and defaults[n.attr] in want):
+                    seen.add(rel)
+            # `Path(__file__).with_name("x.json")` carries only the basename, and
+            # that IS this file when the writer stands beside it. A bare basename
+            # elsewhere is not, so it needs the writer to be in the record's dir.
+            if base in seen and (parent == str(Path(rel).parent)):
+                if rel in seen or base in seen:
+                    hits.append((node.lineno, name))
+            elif rel in seen:
+                hits.append((node.lineno, name))
+            continue
+        if name == "open":
+            if not node.args:
+                continue
+            target = _strings(node.args[0])
+            mode = ""
+            if len(node.args) > 1:
+                mode = "".join(sorted(_strings(node.args[1])))
+            if not (set(mode) & WRITE_MODES):
+                continue
+            if rel in target:
+                hits.append((node.lineno, "open(w)"))
+            elif base in target and str(Path(rel).parent) == ".":
+                hits.append((node.lineno, "open(w)"))
+    return hits
+
+
 def check_producers():
-    """Each claimed record exists and the claimed writer names it."""
+    """Each claimed record exists and the claimed writer WRITES it.
+
+    Not "names it": the claim is about a write, and a check that accepts the name
+    accepts a comment, an argument default and a different path with the same
+    basename. The writer's own source is parsed and a write call to the record's
+    path is required.
+    """
     problems = []
     for rel, writer in sorted(PRODUCERS.items()):
         if not (ROOT / rel).exists():
@@ -686,9 +879,14 @@ def check_producers():
             problems.append(f"{rel}: claimed producer {writer} is missing")
             continue
         text = (ROOT / writer).read_text(encoding="utf-8", errors="replace")
-        if Path(rel).name not in text:
-            problems.append(f"{rel}: claimed producer {writer} never names the file, "
-                            "so the claim that it is written there is unproven")
+        hits = write_sites(text, rel)
+        if not hits:
+            named = Path(rel).name in text
+            problems.append(
+                f"{rel}: claimed producer {writer} has no write call for it"
+                + (" -- it only NAMES the file, which is not a write"
+                   if named else "")
+                + "; the claim that this code writes this record is unproven")
     return problems
 
 
@@ -814,6 +1012,44 @@ def run_control(sabotage):
         if extra:
             failures += 1
         total = len(CONTROL_CHECKS) + 1
+
+        # The producer check's own falsifier. The claim is "this code WRITES this
+        # record", and the old test was `basename in text` -- satisfied by a
+        # docstring, a comment, an argparse default, and a write to a different
+        # path that shares the basename. `doors/refusal_doors.py` wrote
+        # `spec/refusal_doors.json`, which does not exist, and the claim passed for
+        # weeks. Each shape below must be judged on whether bytes land on THIS file.
+        WRITER_CASES = [
+            ("a docstring that names it", '"""writes x.json"""\n', False),
+            ("a comment that names it", "# x.json\n", False),
+            ("an argparse default that names it",
+             'ap.add_argument("--out", default="x.json")\n', False),
+            ("a write to a DIFFERENT path sharing the basename",
+             'open("spec/x.json", "w")\n', False),
+            ("a read of it", 'open("x.json")\n', False),
+            ("a plain write to it", 'open("x.json", "w")\n', True),
+            ("Path(__file__).with_name(...).write_text",
+             'import pathlib\nT = pathlib.Path(__file__).with_name("x.json")\n'
+             'T.write_text("1")\n', True),
+            ("a local alias of that constant",
+             'import pathlib\nT = pathlib.Path(__file__).with_name("x.json")\n'
+             't = T\nt.write_text("1")\n', True),
+            ("a shell variable and a move onto it",
+             'reg="$WS/x.json"\nnewreg="$(mktemp)"\nmv "$newreg" "$reg"\n', True),
+        ]
+        writer_bad = []
+        for label, src, want in WRITER_CASES:
+            got = bool(write_sites(src, "x.json"))
+            if got != want:
+                writer_bad.append(f"{label}: want {'a write' if want else 'no write'}, "
+                                  f"got {'a write' if got else 'no write'}")
+        print(f"{'ok  ' if not writer_bad else 'RED '} the producer check judges a "
+              "WRITE, not a name")
+        for line in writer_bad:
+            print(f"     {line}")
+        if writer_bad:
+            failures += 1
+        total += 1
 
         # The boundary's own falsifier. The census reports "0 fields have no
         # reader" over the records it was told about; a record that appears in the

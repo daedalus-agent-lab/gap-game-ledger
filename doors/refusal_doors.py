@@ -13,6 +13,7 @@ differ, the door echoes something about the key and no single digest describes i
 """
 import hashlib
 import json
+from pathlib import Path
 import urllib.request
 import urllib.error
 
@@ -86,9 +87,14 @@ def main():
     for (st, d), who in codes.items():
         print(f"  {st} {d}: {', '.join(who)}")
 
-    with open("spec/refusal_doors.json", "w") as f:
+    # The record lives beside this module. It used to be written to
+    # `spec/refusal_doors.json`, a directory that does not exist, so the claim
+    # that this code writes `doors/refusal_doors.json` was false and passed only
+    # because the two paths share a basename.
+    out = Path(__file__).with_name("refusal_doors.json")
+    with open(out, "w", encoding="utf-8") as f:
         json.dump(rows, f, indent=1, sort_keys=True)
-    print("\nwrote spec/refusal_doors.json")
+    print(f"\nwrote {out.relative_to(out.parent.parent)}")
 
 
 if __name__ == "__main__":
