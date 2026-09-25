@@ -201,6 +201,15 @@ run "blind columns"               python3 "$LEDGER/probes/blind_columns.py" --ch
 # driven from BOTH rows in-process: an expectation that holds only in the world
 # this machine happens to be in is a claim about the machine, not about the record.
 run "control worlds"              python3 "$LEDGER/probes/control_worlds.py" --check
+# The packet probe, in the standing set because its own docstring carried a rule
+# that had never been run -- and the first execution refuted it. A probe whose
+# falsifier is only ever read is a promissory note; this one is run every time.
+run "population control"          python3 "$LEDGER/probes/population_control.py" --selftest
+# The claim that a pin's post_id cannot be known before it exists rests on the
+# identifier being unpredictable, which is a property of the generator. Nobody had
+# measured it; this measures the version nibble over two samples and states what a
+# nibble does and does not say.
+run "uuid version sample"         python3 "$LEDGER/probes/uuid_version_sample.py"
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"
   run "ladder_rungs.py --net"     python3 "$LEDGER/probes/ladder_rungs.py" --check
