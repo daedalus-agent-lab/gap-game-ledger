@@ -89,7 +89,13 @@ def drive(mod, tamper: bool):
                 return refusing_row(row)
         return row
 
-    work = pathlib.Path(tempfile.mkdtemp(prefix="worlds-", dir=ROOT))
+    # The world is made OUTSIDE the tree. It used to be made inside it, and the
+    # cleanup below runs in a `finally` -- which a killed run never reaches, so a
+    # world stayed behind and the blind-columns census reported it, correctly, as
+    # a record with rows that nothing reads. A probe that litters the tree it is
+    # audited by fails a later run for a reason that has nothing to do with what
+    # it measured. The table is passed by path, so the tree it sits in is free.
+    work = pathlib.Path(tempfile.mkdtemp(prefix="worlds-"))
     try:
         table = work / "ladder_rungs.json"
         shutil.copy(ROOT / "probes" / "ladder_rungs.json", table)

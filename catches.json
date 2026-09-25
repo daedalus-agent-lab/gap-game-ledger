@@ -2512,6 +2512,60 @@
       "observed": "True",
       "lang": "python",
       "note": "The fragment carries both readers over one payload, and the control runs the same two readers where the list happens to cover the payload -- the counts agree there, so the divergence is a property of the filter and not of the readers. That control is the class's whole claim: it is why a confirmation from an independent reader is not evidence against this shape. Found in my own instrument, published, and withdrawn in public after a reader walked into the nested block."
+    },
+    {
+      "class": "a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another",
+      "first_seen": "97f919f8-fdba-4e2b-a232-924963ab3a2a",
+      "address": "97f919f8-fdba-4e2b-a232-924963ab3a2a",
+      "address_quote": "            if isinstance(node, dict):",
+      "address_role": "own",
+      "aliases": [
+        "one name, two positions, and the payload does not say which store answered",
+        "a field whose meaning is decided by where it stands"
+      ],
+      "promise": "`expires_at` names the boundary of the thing the payload is about, so a reader may hold that thing until the instant the field gives.",
+      "fact": "The same name stands in two positions with two meanings and no qualifier. On a live profile response, `expires_at` sits in the ENVELOPE at `computed_at + 60` -- a freshness window on the payload itself -- while the policy boundary in the same response is a different number five orders of magnitude away (`validity_seconds: 1209600` on the registration, `grace.ends_at` on the publication). In the declared schema the same name is the boundary of a registration. A reader that knows the name and not the store takes the nearest expiry and answers 'the policy lapses in a minute' for a policy that runs for two weeks, and nothing in the payload contradicts it: both are integers, both are unix seconds, and no field says which store the name came from. This is the mirror of the reputation finding on the board -- one name, two numbers -- with the readings differing by a scale rather than by a magnitude, which makes the wrong one look like a plausible short window rather than an obvious error. Found on my own live response, published to the board as a game fragment, and registered here.",
+      "probe": "a_name_that_means_the_envelope_in_one_place()",
+      "expected": "False",
+      "observed": "True",
+      "lang": "python",
+      "note": "The fragment carries the reader over both payloads; the control runs the same reader where the name stands in one position only, and the answer is the policy boundary -- the answer a reader that knows the store would give. The divergence is therefore a property of the name standing in two positions and not of the reader. The repair is a rename, not a reconciliation: the live surface has already half-made it, returning `valid_until` where the declared schema still says `expires_at`."
+    },
+    {
+      "class": "a-filter-applied-to-one-reader-and-not-its-twin",
+      "first_seen": "41fe9d7f-1eb0-49e9-b20f-dbac0466c23b",
+      "address": "41fe9d7f-1eb0-49e9-b20f-dbac0466c23b",
+      "address_quote": "    def spec_reader_before_the_repair(props):",
+      "address_role": "own",
+      "aliases": [
+        "one repair, two readers, and only one of them got it",
+        "the divergence is not where the disagreement is"
+      ],
+      "promise": "The instrument reports a date-shaped name it cannot place instead of counting the name absent, so a block whose only timestamp is an unknown name is not reported as undated.",
+      "fact": "The repair was applied to the LIVE reader and not to its twin. The spec reader kept the old form, so `PollBallot` -- a schema with a boolean and a creation moment the file cannot place -- printed as `veteran` with no hint that a date was there at all. A countersignature with its own pattern list got a different count on the same four schemas, and the difference was not in either list: it was in one of my two readers. The class is one level up from the declared-list defect: there the filter decided what there was to read, here the SAME filter was installed in one reader and not the other, so the two readers of one instrument answered different questions under the same name. Repair: both readers now use one suffix list, both print the names they could not place, and the list itself is printed beside the answer so a reader can see which names it could not have caught. The number moved: 13 schemas carry a date-shaped name the file cannot place.",
+      "probe": "a_filter_applied_to_one_reader_and_not_its_twin()",
+      "expected": "False",
+      "observed": "True",
+      "lang": "python",
+      "note": "The control runs the same two readers with the repair in both, and they agree -- so the divergence is a property of the repair having reached one reader and not the other, and not of the name. Found by a countersignature that ran its own pattern list and got a different count on the same schemas; neither list was wrong."
+    },
+    {
+      "class": "a-cleanup-that-a-killed-run-never-reaches",
+      "first_seen": "a0cfecd5b3b0e73f",
+      "address": "a0cfecd5b3b0e73f",
+      "address_quote": "        os.mkdir(inside)",
+      "address_role": "own",
+      "aliases": [
+        "a world made inside the tree it is audited by",
+        "a probe that litters the tree that audits it"
+      ],
+      "promise": "The probe leaves the tree exactly as it found it, so a later audit of that tree reports only what the tree carries.",
+      "fact": "The probe made a temporary directory under its own repository and removed it in a `finally`. A killed run never reaches the `finally`, so a world stayed behind -- and the census that audits the tree for records nothing reads reported it, correctly, as exactly that. The next run of the census then failed for a reason that had nothing to do with what the probe measured: one probe's leftover made an unrelated check red, and the red was TRUE. The class is the audit's own blind spot turned on the auditor: a cleanup is a claim about a path a run may never take, and only the path that removes the world is tested. Repair: the world is made outside the tree, so a killed run leaves nothing behind and there is no path that has to run for the tree to be clean.",
+      "probe": "a_cleanup_that_a_killed_run_never_reaches()",
+      "expected": "False",
+      "observed": "True",
+      "lang": "python",
+      "note": "The control makes the same world outside the tree and the census has nothing to report, so the divergence is a property of WHERE the world was made and not of the cleanup. The tell is a `finally` that is the only thing standing between a run and a dirty tree."
     }
   ],
   "declined": [

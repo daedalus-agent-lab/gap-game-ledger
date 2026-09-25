@@ -86,6 +86,14 @@ BOUNDARY_KEYS = ("resets_at", "eligible_at", "expires_at", "valid_until")
 # REPORTED rather than silently counted as absent.
 LIVE_ONLY_KEYS = ("valid_until", "first_registered_at")
 
+# A suffix list is still a filter, and a filter decides what there is to read.
+# It is printed beside every answer that used it, so a reader can see which names
+# it could not have caught. `_of` is absent on purpose: `as_of` is in
+# INSTANT_KEYS, and a suffix that catches a name already placed would report the
+# same key twice.
+DATE_WORDS = ("_at", "_until", "_after", "_since", "_on", "_date", "_epoch",
+              "_time", "_ts", "timestamp")
+
 
 def blocks(doc, prefix=""):
     """(path, block) for every dict in the payload, including nested ones."""
@@ -126,8 +134,31 @@ def unclassified(block):
             continue
         if not isinstance(value, (int, float)) or isinstance(value, bool):
             continue
-        if any(w in key for w in ("_at", "_until", "_after", "_since", "_on",
-                                  "_date", "_epoch", "_time", "_ts", "timestamp")):
+        if any(w in key for w in DATE_WORDS):
+            out.append(key)
+    return out
+
+
+def unplaced_names(props):
+    """Date-shaped property names the SPEC declares that this file cannot place.
+
+    The live reader prints an unplaced name by name; the spec reader used to drop
+    it, so a schema whose only timestamp was a name outside both registries was
+    reported as "a boolean and no instant" with no hint that a date was there at
+    all. That is the declared-list defect one function over, and it was found by a
+    countersignature that ran its own pattern list and got a different count.
+
+    The suffix list is a filter, so it is returned with the answer and printed
+    beside it: the reader can then see which names it could not have caught.
+    """
+    out = []
+    for key, schema in props.items():
+        if key in INSTANT_KEYS or key in BOUNDARY_KEYS:
+            continue
+        kind = schema.get("type") if isinstance(schema, dict) else None
+        if kind not in ("integer", "number"):
+            continue
+        if any(w in key for w in DATE_WORDS):
             out.append(key)
     return out
 
@@ -383,7 +414,7 @@ def spec_report(spec) -> int:
         if bs and ins:
             both.append((name, bs, ins))
         elif bs:
-            bools_only.append((name, bs, bnd))
+            bools_only.append((name, bs, bnd, unplaced_names(props)))
         elif ins:
             inst_only.append((name, ins))
         else:
@@ -396,10 +427,16 @@ def spec_report(spec) -> int:
     for name, bs, ins in both:
         print(f"  {name:<26} booleans: {', '.join(bs)}")
         print(f"  {'':<26} instants: {', '.join(ins)}")
+    unplaced = [row for row in bools_only if row[3]]
     print(f"\nSCHEMAS CARRYING A BOOLEAN AND NO INSTANT ({len(bools_only)}):")
-    for name, bs, bnd in bools_only:
+    for name, bs, bnd, un in bools_only:
         tail = f"  boundaries: {', '.join(bnd)}" if bnd else ""
+        if un:
+            tail += f"  unplaced date-shaped: {', '.join(un)}"
         print(f"  {name:<26} {', '.join(bs)}{tail}")
+    print(f"  of these, {len(unplaced)} carry a date-shaped name this file cannot "
+          "place; they are named above rather than counted as undated")
+    print(f"  the suffix list that decides 'date-shaped': {', '.join(DATE_WORDS)}")
     print(f"\nSCHEMAS CARRYING AN INSTANT AND NO BOOLEAN ({len(inst_only)}):")
     for name, ins in inst_only:
         print(f"  {name:<26} {', '.join(ins)}")

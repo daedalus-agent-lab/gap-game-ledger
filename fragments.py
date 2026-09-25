@@ -2645,7 +2645,194 @@ def a_filter_that_covers_the_payload_reads_the_same_blocks() -> bool:
         len(read_every_block_with_a_boolean(payload))
 
 
+
+def a_name_that_means_the_envelope_in_one_place() -> bool:
+    """One name, two positions, and a reader that cannot tell them apart.
+
+    `expires_at` names a freshness window on a response envelope and a policy
+    boundary inside a policy block. A reader that knows the name and not the
+    store scans for it and takes the nearest expiry; on a payload carrying both
+    it answers "in a minute" for a policy that runs for two weeks. True means
+    the two positions answer one question differently.
+    """
+    now = 1000
+
+    def soonest_expiry(doc):
+        found = []
+
+        def walk(node):
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    if k == "expires_at" and isinstance(v, int):
+                        found.append(v - now)
+                    walk(v)
+
+        walk(doc)
+        return min(found) if found else None
+
+    envelope_and_policy = {"computed_at": now, "expires_at": now + 60,
+                           "registration": {"renewed_at": now - 100,
+                                            "expires_at": now + 1209600}}
+    policy_only = {"registration": {"renewed_at": now - 100,
+                                    "expires_at": now + 1209600}}
+    return soonest_expiry(envelope_and_policy) < 3600 <= \
+        soonest_expiry(policy_only)
+
+
+def a_name_that_stands_in_one_position_answers_one_question() -> bool:
+    """The control: the same reader where the name stands in one position only.
+
+    The answer is the policy boundary, and it is the answer a reader that knows
+    the store would give. The divergence above is therefore a property of the
+    name standing in two positions, and not of the reader.
+    """
+    now = 1000
+
+    def soonest_expiry(doc):
+        found = []
+
+        def walk(node):
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    if k == "expires_at" and isinstance(v, int):
+                        found.append(v - now)
+                    walk(v)
+
+        walk(doc)
+        return min(found) if found else None
+
+    policy_only = {"registration": {"renewed_at": now - 100,
+                                    "expires_at": now + 1209600}}
+    return soonest_expiry(policy_only) < 3600
+
+
+def a_filter_applied_to_one_reader_and_not_its_twin() -> bool:
+    """One repair, two readers, and only one of them got it.
+
+    A reader was repaired to report a date-shaped name it cannot place instead of
+    counting the name absent. Its twin -- the same question asked of a registry
+    rather than of a payload -- kept the old form: a name outside both registries
+    was dropped, so a schema whose only timestamp was such a name printed as "a
+    boolean and no instant" with no hint that a date was there at all. True means
+    the twins disagree about whether the name exists.
+    """
+    placed = ("as_of", "computed_at", "expires_at", "valid_until")
+    words = ("_at", "_until", "_on")
+
+    def live_reader(block):
+        return [k for k, v in block.items()
+                if k not in placed and isinstance(v, int)
+                and not isinstance(v, bool) and any(w in k for w in words)]
+
+    def spec_reader_before_the_repair(props):
+        return []
+
+    def spec_reader_after_the_repair(props):
+        return [k for k, v in props.items()
+                if k not in placed and v.get("type") in ("integer", "number")
+                and any(w in k for w in words)]
+
+    schema = {"veteran": {"type": "boolean"},
+              "created_at": {"type": "integer"}}
+    block = {"veteran": True, "created_at": 1790353912}
+    return (bool(live_reader(block))
+            and spec_reader_before_the_repair(schema) == []
+            and bool(spec_reader_after_the_repair(schema)))
+
+
+def a_filter_applied_to_both_readers_answers_the_same() -> bool:
+    """The control: both readers carry the repair, so both see the name.
+
+    The divergence above is a property of the repair having been applied to one
+    reader and not to its twin -- not of the name, which both readers find when
+    both have been repaired.
+    """
+    placed = ("as_of", "computed_at", "expires_at", "valid_until")
+    words = ("_at", "_until", "_on")
+
+    def reader(block):
+        return [k for k, v in block.items()
+                if k not in placed and isinstance(v, int)
+                and not isinstance(v, bool) and any(w in k for w in words)]
+
+    def spec_reader(props):
+        return [k for k, v in props.items()
+                if k not in placed and v.get("type") in ("integer", "number")
+                and any(w in k for w in words)]
+
+    schema = {"veteran": {"type": "boolean"}, "created_at": {"type": "integer"}}
+    block = {"veteran": True, "created_at": 1790353912}
+    return bool(reader(block)) != bool(spec_reader(schema))
+
+
+def a_cleanup_that_a_killed_run_never_reaches() -> bool:
+    """A world made inside the tree it is audited by, cleaned in a `finally`.
+
+    A probe made a temporary directory under its own repository and removed it in
+    a `finally` block. A killed run never reaches the `finally`, so the world
+    stayed behind -- and the census that audits the tree for records nothing
+    reads reported it, correctly, as exactly that. The next run of the census
+    then failed for a reason that had nothing to do with what the probe measured.
+    True means the tree carries a record the cleanup did not remove.
+    """
+    import os
+    import tempfile
+
+    tree = tempfile.mkdtemp(prefix="tree-")
+    inside = os.path.join(tree, "work")
+    outside = tempfile.mkdtemp(prefix="outside-")
+    try:
+        os.mkdir(inside)
+        open(os.path.join(inside, "rows.json"), "w").write("{}")
+        # the `finally` never runs: this is what a killed run leaves
+        return any(f.endswith("rows.json")
+                   for _, _, fs in os.walk(tree) for f in fs)
+    finally:
+        import shutil
+        shutil.rmtree(tree, ignore_errors=True)
+        shutil.rmtree(outside, ignore_errors=True)
+
+
+def a_world_made_outside_the_tree_leaves_nothing_to_audit() -> bool:
+    """The control: the same world made outside the tree.
+
+    Nothing the probe creates is inside the tree it is audited by, so a killed
+    run leaves the tree exactly as it found it and the census has nothing to
+    report. The divergence above is a property of WHERE the world was made, not
+    of the cleanup.
+    """
+    import os
+    import shutil
+    import tempfile
+
+    tree = tempfile.mkdtemp(prefix="tree-")
+    outside = tempfile.mkdtemp(prefix="outside-")
+    try:
+        os.mkdir(os.path.join(outside, "work"))
+        open(os.path.join(outside, "work", "rows.json"), "w").write("{}")
+        return any(f.endswith("rows.json")
+                   for _, _, fs in os.walk(tree) for f in fs)
+    finally:
+        shutil.rmtree(tree, ignore_errors=True)
+        shutil.rmtree(outside, ignore_errors=True)
+
 NAMESPACES = {
+    "a-filter-applied-to-one-reader-and-not-its-twin": {
+        "a_filter_applied_to_one_reader_and_not_its_twin":
+            a_filter_applied_to_one_reader_and_not_its_twin,
+        "a_filter_applied_to_both_readers_answers_the_same":
+            a_filter_applied_to_both_readers_answers_the_same},
+    "a-cleanup-that-a-killed-run-never-reaches": {
+        "a_cleanup_that_a_killed_run_never_reaches":
+            a_cleanup_that_a_killed_run_never_reaches,
+        "a_world_made_outside_the_tree_leaves_nothing_to_audit":
+            a_world_made_outside_the_tree_leaves_nothing_to_audit},
+
+    "a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another": {
+        "a_name_that_means_the_envelope_in_one_place":
+            a_name_that_means_the_envelope_in_one_place,
+        "a_name_that_stands_in_one_position_answers_one_question":
+            a_name_that_stands_in_one_position_answers_one_question},
     "a-filter-that-decides-what-is-read-and-is-never-checked": {
         "a_filter_that_decides_what_is_read_is_never_checked":
             a_filter_that_decides_what_is_read_is_never_checked,

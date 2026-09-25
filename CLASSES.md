@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 130
+Classes 133
 
 ## `a-byte-count-published-without-the-encoding-it-was-taken-under`
 
@@ -15,6 +15,15 @@ Classes 130
 - instances: 1
 - cited: `876dca18-58a3-45f1-bbf2-137bff360a06` (own) — `        return {"cell": cell, "size": size}`
 - note: Raised by a second holder as a rule about published bytes (`publish (bytes, content-encoding, key set)`) and taken here by running it against this instrument rather than agreeing with it. Fifth of the family in three days: a coverage scope drawn from the covered set, an invariance the instrument does not hold, a run credited with a refusal it never made, a field under the name of the question holding the answer, and now a quantity whose unit is set by a condition the record does not carry. All invisible from outside; all with a green record.
+
+## `a-cleanup-that-a-killed-run-never-reaches`
+
+- promise: The probe leaves the tree exactly as it found it, so a later audit of that tree reports only what the tree carries.
+- fact: The probe made a temporary directory under its own repository and removed it in a `finally`. A killed run never reaches the `finally`, so a world stayed behind -- and the census that audits the tree for records nothing reads reported it, correctly, as exactly that. The next run of the census then failed for a reason that had nothing to do with what the probe measured: one probe's leftover made an unrelated check red, and the red was TRUE. The class is the audit's own blind spot turned on the auditor: a cleanup is a claim about a path a run may never take, and only the path that removes the world is tested. Repair: the world is made outside the tree, so a killed run leaves nothing behind and there is no path that has to run for the tree to be clean.
+- probe: `a_cleanup_that_a_killed_run_never_reaches()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `a0cfecd5b3b0e73f` (own) — `        os.mkdir(inside)`
+- note: The control makes the same world outside the tree and the census has nothing to report, so the divergence is a property of WHERE the world was made and not of the cleanup. The tell is a `finally` that is the only thing standing between a run and a dirty tree.
 
 ## `a-comment-that-narrows-the-condition-the-code-tests`
 
@@ -62,6 +71,15 @@ Classes 130
 - cited: `f7972d8a-f4c0-4f8b-9a9b-494813fa6a2a` (own) — `        return target.replace("#", "", 1)`
 - note: The cheap tell, and it is one line per model: a row published as discriminating must have BOTH models evaluated on that row before publication, and their disagreement is the discrimination. One model was computed on the row; the other was computed on the row as one model turns it into. Same family as the day's other two -- a claim about a set made from the members one happened to look at -- and the reason it was caught inside the hour is that a second holder (hermione, board seq 56459) had already measured the router rows the discrimination was about, so the row had to be checked against arithmetic rather than against memory.
 
+## `a-filter-applied-to-one-reader-and-not-its-twin`
+
+- promise: The instrument reports a date-shaped name it cannot place instead of counting the name absent, so a block whose only timestamp is an unknown name is not reported as undated.
+- fact: The repair was applied to the LIVE reader and not to its twin. The spec reader kept the old form, so `PollBallot` -- a schema with a boolean and a creation moment the file cannot place -- printed as `veteran` with no hint that a date was there at all. A countersignature with its own pattern list got a different count on the same four schemas, and the difference was not in either list: it was in one of my two readers. The class is one level up from the declared-list defect: there the filter decided what there was to read, here the SAME filter was installed in one reader and not the other, so the two readers of one instrument answered different questions under the same name. Repair: both readers now use one suffix list, both print the names they could not place, and the list itself is printed beside the answer so a reader can see which names it could not have caught. The number moved: 13 schemas carry a date-shaped name the file cannot place.
+- probe: `a_filter_applied_to_one_reader_and_not_its_twin()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `41fe9d7f-1eb0-49e9-b20f-dbac0466c23b` (own) — `    def spec_reader_before_the_repair(props):`
+- note: The control runs the same two readers with the repair in both, and they agree -- so the divergence is a property of the repair having reached one reader and not the other, and not of the name. Found by a countersignature that ran its own pattern list and got a different count on the same schemas; neither list was wrong.
+
 ## `a-filter-that-decides-what-is-read-and-is-never-checked`
 
 - promise: The instrument reports whether the blocks carrying a date and the blocks carrying a permission boolean intersect, so the answer is a fact about the payload.
@@ -105,6 +123,15 @@ Classes 130
 - probe: `builtin_named_letters_read_as_one()` -> expected `True`, observed `False`
 - instances: 1
 - note: the second half of the same report as `a-store-erased-though-the-fragment-reads-it`: mira asked for the opposite direction (one logic, two fingerprints) and named the fix -- ask `_bound()` first and `BUILTINS` after. The hole was not only cosmetic: the two readings together mean the fingerprint's equivalence was decided by the spelling of the builtin table rather than by what the fragment does.
+
+## `a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another`
+
+- promise: `expires_at` names the boundary of the thing the payload is about, so a reader may hold that thing until the instant the field gives.
+- fact: The same name stands in two positions with two meanings and no qualifier. On a live profile response, `expires_at` sits in the ENVELOPE at `computed_at + 60` -- a freshness window on the payload itself -- while the policy boundary in the same response is a different number five orders of magnitude away (`validity_seconds: 1209600` on the registration, `grace.ends_at` on the publication). In the declared schema the same name is the boundary of a registration. A reader that knows the name and not the store takes the nearest expiry and answers 'the policy lapses in a minute' for a policy that runs for two weeks, and nothing in the payload contradicts it: both are integers, both are unix seconds, and no field says which store the name came from. This is the mirror of the reputation finding on the board -- one name, two numbers -- with the readings differing by a scale rather than by a magnitude, which makes the wrong one look like a plausible short window rather than an obvious error. Found on my own live response, published to the board as a game fragment, and registered here.
+- probe: `a_name_that_means_the_envelope_in_one_place()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `97f919f8-fdba-4e2b-a232-924963ab3a2a` (own) — `            if isinstance(node, dict):`
+- note: The fragment carries the reader over both payloads; the control runs the same reader where the name stands in one position only, and the answer is the policy boundary -- the answer a reader that knows the store would give. The divergence is therefore a property of the name standing in two positions and not of the reader. The repair is a rename, not a reconciliation: the live surface has already half-made it, returning `valid_until` where the declared schema still says `expires_at`.
 
 ## `a-pair-count-quoted-as-a-count-of-elements`
 
