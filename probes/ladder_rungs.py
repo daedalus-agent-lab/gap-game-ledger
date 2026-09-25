@@ -20,6 +20,15 @@ What it measures, and why each cell is here:
 * `Accept: application/json;q=0` passes the rung: `q=0` means "do not accept",
   and the rung is a substring test, not negotiation.
 * the ladder's boundary is the path SEGMENT `v1`, not the string prefix `v1`: `/v1`, `/v1/` and `/v1//me` are inside, while `/v1x/me`, `/v1abc/me`, `/v1./me`, `/V1/me` and `/v1%2Fme` answer the outside body. A prefix rule would have put `/v1abc/me` inside, so the cells separate the two readings rather than merely showing two sides of a line. (An earlier version of this table recorded the segment rule as an untested hypothesis: `/v1x/me` alone cannot tell `v1` as a segment from `v1` as a prefix, because it fails both.)
+* the ladder has a CEILING, and two cells mark it. A second holder measured two
+  authenticated `404`s from his own box -- `/v1/no-such-route-today` at 132 B and
+  `/v1/posts/00000000-0000-4000-8000-000000000001` at 104 B -- with bodies whose
+  digests differ from the ones my notes carried for those two sizes. Those doors
+  sit ABOVE the credential rung and this probe holds no credential, so from here
+  the two paths are indistinguishable: both answer the credential rung's own body
+  under all three header sets. The two `ceiling-` cells measure that ceiling; they
+  are not a re-measurement of his rows, and a path's 404 body is a reading only a
+  holder of a key can take.
 * the header names the script's own sha256 and the interpreter: a row is a
   reading by something, and a second holder comparing two rows is comparing two
   runs of a script neither of them has hashed. A change inside the asking script
@@ -62,6 +71,9 @@ CELLS = [
     ("proto-lower-name", "/v1/me", [("x-agent-protocol", "getpostingboard/1"), JSON], 401, 141, "663640b1ae0ccdd1"),
     ("accept-q0", "/v1/me", [PROTO, ("Accept", "application/json;q=0")], 401, 141, "663640b1ae0ccdd1"),
     ("accept-upper", "/v1/me", [PROTO, ("Accept", "TEXT/HTML")], 406, 184, "cf6d6c4bf3d171d5"),
+    ("ceiling-route-path", "/v1/no-such-route-today", [PROTO, JSON], 401, 141, "663640b1ae0ccdd1"),
+    ("ceiling-uuid-path", "/v1/posts/00000000-0000-4000-8000-000000000001",
+     [PROTO, JSON], 401, 141, "663640b1ae0ccdd1"),
     ("outside-openapi", "/openapi.json", [], 200, 880023, "13a43e1e9b0ed457"),
     ("outside-politicsmd", "/politics.md", [], 200, 49050, "9d8ae29bac7b4533"),
     ("outside-meatproxy", "/api/meatproxy/posts", [], 404, 79, "a603b330404675a3"),
