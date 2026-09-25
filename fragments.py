@@ -1572,6 +1572,62 @@ def two_readings_that_agree_on_the_row_that_was_said_to_part_them() -> bool:
             and measured_inside)
 
 
+def a_byte_count_published_without_the_encoding_it_was_taken_under() -> bool:
+    """The record's byte column counts a point on the decoding chain, and the record does not say which.
+
+    The ladder records one number per row under the name `size`, taken from
+    `curl -w '%{size_download}'`. Measured on a loopback listener, that number is
+    not a count of the object, and not a count of the wire either: it is the entity AFTER transfer decoding and BEFORE content decoding: a 1024-byte body served
+    gzipped is reported as 29, and `--compressed` reports the same 29, so the flag
+    decodes what is written rather than what is counted. Two rows whose answers
+    were encoded differently therefore put two different quantities in one column
+    under one name, and a reader comparing them compares nothing.
+
+    The record did not carry a `content-encoding`. The head block was already in
+    hand -- the rows are taken with `-D -` -- and the encoding was in it, read by
+    nobody. What kept the column honest was the flag set: `curl` sends no
+    `Accept-Encoding` unless `--compressed` is passed, so every cell happened to
+    be plain. That is a promise about the client, standing where a reading of the
+    answer belongs, and it holds only while the server does not take an offer it
+    was never made -- and it breaks silently the first time a row's own headers
+    ask for an encoding.
+
+    True means the record as it shipped reads two quantities as one: the rows do
+    not name an encoding, so nothing in them separates a plain count from an
+    encoded one, while the same rows with the encoding beside them do not compare
+    at all.
+    """
+    def a_row_as_the_record_shipped(cell, size):
+        # The ladder's row: a cell, a path, an answerer, a byte count -- and no
+        # `content-encoding`, though the head that carried one was in hand.
+        return {"cell": cell, "size": size}
+
+    def a_row_with_the_encoding_beside_it(cell, size, content_encoding):
+        # The same row after the repair: the condition the number was taken under
+        # is published with the number.
+        return {"cell": cell, "size": size, "content_encoding": content_encoding}
+
+    def what_the_number_counts(row):
+        # `%{size_download}`: the entity after transfer decoding, before content decoding.
+        return row["size"]
+
+    def two_rows_are_comparable(left, right):
+        # Comparable only when the same encoding lies behind both numbers. A row
+        # that names no encoding cannot answer the question, and a record that
+        # admits such rows is claiming they can.
+        return ("content_encoding" not in left
+                or "content_encoding" not in right
+                or left["content_encoding"] == right["content_encoding"])
+
+    plain = a_row_as_the_record_shipped("plain", 1024)
+    encoded = a_row_as_the_record_shipped("gzip", 29)
+    return (two_rows_are_comparable(plain, encoded)
+            and what_the_number_counts(plain) != what_the_number_counts(encoded)
+            and not two_rows_are_comparable(
+                a_row_with_the_encoding_beside_it("plain", 1024, ""),
+                a_row_with_the_encoding_beside_it("gzip", 29, "gzip")))
+
+
 def check_passes_when_there_is_nothing_to_check(present, named):
     """The mirror item as the runner ran it: the file it checks is not there, so
     it prints a sentence and exits zero."""
@@ -2497,6 +2553,10 @@ NAMESPACES = {
     "a-discriminator-adopted-without-evaluating-the-models-on-it": {
         "two_readings_that_agree_on_the_row_that_was_said_to_part_them":
             two_readings_that_agree_on_the_row_that_was_said_to_part_them,
+    },
+    "a-byte-count-published-without-the-encoding-it-was-taken-under": {
+        "a_byte_count_published_without_the_encoding_it_was_taken_under":
+            a_byte_count_published_without_the_encoding_it_was_taken_under,
     },    "a-store-erased-though-the-fragment-reads-it": {
         "stores_no_name_reads": stores_no_name_reads,
         "a_store_only_a_caller_reads": a_store_only_a_caller_reads,

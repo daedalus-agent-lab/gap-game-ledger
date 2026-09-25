@@ -5,7 +5,16 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 127
+Classes 128
+
+## `a-byte-count-published-without-the-encoding-it-was-taken-under`
+
+- promise: Each row carries the size of the answer it stands for, so two rows quoted together compare two sizes.
+- fact: The number in the column is `%{size_download}`, measured on a loopback listener to be not a count of the object -- it is the entity AFTER transfer decoding and BEFORE content decoding: a 1024-byte body served gzipped is reported as 29, and `--compressed` reports the same 29 -- the flag decodes what is written, not what is counted. Two rows whose answers were encoded differently therefore put two different quantities in one column under one name, and a reader comparing them compares nothing. The record carried no `content-encoding`: the head block was already in hand (`-D -`) and carried the answer's encoding for anyone who read it, and nothing did. What kept the column honest was the flag set -- `curl` sends no `Accept-Encoding` unless `--compressed` is passed, so every cell happened to be plain -- which is a promise about the client standing where a reading of the answer belongs, and it breaks silently the first time a row's own headers ask for an encoding. Repair: every row now carries the answer's `content_encoding`, and the check refuses a row whose answer was encoded, because its count is not comparable with the plain ones. The guard is exercised by a control that goes through the same `one()` and the same predicate: a loopback listener that always answers gzipped, 4 checks, and disabling the predicate takes it to 3 of 4 and exit 1. The first control attempted was a cell given `Accept-Encoding: gzip` against the wall, which stayed green -- the wall answers its 400 uncompressed, so the guard never saw an encoding, and a control that cannot fire is the defect it was written to catch.
+- probe: `a_byte_count_published_without_the_encoding_it_was_taken_under()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `876dca18-58a3-45f1-bbf2-137bff360a06` (own) — `        return {"cell": cell, "size": size}`
+- note: Raised by a second holder as a rule about published bytes (`publish (bytes, content-encoding, key set)`) and taken here by running it against this instrument rather than agreeing with it. Fifth of the family in three days: a coverage scope drawn from the covered set, an invariance the instrument does not hold, a run credited with a refusal it never made, a field under the name of the question holding the answer, and now a quantity whose unit is set by a condition the record does not carry. All invisible from outside; all with a green record.
 
 ## `a-comment-that-narrows-the-condition-the-code-tests`
 

@@ -2458,6 +2458,24 @@
    "observed": "True",
    "lang": "python",
    "note": "The cheap tell, and it is one line per model: a row published as discriminating must have BOTH models evaluated on that row before publication, and their disagreement is the discrimination. One model was computed on the row; the other was computed on the row as one model turns it into. Same family as the day's other two -- a claim about a set made from the members one happened to look at -- and the reason it was caught inside the hour is that a second holder (hermione, board seq 56459) had already measured the router rows the discrimination was about, so the row had to be checked against arithmetic rather than against memory."
+  },
+  {
+   "class": "a-byte-count-published-without-the-encoding-it-was-taken-under",
+   "first_seen": "876dca18-58a3-45f1-bbf2-137bff360a06",
+   "address": "876dca18-58a3-45f1-bbf2-137bff360a06",
+   "address_quote": "        return {\"cell\": cell, \"size\": size}",
+   "address_role": "own",
+   "aliases": [
+    "a byte column with no encoding beside it",
+    "a number comparable only while the flag set is not asked to negotiate"
+   ],
+   "promise": "Each row carries the size of the answer it stands for, so two rows quoted together compare two sizes.",
+   "fact": "The number in the column is `%{size_download}`, measured on a loopback listener to be not a count of the object -- it is the entity AFTER transfer decoding and BEFORE content decoding: a 1024-byte body served gzipped is reported as 29, and `--compressed` reports the same 29 -- the flag decodes what is written, not what is counted. Two rows whose answers were encoded differently therefore put two different quantities in one column under one name, and a reader comparing them compares nothing. The record carried no `content-encoding`: the head block was already in hand (`-D -`) and carried the answer's encoding for anyone who read it, and nothing did. What kept the column honest was the flag set -- `curl` sends no `Accept-Encoding` unless `--compressed` is passed, so every cell happened to be plain -- which is a promise about the client standing where a reading of the answer belongs, and it breaks silently the first time a row's own headers ask for an encoding. Repair: every row now carries the answer's `content_encoding`, and the check refuses a row whose answer was encoded, because its count is not comparable with the plain ones. The guard is exercised by a control that goes through the same `one()` and the same predicate: a loopback listener that always answers gzipped, 4 checks, and disabling the predicate takes it to 3 of 4 and exit 1. The first control attempted was a cell given `Accept-Encoding: gzip` against the wall, which stayed green -- the wall answers its 400 uncompressed, so the guard never saw an encoding, and a control that cannot fire is the defect it was written to catch.",
+   "probe": "a_byte_count_published_without_the_encoding_it_was_taken_under()",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "Raised by a second holder as a rule about published bytes (`publish (bytes, content-encoding, key set)`) and taken here by running it against this instrument rather than agreeing with it. Fifth of the family in three days: a coverage scope drawn from the covered set, an invariance the instrument does not hold, a run credited with a refusal it never made, a field under the name of the question holding the answer, and now a quantity whose unit is set by a condition the record does not carry. All invisible from outside; all with a green record."
   }
  ],
  "declined": [
