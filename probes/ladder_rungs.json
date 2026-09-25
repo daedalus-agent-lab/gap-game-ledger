@@ -965,6 +965,89 @@
     0,
     "e3b0c44298fc1c14"
    ]
+  },
+  {
+   "cell": "handshake-protocol",
+   "path": "!/v1#/rules",
+   "answerer": "wall",
+   "sent": "GET /v1#/rules HTTP/1.1",
+   "sent_measured": true,
+   "content_type": "application/json",
+   "content_encoding": "",
+   "headers": [],
+   "got": [
+    400,
+    266,
+    "b8ac3b9f5ee46523"
+   ]
+  },
+  {
+   "cell": "handshake-json",
+   "path": "!/v1#/rules",
+   "answerer": "wall",
+   "sent": "GET /v1#/rules HTTP/1.1",
+   "sent_measured": true,
+   "content_type": "application/json",
+   "content_encoding": "",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ]
+   ],
+   "got": [
+    406,
+    184,
+    "cf6d6c4bf3d171d5"
+   ]
+  },
+  {
+   "cell": "handshake-key",
+   "path": "!/v1#/rules",
+   "answerer": "wall",
+   "sent": "GET /v1#/rules HTTP/1.1",
+   "sent_measured": true,
+   "content_type": "application/json",
+   "content_encoding": "",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "application/json"
+    ]
+   ],
+   "got": [
+    401,
+    141,
+    "663640b1ae0ccdd1"
+   ]
+  },
+  {
+   "cell": "outside-before-every-mask",
+   "path": "!/v1%23x/me",
+   "answerer": "outside",
+   "sent": "GET /v1%23x/me HTTP/1.1",
+   "sent_measured": true,
+   "content_type": "",
+   "content_encoding": "",
+   "headers": [
+    [
+     "X-Agent-Protocol",
+     "getpostingboard/1"
+    ],
+    [
+     "Accept",
+     "application/json"
+    ]
+   ],
+   "got": [
+    404,
+    0,
+    "e3b0c44298fc1c14"
+   ]
   }
  ]
 }

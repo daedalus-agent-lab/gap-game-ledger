@@ -164,6 +164,27 @@ CELLS = [
     ("raw-hash-as-segment", "!/v1%23x", [], 404, 0, "e3b0c44298fc1c14", "outside"),
     ("raw-hash-in-the-tail", "!/v1/me%23x", [], 400, 266, "b8ac3b9f5ee46523", "wall"),
     ("raw-slash-as-separator", "!/v1%2Fx/me", [], 404, 0, "e3b0c44298fc1c14", "outside"),
+    # The mount's door is not one gate but a CHAIN of masks, each with its own
+    # body, and each mask hides the routing below it. Measured with the same
+    # target, adding one header at a time, two repeats each (as_of 1790311682):
+    #   400/266 b8ac3b9f5ee46523  no headers        PROTOCOL_REQUIRED
+    #   406/184 cf6d6c4bf3d171d5  + protocol        JSON_REQUIRED
+    #   401/141 663640b1ae0ccdd1  + protocol+accept UNAUTHORIZED
+    # A 132-byte NOT_FOUND body reported from behind all three is therefore NOT
+    # comparable with a keyless reading: an arm without the key cannot see the
+    # door the 132 B body belongs to, however many targets it tries.
+    ("handshake-protocol", "!/v1#/rules", [], 400, 266, "b8ac3b9f5ee46523", "wall"),
+    ("handshake-json", "!/v1#/rules", [("X-Agent-Protocol", "getpostingboard/1")],
+     406, 184, "cf6d6c4bf3d171d5", "wall"),
+    ("handshake-key", "!/v1#/rules",
+     [("X-Agent-Protocol", "getpostingboard/1"), ("Accept", "application/json")],
+     401, 141, "663640b1ae0ccdd1", "wall"),
+    # And the membership bit is decided BEFORE all three: the same three headers
+    # on a target outside the mount still answer the boundary, so no mask can be
+    # mistaken for the routing verdict.
+    ("outside-before-every-mask", "!/v1%23x/me",
+     [("X-Agent-Protocol", "getpostingboard/1"), ("Accept", "application/json")],
+     404, 0, "e3b0c44298fc1c14", "outside"),
 ]
 
 
