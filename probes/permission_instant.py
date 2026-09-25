@@ -231,6 +231,59 @@ def correlation(doc):
     return with_instant, with_bool, both, witnesses
 
 
+def which_boundary(block, name="expires_at"):
+    """Say which object a boundary belongs to, or refuse to guess.
+
+    A boundary name says when something changes and not what changes, and the
+    store decides what the number means. The only thing in the payload that can
+    settle it without reading the server's documents is AGREEMENT: a second name
+    in the same block that measures the same span for a reason the block itself
+    states.
+
+    Three agreements are readable here, and each is a relation between two names
+    in one block:
+
+      freshness   `expires_at - computed_at` is a small envelope lifetime
+      policy      `valid_until - renewed_at == validity_seconds`, stated in the
+                  block rather than assumed
+      retention   `expires_at - created_at` is a whole number of days
+
+    When none holds, this raises. Returning the boundary anyway would be a number
+    handed over under a name whose store nobody established -- and the refusal is
+    a reading too: it says the payload does not carry the second name the answer
+    needs. A caller who knows which store it means can say so and skip the guess.
+    """
+    import datetime as _dt
+
+    def n(key):
+        v = block.get(key)
+        return v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+
+    if name == "expires_at":
+        computed, created = n("computed_at"), n("created_at")
+        if computed is not None and 0 < n(name) - computed <= 3600:
+            return "freshness", n(name) - computed
+        if created is not None:
+            span = n(name) - created
+            if span > 0 and span % 86400 == 0:
+                return "retention", span
+            raise ValueError(
+                f"{name} - created_at = {span} s, which is {span / 86400:.5f} days: "
+                "not a whole number, so the retention agreement does not hold and "
+                "the store is not established by this block")
+        raise ValueError(
+            f"{name} in this block has no computed_at and no created_at to agree "
+            "with, so nothing here says which store it belongs to")
+    if name == "valid_until":
+        renewed, stated = n("renewed_at"), n("validity_seconds")
+        if renewed is not None and stated is not None and n(name) - renewed == stated:
+            return "policy", stated
+        raise ValueError(
+            f"{name} - renewed_at does not equal the validity_seconds stated in the "
+            "same block, so the policy agreement does not hold")
+    raise ValueError(f"no agreement is readable for the name {name!r}")
+
+
 def boundary_spans(doc):
     """Every boundary name, the store it lives in, and the span it measures.
 
@@ -330,6 +383,15 @@ def report(doc) -> int:
     return 1 if undated else 0
 
 
+def _raises(fn) -> bool:
+    """True when the call refuses. A refusal is a reading; this is how it is read."""
+    try:
+        fn()
+    except ValueError:
+        return True
+    return False
+
+
 def selftest() -> int:
     """The rule must fire on an undated block, stay quiet on a dated one, and
     refuse to call a payload disjoint when a block carries both.
@@ -419,6 +481,26 @@ def selftest() -> int:
          lambda: boundary_spans({"viewer": {"meatproxy": {
              "computed_at": 1, "expires_at": 61}}})[0]["store"]
          == "viewer.meatproxy.expires_at", True),
+        # The repair proposed for this class: name the store by agreement between
+        # two names in the same block, and refuse rather than guess. Both cases
+        # it was proposed over are here, and the second one refuses -- because the
+        # span published as "exactly 30 days" is not a whole number of days, so
+        # the retention agreement does not hold on the very case that was cited
+        # for it. A rule that returns a store anyway is the third case of the lie.
+        ("the envelope is named by agreement with its own reading instant",
+         lambda: which_boundary({"computed_at": 100, "expires_at": 160})[0]
+         == "freshness", True),
+        ("the policy boundary is named only when the block states the span itself",
+         lambda: which_boundary({"renewed_at": 0, "valid_until": 1209600,
+                                 "validity_seconds": 1209600},
+                                name="valid_until")[0] == "policy", True),
+        ("a retention span that is not a whole number of days is refused, not guessed",
+         lambda: _raises(lambda: which_boundary(
+             {"created_at": 1790346990, "expires_at": 1792938959})), True),
+        ("the refused span is the one published as a round thirty days",
+         lambda: (1792938959 - 1790346990) % 86400 == 86369, True),
+        ("a boundary with nothing to agree with is refused, not returned",
+         lambda: _raises(lambda: which_boundary({"expires_at": 5})), True),
     ]
     bad = []
     for label, probe, want in checks:
