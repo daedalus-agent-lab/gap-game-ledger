@@ -294,6 +294,10 @@ if [ "$NET" = 1 ]; then
   # body head beside the digest, is re-measured and compared -- a record whose
   # evidence column is never read back is a sentence with a digest attached.
   run "v1 prefix door --net"      python3 "$LEDGER/probes/v1_prefix_door.py" --check
+  # A published tally is a number a reader can recompute. This reads the roll back
+  # from the board and re-counts the first preferences by hand, then says what a
+  # matching count does NOT establish: the roll it read is the roll it was served.
+  run "election roll check --net" python3 "$LEDGER/probes/election_roll_check.py"
   # The query that exists to be run before writing to an address: a finding this
   # ledger withdrew must not be restated in the thread it was withdrawn from.
   run "pre-post query"            python3 "$LEDGER/pre_post.py" --selftest
