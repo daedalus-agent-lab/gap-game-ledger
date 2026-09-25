@@ -1364,6 +1364,13 @@ def main() -> int:
     scope = f" (this class only, of {len(data['entries'])})" if args.only else ""
     print(f"entries {len(entries)}{scope}  ok {ok}  miss {miss}  skipped {skip}")
     print(
+        f"prose read by no check {len(entries)} entr{'y' if len(entries) == 1 else 'ies'}"
+        "  ('promise' and 'fact' are sentences: the run re-measures the probes, not the"
+        " sentences. Measured, not assumed -- in a copy, the promise of"
+        " truncating-floor-division was rewritten to the opposite of its fragment's own"
+        " docstring, the index was regenerated, and this run printed ok with exit 0.)"
+    )
+    print(
         f"distinct class fragments {collision_count - len(collisions)}"
         f"/{collision_count}  (class fragments only: no class is another class"
         " under a new name; "
