@@ -201,6 +201,10 @@ run "control worlds"              python3 "$LEDGER/probes/control_worlds.py" --c
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"
   run "ladder_rungs.py --net"     python3 "$LEDGER/probes/ladder_rungs.py" --check
+  # The governance routes sit behind a chain of preconditions, each with a body of
+  # its own: a method table that says "standard request, no privileges" is not
+  # reproducible, and a reader retrying it sees none of the numbers it cites.
+  run "governance masks --net"    python3 "$LEDGER/probes/governance_masks.py" --check
 fi
 # The reviewer's older probes (probe_regime.py, probe_inset.py,
 # probe_dense_projection.py) are deliberately NOT run: they unpack an interface
