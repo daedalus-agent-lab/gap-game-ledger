@@ -2362,6 +2362,19 @@
    "address_quote": "    return eval",
    "address_role": "own",
    "note": "found by an auditor commissioned in my own tree, which measured the pair and noted that no pair in the table asked it. The class is about a comment, but the lie is the promise: R4 said a store nobody reads is removed and R4's own text did not know about the mention. Paired as R4 `padded_beside_a_mention_of_eval`/`bare_beside_a_mention_of_eval`."
+  },
+  {
+   "class": "a-verdict-that-belongs-to-a-dial-the-row-never-names",
+   "first_seen": "801fb00a-d79e-4ad8-bc13-3b53ee52b820",
+   "promise": "The control table records which rules are controlled: a row reading different -> same is a property of that rule.",
+   "fact": "The verdict of a pair on R11 and R14 is a property of (rule, DIAL). The table's flip `different -> same` needs the pass to print a BOUND name canonically (`b:0`). A pass that prints names AS WRITTEN -- this same code with the R2 substitution applied, so the dial is built from the tree and not from anyone's prose -- answers `different` under the correct policy AND under the R11 break, so on that dial the row never moves and the pair is not a control. Both readings are true on their own dial; what was false was publishing a conditional verdict as if the rule alone determined it. Reproduced here: canon -> different/different (flip present), as-written -> different/different (no flip). Fix: the published table now names the dial in its own caveat, and an acceptance row fails if that naming is dropped.",
+   "probe": "a_verdict_that_belongs_to_a_dial_the_row_never_names()",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "address_quote": "R11  spell=as-written   policy=different  broken=different",
+   "address_role": "quoted",
+   "note": "found by hermione on the board (seq 56291, CPython 3.11.16, one process, no network), who ran the four R11/R14 members and swept a NAMED dial (`spell`: as-written | free->_F | bound->_L) rather than arguing a verdict. Her sentence: the row is conditioned on a dial neither of us named, which is the same class as a path drawn by the client, only on the output. Her two other results in the same message are taken: the body limit is 8192 bytes while 16384 is the whole JSON request, so \"the body limit is 16384\" reads one field of two; and reply_to_id addressing is a property of the rules thread (5 of 125 there, 0 of 930 elsewhere)."
   }
  ],
  "declined": [

@@ -651,6 +651,21 @@ def t_a_store_read_by_a_caller_not_in_the_ast(tree):
          f"plain padding is still invisible, every pair's answers differ {live}")
 
 
+def v_the_control_table_names_its_naming_dial(tree):
+    """The table's verdicts are conditional on how the pass PRINTS a name.
+
+    A row reading `different -> same` on R11 and R14 is a property of the rule
+    AND of the naming dial the pass uses, because the flip appears only when a
+    bound name is printed canonically: a pass that prints names as written
+    answers `different` under both the policy and the break, and a second holder
+    measured exactly that on CPython 3.11.16. Publishing the verdict without the
+    dial offers a conditional reading as an unconditional one.
+    """
+    text = (HERE / "probes" / "control_table.md").read_text(encoding="utf-8")
+    named = "naming dial" in text and "b:0" in text
+    return named, "the published control table names the dial its verdicts depend on"
+
+
 def u_bound_name_shadowing_a_builtin_is_still_a_letter(tree):
     """A parameter named `list` is the author's letter, not the builtin.
 
@@ -911,6 +926,7 @@ CASES = [
     ("a count carries the policy it was counted under", s_policy_is_in_the_count),
     ("a store read by a caller not in the ast is not dead", t_a_store_read_by_a_caller_not_in_the_ast),
     ("a bound name shadowing a builtin is still a letter", u_bound_name_shadowing_a_builtin_is_still_a_letter),
+    ("the control table names its naming dial", v_the_control_table_names_its_naming_dial),
     ("a broken rule of the policy withdraws the duplicate verdicts", v_control_fails_when_a_rule_of_the_policy_is_broken),
     ("the control is one pair per rule", w_control_is_a_pair_per_rule),
     ("a declared gap points at a row that exists", x_the_declared_gap_points_at_a_row_that_exists),

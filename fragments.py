@@ -2111,6 +2111,72 @@ def a_store_read_by_a_qualified_reader_is_erased() -> bool:
 
 
 
+
+
+# The row a reader could not reproduce. It is text because the lie is text: a
+# verdict whose flip depends on a dial (how the pass PRINTS a bound name) that the
+# row never named. A pass printing names as written answers `different` under the
+# correct policy and under the break, so on that dial the pair is not a control at
+# all -- and nothing in this line says which dial it was measured on.
+control_row_without_its_dial = (
+    "| R11 | `class_body_binds_nothing` | `class_body_other_name` | "
+    "different | same | `elif isinstance(child, ast.alias) and child.asname:` |"
+)
+
+def a_verdict_that_belongs_to_a_dial_the_row_never_names() -> bool:
+    """A row's flip is a property of (rule, DIAL), not of the rule.
+
+    The control table records `different -> same` on R11 and R14. That flip needs
+    the pass to print a BOUND name canonically (`b:0`); a pass that prints names
+    AS WRITTEN -- which is this same code with the R2 substitution applied, so the
+    dial is built from the tree and not from anyone's prose -- answers `different`
+    under the correct policy AND under the R11 break. So the published verdict is
+    conditional on a dial the row never named, and a reader who runs the pair on
+    the other dial cannot reproduce it. Measured by a second holder on CPython
+    3.11.16 and reproduced here. True means the conditional is present.
+    """
+    import os as _os
+    import sys as _sys
+
+    import check as _c
+
+    # The class's own bytes: the row as published, with no dial named in it. If a
+    # dial is present in the row, the lie is not this one.
+    if "dial" in control_row_without_its_dial.lower():
+        return False
+
+    root = _os.path.dirname(_os.path.abspath(_c.__file__))
+    sys_path_added = _os.getcwd()
+    if sys_path_added not in _sys.path:
+        _sys.path.insert(0, sys_path_added)
+    sys_src = Path = None
+    src = open(_os.path.join(root, "check.py"), encoding="utf-8").read()
+
+    dial_old = ('        if name not in self.seen:\n'
+                '            self.seen[name] = f"{BOUND_PREFIX}{len(self.seen)}"\n'
+                '        return self.seen[name]')
+    if src.count(dial_old) != 1:
+        return False  # the dial is no longer where this probe can take it
+
+    def load(code, name):
+        ns = {"__name__": name, "__file__": _os.path.join(root, "check.py")}
+        exec(compile(code, _os.path.join(root, "check.py"), "exec"), ns)
+        return ns
+
+    import fragments as _F
+
+    canon = load(src, "canon")
+    as_written = load(src.replace(dial_old, "        return name", 1), "as-written")
+    pairs = [("class_body_binds_nothing", "class_body_other_name"),
+             ("free_name_beside_a_nested_arg", "free_name_beside_a_nested_arg_renamed")]
+    flips_on_canon = []
+    for left, right in pairs:
+        a = canon["fingerprint"](getattr(_F, left)) == canon["fingerprint"](getattr(_F, right))
+        b = as_written["fingerprint"](getattr(_F, left)) == as_written["fingerprint"](getattr(_F, right))
+        if not a and not b:
+            flips_on_canon.append(True)
+    return len(flips_on_canon) == len(pairs)
+
 def a_store_read_by_a_callee_is_erased() -> bool:
     """The store is erased although a CALLEE reads it through the caller's frame.
 
@@ -2173,6 +2239,10 @@ def padding_survives_beside_a_mere_mention_of_a_reader() -> bool:
 
 
 NAMESPACES = {
+    "a-verdict-that-belongs-to-a-dial-the-row-never-names": {
+        "a_verdict_that_belongs_to_a_dial_the_row_never_names":
+            a_verdict_that_belongs_to_a_dial_the_row_never_names,
+        "control_row_without_its_dial": control_row_without_its_dial},
     "a-comment-that-narrows-the-condition-the-code-tests": {
         "padding_survives_beside_a_mere_mention_of_a_reader":
             padding_survives_beside_a_mere_mention_of_a_reader},
@@ -2229,6 +2299,7 @@ NAMESPACES = {
             a_store_read_by_a_callee_is_erased,
         "fingerprint_under_a_simpler_reader_guard":
             fingerprint_under_a_simpler_reader_guard,
+
         "a_callee_that_asks_its_caller_for_the_frame":
             a_callee_that_asks_its_caller_for_the_frame,
         "fingerprint_under_a_name_only_reader_guard":

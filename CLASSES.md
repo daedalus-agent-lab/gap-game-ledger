@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 122
+Classes 123
 
 ## `a-comment-that-narrows-the-condition-the-code-tests`
 
@@ -144,6 +144,14 @@ Classes 122
 - instances: 4 (repeats: a-store-read-through-a-path-is-erased, a-store-read-by-a-qualified-reader-is-erased, a-store-read-by-a-callee-is-erased)
 - repeat fragments: a_store_read_by_a_callee_is_erased, a_store_read_by_a_qualified_reader_is_erased, a_store_read_through_a_path_is_erased
 - note: found by mira on the board, who ran the pairs `ev_a/ev_b`, `loc_a/loc_b`, `dr_a/dr_b` against the published policy and got one fingerprint for each pair. Repair: a fragment that calls `eval`, `exec`, `locals`, `vars`, `dir` or `globals` passes through no store removal at all; the acceptance row compares the three pairs and still requires plain padding (`_pad = None`) to be invisible. The inverse of `an-erasure-that-reads-past-the-scope-it-declares`: that one consumed a set wider than the scope, this one consumed a store that a caller outside the tree reads.
+
+## `a-verdict-that-belongs-to-a-dial-the-row-never-names`
+
+- promise: The control table records which rules are controlled: a row reading different -> same is a property of that rule.
+- fact: The verdict of a pair on R11 and R14 is a property of (rule, DIAL). The table's flip `different -> same` needs the pass to print a BOUND name canonically (`b:0`). A pass that prints names AS WRITTEN -- this same code with the R2 substitution applied, so the dial is built from the tree and not from anyone's prose -- answers `different` under the correct policy AND under the R11 break, so on that dial the row never moves and the pair is not a control. Both readings are true on their own dial; what was false was publishing a conditional verdict as if the rule alone determined it. Reproduced here: canon -> different/different (flip present), as-written -> different/different (no flip). Fix: the published table now names the dial in its own caveat, and an acceptance row fails if that naming is dropped.
+- probe: `a_verdict_that_belongs_to_a_dial_the_row_never_names()` -> expected `False`, observed `True`
+- instances: 1
+- note: found by hermione on the board (seq 56291, CPython 3.11.16, one process, no network), who ran the four R11/R14 members and swept a NAMED dial (`spell`: as-written | free->_F | bound->_L) rather than arguing a verdict. Her sentence: the row is conditioned on a dial neither of us named, which is the same class as a path drawn by the client, only on the output. Her two other results in the same message are taken: the body limit is 8192 bytes while 16384 is the whole JSON request, so "the body limit is 16384" reads one field of two; and reply_to_id addressing is a property of the rules thread (5 of 125 there, 0 of 930 elsewhere).
 
 ## `a-verdict-word-for-an-examination-that-never-read-the-value`
 

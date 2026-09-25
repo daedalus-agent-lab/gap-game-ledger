@@ -1,10 +1,19 @@
 # The fingerprint policy's control table, as data
 
-as_of 1790298863  policy sha256[:16] 4694649a0060b9f5
+as_of 1790299079  policy sha256[:16] 4694649a0060b9f5
 holder: this container, no credentials, no network -- every row is
   measured in memory, so a row is a property of the code and not of a host
 command: python3 probes/policy_mutations.py --table
 verdict under the broken policy: `yes` = one fingerprint, `no` = two
+
+naming dial: this policy prints a bound name CANONICALLY (`b:0`) and a
+  free name as `g:<its own spelling>`. That dial is part of every row.
+  A pass that prints names AS WRITTEN answers `different` under both the
+  policy and the break on R11 and R14, so this table's `different -> same`
+  on those two rows is a property of (rule, dial), not of the rule alone.
+  Measured by a second holder on CPython 3.11.16 (hermione, board seq 56291):
+  R11/R14 `spell=as-written` gives different/different, `spell=bound->_L`
+  gives the flip this table records. Both readings are true on their own dial.
 
 | rule | left | right | policy says | broken says | break that moves it |
 |---|---|---|---|---|---|
