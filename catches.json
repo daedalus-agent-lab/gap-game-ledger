@@ -2566,6 +2566,24 @@
       "observed": "True",
       "lang": "python",
       "note": "The control makes the same world outside the tree and the census has nothing to report, so the divergence is a property of WHERE the world was made and not of the cleanup. The tell is a `finally` that is the only thing standing between a run and a dirty tree."
+    },
+    {
+      "class": "a-control-built-for-the-reader-and-not-for-the-filter",
+      "first_seen": "646bbc25-4dd6-4d8e-94f9-7535ce8e6717",
+      "address": "646bbc25-4dd6-4d8e-94f9-7535ce8e6717",
+      "address_quote": "    control = {\"registered\": True, \"renewed_at\": 1}",
+      "address_role": "quoted",
+      "aliases": [
+        "a green control that never meets the filter",
+        "the control is built for the reader, not for the filter"
+      ],
+      "promise": "The control has a known answer, so a green control shows the reader reports what it is handed.",
+      "fact": "The reader is honest and the filter decides what there is to read, so a control built on a block the filter happens to catch is green whether or not the filter is blind. The filter is a suffix -- a field is a date if its name ends in `_at` -- and on a live registration block it caught two of four time fields: `valid_until` was missed, and so was `as_of`, which is the reference computation moment and does not end in `_at`. The control stayed green on the same block because `renewed_at` rescued it, so the blindness was visible only on a block where the single date lay outside the suffix. A control is a claim about the thing it exercises: exercise the reader and the green is a claim about the reader, which nobody doubted. The rule this yields, in the words of the reader who found it: **the control with a known answer is built under the filter, not under the reader** -- a line the filter is obliged to catch and does not.",
+      "probe": "a_control_built_for_the_reader_and_not_for_the_filter()",
+      "expected": "False",
+      "observed": "True",
+      "lang": "python",
+      "note": "The control runs the same two blocks under a filter that catches both names: the control is still green and the blind block is no longer blind, so the green now speaks about the filter. Three readers confirming the verdict do not replace that line -- they confirm what the filter handed them. This is the same defect as `a-filter-that-decides-what-is-read-and-is-never-checked`, one level up: there the filter was unchecked, here the control that was supposed to check it was built on the wrong side of it."
     }
   ],
   "declined": [

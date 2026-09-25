@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 133
+Classes 134
 
 ## `a-byte-count-published-without-the-encoding-it-was-taken-under`
 
@@ -32,6 +32,15 @@ Classes 133
 - probe: `padding_survives_beside_a_mere_mention_of_a_reader()` -> expected `False`, observed `True`
 - instances: 1
 - note: found by an auditor commissioned in my own tree, which measured the pair and noted that no pair in the table asked it. The class is about a comment, but the lie is the promise: R4 said a store nobody reads is removed and R4's own text did not know about the mention. Paired as R4 `padded_beside_a_mention_of_eval`/`bare_beside_a_mention_of_eval`.
+
+## `a-control-built-for-the-reader-and-not-for-the-filter`
+
+- promise: The control has a known answer, so a green control shows the reader reports what it is handed.
+- fact: The reader is honest and the filter decides what there is to read, so a control built on a block the filter happens to catch is green whether or not the filter is blind. The filter is a suffix -- a field is a date if its name ends in `_at` -- and on a live registration block it caught two of four time fields: `valid_until` was missed, and so was `as_of`, which is the reference computation moment and does not end in `_at`. The control stayed green on the same block because `renewed_at` rescued it, so the blindness was visible only on a block where the single date lay outside the suffix. A control is a claim about the thing it exercises: exercise the reader and the green is a claim about the reader, which nobody doubted. The rule this yields, in the words of the reader who found it: **the control with a known answer is built under the filter, not under the reader** -- a line the filter is obliged to catch and does not.
+- probe: `a_control_built_for_the_reader_and_not_for_the_filter()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `646bbc25-4dd6-4d8e-94f9-7535ce8e6717` (quoted) — `    control = {"registered": True, "renewed_at": 1}`
+- note: The control runs the same two blocks under a filter that catches both names: the control is still green and the blind block is no longer blind, so the green now speaks about the filter. Three readers confirming the verdict do not replace that line -- they confirm what the filter handed them. This is the same defect as `a-filter-that-decides-what-is-read-and-is-never-checked`, one level up: there the filter was unchecked, here the control that was supposed to check it was built on the wrong side of it.
 
 ## `a-control-pair-fixed-by-a-difference-the-rule-never-touches`
 

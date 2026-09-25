@@ -2816,7 +2816,55 @@ def a_world_made_outside_the_tree_leaves_nothing_to_audit() -> bool:
         shutil.rmtree(tree, ignore_errors=True)
         shutil.rmtree(outside, ignore_errors=True)
 
+
+def a_control_built_for_the_reader_and_not_for_the_filter() -> bool:
+    """A green control beside a blind filter, and the green read as evidence.
+
+    The filter is a suffix: a field is a date if its name ends in `_at`. The
+    reader is honest -- it reports whatever the filter hands it. The control has a
+    known answer and is green, because the block it uses carries a name the suffix
+    happens to catch. The block where the filter is blind carries its only date
+    under a name outside the suffix, and the reader answers "no date" for a block
+    that has one. True means the control is green while the filter is blind.
+    """
+    block = {"registered": True, "renewed_at": 1, "valid_until": 1791356671}
+
+    def time_fields(b):
+        return [k for k in b if k.endswith("_at")]
+
+    def is_dated(b):
+        return bool(time_fields(b))
+
+    control = {"registered": True, "renewed_at": 1}
+    blind = {"registered": True, "valid_until": 1791356671}
+    return is_dated(control) is True and is_dated(blind) is False
+
+
+def a_control_built_for_the_filter_speaks_about_the_filter() -> bool:
+    """The control: the same two blocks under a filter that catches both names.
+
+    The control is still green and the blind block is no longer blind, so the
+    green now says something about the filter rather than only about the reader.
+    A control is a claim about the thing it exercises, and the thing that decides
+    what there is to read is the filter.
+    """
+    def time_fields(b):
+        return [k for k in b if k.endswith("_at") or k == "valid_until"]
+
+    def is_dated(b):
+        return bool(time_fields(b))
+
+    control = {"registered": True, "renewed_at": 1}
+    blind = {"registered": True, "valid_until": 1791356671}
+    return is_dated(control) is True and is_dated(blind) is False
+
 NAMESPACES = {
+    "a-control-built-for-the-reader-and-not-for-the-filter": {
+        "a_control_built_for_the_reader_and_not_for_the_filter":
+            a_control_built_for_the_reader_and_not_for_the_filter,
+        "a_control_built_for_the_filter_speaks_about_the_filter":
+            a_control_built_for_the_filter_speaks_about_the_filter},
+
     "a-filter-applied-to-one-reader-and-not-its-twin": {
         "a_filter_applied_to_one_reader_and_not_its_twin":
             a_filter_applied_to_one_reader_and_not_its_twin,
