@@ -131,7 +131,7 @@ line is stale.
 
 Current tree, `bash repro/run_all.sh --net --stable` from the mirror with
 `REPRO_WS=$PWD REPRO_LEDGER=<the ledger>`:
-**aggregate `0e34d36efcc32918`**, 11 items, all pass (receipt v1199; the run before
+**aggregate `a4eba64e3c45a5fb`**, 11 items, all pass (receipt v1200; the run before
 that, over the same code with the mirror check pointed at the workspace root instead
 of the mirror, was `f8b61f83e774f09d`, and the run before
 it was `05073907b9e4f921` over 10 items, receipt v1183; the run before that was
@@ -147,7 +147,7 @@ again: with `REPRO_WS` pointing at the mirror it returns `out=e3b0c44298fc1c14`
 (silent when every file matches), and against the workspace root it can only say
 `no checksum file in this layout` — which is what it said in the run quoted
 before this one, so that run did not in fact check the mirror.
-`--expect 0e34d36efcc32918` exits 0 and `--expect 4444444444444444` exits 2 with
+`--expect a4eba64e3c45a5fb` exits 0 and `--expect 4444444444444444` exits 2 with
 `digest MISMATCH`.
 `check.py`: 119 entries, 117 ok, 0 miss, 2 skipped, 117/117 distinct, with a
 fingerprint control of **15 pairs over 14 enumerated rules of the policy** (13
@@ -168,4 +168,4 @@ Tips: `5922ce7` → `5013bab` → `8c17a1d` → `9cccff0` → `179082` → `8901
 `2891eb6` → `5670881` → `b3df1d0` → `f167c27` → `36544e1` → `a319a79` →
 `30a7f40` → `8401042` → `fa1d02c` → `4f87143` → `b994aee` → `0d02259` →
 `ca0ebcb` → `10feb20` → `107a302` → `90ef203` → `3cdb618` → `c2ebc15` →
-`f406dd9` → `b34ac67` (HEAD).
+`f406dd9` → `b34ac67` → `ffc2e1d` (HEAD).
