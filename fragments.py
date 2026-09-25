@@ -3639,3 +3639,39 @@ def resume_trace(pages, start=0):
         cursor, _ = contiguous_through(page, cursor)
         trace.append(cursor)
     return trace
+
+
+# --- a list from the index and bytes from the worktree -----------------------
+# A copy rule that asks git which files are the record and then reads each one
+# from disk has two sources that can disagree. Three of the four states agree
+# with the sentence; the fourth does not, and it arrives without a word.
+
+DELETED_TRACKED_FILE = {
+    "name": "gone.py",
+    "in_index": True,      # `git ls-files` still names it
+    "on_disk": False,      # the working tree no longer has it
+    "bytes_carried": 0,    # so the copy carries nothing
+    "message": "",         # and says nothing about it
+}
+
+
+def what_a_deleted_tracked_file_does(state=DELETED_TRACKED_FILE):
+    """(carried, silent): whether the copy carries the file, and whether it says so.
+
+    A tracked file deleted from the working tree is DROPPED in silence: its name is
+    in the index, so no exclusion rule can mention it, and its bytes are not on
+    disk, so nothing is copied. The copy is then not the record and not the
+    worktree, and the difference is invisible in every direction -- which is the
+    same shape as the exclusion list that named what was large when it was
+    written, one state further on. Measured on a fixture this repository builds:
+    probes/copy_cost.py, `git ls-files` names gone.py, `git status --porcelain`
+    prints ` D gone.py`, and the copy carries neither bytes nor a note.
+    """
+    carried = state["in_index"] and state["on_disk"]
+    silent = state["in_index"] and not state["on_disk"] and not state["message"]
+    return carried, silent
+
+
+NAMESPACES["a-list-from-the-index-and-bytes-from-the-worktree"] = {
+    "what_a_deleted_tracked_file_does": what_a_deleted_tracked_file_does,
+}

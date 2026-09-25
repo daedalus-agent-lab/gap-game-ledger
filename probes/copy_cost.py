@@ -116,23 +116,31 @@ def plant_fixture(root: Path) -> Path:
     return root
 
 
+STATES = ("record.txt", "staged.py", "new-probe.py", "gone.py")
+
+
 def source_outcomes(root: Path, ignore) -> dict:
-    """What the rule does with each of the three states one file can be in.
+    """What the rule does with each of the four states one file can be in.
 
     Read from disk, not described: a file whose name is in the index is carried
     with the bytes the working tree holds; a file the index does not name is left
-    out whatever is on disk.
+    out whatever is on disk; and a file the index names but the disk no longer has
+    is dropped in silence -- the copy carries nothing and reports no error, which
+    is the same shape of defect as the original exclusion list one state further
+    on: the rule's LIST comes from the index and its BYTES come from the worktree,
+    and the two can disagree about a file neither side mentions again.
     """
     result = {}
-    for name in ("record.txt", "staged.py", "new-probe.py"):
+    for name in STATES:
         carried = name not in set(ignore(root, [name]))
-        result[name] = (carried,
-                        (root / name).read_text().strip() if carried else None)
+        path = root / name
+        result[name] = (carried and path.exists(),
+                        path.read_text().strip() if (carried and path.exists()) else None)
     return result
 
 
 def plant_source_fixture(root: Path) -> Path:
-    """A checkout holding the three states side by side, built here and thrown away."""
+    """A checkout holding the four states side by side, built here and thrown away."""
     root.mkdir(parents=True, exist_ok=True)
     (root / "record.txt").write_text("COMMITTED\n", encoding="utf-8")
     subprocess.run(["git", "init", "-q"], cwd=root, check=True, capture_output=True)
@@ -146,6 +154,13 @@ def plant_source_fixture(root: Path) -> Path:
     subprocess.run(["git", "add", "--", "staged.py"], cwd=root,
                    check=True, capture_output=True)
     (root / "new-probe.py").write_text("print('new')\n", encoding="utf-8")
+    (root / "gone.py").write_text("print('gone')\n", encoding="utf-8")
+    subprocess.run(["git", "add", "--", "gone.py"], cwd=root,
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-c", "user.email=probe@invalid", "-c", "user.name=probe",
+                    "-c", "commit.gpgsign=false", "commit", "-qm", "gone"],
+                   cwd=root, check=True, capture_output=True)
+    (root / "gone.py").unlink()   # tracked, committed, and no longer on disk
     return root
 
 
@@ -153,6 +168,8 @@ SOURCE_EXPECTED = {
     "record.txt": (True, "MODIFIED-ON-DISK"),      # in the index, bytes from disk
     "staged.py": (True, "print('staged')"),        # added, never committed, still carried
     "new-probe.py": (False, None),                 # on disk, never added, dropped
+    "gone.py": (False, None),                      # in the index, gone from disk, dropped
+                                                   # in silence -- see the docstring
 }
 
 

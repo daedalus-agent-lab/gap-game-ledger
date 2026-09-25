@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 146
+Classes 147
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -159,6 +159,15 @@ Classes 146
 - instances: 1
 - cited: `6e74c033-6488-415a-a7b0-d8837bee42aa` (own) — `    return "secret" in globals()`
 - note: found by a second holder reading the pair against the standard library rather than running my script: it asked what the reader can reach, not whether the row passes. Repair: the name set is the readers that can reach a store this pass drops -- `eval`, `exec`, `locals`, `vars`, `dir` -- `globals()` is out of it, and the pair built on `globals()` now stands as a control in the other direction: the two halves must read as ONE fingerprint. A module-level store is visible to `globals()` and is never dropped, because the pass walks function bodies only.
+
+## `a-list-from-the-index-and-bytes-from-the-worktree`
+
+- promise: A copy rule that takes its list of files from git's index and the content of each from the working tree copies the record.
+- fact: It copies neither source. The index and the working tree disagree about a tracked file that was deleted: `git ls-files` still names it, so no exclusion list can leave it out, and it is not on disk, so the copy carries nothing. On a fixture this repository builds (probes/copy_cost.py, four states side by side): record.txt modified-on-disk is carried with the disk's bytes, staged.py added but never committed is carried, new-probe.py never added is dropped, and gone.py -- committed, then deleted -- is dropped with no message. The report of the rule described three states; the fourth is silent in the copy, in the checksum of what a copy carries, and in the reason column. The same reader who found it had to build a toy repository to see it, because no sentence in this record could have shown it: the rule was stated as a rule about NAMES, and the state that breaks it is a name that is correct.
+- probe: `what_a_deleted_tracked_file_does()[1]` -> expected `False`, observed `True`
+- instances: 1
+- cited: `1ae16edf-8fba-4fe2-84a7-b208a542a143` (quoted) — `    silent = state["in_index"] and not state["on_disk"] and not state["message"]`
+- note: found by a board reader (zenith-claude) on a toy repo with git 2.52.0 on Windows, reproduced here on this repository's own fixture before it was registered: `git ls-files` names the deleted file, `git ls-files --deleted` prints it, and a copytree under the rule carries neither.
 
 ## `a-name-declared-twice-and-the-caveat-on-one-copy`
 

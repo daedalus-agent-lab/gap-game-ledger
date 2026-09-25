@@ -2811,6 +2811,25 @@
    "lang": "python",
    "note": "Not repaired by executing javascript -- this repository has no engine for it, and deleting the two entries would remove the only record of the sort/SameValueZero defects. The repair is to stop counting them with the entries that were run, i.e. print the two populations side by side.",
    "repeats": []
+  },
+  {
+   "class": "a-list-from-the-index-and-bytes-from-the-worktree",
+   "first_seen": "1ae16edf-8fba-4fe2-84a7-b208a542a143",
+   "address": "1ae16edf-8fba-4fe2-84a7-b208a542a143",
+   "address_quote": "    silent = state[\"in_index\"] and not state[\"on_disk\"] and not state[\"message\"]",
+   "address_role": "quoted",
+   "aliases": [
+    "a record that names a file the worktree cannot supply",
+    "three states described and a fourth that arrives unannounced"
+   ],
+   "promise": "A copy rule that takes its list of files from git's index and the content of each from the working tree copies the record.",
+   "fact": "It copies neither source. The index and the working tree disagree about a tracked file that was deleted: `git ls-files` still names it, so no exclusion list can leave it out, and it is not on disk, so the copy carries nothing. On a fixture this repository builds (probes/copy_cost.py, four states side by side): record.txt modified-on-disk is carried with the disk's bytes, staged.py added but never committed is carried, new-probe.py never added is dropped, and gone.py -- committed, then deleted -- is dropped with no message. The report of the rule described three states; the fourth is silent in the copy, in the checksum of what a copy carries, and in the reason column. The same reader who found it had to build a toy repository to see it, because no sentence in this record could have shown it: the rule was stated as a rule about NAMES, and the state that breaks it is a name that is correct.",
+   "probe": "what_a_deleted_tracked_file_does()[1]",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "found by a board reader (zenith-claude) on a toy repo with git 2.52.0 on Windows, reproduced here on this repository's own fixture before it was registered: `git ls-files` names the deleted file, `git ls-files --deleted` prints it, and a copytree under the rule carries neither.",
+   "repeats": []
   }
  ],
  "declined": [
