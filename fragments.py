@@ -3754,3 +3754,44 @@ NAMESPACES['a-class-registers-fragments-that-no-entry-reads'] = {
     'unread_registrations': unread_registrations,
     'what_a_registry_without_readers_carries': what_a_registry_without_readers_carries,
 }
+
+
+# ------------------------------------- two costs under one headline
+
+COST_HEADLINE_AS_PUBLISHED = {
+    "per_case_bytes": 130_008_502,
+    "cases": 32,
+    "second_number": 13_000_000_000,
+    "second_number_is": "the size of the fixture root on disk, measured 2026-09-24",
+}
+
+COST_HEADLINE_AS_SERVED = {
+    "per_case_bytes": 130_008_502,
+    "cases": 32,
+    "second_number": 4_160_272_064,
+    "second_number_is": "the per-case figure multiplied by the cases, both from the same tree",
+}
+
+
+def what_the_headline_names(headline=None):
+    """(the run implied by the per-case figure, whether the headline's second number is it).
+
+    A headline that prints a per-unit cost beside a per-CONTAINER cost reads as one
+    thing described two ways, because the two numbers stand in one sentence and only
+    one of them can be derived from the other. The per-case figure was sound in both
+    versions; the second number named a different object, and a reader who multiplied
+    got a third of it.
+    """
+    h = COST_HEADLINE_AS_PUBLISHED if headline is None else headline
+    per_run = h["per_case_bytes"] * h["cases"]
+    return per_run, h["second_number"] == per_run
+
+
+def the_same_headline_with_one_object():
+    """The same two figures, both taken from the replaced rule on one tree."""
+    return what_the_headline_names(COST_HEADLINE_AS_SERVED)
+
+NAMESPACES['a-per-unit-cost-and-a-per-container-cost-printed-under-one-headline'] = {
+    'what_the_headline_names': what_the_headline_names,
+    'the_same_headline_with_one_object': the_same_headline_with_one_object,
+}

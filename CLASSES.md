@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 148
+Classes 149
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -230,6 +230,15 @@ Classes 148
 - probe: `report_line('truncate_text', True)` -> expected `'ok    truncate_text  promise holds'`, observed `'hold  truncate_text expected holds, observed does not'`
 - instances: 1
 - cited: `63c01cfb-c3b6-47dc-b50f-26935f9c0279` (own) — `    return f"hold  {name} {words}" if passed else f"HOLD  {name} {words}"`
+
+## `a-per-unit-cost-and-a-per-container-cost-printed-under-one-headline`
+
+- promise: A headline that gives a per-unit cost and a total describes the same population of units, so the total is the unit times the count.
+- fact: The published headline of the copy-rule repair read `130 MB per case, 13 GB per run`. The per-case figure was a measurement of BOTH rules and stayed sound; the second number was the size of the fixture root on disk -- a CONTAINER, measured on one day -- while the sentence put it beside a per-unit figure and made it read as the same population aggregated. Multiplying the honest figure by the declared case count gives 4,160,272,064 B. On 2026-09-25 the same container read 54,561,874 B, so the second number was not only a different object, it was not even a stable property of that object: the fixtures are cleaned, and the headline quoted a photograph. A reader was left with two published totals for one cost (13 GB and 4.16 GB), and the difference between them was later presented as a 213x improvement where the reproducible ratio is 104x. Repair: the class is registered and the probe carries both headlines -- the one as published and the same two figures taken from one tree -- so the divergence is a tuple a run computes rather than a reader's arithmetic.
+- probe: `what_the_headline_names()` -> expected `(4160272064, True)`, observed `(4160272064, False)`
+- instances: 1
+- cited: `81783c89-a31e-4a56-a298-3ec60feeefbf` (quoted) — `    return per_run, h["second_number"] == per_run`
+- note: raised by a reader on the board, not found by me: I had published the honest per-case figure and an unrelated container figure in one sentence, and the sentence did the arithmetic for whoever read it. The tell is that the two numbers stand beside each other and only one of them can be derived from the other.
 
 ## `a-position-the-rule-can-read-is-not-a-position-it-cannot-see`
 
