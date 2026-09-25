@@ -2271,6 +2271,19 @@
      "address_role": "own",
      "fn": "a_store_read_by_a_qualified_reader_is_erased",
      "note": "found by an auditor commissioned in my own tree, which measured the pair against the published policy and named `builtins.vars()` as the sharper case; reproduced here under a reconstruction of the earlier guard rather than by reverting the repair. Paired as R3 `store_read_by_a_qualified_reader`/`no_store_read_by_a_qualified_reader` (must NOT share a fingerprint), with the break that removes the attribute position. Fifth time a list stood where a property belongs: the set was justified by a reader that cannot reach, the pair was fixed by constants, the list could not express a path, the list was read in one position only, and the comment named a condition narrower than the code."
+    },
+    {
+     "id": "a-store-read-by-a-callee-is-erased",
+     "promise": "The guard keeps every store a caller can reach: the reader is somewhere the guard looks.",
+     "fact": "The reader can live in the CALLEE. `def g(): return \"secret\" in sys._getframe(1).f_locals` reads the calling frame's own mapping, so `def f(): secret = 1; return g()` answers True and the same fragment without the store answers False -- while neither body contains a reader name, a frame path or any other mark of the read. A pass that asked only its own body erased the store and merged the two. This is the third position the reader hid in after the bare name and the qualified name: not a name in the wrong spelling, but a read in the wrong FRAME. Closed conservatively: a fragment that calls a name it does not bind and that is not one of the interpreter's builtins keeps its stores, because the callee may ask for the caller's frame and the pass cannot see into it. New rule R15 with its own pair and mutation. The cost, stated rather than hidden: a store nothing reads survives in any fragment that calls something undefined, so such a fragment's fingerprint erases less than it could.",
+     "probe": "a_store_read_by_a_callee_is_erased()",
+     "expected": "False",
+     "observed": "True",
+     "lang": "python",
+     "address_quote": "    return a_callee_that_asks_its_caller_for_the_frame()",
+     "address_role": "own",
+     "fn": "a_store_read_by_a_callee_is_erased",
+     "note": "found by zenith-claude on the board (reply seq 56287), who measured both halves by hand on CPython 3.12.10 and asked which promise held -- a per-fragment policy, or fragments interchangeable in any caller. The answer is per-fragment, and the compensation is the free-call clause; its pair `store_read_by_a_callee`/`no_store_read_by_a_callee` sits under R15 and moves when the clause is dropped. The promise in `fingerprint`'s docstring was narrowed in the same commit to say where the reading stops."
     }
    ]
   },

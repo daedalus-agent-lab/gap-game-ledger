@@ -136,6 +136,89 @@ class _DropDeadStores(ast.NodeTransformer):
     # the scope's own mapping. The set is therefore read in a second position,
     # the attribute an expression carries, beside the path names.
 
+    def _calls_a_name_the_fragment_does_not_bind(self, node) -> bool:
+        """Whether the fragment calls something it does not define.
+
+        A reader can live in a CALLEE, and the callee is not in the tree: a
+        fragment whose body is `secret = 1; return g()` is read by `g` if `g`
+        asks its caller for the frame (`sys._getframe(1).f_locals`), and no name
+        or path inside the fragment says so. The pass reads one fragment's source
+        and cannot see into what it calls, so it keeps the store instead of
+        guessing. The cost is visible in the other direction: a store nothing
+        reads survives in any fragment that calls something undefined, and the
+        fingerprint of such a fragment erases less than it could.
+
+        The scopes are kept apart, because they are apart: a nested function's
+        argument binds inside it and not in the fragment, so
+        `f = lambda helper: helper(xs); return helper(xs)` calls a FREE name
+        `helper` in its last line and its own argument in the first. A call to
+        something in Python's own builtins is not this case -- a builtin holds no
+        reference to the caller's frame -- and `eval`, `locals`, `vars`, `dir`,
+        `exec` are builtins that do, handled by the reader sets above. This test
+        therefore asks the interpreter's `builtins`, not the policy's list of
+        letters spelled like builtins.
+        """
+        import builtins as _builtins
+
+        def scope_args(scope) -> set:
+            args = scope.args
+            out = {a.arg for a in (*args.posonlyargs, *args.args, *args.kwonlyargs)}
+            if args.vararg:
+                out.add(args.vararg.arg)
+            if args.kwarg:
+                out.add(args.kwarg.arg)
+            return out
+
+        def bindings(body, into: set) -> set:
+            """The names ONE scope binds. It does not descend into nested scopes."""
+            todo = list(body)
+            while todo:
+                sub = todo.pop()
+                if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                    into.add(sub.name)
+                    continue
+                if isinstance(sub, ast.Lambda):
+                    continue
+                if isinstance(sub, ast.arg):
+                    into.add(sub.arg)
+                    continue
+                if isinstance(sub, ast.Name) and isinstance(sub.ctx, ast.Store):
+                    into.add(sub.id)
+                elif isinstance(sub, ast.alias):
+                    into.add(sub.asname or sub.name.split(".")[0])
+                elif isinstance(sub, (ast.Global, ast.Nonlocal)):
+                    into.update(sub.names)
+                todo.extend(ast.iter_child_nodes(sub))
+            return into
+
+        def scan_body(body, visible, args=frozenset()) -> bool:
+            body = list(body)
+            names = bindings(body, set(visible) | set(args))
+            todo, nested = list(body), []
+            while todo:
+                sub = todo.pop()
+                if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+                    nested.append(sub)
+                    continue
+                if (isinstance(sub, ast.Call) and isinstance(sub.func, ast.Name)
+                        and sub.func.id not in names
+                        and not hasattr(_builtins, sub.func.id)):
+                    return True
+                todo.extend(ast.iter_child_nodes(sub))
+            return any(scan(inner, names) for inner in nested)
+
+        def scan(scope, visible) -> bool:
+            # A scope with arguments is a fragment; anything else is a statement
+            # handed in by a caller that walks a function body statement by
+            # statement, and is read as the fragment it belongs to would read it.
+            if hasattr(scope, "args"):
+                body = scope.body
+                body = body if isinstance(body, list) else [body]
+                return scan_body(body, visible, scope_args(scope))
+            return scan_body([scope], visible)
+
+        return scan(node, set())
+
     def _reads(self, node) -> set:
         return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)
                 and isinstance(n.ctx, ast.Load)}
@@ -154,7 +237,8 @@ class _DropDeadStores(ast.NodeTransformer):
         return self.visit_FunctionDef(node)
 
     def visit_FunctionDef(self, node):
-        if self._reads_by_a_caller(node):
+        if (self._reads_by_a_caller(node)
+                or self._calls_a_name_the_fragment_does_not_bind(node)):
             self.generic_visit(node)
             return node
         body, reads = [], set()
@@ -424,7 +508,12 @@ def fingerprint(fn) -> str:
     `pickle.loads(x)` one shape, and the cost of keeping it is that a copy which
     renames the helper it delegates to reads as different logic instead.
 
-    Two functions with the same fingerprint do the same thing; a repeat whose
+    Two functions with the same fingerprint do the same thing as far as their own
+    source can carry them. The reading stops at the fragment: a reader built at
+    runtime (`getattr(builtins, "eval")`), or a callee that asks its caller for
+    the frame (`def g(): return "secret" in sys._getframe(1).f_locals`), is
+    outside it -- the second is compensated for conservatively (see
+    `_calls_a_name_the_fragment_does_not_bind`), the first is not. A repeat whose
     fragment fingerprints identically to the class fragment is the class probe
     again, not a second sighting.
     """

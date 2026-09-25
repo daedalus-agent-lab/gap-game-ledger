@@ -653,7 +653,8 @@ def v_control_fails_when_a_rule_of_the_policy_is_broken(tree):
     report agreement between two fragments it can no longer tell apart.
     """
     src = (tree / "check.py").read_text(encoding="utf-8")
-    guard = ("        if self._reads_by_a_caller(node):\n"
+    guard = ("        if (self._reads_by_a_caller(node)\n"
+             "                or self._calls_a_name_the_fragment_does_not_bind(node)):\n"
              "            self.generic_visit(node)\n"
              "            return node\n")
     if guard not in src:

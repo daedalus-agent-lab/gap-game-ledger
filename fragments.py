@@ -1423,6 +1423,30 @@ def store_read_by_no_one():
     return eval("x + 1")
 
 
+def a_callee_that_asks_its_caller_for_the_frame():
+    """A reader that lives in the CALLEE, one frame down.
+
+    `sys._getframe(1).f_locals` is the calling frame's own mapping, so a function
+    called from a fragment with a store reads that store -- and no name or path
+    inside the fragment says so. The pass reads one fragment's source, so the
+    store is kept rather than guessed at.
+    """
+    import sys as _sys
+
+    return "secret" in _sys._getframe(1).f_locals
+
+
+def store_read_by_a_callee():
+    """A store its callee reads through the caller's frame. Answers True."""
+    secret = 1
+    return a_callee_that_asks_its_caller_for_the_frame()
+
+
+def no_store_read_by_a_callee():
+    """The same call with no store to reach. Answers False."""
+    return a_callee_that_asks_its_caller_for_the_frame()
+
+
 def store_read_by_a_qualified_reader():
     """A store a caller reads through a QUALIFIED reader.
 
@@ -1674,6 +1698,8 @@ POLICY_RULES = (
     ("R12", "a `global` or `nonlocal` declaration makes the name external"),
     ("R13", "the erasure is idempotent: applying it to its own output changes nothing"),
     ("R14", "a nested local binds nothing in the enclosing scope"),
+    ("R15", "a fragment that calls a name it does not bind keeps its stores: the callee is "
+            "outside the fragment and may read them through the caller's frame"),
 )
 
 # The control table: (left, right, must they share one fingerprint?, rule id).
@@ -1694,6 +1720,7 @@ CONTROL_PAIRS = (
     ("added_over_a_shadowing_name", "added_over_another_shadowing_name", True, "R6"),
     ("store_read_by_a_qualified_reader", "no_store_read_by_a_qualified_reader",
      False, "R3"),
+    ("store_read_by_a_callee", "no_store_read_by_a_callee", False, "R15"),
     ("a_local_store_globals_cannot_reach",
      "a_local_store_globals_cannot_reach_other_name", True, "R3"),
     ("read_by_vars", "read_by_vars_renamed", False, "R7"),
@@ -1737,10 +1764,12 @@ POLICY_MUTATIONS = (
     ("R4", "            if targets and all(t.id not in reads for t in targets):\n"
            "                continue",
      "            if False:\n                continue"),
-    ("R5", "        if self._reads_by_a_caller(node):\n"
+    ("R5", "        if (self._reads_by_a_caller(node)\n"
+           "                or self._calls_a_name_the_fragment_does_not_bind(node)):\n"
            "            self.generic_visit(node)\n"
            "            return node",
-     "        if all(self._reads_by_a_caller(s) for s in node.body):\n"
+     "        if all(self._reads_by_a_caller(s)\n"
+     "               or self._calls_a_name_the_fragment_does_not_bind(s) for s in node.body):\n"
      "            self.generic_visit(node)\n"
      "            return node"),
     ("R6", "        if name in BUILTINS and not self._bound(name):",
@@ -1780,6 +1809,9 @@ POLICY_MUTATIONS = (
      "                pass"),
     ("R13", "            if not node.id.startswith(FREE_PREFIX):",
      "            if True:"),
+    ("R15", "        if (self._reads_by_a_caller(node)\n"
+            "                or self._calls_a_name_the_fragment_does_not_bind(node)):",
+     "        if (self._reads_by_a_caller(node)):"),
     ("R14",
      "            new = {a.arg for a in (*child.args.posonlyargs, *child.args.args,\n"
      "                                   *child.args.kwonlyargs)}",
@@ -2078,6 +2110,43 @@ def a_store_read_by_a_qualified_reader_is_erased() -> bool:
             == old(no_store_read_by_a_qualified_reader, attributes=False))
 
 
+
+def a_store_read_by_a_callee_is_erased() -> bool:
+    """The store is erased although a CALLEE reads it through the caller's frame.
+
+    `def f(): secret = 1; return g()` where `g` asks for `sys._getframe(1).f_locals`
+    answers True, and the same fragment without the store answers False; neither
+    body contains a reader name or a frame path, because the reading happens one
+    frame down. A per-fragment pass that asks its own body dropped the store and
+    merged the two. True means the lie is present under such a pass.
+    """
+    import ast as _ast
+    import inspect as _inspect
+    import check as _c
+
+    def callee():
+        import sys as _sys
+
+        return "secret" in _sys._getframe(1).f_locals
+
+    def store_read_by_a_callee():
+        secret = 1
+        return callee()
+
+    def no_store_read_by_a_callee():
+        return callee()
+
+    if store_read_by_a_callee() == no_store_read_by_a_callee():
+        return False  # the halves agree here, so the pair proves nothing
+    cls = _c._DropDeadStores
+    saved = cls._calls_a_name_the_fragment_does_not_bind
+    try:
+        cls._calls_a_name_the_fragment_does_not_bind = lambda self, node: False
+        return (_c.fingerprint(store_read_by_a_callee)
+                == _c.fingerprint(no_store_read_by_a_callee))
+    finally:
+        cls._calls_a_name_the_fragment_does_not_bind = saved
+
 def padding_survives_beside_a_mere_mention_of_a_reader() -> bool:
     """A dead store survives because a reader is MENTIONED and never called.
 
@@ -2156,6 +2225,12 @@ NAMESPACES = {
             a_store_read_through_a_path_is_erased,
         "a_store_read_by_a_qualified_reader_is_erased":
             a_store_read_by_a_qualified_reader_is_erased,
+        "a_store_read_by_a_callee_is_erased":
+            a_store_read_by_a_callee_is_erased,
+        "fingerprint_under_a_simpler_reader_guard":
+            fingerprint_under_a_simpler_reader_guard,
+        "a_callee_that_asks_its_caller_for_the_frame":
+            a_callee_that_asks_its_caller_for_the_frame,
         "fingerprint_under_a_name_only_reader_guard":
             fingerprint_under_a_name_only_reader_guard,
     },

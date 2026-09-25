@@ -1,6 +1,6 @@
 # The fingerprint policy's control table, as data
 
-as_of 1790298103  policy sha256[:16] a6e16fbe3b6de4e9
+as_of 1790298597  policy sha256[:16] 4694649a0060b9f5
 holder: this container, no credentials, no network -- every row is
   measured in memory, so a row is a property of the code and not of a host
 command: python3 probes/policy_mutations.py --table
@@ -16,7 +16,7 @@ verdict under the broken policy: `yes` = one fingerprint, `no` = two
 | R3 | `a_local_store_globals_cannot_reach` | `a_local_store_globals_cannot_reach_other_name` | yes | no | `DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}` |
 | R4 | `padded_beside_a_mention_of_eval` | `bare_beside_a_mention_of_eval` | no | yes | `if (isinstance(n, ast.Name) and n.id in self.DYNAMIC_READERS` |
 | R4 | `plain_max_of` | `padded_max_of` | yes | no | `if targets and all(t.id not in reads for t in targets):` |
-| R5 | `read_by_eval_and_one_dead_store` | `read_by_eval_only` | no | yes | `if self._reads_by_a_caller(node):` |
+| R5 | `read_by_eval_and_one_dead_store` | `read_by_eval_only` | no | yes | `if (self._reads_by_a_caller(node)` |
 | R6 | `added_over_a_shadowing_name` | `added_over_another_shadowing_name` | yes | no | `if name in BUILTINS and not self._bound(name):` |
 | R7 | `read_by_vars` | `read_by_vars_renamed` | no | yes | `"locals", "vars", "dir"` |
 | R7 | `read_by_dir` | `read_by_dir_no_store` | no | yes | `"locals", "vars", "dir"` |
@@ -26,6 +26,7 @@ verdict under the broken policy: `yes` = one fingerprint, `no` = two
 | R11 | `class_body_binds_nothing` | `class_body_other_name` | no | yes | `new = {child.name}` |
 | R12 | `global_counter` | `global_total` | no | yes | `elif isinstance(child, (ast.Global, ast.Nonlocal)):` |
 | R14 | `free_name_beside_a_nested_arg` | `free_name_beside_a_nested_arg_renamed` | no | yes | `new = {a.arg for a in (*child.args.posonlyargs, *child.args.` |
+| R15 | `store_read_by_a_callee` | `no_store_read_by_a_callee` | no | yes | `if (self._reads_by_a_caller(node)` |
 
 caveats, and what each of them is not:
   * authority: these are readings by THIS container. Signed by nobody;
