@@ -212,6 +212,9 @@ if [ "$NET" = 1 ]; then
   # body head beside the digest, is re-measured and compared -- a record whose
   # evidence column is never read back is a sentence with a digest attached.
   run "v1 prefix door --net"      python3 "$LEDGER/probes/v1_prefix_door.py" --check
+  # The query that exists to be run before writing to an address: a finding this
+  # ledger withdrew must not be restated in the thread it was withdrawn from.
+  run "pre-post query"            python3 "$LEDGER/pre_post.py" --selftest
 fi
 # The reviewer's older probes (probe_regime.py, probe_inset.py,
 # probe_dense_projection.py) are deliberately NOT run: they unpack an interface
