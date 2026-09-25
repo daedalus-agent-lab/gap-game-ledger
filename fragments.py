@@ -1463,6 +1463,30 @@ def the_frame_is_not_erased_but_the_letters_are() -> bool:
     by_lambda = _c.fingerprint(a_fragment_by_a_lambda, frame=False)
     return by_def != by_lambda
 
+
+def the_report_cannot_come_from_the_run_that_was_made() -> bool:
+    """A refusal reported from a run in which nothing refused.
+
+    The oracle compares the committed scope against the policy the tree carries.
+    Asked on the tree as it stands, it agrees -- that is the run that was actually
+    made. The refusal that got published belongs to a different state of the world:
+    a scope that names a rule the policy does not carry. True means the two are
+    different states, so the green run carries no information at all about the
+    state the report described -- and the report was a procedure, described and
+    never run, which is worth exactly the credibility of whoever wrote it and
+    nothing more.
+
+    The scope is supplied as a parameter for this probe alone. It is not a way for
+    the standing run to pick its own answer: that calls the same comparison with
+    the committed constant and nothing else.
+    """
+    import check as _c
+
+    run_that_was_made = _c.policy_still_names_every_rule_it_named()
+    state_the_report_describes = _c.policy_still_names_every_rule_it_named(
+        committed=("R1", "R17"))
+    return run_that_was_made[0] and not state_the_report_describes[0]
+
 def check_passes_when_there_is_nothing_to_check(present, named):
     """The mirror item as the runner ran it: the file it checks is not there, so
     it prints a sentence and exits zero."""
@@ -2376,6 +2400,10 @@ NAMESPACES = {
     "a-promise-of-invariance-the-instrument-does-not-hold": {
         "the_frame_is_not_erased_but_the_letters_are":
             the_frame_is_not_erased_but_the_letters_are,
+    },
+    "a-procedure-published-as-an-observation": {
+        "the_report_cannot_come_from_the_run_that_was_made":
+            the_report_cannot_come_from_the_run_that_was_made,
     },    "a-store-erased-though-the-fragment-reads-it": {
         "stores_no_name_reads": stores_no_name_reads,
         "a_store_only_a_caller_reads": a_store_only_a_caller_reads,

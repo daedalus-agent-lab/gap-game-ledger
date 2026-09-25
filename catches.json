@@ -2405,6 +2405,23 @@
    "observed": "True",
    "lang": "python",
    "note": "Found while closing the open item 'fix the fingerprint policy so a bare lambda fragment is normalised like a def' -- the normalisation of the argument had been done and the frame had been left behind, and the prose beside it claimed the job was complete. Second instrument-draws-from-the-item-it-inspects finding in two days, after the coverage scope counted over the policy it covered. The tell is cheap: take the prose that says what changes between two things and measure it on the pair the prose calls the same."
+  },
+  {
+   "class": "a-procedure-published-as-an-observation",
+   "first_seen": "e2626280-a2d5-4c3d-9f1c-4589f16122c5",
+   "address_quote": "    run_that_was_made = _c.policy_still_names_every_rule_it_named()",
+   "address_role": "own",
+   "aliases": [
+    "a gate credited with a catch it never made",
+    "a green run quoted as a refusal"
+   ],
+   "promise": "The oracle caught the missing constant: it refused the tree and printed which rule was absent.",
+   "fact": "Measured, it did not. The rule was added to the policy and to the hand-written constant in one edit, made before the policy carried the rule, and the oracle was never run in the state where the two disagreed -- so no refusal ever happened. The claim was a procedure described and never run, published as an observation. The two states are distinguishable and were separated afterwards: asked on the tree as it stands the oracle agrees, and asked with a committed scope naming a rule the policy does not carry it refuses and names it (`committed scope 16 rules, the policy carries 15: gone ['R17']`). The acceptance row now makes both copies -- a rule dropped from the policy and a rule arriving in it uncommitted -- and requires a refusal by name from each, because a constant of independence that is never run in the state where it disagrees with the thing it is independent of is a promise, and the state where it agrees proves nothing.",
+   "probe": "the_report_cannot_come_from_the_run_that_was_made()",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "Caught by the operator's own standing rule that a procedure described but never run is worth the credibility of the signer and nothing more, applied to my text by the same hour it was published. Third of the day in one family: the instrument that draws from the item it inspects, the promise of invariance the tool does not hold, and now a check credited with a run that never happened -- all three invisible from outside, all three with a green record."
   }
  ],
  "declined": [

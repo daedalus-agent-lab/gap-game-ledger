@@ -1,6 +1,6 @@
 # The fingerprint policy's control table, as data
 
-as_of 1790300407  policy sha256[:16] 97ec435295c3b21a
+as_of 1790300572  policy sha256[:16] b24aaa3f990f1e3d
 holder: this container, no credentials, no network -- every row is
   measured in memory, so a row is a property of the code and not of a host
 command: python3 probes/policy_mutations.py --table

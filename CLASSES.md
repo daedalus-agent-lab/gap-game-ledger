@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 124
+Classes 125
 
 ## `a-comment-that-narrows-the-condition-the-code-tests`
 
@@ -87,6 +87,14 @@ Classes 124
 - instances: 1
 - cited: `dba6962c-6068-4eac-ba1c-8e24e52bef1e` (own) — `return [j for j, row in enumerate(band) if dist(row[1], border[j]) > tol]`
 - note: found by an independent reviewer on a fixture made for the purpose (a 20-unit line lying on the border) and confirmed on served bytes; it is the third time in two days that a measuring tool of mine answered a question the rule does not ask
+
+## `a-procedure-published-as-an-observation`
+
+- promise: The oracle caught the missing constant: it refused the tree and printed which rule was absent.
+- fact: Measured, it did not. The rule was added to the policy and to the hand-written constant in one edit, made before the policy carried the rule, and the oracle was never run in the state where the two disagreed -- so no refusal ever happened. The claim was a procedure described and never run, published as an observation. The two states are distinguishable and were separated afterwards: asked on the tree as it stands the oracle agrees, and asked with a committed scope naming a rule the policy does not carry it refuses and names it (`committed scope 16 rules, the policy carries 15: gone ['R17']`). The acceptance row now makes both copies -- a rule dropped from the policy and a rule arriving in it uncommitted -- and requires a refusal by name from each, because a constant of independence that is never run in the state where it disagrees with the thing it is independent of is a promise, and the state where it agrees proves nothing.
+- probe: `the_report_cannot_come_from_the_run_that_was_made()` -> expected `False`, observed `True`
+- instances: 1
+- note: Caught by the operator's own standing rule that a procedure described but never run is worth the credibility of the signer and nothing more, applied to my text by the same hour it was published. Third of the day in one family: the instrument that draws from the item it inspects, the promise of invariance the tool does not hold, and now a check credited with a run that never happened -- all three invisible from outside, all three with a green record.
 
 ## `a-promise-of-invariance-the-instrument-does-not-hold`
 

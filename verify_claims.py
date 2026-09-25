@@ -707,6 +707,13 @@ def x_the_policy_cannot_quietly_lose_a_rule(tree):
     committed scope in check.py is the oracle: a rule the hand-written tuple names
     and the policy does not is a failure, and a rule the policy carries and the
     tuple does not is a failure too.
+
+    Two copies are made, one for each direction, and **both** are required to be
+    refused by name -- the second because it is the state I was actually in when a
+    rule was added to the policy, and I had never run the oracle there. A constant
+    of independence that is not run in the state where it disagrees with the thing
+    it is independent of is a promise, not a check; the state where it agrees
+    proves nothing.
     """
     import importlib.util
     spec = importlib.util.spec_from_file_location("chk", HERE / "check.py")
@@ -739,8 +746,33 @@ def x_the_policy_cannot_quietly_lose_a_rule(tree):
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     refused = out.startswith("REFUSES") and "R9" in out
-    return refused, (f"{detail}; and the oracle refuses a policy with R9 dropped "
-                     f"({out[:80]})")
+    # The other direction: a rule that ARRIVES in the policy without being
+    # committed. This is the state the author was in and never measured, and the
+    # oracle has to refuse it by name or the first direction was the only one.
+    tmp2 = Path(tempfile.mkdtemp(prefix="scope-arrival-"))
+    try:
+        for name in ("check.py", "fragments.py"):
+            shutil.copy(HERE / name, tmp2 / name)
+        text = (tmp2 / "fragments.py").read_text(encoding="utf-8")
+        anchor = '    ("R15", "a fragment that calls a name it does not bind keeps its stores:'
+        assert anchor in text
+        text = text.replace(anchor, '    ("R17", "a rule nobody committed"),\n' + anchor, 1)
+        (tmp2 / "fragments.py").write_text(text, encoding="utf-8")
+        out2 = subprocess.run(
+            [sys.executable, "-c",
+             "import importlib.util as u, sys;"
+             f"s=u.spec_from_file_location('c', {str(tmp2 / 'check.py')!r});"
+             "m=u.module_from_spec(s); sys.path.insert(0,"
+             f"{str(tmp2)!r}); s.loader.exec_module(m);"
+             "ok,why=m.policy_still_names_every_rule_it_named();"
+             "print('REFUSES' if not ok else 'ACCEPTS', why)"],
+            capture_output=True, text=True).stdout.strip()
+    finally:
+        shutil.rmtree(tmp2, ignore_errors=True)
+    refused2 = out2.startswith("REFUSES") and "R17" in out2
+    return refused and refused2, (
+        f"{detail}; and the oracle refuses a policy with R9 dropped ({out[:80]}), "
+        f"and a policy carrying a rule nobody committed ({out2[:80]})")
 
 
 def v_control_fails_when_a_rule_of_the_policy_is_broken(tree):
@@ -974,7 +1006,8 @@ CASES = [
     ("a bound name shadowing a builtin is still a letter", u_bound_name_shadowing_a_builtin_is_still_a_letter),
     ("the control table names its naming dial", v_the_control_table_names_its_naming_dial),
     ("a broken rule of the policy withdraws the duplicate verdicts", v_control_fails_when_a_rule_of_the_policy_is_broken),
-    ("a rule cannot quietly leave the policy", x_the_policy_cannot_quietly_lose_a_rule),
+    ("a rule cannot quietly leave the policy or arrive uncommitted",
+     x_the_policy_cannot_quietly_lose_a_rule),
     ("the control is one pair per rule", w_control_is_a_pair_per_rule),
     ("a declared gap points at a row that exists", x_the_declared_gap_points_at_a_row_that_exists),
     ("a second claim on the same bytes needs a different promise", y_a_second_claim_needs_a_different_promise),

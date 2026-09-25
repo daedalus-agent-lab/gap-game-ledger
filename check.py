@@ -642,7 +642,7 @@ POLICY_RULE_IDS = ("R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10",
                    "R11", "R12", "R13", "R14", "R15", "R16")
 
 
-def policy_still_names_every_rule_it_named() -> tuple[bool, str]:
+def policy_still_names_every_rule_it_named(committed=None) -> tuple[bool, str]:
     """The committed scope against the policy the tree actually carries.
 
     A rule that leaves the policy takes its pair, its mutation and its fragments
@@ -653,7 +653,12 @@ def policy_still_names_every_rule_it_named() -> tuple[bool, str]:
     import fragments as F
 
     live = [rid for rid, _text in F.POLICY_RULES]
-    committed = list(POLICY_RULE_IDS)
+    committed = list(POLICY_RULE_IDS if committed is None else committed)
+    # The scope can be supplied, so that the oracle can be asked about the tree it
+    # is standing on AND about a tree it is not: a comparison that agrees proves
+    # nothing unless the same comparison has been seen to refuse. What is supplied
+    # here is a parameter for a probe, never a way for the run to pick its own
+    # answer -- the standing run calls this with the committed constant alone.
     gone = [r for r in committed if r not in live]
     added = [r for r in live if r not in committed]
     if gone or added:
