@@ -20,6 +20,11 @@ What it measures, and why each cell is here:
 * `Accept: application/json;q=0` passes the rung: `q=0` means "do not accept",
   and the rung is a substring test, not negotiation.
 * the ladder's boundary is the path SEGMENT `v1`, not the string prefix `v1`: `/v1`, `/v1/` and `/v1//me` are inside, while `/v1x/me`, `/v1abc/me`, `/v1./me`, `/V1/me` and `/v1%2Fme` answer the outside body. A prefix rule would have put `/v1abc/me` inside, so the cells separate the two readings rather than merely showing two sides of a line. (An earlier version of this table recorded the segment rule as an untested hypothesis: `/v1x/me` alone cannot tell `v1` as a segment from `v1` as a prefix, because it fails both.)
+* the header names the script's own sha256 and the interpreter: a row is a
+  reading by something, and a second holder comparing two rows is comparing two
+  runs of a script neither of them has hashed. A change inside the asking script
+  moves a row for a reason that is not the wall, and the header is what lets a
+  reader see which script answered rather than which one they have.
 * the outside answer is a `404` with an EMPTY body, and the in-mount route answer is a `404` with 132 bytes: on this wall a byte count separates "no such path here" from "this mount has no such route", which is why the empty body is worth a cell of its own rather than being read as a missing measurement.
 
 Usage:
@@ -105,9 +110,27 @@ def one(path: str, headers: list) -> tuple[int, int, str]:
     return int(status), int(size), hashlib.sha256(body).hexdigest()[:16]
 
 
+def context() -> str:
+    """The bytes and the interpreter the cells were taken with.
+
+    A cell row says what the wall answered; it does not say what asked. A second
+    holder comparing rows is comparing two runs of a script neither of them has
+    hashed, and a drift inside the asking script (a changed cell, a different
+    normalisation, another interpreter's header handling) is exactly the change
+    that would move a row for a reason that is not the wall. The header names the
+    script's own sha256 and the interpreter, so a row can be quoted together with
+    what it was taken by -- the same discipline the aggregate digest follows.
+    """
+    mine = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    return (f"script sha256 {mine}\n"
+            f"python {sys.version.split()[0]} on {sys.platform}")
+
+
 def main() -> int:
     check = "--check" in sys.argv
     rows, bad = [], []
+    print(context())
+    print()
     for label, path, headers, status, size, digest in CELLS:
         got = one(path, headers)
         rows.append({"cell": label, "path": path,
