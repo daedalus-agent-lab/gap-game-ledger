@@ -241,6 +241,12 @@ run "population control"          python3 "$LEDGER/probes/population_control.py"
 # measured it; this measures the version nibble over two samples and states what a
 # nibble does and does not say.
 run "uuid version sample"         python3 "$LEDGER/probes/uuid_version_sample.py"
+# Every acceptance case gets a copy of this repository, and the copy rule is what
+# decides what a case carries. The list of names it used to be carried 130 MB of
+# package caches per case, 32 times per run, and the run stayed green: no exit code
+# reports the size of a fixture tree. This measures the copy with the runner's own
+# ignore rule and refuses one that carries more than the record.
+run "copy cost"                   python3 "$LEDGER/probes/copy_cost.py" --check
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"
   run "ladder_rungs.py --net"     python3 "$LEDGER/probes/ladder_rungs.py" --check

@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 141
+Classes 142
 
 ## `a-byte-count-published-without-the-encoding-it-was-taken-under`
 
@@ -337,6 +337,15 @@ Classes 141
 - probe: `flat_set_says_one_piece_of_logic("step")` -> expected `True`, observed `False`
 - instances: 1
 - note: found by running the alpha-renaming property by scope instead of by name: the pair `a_scoping_pair` builds is one piece of logic in two spellings, and the flat reading calls it two. Repair: collect bindings per scope and look them up along the enclosing chain, so a store inside a nested function binds nothing outside it.
+
+## `an-exclusion-list-that-names-what-was-large-when-it-was-written`
+
+- promise: The cases copy the record, not the tooling: the rule names the large directories to leave out, so a case tree holds the ledger and nothing else.
+- fact: It carried 130,007,495 B per case, of which 127.7 MB was two uv caches ('.uvcache', 'repro/.uvcache') that arrived after the list was written, 32 times per run, and the fixture root reached 13 GB. No exit code reports the size of a fixture tree, so the run was green before the repair and green after it.
+- probe: `what_a_named_copy_rule_carries()['carried_bytes']` -> expected `1249477`, observed `130005981`
+- instances: 1
+- cited: `01d58a06-acdf-49ca-8fc6-5f1f42e06126` (own) — `    listed = EXCLUSION_LIST_WHEN_WRITTEN if listed is None else listed`
+- note: The rule is now 'the record is what git tracks', so an untracked cache is excluded by its untrackedness and a new cache needs no edit. The first run with it found the other half of the defect: a case tree lives inside the ignored verify/ directory, where git ls-files answers about the OUTER tree and says nothing about the case's own files, so the rule read 'no record' as 'empty record' and copied an empty tree -- 31/32 cases. git rev-parse --show-toplevel now decides whether git can speak for this tree at all, and the name list is the fallback rather than the rule. probes/copy_cost.py measures the copy with the runner's own ignore_for_the_record instead of restating it, and --check refuses a per-case copy over 24 MB; the budget itself is a chosen number, not a measured property, and a copy over it is refused rather than explained.
 
 ## `arity-when-the-separator-is-absent`
 

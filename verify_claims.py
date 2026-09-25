@@ -41,12 +41,78 @@ def check(tree: Path, *args: str) -> tuple[int, str]:
     return out.returncode, out.stdout + out.stderr
 
 
+FALLBACK_IGNORE = ("verify", "__pycache__", ".git", ".uvcache")
+
+
+def tracked_files(root: Path) -> set[str] | None:
+    """The paths git calls the record, relative to `root`; None when git cannot answer.
+
+    None comes back when `root` is not the top of a checkout. That case is real and
+    was found by the case that mutates the policy: a case tree lives inside this
+    repository's ignored `verify/` directory, so `git ls-files` run there answers
+    about the OUTER tree -- and answers nothing at all about the files inside the
+    case, because none of them are tracked. Read as "the record is empty", the rule
+    copies an empty tree and the mutation harness cannot find check.py in it. A
+    question git cannot answer about this tree is not an empty record; it is no
+    record, and the caller must fall back.
+    """
+    try:
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                             cwd=root, capture_output=True, text=True)
+        if top.returncode != 0 or Path(top.stdout.strip()).resolve() != root.resolve():
+            return None
+        out = subprocess.run(["git", "ls-files", "-z"], cwd=root, capture_output=True, text=True)
+    except OSError:
+        return None
+    if out.returncode != 0:
+        return None
+    return {p for p in out.stdout.split("\0") if p}
+
+
+def ignore_for_the_record(root: Path):
+    """What a copy of the ledger must not carry.
+
+    The record is what git tracks, so a cache, a virtual environment or an
+    auditor's scratch directory is excluded by its untrackedness and not by its
+    name. That is the repair of a measured defect: the first rule was a list of
+    three names -- `verify`, `__pycache__`, `.git` -- written when those were the
+    large directories, and the tree has since grown two package caches that no
+    name on the list covered. A copy carried 130.0 MB of which 127.7 MB was
+    `.uvcache` and `repro/.uvcache`, 32 times per run, and the run stayed green:
+    a cost nobody's exit code reports is a cost nobody removes. A name list goes
+    stale the moment a new tool drops a new cache in the tree; an untracked file
+    is untracked whatever it is called. `probes/copy_cost.py` measures the result
+    and `--check` refuses a copy that carries more than the record.
+    """
+    files = tracked_files(root)
+    if files is None:
+        return shutil.ignore_patterns(*FALLBACK_IGNORE)
+    keep_files = set(files)
+    keep_dirs: set[str] = set()
+    for f in files:
+        parts = f.split("/")
+        for i in range(1, len(parts)):
+            keep_dirs.add("/".join(parts[:i]))
+    root = root.resolve()
+
+    def _ignore(dirpath, names):
+        try:
+            rel = Path(dirpath).resolve().relative_to(root).as_posix()
+        except ValueError:
+            return list(names)
+        prefix = "" if rel == "." else rel + "/"
+        return [n for n in names
+                if prefix + n not in keep_dirs and prefix + n not in keep_files]
+
+    return _ignore
+
+
 def copy_ledger(name: str) -> Path:
     tree = CASE_ROOT / f"case-{name}"
     if tree.exists():
         shutil.rmtree(tree)
     tree.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(HERE, tree, ignore=shutil.ignore_patterns("verify", "__pycache__", ".git"))
+    shutil.copytree(HERE, tree, ignore=ignore_for_the_record(HERE))
     return tree
 
 

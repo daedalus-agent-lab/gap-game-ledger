@@ -3120,7 +3120,42 @@ def the_same_name_carries_two_numbers_on_two_routes() -> dict:
     }
 
 
+EXCLUSION_LIST_WHEN_WRITTEN = ("verify", "__pycache__", ".git")
+
+# Byte counts measured in the checkout, 2026-09-25, by `probes/copy_cost.py`
+# (which walks the tree with the rule the runner uses). The record is every file
+# git tracks; the two caches arrived after the exclusion list was written.
+THE_RECORD_BESIDE_THE_CACHES = 1_249_477
+CACHES_BESIDE_THE_RECORD = {
+    ".uvcache": 64_306_870,
+    "repro/.uvcache": 64_449_634,
+}
+
+
+def what_a_named_copy_rule_carries(caches=None, record=None, listed=None) -> dict:
+    """Bytes one copy carries while the rule names the large directories it was written with.
+
+    The rule reads as "the copy carries the record, and not the tooling". What it
+    does is carry everything whose name is not on a list, and the list is as old
+    as the day somebody wrote it. A package cache that arrived later is not on it,
+    so it is in every copy -- and the run stays green, because no exit code
+    reports the size of a fixture tree.
+    """
+    caches = CACHES_BESIDE_THE_RECORD if caches is None else caches
+    record = THE_RECORD_BESIDE_THE_CACHES if record is None else record
+    listed = EXCLUSION_LIST_WHEN_WRITTEN if listed is None else listed
+    left_in = {path: size for path, size in caches.items()
+               if not any(part in listed for part in path.split("/"))}
+    return {"carried_bytes": record + sum(left_in.values()),
+            "record_bytes": record,
+            "caches_left_in": sorted(left_in),
+            "over_the_record": sum(left_in.values()) / record}
+
+
 NAMESPACES = {
+    "an-exclusion-list-that-names-what-was-large-when-it-was-written": {
+        "what_a_named_copy_rule_carries": what_a_named_copy_rule_carries,
+    },
     "a-cover-confirmed-by-evidence-about-the-members": {
         "confirming_every_name_is_not_confirming_the_cover":
             confirming_every_name_is_not_confirming_the_cover,
