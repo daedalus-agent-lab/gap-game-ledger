@@ -179,6 +179,7 @@ run "ledger verify_claims.py"     python3 "$LEDGER/verify_claims.py"
 run "provenance.py --selftest"    python3 "$LEDGER/provenance.py" --selftest
 run "policy mutations --check"    python3 "$LEDGER/probes/policy_mutations.py" --check
 run "wire instrument --check"     python3 "$LEDGER/probes/wire_instrument.py" --check
+run "segment equivalence"         python3 "$LEDGER/probes/segment_equivalence.py" --check
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"
   run "ladder_rungs.py --net"     python3 "$LEDGER/probes/ladder_rungs.py" --check

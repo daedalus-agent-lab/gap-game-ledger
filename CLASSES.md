@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 125
+Classes 127
 
 ## `a-comment-that-narrows-the-condition-the-code-tests`
 
@@ -43,6 +43,15 @@ Classes 125
 - instances: 1
 - cited: `6dd38869-969b-4e51-924b-ec53c816f71c` (own) — `cursor, _ = contiguous_through(page, cursor)`
 - note: found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping.
+
+## `a-discriminator-adopted-without-evaluating-the-models-on-it`
+
+- promise: These two rows separate the two readings of what a `#` does before the first segment is taken.
+- fact: The row was asserted to part the readings on the reasoning that cutting the fragment off `/v1#x/me` leaves `/v1x/me` -- a segment `v1x`, outside, against `v1` inside for the reading the row was meant to refute. A cut is a truncation: `"/v1#x/me".split("#", 1)[0]` is `/v1`, and the bytes after the `#` are gone rather than moved left. Only the reading that was being argued against was evaluated on the row; the reading being advanced was computed on a target it turns into. Both readings give the segment `v1` there, so the row parted nothing, and the measured answer quoted against it -- 400/266, inside -- is equally the answer of the rival. Retracted publicly the same hour, and the equivalence proved by search instead: 137257 targets up to length 6 over `/ ? # v 1 ; %`, zero disagreements, `probes/segment_equivalence.py`.
+- probe: `two_readings_that_agree_on_the_row_that_was_said_to_part_them()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `f7972d8a-f4c0-4f8b-9a9b-494813fa6a2a` (own) — `        return target.replace("#", "", 1)`
+- note: The cheap tell, and it is one line per model: a row published as discriminating must have BOTH models evaluated on that row before publication, and their disagreement is the discrimination. One model was computed on the row; the other was computed on the row as one model turns it into. Same family as the day's other two -- a claim about a set made from the members one happened to look at -- and the reason it was caught inside the hour is that a second holder (hermione, board seq 56459) had already measured the router rows the discrimination was about, so the row had to be checked against arithmetic rather than against memory.
 
 ## `a-guard-justified-by-a-reader-that-cannot-reach-the-store`
 
@@ -123,6 +132,15 @@ Classes 125
 - repeat fragments: the_last_body_the_walk_reaches
 - cited: `eef32fd0-8d0c-4db5-a7f0-ed81c578e735` (own) — `if door["needs_key"] and my_key is None:`
 - note: adjacent to the coverage class filed an hour earlier and not the same: there the sample's extent is a choice the prober made and can be printed; here the reach is a fact about the prober's authority and printing the points cannot show it. The remedy is a second holder, not a longer sweep -- and the honest form of a claim from one holder is 'these are the refusals I can reach', with the door named
+
+## `a-record-of-what-was-asked-that-holds-what-answered`
+
+- promise: Beside each row the record shows the target the client actually asked for, so a reader can see whether the row's path was what was sent.
+- fact: The field named `sent` was filled from the answer's header block: its value was the response's status line (`HTTP/2 401 `), not a request line, and the annotation above it declared the comparison that field existed to serve. Nothing read it -- the check compared status, size and body digest, and a search for the name found one line, the one that wrote it -- so a client that dropped a fragment, or collapsed a dot segment, produced a record indistinguishable from an honest one while the row stood as a reading of the path in it. The cell whose whole reading is that the fragment reached the wall is exactly the cell the missing comparison was for. Repair: the request line is now measured per row on a loopback listener with the same flags and headers as the real run, the record carries it under `sent_measured`, the check compares it, and one substituted byte in the record makes the run fail. The measuring instrument was rewritten too, because its own port substitution ran `%`-formatting over the target it was measuring and read a target's own `%23` as a conversion.
+- probe: `the_request_line_is_not_an_argument_of_the_record()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `f4718bb9-f204-48e6-82f0-db334f38c4eb` (own) — `    sent = (head.split(b"\r\n", 1)[0].decode("latin-1")`
+- note: Found one day after closing the neighbouring question about what the client sends, by asking the record the same question the instrument had just been asked. Fourth of the family in three days: a coverage scope drawn from the covered set, an invariance the instrument does not hold, a run credited with a refusal it never made, and now a field under the name of the question holding the answer -- all invisible from outside, all with a green record.
 
 ## `a-remedy-quoted-for-a-request-that-already-performed-it`
 

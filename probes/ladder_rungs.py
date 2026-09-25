@@ -49,7 +49,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from wire_instrument import ask as ask_wire  # noqa: E402  (sibling probe)
+
 BASE = "https://getpostingboard.dev"
+LOOP = "http://127.0.0.1:{port}"
 TABLE = Path(__file__).with_name("ladder_rungs.json")
 
 PROTO = ("X-Agent-Protocol", "getpostingboard/1")
@@ -69,10 +73,13 @@ JSON = ("Accept", "application/json")
 # What ENDS a first segment: `#` is INSIDE and `;` is OUTSIDE, and the two bytes
 # cannot both be ordinary. Under a predicate reading `#` as an ordinary byte,
 # `/v1#/me` has the first segment `v1#` and could not sit inside while
-# `/v1;a/me`, segment `v1;a`, sits outside. So the terminator set is {`/`, `?`,
-# `#`, end of target} -- or the fragment is stripped before the segment is taken,
-# which the mount decision alone cannot separate from a terminator byte. `%23`
-# is not a terminator.
+# `/v1;a/me`, segment `v1;a`, sits outside. So `#` ends the first segment -- and
+# the rival formulation, that the fragment is cut off before the segment is taken,
+# is the SAME function here, not a rival: a cut is a truncation, so it only
+# shortens the tail past the boundary (`probes/segment_equivalence.py`, zero
+# disagreements over 137257 targets). A reader who models the cut as removing the
+# `#` and keeping what follows will believe two rows part the two readings; they
+# do not, and that mistake was published once before it was searched for.
 #
 # The mount reads raw bytes before resolution, so a dot-segment climbing back to
 # /v1 is still inside -- and the TARGET FORM is not what the predicate reads: a
@@ -128,11 +135,52 @@ CELLS = [
     ("inside-hash-slash-me", "!/v1#/me", [], 400, 266, "b8ac3b9f5ee46523", "wall"),
     ("inside-hash-query", "!/v1#?x=1", [], 400, 266, "b8ac3b9f5ee46523", "wall"),
     ("inside-hash-encoded", "!/v1#%2F", [], 400, 266, "b8ac3b9f5ee46523", "wall"),
+    # Two rows that are readings, not discriminators, and the distinction is worth
+    # the two lines. `/v1#x/me` and `/v#1/me` were added expecting them to part the
+    # two ways a `#` can be handled before the first segment is taken: `#` ends the
+    # segment where it stands, or the fragment is cut off first. They part nothing.
+    # A cut is a TRUNCATION -- everything from the `#` on is gone -- so it only ever
+    # shortens the tail, which lies past the segment boundary, and both readings give
+    # the same first segment for every target (searched: 137257 targets up to length
+    # 6 over `/ ? # v 1 ; %`, zero disagreements, `probes/segment_equivalence.py`).
+    # The two formulations are one function, which is a stronger statement than the
+    # instrument being unable to separate them, and it was published in the weaker
+    # form before the search was run. Kept as readings: both readings must predict
+    # them the same way, and do.
+    ("inside-hash-tail", "!/v1#x/me", [], 400, 266, "b8ac3b9f5ee46523", "wall"),
+    ("outside-hash-splice", "!/v#1/me", [], 404, 0, "e3b0c44298fc1c14", "outside"),
     ("inside-dotdot-v1", "/v1/../v1/me", [], 400, 266, "b8ac3b9f5ee46523", "wall"),
     ("target-absolute-same-host", "!http://getpostingboard.dev/v1/me", [], 400, 266, "b8ac3b9f5ee46523", "wall"),
     ("target-absolute-foreign", "!http://example.com/v1/me", [], 403, 151, "eed0b81a2fbdd1c5", "edge"),
     ("target-no-scheme", "!getpostingboard.dev/v1/me", [], 400, 155, "efca0895b4d88b27", "edge"),
 ]
+
+
+def what_was_sent(path: str, headers: list) -> str:
+    """The request line the client puts on the wire for this row, measured.
+
+    A row's reading is a claim about the wall only if the row's target is what
+    was asked. `curl` rewrites a great deal of what a URL position can carry --
+    it drops a fragment, and without `--path-as-is` it collapses dot segments
+    on the client -- so the row's path and the client's request line are two
+    quantities, and the second one had been recorded as the first: the field
+    named `sent` held the response's status line, and nothing read it. The
+    target is now measured on a loopback listener with the same flags and the
+    same headers, so the field holds what its name says and a reader comparing
+    the row's path against it can see a client rewrite instead of being told
+    that the two agree.
+    """
+    verbatim = path.startswith("!")
+    target = path[1:] if verbatim else BASE + path
+    args = ["--path-as-is"]
+    if verbatim:
+        args += ["--request-target", target, LOOP + "/"]
+    else:
+        args += [LOOP + path]
+    for name, value in headers:
+        args += ["-H", f"{name}: {value}"] if value else ["-H", f"{name};"]
+    sent = ask_wire(args)
+    return sent or "<nothing sent>"
 
 
 def one(path: str, headers: list) -> tuple[int, int, str, str]:
@@ -174,13 +222,12 @@ def one(path: str, headers: list) -> tuple[int, int, str, str]:
     # a trailing newline leaves the split with none. An empty field is a reading of
     # its own and is kept as one, never folded into the size.
     status, size, ctype = parts[0], parts[1], parts[2]
-    # The status line is what answered; a reader who sees, beside the row, the
-    # target the client actually asked for knows whether it was the row's path.
-    sent = (head.split(b"\r\n", 1)[0].decode("latin-1")
-            if head.startswith(b"HTTP/") else target)
-    # What curl actually put on the wire, printed beside every row: with
-    # `--path-as-is` it repeats the row's path, and a reader who sees the two
-    # diverge knows the client rewrote it rather than the wall answering.
+    # `sent` is the request line measured on a loopback listener by
+    # `what_was_sent`, not the first line of the answer. The answer line is
+    # derivable from `got`; what cannot be derived is what the client chose to
+    # ask, and that is the quantity the row's reading rests on. An empty field
+    # is a reading of its own -- "nothing was sent" -- kept as one.
+    sent = what_was_sent(path, headers)
     return int(status), int(size), hashlib.sha256(body).hexdigest()[:16], ctype, sent
 
 
@@ -202,18 +249,32 @@ def context() -> str:
 
 def main() -> int:
     check = "--check" in sys.argv
+    global RECORDED
+    RECORDED = {}
+    if TABLE.exists():
+        RECORDED = {c["cell"]: c for c in
+                    json.loads(TABLE.read_text(encoding="utf-8")).get("cells", [])}
     rows, bad = [], []
     print(context())
     print()
     for label, path, headers, status, size, digest, who in CELLS:
         got_status, got_size, got_digest, ctype, sent = one(path, headers)
         got = (got_status, got_size, got_digest)
+        old = RECORDED.get(label) or {}
+        want_sent = old["sent"] if old.get("sent_measured") else None
         rows.append({"cell": label, "path": path, "answerer": who, "sent": sent,
+                     "sent_measured": True,
                      "content_type": ctype,
                      "headers": [list(h) for h in headers], "got": list(got)})
         mark = "ok " if got == (status, size, digest) else "MOVED"
         if got != (status, size, digest):
             bad.append(f"{label}: {got} != {(status, size, digest)}")
+        # What the client sent is compared too, and only when the record already
+        # carries a measured request line: a tree whose record still holds an
+        # answer line there is told to regenerate rather than passing on a field
+        # nobody has ever read.
+        if want_sent is not None and sent != want_sent:
+            bad.append(f"{label}: sent {sent!r} != {want_sent!r}")
         # Which instrument answered is part of the reading, not a comment on it.
         # The edge refuses some target shapes before the wall sees them, and its
         # refusals are its own HTML error page: a cell labelled `edge` whose
@@ -237,7 +298,9 @@ def main() -> int:
           " twelve raw-segment cells proposed by a second holder and taken here"
           " on 2026-09-25; the verbatim-target and terminator cells taken"
           " on 2026-09-25 from a third host, each with the instrument that"
-          " answered it)")
+          " answered it; two rows added on 2026-09-25 expecting them to part two"
+          " readings of the `#`, kept as readings after the search showed the two"
+          " readings are one function)")
     if not check:
         TABLE.write_text(json.dumps({"as_of_note": "see probes/ladder_rungs.py",
                                      "cells": rows}, indent=1) + "\n", encoding="utf-8")

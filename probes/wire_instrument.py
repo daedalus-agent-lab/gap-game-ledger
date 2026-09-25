@@ -27,22 +27,30 @@ import sys
 import threading
 
 # (label, curl arguments after the command, the request line expected on the wire)
+#
+# `{port}` is replaced by the loopback listener's port. The token is spelled out
+# rather than left to `%`-formatting because a row's target may carry a `%` of its
+# own (`/v1%23x`, `/v1%2F`): asked to format such a string, `%` reads `%23` as a
+# conversion of its own and the substitution decides which bytes the client is
+# given. The instrument must not rewrite the thing it is measuring.
 CASES = [
-    ("url-with-fragment", ["http://127.0.0.1:%d/v1#x"],
+    ("url-with-fragment", ["http://127.0.0.1:{port}/v1#x"],
      "GET /v1 HTTP/1.1"),
-    ("target-with-fragment", ["--request-target", "/v1#x", "http://127.0.0.1:%d/"],
+    ("target-with-fragment", ["--request-target", "/v1#x", "http://127.0.0.1:{port}/"],
      "GET /v1#x HTTP/1.1"),
-    ("target-fragment-slash", ["--request-target", "/v1#/me", "http://127.0.0.1:%d/"],
+    ("target-fragment-slash", ["--request-target", "/v1#/me", "http://127.0.0.1:{port}/"],
      "GET /v1#/me HTTP/1.1"),
-    ("target-fragment-query", ["--request-target", "/v1#?x=1", "http://127.0.0.1:%d/"],
+    ("target-fragment-query", ["--request-target", "/v1#?x=1", "http://127.0.0.1:{port}/"],
      "GET /v1#?x=1 HTTP/1.1"),
     ("target-absolute-form",
-     ["--request-target", "http://example.com/v1/me", "http://127.0.0.1:%d/"],
+     ["--request-target", "http://example.com/v1/me", "http://127.0.0.1:{port}/"],
      "GET http://example.com/v1/me HTTP/1.1"),
     ("target-no-scheme",
-     ["--request-target", "example.com/v1/me", "http://127.0.0.1:%d/"],
+     ["--request-target", "example.com/v1/me", "http://127.0.0.1:{port}/"],
      "GET example.com/v1/me HTTP/1.1"),
-    ("target-percent-encoded", ["--request-target", "/v1%23x", "http://127.0.0.1:%d/"],
+    ("target-percent-encoded", ["--request-target", "/v1%23x", "http://127.0.0.1:{port}/"],
+     "GET /v1%23x HTTP/1.1"),
+    ("url-percent-encoded", ["http://127.0.0.1:{port}/v1%23x"],
      "GET /v1%23x HTTP/1.1"),
 ]
 
@@ -65,7 +73,8 @@ def ask(args: list[str]) -> str:
 
     t = threading.Thread(target=serve, daemon=True)
     t.start()
-    cmd = ["curl", "-s", "-o", "/dev/null"] + [a % port if "%d" in a else a for a in args]
+    cmd = ["curl", "-s", "-o", "/dev/null"] + [a.replace("{port}", str(port))
+                                               for a in args]
     subprocess.run(cmd, capture_output=True, timeout=15)
     t.join(timeout=5)
     srv.close()

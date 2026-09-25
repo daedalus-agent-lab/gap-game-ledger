@@ -1487,6 +1487,91 @@ def the_report_cannot_come_from_the_run_that_was_made() -> bool:
         committed=("R1", "R17"))
     return run_that_was_made[0] and not state_the_report_describes[0]
 
+def the_request_line_is_not_an_argument_of_the_record() -> bool:
+    """The field named for the request holds the answer, and nothing reads it.
+
+    A cell of the ladder is a claim about the wall only if the target in the row
+    is the target that was asked. Two runs differ in exactly that: one puts
+    `GET /v1#x HTTP/1.1` on the wire, the other a client that dropped the
+    fragment puts `GET /v1 HTTP/1.1` there, and the second is a reading of a
+    different path wearing the row's name. The record was meant to make the two
+    distinguishable -- the sentence beside the field said the reader could
+    compare the row's path against what was sent and see the divergence.
+
+    Measured, the field does not depend on what was sent at all: it is filled
+    from the answer's header block, so both runs carry the same value and the
+    comparison the sentence promised compares the row with the answer. True
+    means a rewritten request and an honest one are indistinguishable in the
+    record, and the guard is the sentence rather than the field.
+
+    The price is not cosmetic. `--path-as-is` and `--request-target` are the
+    flags that keep the client honest, and a record unable to show what the
+    client chose makes every cell taken with them a promise about the client
+    rather than a reading -- including the cells whose whole point is that the
+    fragment was sent.
+
+    The recorder below is the ladder's own, kept as it shipped. `asked` is what
+    the client actually put on the wire -- the only quantity the row's reading
+    rests on -- carried so the probe can compare it with the field the reader
+    was given.
+    """
+    def a_row_recorded_from_the_answer_line(path, head, asked):
+        sent = (head.split(b"\r\n", 1)[0].decode("latin-1")
+                if head.startswith(b"HTTP/") else path)
+        return {"path": path, "sent": sent, "asked": asked}
+
+    row = "/v1#x"
+    answer = b"HTTP/2 400 \r\ncontent-type: application/json\r\n"
+    kept = a_row_recorded_from_the_answer_line(row, answer, "GET /v1#x HTTP/1.1")
+    dropped = a_row_recorded_from_the_answer_line(row, answer, "GET /v1 HTTP/1.1")
+    return kept["sent"] == dropped["sent"] and kept["sent"] != kept["asked"]
+
+
+def two_readings_that_agree_on_the_row_that_was_said_to_part_them() -> bool:
+    """A row published as parting two readings, with only one of them computed on it.
+
+    The two readings: `#` ends the first segment where it stands, or the fragment
+    is cut off the target before the segment is taken. The row published as
+    parting them was `/v1#x/me`, on the reasoning that a cut turns it into
+    `/v1x/me` -- a segment `v1x`, outside, against `v1` inside for the reading the
+    row was meant to refute.
+
+    That reasoning reads a cut as the removal of one character. A cut is a
+    truncation: `"/v1#x/me".split("#", 1)[0]` is `/v1`, and the bytes after the
+    `#` are gone, not moved left. Under the second reading the row's segment is
+    `v1` -- the same as under the first -- so the row parts nothing, refutes
+    nothing, and the two readings predict the measured answer together.
+
+    True means the two readings agree on the row that was said to separate them:
+    the discriminator was adopted without both models being evaluated on it, and
+    the measured answer it was quoted against is equally the answer of the rival.
+    """
+    def segment_ends_where_the_hash_stands(target):
+        body = target[1:] if target.startswith("/") else target
+        for i, ch in enumerate(body):
+            if ch in "/?#":
+                return body[:i]
+        return body
+
+    def segment_after_the_fragment_is_cut(target):
+        t = target.split("#", 1)[0]
+        body = t[1:] if t.startswith("/") else t
+        for i, ch in enumerate(body):
+            if ch in "/?":
+                return body[:i]
+        return body
+
+    def the_cut_read_as_a_splice(target):
+        return target.replace("#", "", 1)
+
+    published = "/v1#x/me"
+    measured_inside = True  # 400/266 with the protocol body, against 404/0 outside
+    return (segment_ends_where_the_hash_stands(published)
+            == segment_after_the_fragment_is_cut(published)
+            and the_cut_read_as_a_splice(published) != published
+            and measured_inside)
+
+
 def check_passes_when_there_is_nothing_to_check(present, named):
     """The mirror item as the runner ran it: the file it checks is not there, so
     it prints a sentence and exits zero."""
@@ -2404,6 +2489,14 @@ NAMESPACES = {
     "a-procedure-published-as-an-observation": {
         "the_report_cannot_come_from_the_run_that_was_made":
             the_report_cannot_come_from_the_run_that_was_made,
+    },
+    "a-record-of-what-was-asked-that-holds-what-answered": {
+        "the_request_line_is_not_an_argument_of_the_record":
+            the_request_line_is_not_an_argument_of_the_record,
+    },
+    "a-discriminator-adopted-without-evaluating-the-models-on-it": {
+        "two_readings_that_agree_on_the_row_that_was_said_to_part_them":
+            two_readings_that_agree_on_the_row_that_was_said_to_part_them,
     },    "a-store-erased-though-the-fragment-reads-it": {
         "stores_no_name_reads": stores_no_name_reads,
         "a_store_only_a_caller_reads": a_store_only_a_caller_reads,

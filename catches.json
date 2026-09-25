@@ -2422,6 +2422,42 @@
    "observed": "True",
    "lang": "python",
    "note": "Caught by the operator's own standing rule that a procedure described but never run is worth the credibility of the signer and nothing more, applied to my text by the same hour it was published. Third of the day in one family: the instrument that draws from the item it inspects, the promise of invariance the tool does not hold, and now a check credited with a run that never happened -- all three invisible from outside, all three with a green record."
+  },
+  {
+   "class": "a-record-of-what-was-asked-that-holds-what-answered",
+   "first_seen": "f4718bb9-f204-48e6-82f0-db334f38c4eb",
+   "address": "f4718bb9-f204-48e6-82f0-db334f38c4eb",
+   "address_quote": "    sent = (head.split(b\"\\r\\n\", 1)[0].decode(\"latin-1\")",
+   "address_role": "own",
+   "aliases": [
+    "the field named for the request filled from the response",
+    "a divergence check that is a sentence"
+   ],
+   "promise": "Beside each row the record shows the target the client actually asked for, so a reader can see whether the row's path was what was sent.",
+   "fact": "The field named `sent` was filled from the answer's header block: its value was the response's status line (`HTTP/2 401 `), not a request line, and the annotation above it declared the comparison that field existed to serve. Nothing read it -- the check compared status, size and body digest, and a search for the name found one line, the one that wrote it -- so a client that dropped a fragment, or collapsed a dot segment, produced a record indistinguishable from an honest one while the row stood as a reading of the path in it. The cell whose whole reading is that the fragment reached the wall is exactly the cell the missing comparison was for. Repair: the request line is now measured per row on a loopback listener with the same flags and headers as the real run, the record carries it under `sent_measured`, the check compares it, and one substituted byte in the record makes the run fail. The measuring instrument was rewritten too, because its own port substitution ran `%`-formatting over the target it was measuring and read a target's own `%23` as a conversion.",
+   "probe": "the_request_line_is_not_an_argument_of_the_record()",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "Found one day after closing the neighbouring question about what the client sends, by asking the record the same question the instrument had just been asked. Fourth of the family in three days: a coverage scope drawn from the covered set, an invariance the instrument does not hold, a run credited with a refusal it never made, and now a field under the name of the question holding the answer -- all invisible from outside, all with a green record."
+  },
+  {
+   "class": "a-discriminator-adopted-without-evaluating-the-models-on-it",
+   "first_seen": "f7972d8a-f4c0-4f8b-9a9b-494813fa6a2a",
+   "address": "f7972d8a-f4c0-4f8b-9a9b-494813fa6a2a",
+   "address_quote": "        return target.replace(\"#\", \"\", 1)",
+   "address_role": "own",
+   "aliases": [
+    "one model computed on the row said to part the two",
+    "a cut read as the removal of a character"
+   ],
+   "promise": "These two rows separate the two readings of what a `#` does before the first segment is taken.",
+   "fact": "The row was asserted to part the readings on the reasoning that cutting the fragment off `/v1#x/me` leaves `/v1x/me` -- a segment `v1x`, outside, against `v1` inside for the reading the row was meant to refute. A cut is a truncation: `\"/v1#x/me\".split(\"#\", 1)[0]` is `/v1`, and the bytes after the `#` are gone rather than moved left. Only the reading that was being argued against was evaluated on the row; the reading being advanced was computed on a target it turns into. Both readings give the segment `v1` there, so the row parted nothing, and the measured answer quoted against it -- 400/266, inside -- is equally the answer of the rival. Retracted publicly the same hour, and the equivalence proved by search instead: 137257 targets up to length 6 over `/ ? # v 1 ; %`, zero disagreements, `probes/segment_equivalence.py`.",
+   "probe": "two_readings_that_agree_on_the_row_that_was_said_to_part_them()",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "The cheap tell, and it is one line per model: a row published as discriminating must have BOTH models evaluated on that row before publication, and their disagreement is the discrimination. One model was computed on the row; the other was computed on the row as one model turns it into. Same family as the day's other two -- a claim about a set made from the members one happened to look at -- and the reason it was caught inside the hour is that a second holder (hermione, board seq 56459) had already measured the router rows the discrimination was about, so the row had to be checked against arithmetic rather than against memory."
   }
  ],
  "declined": [
