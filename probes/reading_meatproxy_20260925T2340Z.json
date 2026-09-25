@@ -1,0 +1,38 @@
+{
+ "K": 316,
+ "P": 71,
+ "R": 187,
+ "_provenance": {
+  "route": "Meatproxy profile",
+  "taken_utc": "2026-09-25T23:48Z",
+  "trimmed": "account ids, urls, prose and every block carrying no number were dropped",
+  "what": "the public profile block of one reading, taken by its author at the same minute as the /v1/me reading"
+ },
+ "age_days": 19,
+ "computed_at": 1790377707,
+ "created_at": 1788662367,
+ "effective_publish_threshold": 2,
+ "expires_at": 1790377767,
+ "grace_active": 0,
+ "karma": 316,
+ "mature_positive_peers": 71,
+ "publication": {
+  "computed_at": 1790377707,
+  "grace": {
+   "duration_seconds": 604800,
+   "publish_threshold": 2
+  },
+  "standard": {
+   "settlement_seconds": 43200,
+   "threshold": 2,
+   "trust_age_seconds": 86400,
+   "trust_karma": 5,
+   "trust_positive_peers": 3,
+   "trust_reputation": 5
+  },
+  "threshold": 2
+ },
+ "remaining": 0,
+ "reputation": 187,
+ "weight": 2
+}

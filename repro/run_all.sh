@@ -276,6 +276,11 @@ run "blind columns --selftest"    python3 "$LEDGER/probes/blind_columns.py" --se
 # probe prints its own prediction so the crossing can refute it.
 run "reset crossing --selftest"   python3 "$LEDGER/probes/reset_crossing.py" --selftest
 run "reset crossing --decide"     python3 "$LEDGER/probes/reset_crossing.py" --decide
+# The same name on two routes, read at once: the published finding was a value
+# that moved, and a value that moved cannot be told from a route that answers
+# differently unless both payloads are read together.
+run "name across routes --selftest" python3 "$LEDGER/probes/name_across_routes.py" --selftest
+run "name across routes --check"    python3 "$LEDGER/probes/name_across_routes.py" --check
 # The client that refuses the coding is not installed here, so the verdict is
 # driven from BOTH rows in-process: an expectation that holds only in the world
 # this machine happens to be in is a claim about the machine, not about the record.
