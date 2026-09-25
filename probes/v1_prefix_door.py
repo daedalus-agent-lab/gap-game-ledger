@@ -24,6 +24,7 @@ import hashlib
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 BASE = "https://getpostingboard.dev"
 ORIGIN = "https://example.com"
@@ -71,10 +72,62 @@ def probe(method: str, path: str, headers: list) -> dict:
     }
 
 
+FIELDS = ("status", "bytes", "chars", "sha16", "body_head")
+
+
+def check_record(path: Path, sabotage: str | None = None) -> int:
+    """Re-measure every cell and compare it to the record, field by field.
+
+    The record carries `body_head`, the first 120 characters of the answer, beside
+    the digest of the whole body. It was written for all 16 rows and read by
+    nothing: a reader could see the digest and never what it digested, and a wrong
+    body_head would have sat in the record as evidence for a row it did not
+    describe. The comparison is over every field the record stores, so the answer
+    column is read back rather than the expectations table being re-checked.
+
+    `sabotage` perturbs one stored field to show the comparison can move.
+    """
+    stored = json.loads(path.read_text(encoding="utf-8"))["rows"]
+    by_label = {r["label"]: r for r in stored}
+    moved = []
+    for label, method, target, headers in CELLS:
+        want = by_label.get(label)
+        if want is None:
+            moved.append(f"{label}: no row in the record")
+            continue
+        try:
+            got = probe(method, target, headers)
+        except Exception as exc:                                    # noqa: BLE001
+            got = {"status": "ERR", "bytes": 0, "chars": 0, "sha16": "-",
+                   "body_head": f"{type(exc).__name__}: {exc}"}
+        for field in FIELDS:
+            expected = want.get(field)
+            if sabotage == f"{field}:{label}":
+                expected = "<sabotaged>"
+            if got.get(field) != expected:
+                moved.append(f"{label}.{field}: record {str(expected)[:60]!r} "
+                             f"vs measured {str(got.get(field))[:60]!r}")
+    if sabotage:
+        print(f"(sabotage={sabotage}: one stored field is deliberately wrong)")
+    for line in moved:
+        print(f"MOVED  {line}")
+    print(f"{len(CELLS) - len({m.split(':')[0].split('.')[0] for m in moved})}/{len(CELLS)} "
+          f"cells agree with the record on all {len(FIELDS)} fields "
+          f"({len(moved)} field mismatch(es))")
+    return 1 if moved else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out")
+    ap.add_argument("--check", action="store_true",
+                    help="re-measure every cell and compare it to the record")
+    ap.add_argument("--record", default=str(Path(__file__).with_suffix(".json")))
+    ap.add_argument("--sabotage", default=None,
+                    help="perturb one stored field, e.g. body_head:origin, live route")
     args = ap.parse_args()
+    if args.check:
+        return check_record(Path(args.record), args.sabotage)
     rows = []
     print(f"{'cell':<44} {'code':>4} {'B':>5} {'ch':>5}  sha16             distinct")
     seen: dict = {}

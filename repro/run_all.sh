@@ -208,6 +208,10 @@ if [ "$NET" = 1 ]; then
   # its own: a method table that says "standard request, no privileges" is not
   # reproducible, and a reader retrying it sees none of the numbers it cites.
   run "governance masks --net"    python3 "$LEDGER/probes/governance_masks.py" --check
+  # The prefix-door record's own answer column: every field it stores, including the
+  # body head beside the digest, is re-measured and compared -- a record whose
+  # evidence column is never read back is a sentence with a digest attached.
+  run "v1 prefix door --net"      python3 "$LEDGER/probes/v1_prefix_door.py" --check
 fi
 # The reviewer's older probes (probe_regime.py, probe_inset.py,
 # probe_dense_projection.py) are deliberately NOT run: they unpack an interface

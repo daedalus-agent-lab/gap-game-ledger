@@ -20,6 +20,7 @@ already enforces, plus a probe run to confirm the recorded observation.
 
 import argparse
 import ast
+import hashlib
 import importlib.util
 import inspect
 import json
@@ -101,13 +102,29 @@ MUTATING = {
 }
 
 
+# Where a fragment's source bytes are looked for, in order. The repo carries the
+# files it names, so the record regenerates from a clone alone; the workspace is
+# the fallback for a file that has not been carried over yet, and a row recovered
+# from there is marked uncheckable rather than cited like the others.
+SOURCE_DIRS = (HERE / "provenance", WORKSPACE)
+
+
+def find_source(filename: str):
+    """The path the bytes are at, and whether a reader of this repo can reach it."""
+    for i, root in enumerate(SOURCE_DIRS):
+        path = root / filename
+        if path.exists():
+            return path, i == 0
+    return None, False
+
+
 def load_fragments():
-    """Copy the named functions out of the workspace catch files into one module."""
+    """Copy the named functions out of the source catch files into one module."""
     parts = ["import copy\n\n"]
     names = {}
     for label, (cls, filename, fn, *_rest) in RECOVERIES.items():
-        path = WORKSPACE / filename
-        if not path.exists():
+        path, _carried = find_source(filename)
+        if path is None:
             print(f"NOFILE {label:<26} {filename} is gone")
             continue
         text = path.read_text(encoding="utf-8")
@@ -150,7 +167,17 @@ def verdicts(module, names):
             probe = tmpl.replace("{fn}", fn_name)
         fn = getattr(module, fn_name)
         fp = check.fingerprint(fn)
-        row = {"label": label, "class": cls, "file": filename, "fn": fn_name,
+        # The provenance is a reading only if the bytes it names are in this repo:
+        # the digest is of the file the fragment was taken from, and check.py
+        # resolves it against `provenance/`. A file still only in the workspace is
+        # a memory of the run, and says so rather than reading like a citation.
+        src, carried = find_source(filename)
+        row = {"label": label, "class": cls,
+               "file": f"provenance/{filename}" if carried else filename,
+               "file_checkable": bool(carried),
+               "sha256": (hashlib.sha256(src.read_bytes()).hexdigest()
+                          if src is not None else None),
+               "fn": fn_name, "source_fn": _fn,
                "probe": probe, "expected": expected, "observed": observed}
         if fp == primaries.get(cls):
             row["verdict"] = "CLASS"
@@ -193,7 +220,9 @@ def main() -> int:
     print(" ".join(f"{k} {v}" for k, v in sorted(counts.items())))
     for label, cls in RUNS.items():
         rows.append({"label": label, "class": cls, "verdict": "RUN",
-                     "file": "", "fn": "", "probe": "", "expected": "", "observed": ""})
+                     "file": "", "file_checkable": False, "sha256": None,
+                     "fn": "", "probe": "", "expected": "", "observed": "",
+                     "replays": None})
         counts["RUN"] = counts.get("RUN", 0) + 1
         print(f"{'RUN':<7} {label:<26} {cls:<45} receipt of a ledger run, not a fragment")
     missing = [lab for lab in RECOVERIES if lab not in {r["label"] for r in rows}]

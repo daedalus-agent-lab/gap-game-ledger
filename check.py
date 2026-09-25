@@ -1011,6 +1011,97 @@ def addresses(data) -> int:
     return 0
 
 
+PATHLIKE = re.compile(r"\b(?:probes|review|verify|repro)/[A-Za-z0-9_./-]+")
+
+
+def evidence_citations(data: dict) -> tuple[int, list[str]]:
+    """Every file an entry's `evidence` names must be a file this repo carries.
+
+    An entry's evidence block is the record of the examination behind its class:
+    it names the scripts that were run and the review that refuted part of the
+    claim. One of those names -- `review/key_shape_refutation.md` -- pointed at a
+    document that was never carried over, so the strongest support the entry
+    claims resolved to nothing for every reader of this repo, and nothing read the
+    field to notice. The block is read here: each path-shaped string in it must
+    exist, or the citation is a sentence.
+    """
+    seen: set[str] = set()
+    missing: list[str] = []
+    for entry in data["entries"]:
+        block = entry.get("evidence")
+        if not block:
+            continue
+        texts = [block] if isinstance(block, str) else json.dumps(block, ensure_ascii=False).split('"')
+        for text in texts:
+            for cited in PATHLIKE.findall(text):
+                seen.add(cited)
+                if not (HERE / cited).exists():
+                    missing.append(f"{entry['class']} cites {cited}, which is not here")
+    return len(seen), missing
+
+
+def provenance_record() -> tuple[int, list[str], list[str]]:
+    """Read `label_recovery.json`, the provenance behind the recovered labels.
+
+    A row there says which file a recovered fragment's bytes were taken from. That
+    is a citation, and a citation a reader cannot resolve is a sentence: the field
+    was written for 19 rows and read by nothing. The bytes now travel in this repo
+    under `provenance/`, and this reads them back -- the digest recorded at
+    recovery time against the file on disk, and the function name against the text.
+
+    Returns (rows read, problems, unproven). A row that says its file is checkable
+    and whose digest or function does not match is a problem: the record claims a
+    provenance the repo does not carry. A row that declares its file uncheckable
+    (the bytes were only ever in a workspace outside this repo) is printed as
+    unproven and is not a failure -- the honest status, not a hidden one.
+    """
+    path = HERE / "label_recovery.json"
+    if not path.exists():
+        return 0, [], []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    rows = data.get("rows") or []
+    problems: list[str] = []
+    unproven: list[str] = []
+    for row in rows:
+        label = row.get("label", "?")
+        named = row.get("file") or ""
+        if "file_checkable" not in row:
+            problems.append(f"{label} does not say whether its provenance is checkable")
+            continue
+        if not named:
+            continue
+        if not row["file_checkable"]:
+            unproven.append(f"{label} ({named})")
+            continue
+        f = HERE / named
+        if not f.exists():
+            problems.append(f"{label} cites {named}, which this repo does not carry")
+            continue
+        got = hashlib.sha256(f.read_bytes()).hexdigest()
+        if got != row.get("sha256"):
+            problems.append(
+                f"{label} cites {named}, whose bytes are not the ones recorded "
+                f"(recorded {str(row.get('sha256'))[:16]}, on disk {got[:16]})")
+            continue
+        # The function to look for is the one in the SOURCE file, not the name the
+        # recovered copy was given: `load_fragments` renames `f` to `f_rec` to keep
+        # the module's namespace apart, so testing the renamed one asks the file for
+        # a name it cannot have and reddens four honest rows.
+        want = row.get("source_fn") or row.get("fn")
+        if want and want not in f.read_text(encoding="utf-8"):
+            problems.append(f"{label} cites {named}, which has no {want}()")
+        # A verdict that rests on an observation must not sit beside a record of
+        # that observation failing to replay.
+        if row.get("replays") is False and row.get("verdict") in ("CLASS", "OBJECT", "MOVE"):
+            problems.append(
+                f"{label} carries verdict {row['verdict']} while its probe is recorded "
+                "as not replaying")
+    overlap = set(data.get("missing") or []) & {r.get("label") for r in rows}
+    for label in sorted(overlap):
+        problems.append(f"{label} is listed both as a row and as a label with no source")
+    return len(rows), problems, unproven
+
+
 def render_index(data: dict) -> str:
     """The whole ledger as one page a stranger can read without cloning.
 
@@ -1332,6 +1423,21 @@ def main() -> int:
     # counter, one line further down.
     print(f"recurring classes  {len(recurring)}: {', '.join(sorted(recurring))}")
     print(f"holds callbacks    {len(HOLDS)} fail {holds_fail}")
+    cited, cited_missing = evidence_citations(data)
+    if cited:
+        print(f"evidence citations {cited - len({m.split(' cites ')[1].split(',')[0] for m in cited_missing})}"
+              f"/{cited} named files resolve in this repo")
+    for line in cited_missing:
+        print(f"UNPROVEN  {'':<48} {line}")
+    prov_rows, prov_bad, prov_unproven = provenance_record()
+    if prov_rows:
+        checkable = prov_rows - len(prov_unproven)
+        print(f"provenance         {checkable}/{prov_rows} recovered rows cite bytes this "
+              f"repo carries and this run re-digested"
+              + (f"; {len(prov_unproven)} name a file that is only a memory of the run: "
+                 + ", ".join(prov_unproven) if prov_unproven else ""))
+    for line in prov_bad:
+        print(f"UNPROVEN  {'':<48} {line}")
     if unknown:
         return 2
     stale = False
@@ -1348,7 +1454,8 @@ def main() -> int:
         )
     else:
         print(f"index    {INDEX.name} is current")
-    return 1 if miss or holds_fail or collisions or bad or stale else 0
+    return 1 if (miss or holds_fail or collisions or bad or stale or prov_bad
+                 or cited_missing) else 0
 
 
 if __name__ == "__main__":

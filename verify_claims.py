@@ -983,6 +983,97 @@ def zz_the_control_table_is_current(tree):
     return True, f"{len(rows)} rows, current, every one moving when its rule is broken"
 
 
+def q_provenance_is_a_reading(tree):
+    """A recovered label's provenance must be bytes this repo carries.
+
+    `label_recovery.json` names, for each recovered label, the file its fragment
+    was taken from. Those files lived in a workspace outside the repo, so the
+    field was a citation no reader could resolve -- and nothing read it at all.
+    The bytes travel under `provenance/` now and `check.py` re-digests them.
+
+    Three attacks, each on its own copy: a digest that does not match the file, a
+    row that stops saying whether its provenance is checkable, and a verdict that
+    rests on an observation recorded as not replaying. The clean copy is measured
+    first, so a gate that is red for everything cannot pass this row.
+    """
+    clean, out = check(tree)
+    if clean != 0:
+        return False, f"the untouched copy already exits {clean}: {out.strip()[-200:]}"
+
+    def attack(name, mutate):
+        victim = copy_ledger(f"provenance-{name}")
+        path = victim / "label_recovery.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not mutate(data):
+            return f"{name}: no row to mutate"
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8")
+        rc, text = check(victim)
+        if rc == 0:
+            return f"{name}: check.py still exits 0"
+        if "UNPROVEN" not in text:
+            return f"{name}: exits {rc} but names no unproven row"
+        return None
+
+    def bad_digest(data):
+        for row in data["rows"]:
+            if row.get("sha256"):
+                row["sha256"] = "0" * 64
+                return True
+        return False
+
+    def no_status(data):
+        for row in data["rows"]:
+            if row.get("file"):
+                row.pop("file_checkable", None)
+                return True
+        return False
+
+    def verdict_without_replay(data):
+        for row in data["rows"]:
+            if row.get("verdict") == "CLASS":
+                row["replays"] = False
+                return True
+        return False
+
+    problems = [p for p in (attack("digest", bad_digest),
+                            attack("status", no_status),
+                            attack("replay", verdict_without_replay)) if p]
+    rows = len(json.loads((tree / "label_recovery.json").read_text(encoding="utf-8"))["rows"])
+    return not problems, (f"clean copy exits 0; {rows} rows; "
+                          + (f"attacks that did not redden: {problems}" if problems
+                             else "all three attacks exit non-zero and name the row"))
+
+
+def q2_evidence_citations_resolve(tree):
+    """A file named in an entry's evidence must be a file this repo carries.
+
+    The evidence block for `a-verdict-word-for-an-examination-that-never-read-the-value`
+    named `review/key_shape_refutation.md` -- the review that refuted half its claim --
+    and that document was never carried over, so the strongest support the entry
+    advertised resolved to nothing. Nothing read the block, so nothing noticed.
+
+    The attack removes one cited file from a copy and requires the run to go red and
+    name it; the untouched copy is measured first, so a gate that is red for
+    everything cannot pass this row.
+    """
+    clean, out = check(tree)
+    if clean != 0:
+        return False, f"the untouched copy already exits {clean}: {out.strip()[-200:]}"
+    victim = copy_ledger("evidence-citation")
+    target = victim / "review" / "key_shape_refutation.md"
+    if not target.exists():
+        return False, "the cited review is not in the clean copy either"
+    target.unlink()
+    rc, text = check(victim)
+    if rc == 0:
+        return False, "check.py still exits 0 with a cited file removed"
+    if "review/key_shape_refutation.md" not in text:
+        return False, f"exits {rc} but does not name the missing citation"
+    return True, ("clean copy exits 0; removing one cited file gives exit "
+                  f"{rc} and names it")
+
+
 CASES = [
     ("order flip keeps the answer", a_order_flip),    ("citation counter agrees with its audit", b_citation_counter),
     ("a class with no fragment is refused", c_ghost_class),
@@ -1016,6 +1107,9 @@ CASES = [
      z_the_policy_is_measured_not_described),
     ("the published control table is current and every row moves",
      zz_the_control_table_is_current),
+    ("a recovered label's provenance is bytes this repo carries", q_provenance_is_a_reading),
+    ("a file named in an entry's evidence is a file this repo carries",
+     q2_evidence_citations_resolve),
 ]
 
 
