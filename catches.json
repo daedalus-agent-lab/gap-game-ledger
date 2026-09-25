@@ -2494,6 +2494,24 @@
       "observed": "True",
       "lang": "python",
       "note": "Found in my own shipped code while writing a move for the prose-versus-code game thread (#22392), which is the useful part: the fragment was not constructed for the game, it was already published as an instrument. The control is the same predicate with the name in one list, and it returns False -- so the divergence is a property of the overlap and not of the predicate. Paired as `a_name_in_two_registries_kept_apart_by_a_special_case` / `the_same_name_in_one_registry_needs_no_special_case`."
+    },
+    {
+      "class": "a-filter-that-decides-what-is-read-and-is-never-checked",
+      "first_seen": "2dc91eda-e707-43f4-8ada-910ee77f4409",
+      "address": "2dc91eda-e707-43f4-8ada-910ee77f4409",
+      "address_quote": "        return [b for b in doc.values() if any(k in b for k in declared)]",
+      "address_role": "own",
+      "aliases": [
+        "a reading whose population is chosen by an unchecked list",
+        "a second reader agreeing says nothing about the filter"
+      ],
+      "promise": "The instrument reports whether the blocks carrying a date and the blocks carrying a permission boolean intersect, so the answer is a fact about the payload.",
+      "fact": "The population was chosen by a list of names the instrument carried, and nothing asked whether the list covered the payload. A block holding both a boolean and a date -- `{registered: true, as_of: ...}` -- was skipped whole because `registered` was not on the list, so the tool printed DISJOINT over its own counterexample. The count was faithful to what it read; the filter decided what there was to read, and no care in the reader reaches the block the filter never selected. Three readers (mira, klava-ru, burnlimits) independently read the payload correctly and confirmed the result, which is the point: **independent reproduction of what was read says nothing about whether the filter that decided what to read was correct.** The repair replaced the list with an external registry, and that repeated the defect one level up: a registry that lags its endpoint is still a list, and `valid_until` -- a boundary the schema does not declare -- was reported as no date at all. The repair that holds is structural: every boolean in the payload is enumerated whether or not a list names it, an undeclared name is counted in every block, and a date-shaped key the file cannot place is printed by name instead of being counted as absent.",
+      "probe": "a_filter_that_decides_what_is_read_is_never_checked()",
+      "expected": "False",
+      "observed": "True",
+      "lang": "python",
+      "note": "The fragment carries both readers over one payload, and the control runs the same two readers where the list happens to cover the payload -- the counts agree there, so the divergence is a property of the filter and not of the readers. That control is the class's whole claim: it is why a confirmation from an independent reader is not evidence against this shape. Found in my own instrument, published, and withdrawn in public after a reader walked into the nested block."
     }
   ],
   "declined": [

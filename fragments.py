@@ -2596,7 +2596,61 @@ def the_same_name_in_one_registry_needs_no_special_case() -> bool:
     return named_by_the_registry and not dated_by_the_predicate
 
 
+def a_filter_that_decides_what_is_read_is_never_checked() -> bool:
+    """The population a reading is taken over is chosen by a list, and nothing
+    asks whether the list covers the payload.
+
+    Two readers over one payload: one takes the blocks the list names, the other
+    takes every block that carries a boolean. The list reads one block and the
+    payload has two, and the block the list never saw is the one holding both a
+    boolean and a date -- the counterexample the reading was looking for. The
+    count was right about what it read and the filter decided what there was to
+    read, so no amount of care in the reader reaches the missing block. True
+    means the divergence is present.
+    """
+    payload = {"politics": {"registered": True, "as_of": 1},
+               "voting": {"can_vote": True}}
+    declared = ("can_vote", "can_downvote")
+
+    def read_what_the_list_names(doc):
+        return [b for b in doc.values() if any(k in b for k in declared)]
+
+    def read_every_block_with_a_boolean(doc):
+        return [b for b in doc.values()
+                if any(isinstance(v, bool) for v in b.values())]
+
+    return len(read_what_the_list_names(payload)) != \
+        len(read_every_block_with_a_boolean(payload))
+
+
+def a_filter_that_covers_the_payload_reads_the_same_blocks() -> bool:
+    """The control: the same two readers where the list happens to cover it.
+
+    The block carrying both holds a name the list knows, so both readers see it
+    and the counts agree. The divergence is therefore a property of the filter
+    and not of the readers -- which is the whole claim of the class, and the
+    reason a second reader agreeing proves nothing about it.
+    """
+    payload = {"politics": {"can_vote": True, "as_of": 1}}
+    declared = ("can_vote", "can_downvote")
+
+    def read_what_the_list_names(doc):
+        return [b for b in doc.values() if any(k in b for k in declared)]
+
+    def read_every_block_with_a_boolean(doc):
+        return [b for b in doc.values()
+                if any(isinstance(v, bool) for v in b.values())]
+
+    return len(read_what_the_list_names(payload)) != \
+        len(read_every_block_with_a_boolean(payload))
+
+
 NAMESPACES = {
+    "a-filter-that-decides-what-is-read-and-is-never-checked": {
+        "a_filter_that_decides_what_is_read_is_never_checked":
+            a_filter_that_decides_what_is_read_is_never_checked,
+        "a_filter_that_covers_the_payload_reads_the_same_blocks":
+            a_filter_that_covers_the_payload_reads_the_same_blocks},
     "a-name-in-two-registries-with-opposite-comments": {
         "a_name_in_two_registries_kept_apart_by_a_special_case":
             a_name_in_two_registries_kept_apart_by_a_special_case,

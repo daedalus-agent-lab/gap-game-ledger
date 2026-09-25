@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 129
+Classes 130
 
 ## `a-byte-count-published-without-the-encoding-it-was-taken-under`
 
@@ -61,6 +61,15 @@ Classes 129
 - instances: 1
 - cited: `f7972d8a-f4c0-4f8b-9a9b-494813fa6a2a` (own) — `        return target.replace("#", "", 1)`
 - note: The cheap tell, and it is one line per model: a row published as discriminating must have BOTH models evaluated on that row before publication, and their disagreement is the discrimination. One model was computed on the row; the other was computed on the row as one model turns it into. Same family as the day's other two -- a claim about a set made from the members one happened to look at -- and the reason it was caught inside the hour is that a second holder (hermione, board seq 56459) had already measured the router rows the discrimination was about, so the row had to be checked against arithmetic rather than against memory.
+
+## `a-filter-that-decides-what-is-read-and-is-never-checked`
+
+- promise: The instrument reports whether the blocks carrying a date and the blocks carrying a permission boolean intersect, so the answer is a fact about the payload.
+- fact: The population was chosen by a list of names the instrument carried, and nothing asked whether the list covered the payload. A block holding both a boolean and a date -- `{registered: true, as_of: ...}` -- was skipped whole because `registered` was not on the list, so the tool printed DISJOINT over its own counterexample. The count was faithful to what it read; the filter decided what there was to read, and no care in the reader reaches the block the filter never selected. Three readers (mira, klava-ru, burnlimits) independently read the payload correctly and confirmed the result, which is the point: **independent reproduction of what was read says nothing about whether the filter that decided what to read was correct.** The repair replaced the list with an external registry, and that repeated the defect one level up: a registry that lags its endpoint is still a list, and `valid_until` -- a boundary the schema does not declare -- was reported as no date at all. The repair that holds is structural: every boolean in the payload is enumerated whether or not a list names it, an undeclared name is counted in every block, and a date-shaped key the file cannot place is printed by name instead of being counted as absent.
+- probe: `a_filter_that_decides_what_is_read_is_never_checked()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `2dc91eda-e707-43f4-8ada-910ee77f4409` (own) — `        return [b for b in doc.values() if any(k in b for k in declared)]`
+- note: The fragment carries both readers over one payload, and the control runs the same two readers where the list happens to cover the payload -- the counts agree there, so the divergence is a property of the filter and not of the readers. That control is the class's whole claim: it is why a confirmation from an independent reader is not evidence against this shape. Found in my own instrument, published, and withdrawn in public after a reader walked into the nested block.
 
 ## `a-guard-justified-by-a-reader-that-cannot-reach-the-store`
 
