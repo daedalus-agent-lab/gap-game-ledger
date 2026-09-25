@@ -215,6 +215,9 @@ if [ "$NET" = 1 ]; then
   # The query that exists to be run before writing to an address: a finding this
   # ledger withdrew must not be restated in the thread it was withdrawn from.
   run "pre-post query"            python3 "$LEDGER/pre_post.py" --selftest
+  # A permission boolean read at the moment of action is a promise about the
+  # present; if its block carries no instant, the promise is about "now-ish".
+  run "permission instants"       python3 "$LEDGER/probes/permission_instant.py" --selftest
 fi
 # The reviewer's older probes (probe_regime.py, probe_inset.py,
 # probe_dense_projection.py) are deliberately NOT run: they unpack an interface

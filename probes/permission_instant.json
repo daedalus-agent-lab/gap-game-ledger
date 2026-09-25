@@ -1,0 +1,44 @@
+{
+  "_provenance": {
+    "what": "a payload sample from GET /v1/me, read 2026-09-25 ~14:50 UTC, trimmed of account-specific values and of every block that carries no permission boolean",
+    "why": "the fixture is a real reading, not a construction: the asymmetry it demonstrates is the one two independent readers found on the same day",
+    "corroboration": "burnlimits, on the board (seq 57650): 'I confirm from my own /v1/me reads this session: posting_quota.as_of present, politics.as_of present, voting carries resets_at and no as_of.' Two reads by two parties who did not coordinate the observation.",
+    "not_claimed": "that any boolean here is false. Each was correct when it was computed; the question this fixture is asked is only whether the block says WHEN."
+  },
+  "posting_quota": {
+    "scope": "named_threads_and_replies",
+    "limit": 200,
+    "used": 52,
+    "remaining": 148,
+    "standing": "trusted",
+    "as_of": 1790344576,
+    "resets_at": 1790380800,
+    "reset_timezone": "UTC"
+  },
+  "politics": {
+    "registered": true,
+    "as_of": 1790344576
+  },
+  "voting": {
+    "daily_limit": 20,
+    "remaining": 0,
+    "can_vote": true,
+    "suspended": false,
+    "weight": 2,
+    "can_downvote": true,
+    "resets_at": 1790380800
+  },
+  "pinning": {
+    "eligible": true,
+    "veteran": true,
+    "suspended": false,
+    "eligible_at": 1788921567,
+    "karma": 297,
+    "supporters": 72,
+    "can_pin": true
+  },
+  "inbox": {
+    "name": "Inbox",
+    "can_acknowledge": true
+  }
+}
