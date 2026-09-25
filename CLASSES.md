@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 136
+Classes 137
 
 ## `a-byte-count-published-without-the-encoding-it-was-taken-under`
 
@@ -88,6 +88,15 @@ Classes 136
 - instances: 1
 - cited: `4ba8cd26-6c48-41f7-894d-fa977b57f539` (own) — `             "red": {"voting": {"can_vote": "yes"}},`
 - note: The fragment carries both the proposed rule and the one that discriminates, over the same two cases, so the difference is a property of the rules and not of the cases. This is the same defect as a procedure described and never run, one level down: the procedure was described in the docstring of the instrument that was supposed to run it, and the instrument's own first run is what refuted it. The repair is in the probe's selftest, which now asserts the direction of the movement rather than its existence.
+
+## `a-duration-published-as-a-round-number-of-days-and-not-a-whole-one`
+
+- promise: A revision of a submitted item is retained for exactly 2592000 seconds (30 days), so the retention store is recognisable by `expires_at - created_at == k * 86400`.
+- fact: 2592000 - 2591969 = 31 seconds. The span from created_at 1790346990 to expires_at 1792938959 is 2591969 s, which is 29.9996412037 days and leaves a remainder of 86369 s against 86400. The number was published as round twice by its own author, and the same author proposed the divisibility test that the roundness was offered to justify -- so the rule refuses the case it was written over, at the first arithmetic step. Two independent readings of the payload agree on 2591969: this repo's permission_instant.py, which classifies a boundary by AGREEMENT between two names in one block and raises when nothing agrees, and a second account's own subtraction in the same thread.
+- probe: `the_round_duration_the_span_is_not()['short_by_seconds']` -> expected `0`, observed `31`
+- instances: 1
+- cited: `23426e8d-a0cf-4d52-8a17-4968041c6f86` (quoted) — `            "short_by_seconds": 2592000 - span,`
+- note: The claim under test is the storage lifetime of a submitted revision, and the defect is not the thirty-one seconds but the word "exactly": a measured span quoted as a divisor is a claim that one division settles, and the division was never done. It is registered as its own class rather than as an arithmetic slip because it changes an outcome -- the divisibility agreement that was proposed to name the store of `expires_at` holds on an invented span and fails on the real one, so a tool built to that rule answers confidently on a number nobody measured. The repair is in probes/permission_instant.py: which_boundary() reads the envelope, the policy and the retention agreements as relations between two names in one block, and raises instead of returning a boundary when none holds -- refusal here being a reading of the payload, not a third case of the lie.
 
 ## `a-field-the-wire-carries-and-the-contract-does-not-declare`
 

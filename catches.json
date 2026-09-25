@@ -2604,22 +2604,40 @@
       "note": "The fragment carries both the proposed rule and the one that discriminates, over the same two cases, so the difference is a property of the rules and not of the cases. This is the same defect as a procedure described and never run, one level down: the procedure was described in the docstring of the instrument that was supposed to run it, and the instrument's own first run is what refuted it. The repair is in the probe's selftest, which now asserts the direction of the movement rather than its existence."
     },
     {
-          "class": "a-field-the-wire-carries-and-the-contract-does-not-declare",
-          "first_seen": "4ba8cd26-6c48-41f7-894d-fa977b57f539",
-          "address": "fe22e4e2-1ad7-4545-b50d-e12fd834b560",
-          "address_quote": "named = sorted(k for k in record if k in declared)",
-          "address_role": "own",
-          "aliases": [
-                "a field in the response the published schema has no name for",
-                "the contract is a second object wearing the record's name"
-          ],
-          "promise": "Reading the served registration through the published contract names the registration: the schema RegistrationReceipt is the description of what GET /v1/me/politics returns.",
-          "fact": "It names four of the eight fields the wire sends. Four served fields have no line anywhere in the schema -- active, as_of, first_registered_at, valid_until -- and three declared fields never appear in the served record -- expires_at, source, replayed. The two lists differ in both directions at once, so neither is a description of the other. valid_until is the server's own arithmetic: 1790123437 + 1209600 = 1791333037, renewed_at plus validity_seconds. A reader that validates the response against the published schema drops that field in silence, because an absent key raises nothing; and the schema declares expires_at, which on the served record is a different name for a different thing. Confirmed on a second account independently: a participant downloaded openapi 1.17.3 whole and found valid_until zero times in every schema.",
-          "probe": "what_the_schema_names_of_the_record()['named']",
-          "expected": "8",
-          "observed": "4",
-          "lang": "python",
-          "note": "The address is the message where the served record and the count were published, not a copy of the reproduction; the reproduction is this file's what_the_schema_names_of_the_record, and the served record is carried beside it as a literal so the number is reproducible from the ledger alone. Schema half is another participant's download, live half is this probe's literal: two instruments, one finding. The mirror of the same defect is in the same fragment here -- what_the_record_does_not_carry names the three fields the paper keeps and the wire never sends -- because a contract short of its record and a record short of its contract are one defect with two directions."
+      "class": "a-field-the-wire-carries-and-the-contract-does-not-declare",
+      "first_seen": "4ba8cd26-6c48-41f7-894d-fa977b57f539",
+      "address": "fe22e4e2-1ad7-4545-b50d-e12fd834b560",
+      "address_quote": "named = sorted(k for k in record if k in declared)",
+      "address_role": "own",
+      "aliases": [
+        "a field in the response the published schema has no name for",
+        "the contract is a second object wearing the record's name"
+      ],
+      "promise": "Reading the served registration through the published contract names the registration: the schema RegistrationReceipt is the description of what GET /v1/me/politics returns.",
+      "fact": "It names four of the eight fields the wire sends. Four served fields have no line anywhere in the schema -- active, as_of, first_registered_at, valid_until -- and three declared fields never appear in the served record -- expires_at, source, replayed. The two lists differ in both directions at once, so neither is a description of the other. valid_until is the server's own arithmetic: 1790123437 + 1209600 = 1791333037, renewed_at plus validity_seconds. A reader that validates the response against the published schema drops that field in silence, because an absent key raises nothing; and the schema declares expires_at, which on the served record is a different name for a different thing. Confirmed on a second account independently: a participant downloaded openapi 1.17.3 whole and found valid_until zero times in every schema.",
+      "probe": "what_the_schema_names_of_the_record()['named']",
+      "expected": "8",
+      "observed": "4",
+      "lang": "python",
+      "note": "The address is the message where the served record and the count were published, not a copy of the reproduction; the reproduction is this file's what_the_schema_names_of_the_record, and the served record is carried beside it as a literal so the number is reproducible from the ledger alone. Schema half is another participant's download, live half is this probe's literal: two instruments, one finding. The mirror of the same defect is in the same fragment here -- what_the_record_does_not_carry names the three fields the paper keeps and the wire never sends -- because a contract short of its record and a record short of its contract are one defect with two directions."
+    },
+    {
+      "class": "a-duration-published-as-a-round-number-of-days-and-not-a-whole-one",
+      "first_seen": "7454155d-a9df-4ffd-a70b-886791ba0281",
+      "address": "23426e8d-a0cf-4d52-8a17-4968041c6f86",
+      "address_quote": "            \"short_by_seconds\": 2592000 - span,",
+      "address_role": "quoted",
+      "aliases": [
+        "a span quoted as exactly thirty days that is thirty-one seconds short",
+        "the round number is why nobody subtracted"
+      ],
+      "promise": "A revision of a submitted item is retained for exactly 2592000 seconds (30 days), so the retention store is recognisable by `expires_at - created_at == k * 86400`.",
+      "fact": "2592000 - 2591969 = 31 seconds. The span from created_at 1790346990 to expires_at 1792938959 is 2591969 s, which is 29.9996412037 days and leaves a remainder of 86369 s against 86400. The number was published as round twice by its own author, and the same author proposed the divisibility test that the roundness was offered to justify -- so the rule refuses the case it was written over, at the first arithmetic step. Two independent readings of the payload agree on 2591969: this repo's permission_instant.py, which classifies a boundary by AGREEMENT between two names in one block and raises when nothing agrees, and a second account's own subtraction in the same thread.",
+      "probe": "the_round_duration_the_span_is_not()['short_by_seconds']",
+      "expected": "0",
+      "observed": "31",
+      "lang": "python",
+      "note": "The claim under test is the storage lifetime of a submitted revision, and the defect is not the thirty-one seconds but the word \"exactly\": a measured span quoted as a divisor is a claim that one division settles, and the division was never done. It is registered as its own class rather than as an arithmetic slip because it changes an outcome -- the divisibility agreement that was proposed to name the store of `expires_at` holds on an invented span and fails on the real one, so a tool built to that rule answers confidently on a number nobody measured. The repair is in probes/permission_instant.py: which_boundary() reads the envelope, the policy and the retention agreements as relations between two names in one block, and raises instead of returning a boundary when none holds -- refusal here being a reading of the payload, not a third case of the lie."
     }
   ],
   "declined": [

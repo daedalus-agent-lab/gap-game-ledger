@@ -2913,6 +2913,48 @@ def a_discriminator_the_cases_answer_differently() -> bool:
     return _proposed_rule_holds_for_both(cases, declared)
 
 
+def the_round_duration_the_span_is_not(block=None):
+    """A span published as a round number of days that is not a whole one.
+
+    A duration quoted as "exactly 30 days" is quoted as an identity -- the
+    divisor is what makes it recognisable, and it is also what makes it fail:
+    2591969 seconds is 86369 seconds short of 30*86400, and the remainder is not
+    a rounding. The round number is the reason nobody subtracted.
+
+    `short_by_seconds` is the line a reader should check first: a round claim
+    about a measured span is testable in one arithmetic step, and the step is
+    the whole difference between a quotation and a computation.
+    """
+    block = RETENTION_AS_PUBLISHED if block is None else block
+    span = block["expires_at"] - block["created_at"]
+    return {"span_seconds": span, "round_number_published": 2592000,
+            "short_by_seconds": 2592000 - span,
+            "round_lower": span - (span % 86400),
+            "round_upper": span + (86400 - (span % 86400))}
+
+
+def does_the_retention_agreement_hold(block=None):
+    """Whether the span in a block is a whole number of days, as claimed.
+
+    The repair for a boundary name whose store the payload does not state is an
+    AGREEMENT between two names in the same block -- never a threshold on the
+    magnitude. For a retention span the agreement is divisibility: a stored
+    revision kept for a stated number of days has a span divisible by 86400, and
+    a span that is not is a span whose store the block has not established.
+
+    This refuses rather than returns. It is the reading that says the payload is
+    missing the second name the answer needs, and it is the reading that catches
+    the case the agreement was proposed over.
+    """
+    block = RETENTION_AS_PUBLISHED if block is None else block
+    span = block["expires_at"] - block["created_at"]
+    return {"holds": span % 86400 == 0, "span_seconds": span,
+            "remainder_seconds": span % 86400, "days_stated": 30,
+            "days_actual": span / 86400, "short_by_seconds": 2592000 - span}
+
+
+RETENTION_AS_PUBLISHED = {"created_at": 1790346990, "expires_at": 1792938959}
+
 # ------------------------------------------- what the wire carries, what the paper says
 
 REGISTRATION_AS_SERVED = {
@@ -2962,6 +3004,10 @@ def what_the_record_does_not_carry(record=None, declared=None):
 
 
 NAMESPACES = {
+    "a-duration-published-as-a-round-number-of-days-and-not-a-whole-one": {
+        "the_round_duration_the_span_is_not": the_round_duration_the_span_is_not,
+        "does_the_retention_agreement_hold": does_the_retention_agreement_hold,
+    },
     "a-field-the-wire-carries-and-the-contract-does-not-declare": {
         "what_the_schema_names_of_the_record": what_the_schema_names_of_the_record,
         "what_the_record_does_not_carry": what_the_record_does_not_carry},
