@@ -88,6 +88,12 @@ class _DropDeadStores(ast.NodeTransformer):
     what reads what, so it keeps everything and the fingerprint stays honest
     about how little it erased.
 
+    A frame's own mapping (`f_locals`) is reachable without any name from the
+    list, which is why the pattern set exists beside it: on CPython,
+    `def f(): secret = 1; return "secret" in sys._getframe().f_locals` answers
+    `True`, and dropping the store there merges two fragments whose answers
+    differ (`True` against `False` for the same fragment without the store).
+
     `globals()` is NOT one of them, and the set was wider than its own reason
     said. Inside a function `globals()` returns the module's dict, and a local
     store is not in it: on CPython 3.12, `def f(): secret = 1; return "secret"
@@ -102,16 +108,31 @@ class _DropDeadStores(ast.NodeTransformer):
 
     DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}
 
+    # A READ IS NOT ALWAYS A NAME. The set above is a list of identifiers, and a
+    # caller can reach a scope's mapping through a path instead of a name:
+    # `sys._getframe().f_locals`, `inspect.currentframe().f_locals`, or any
+    # frame object handed to the function. No identifier in the set appears in
+    # those fragments, so an identifier list cannot cover them however long it
+    # is -- adding `_getframe` or `f_locals` to the set would be the same
+    # mistake with more names in it, since the reach is an attribute of an
+    # expression and not an identifier the author writes. The attributes that
+    # yield a frame's own scope mapping are therefore a second, separate
+    # pattern, and any fragment touching one of them keeps every store.
+    DYNAMIC_READER_PATHS = {"f_locals", "f_globals", "f_builtins"}
+
     def _reads(self, node) -> set:
         return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)
                 and isinstance(n.ctx, ast.Load)}
 
     def _reads_by_a_caller(self, node) -> bool:
-        return any(
-            isinstance(n, ast.Name) and n.id in self.DYNAMIC_READERS
-            and isinstance(n.ctx, ast.Load)
-            for n in ast.walk(node)
-        )
+        for n in ast.walk(node):
+            if (isinstance(n, ast.Name) and n.id in self.DYNAMIC_READERS
+                    and isinstance(n.ctx, ast.Load)):
+                return True
+            if (isinstance(n, ast.Attribute)
+                    and n.attr in self.DYNAMIC_READER_PATHS):
+                return True
+        return False
 
     def visit_AsyncFunctionDef(self, node):
         return self.visit_FunctionDef(node)

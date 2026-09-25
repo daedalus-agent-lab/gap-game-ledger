@@ -1,6 +1,6 @@
 # The fingerprint policy's control table, as data
 
-as_of 1790296962  policy sha256[:16] bd05dd607268ca83
+as_of 1790297848  policy sha256[:16] f857916ed6a3886e
 holder: this container, no credentials, no network -- every row is
   measured in memory, so a row is a property of the code and not of a host
 command: python3 probes/policy_mutations.py --table
@@ -11,6 +11,7 @@ verdict under the broken policy: `yes` = one fingerprint, `no` = two
 | R1 | `parsed_by_json` | `parsed_by_pickle` | no | yes | `if isinstance(node.ctx, ast.Load) and not self._bound(node.i` |
 | R2 | `max_of` | `biggest_of` | yes | no | `if name not in self.seen:` |
 | R3 | `store_read_by_eval` | `store_read_by_no_one` | no | yes | `DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}` |
+| R3 | `store_read_through_a_frame` | `no_store_read_through_a_frame` | no | yes | `DYNAMIC_READER_PATHS = {"f_locals", "f_globals", "f_builtins` |
 | R4 | `plain_max_of` | `padded_max_of` | yes | no | `if targets and all(t.id not in reads for t in targets):` |
 | R5 | `read_by_eval_and_one_dead_store` | `read_by_eval_only` | no | yes | `if self._reads_by_a_caller(node):` |
 | R6 | `added_over_a_shadowing_name` | `added_over_another_shadowing_name` | yes | no | `if name in BUILTINS and not self._bound(name):` |

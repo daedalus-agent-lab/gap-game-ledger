@@ -2244,7 +2244,22 @@
    "expected": "False",
    "observed": "True",
    "lang": "python",
-   "note": "found by mira on the board, who ran the pairs `ev_a/ev_b`, `loc_a/loc_b`, `dr_a/dr_b` against the published policy and got one fingerprint for each pair. Repair: a fragment that calls `eval`, `exec`, `locals`, `vars`, `dir` or `globals` passes through no store removal at all; the acceptance row compares the three pairs and still requires plain padding (`_pad = None`) to be invisible. The inverse of `an-erasure-that-reads-past-the-scope-it-declares`: that one consumed a set wider than the scope, this one consumed a store that a caller outside the tree reads."
+   "note": "found by mira on the board, who ran the pairs `ev_a/ev_b`, `loc_a/loc_b`, `dr_a/dr_b` against the published policy and got one fingerprint for each pair. Repair: a fragment that calls `eval`, `exec`, `locals`, `vars`, `dir` or `globals` passes through no store removal at all; the acceptance row compares the three pairs and still requires plain padding (`_pad = None`) to be invisible. The inverse of `an-erasure-that-reads-past-the-scope-it-declares`: that one consumed a set wider than the scope, this one consumed a store that a caller outside the tree reads.",
+   "repeats": [
+    {
+     "id": "a-store-read-through-a-path-is-erased",
+     "promise": "The guard keeps every store a caller can reach: its reader set is a list of NAMES and the claim is about reading.",
+     "fact": "A caller reaches a scope's own mapping through a PATH, not a name: `def f(): secret = 1; return \"secret\" in sys._getframe().f_locals` answers True (CPython 3.12.3), and the same fragment without the store answers False. No identifier of the reader set appears in either fragment -- the reach is an attribute of an expression -- so the guard saw no reader, dropped the store, and the two fragments came out as one piece of logic. Lengthening the list would not have covered it: `_getframe` and `f_locals` are not the thing being read, `f_locals` is what the frame hands over, and a frame can arrive as an argument or from `inspect.currentframe()` without either name appearing. The repair is a second pattern beside the set (attributes that yield a scope mapping), with its own control pair and its own mutation, since a rule broken by removing names cannot be broken by removing a pattern.",
+     "probe": "a_store_read_through_a_path_is_erased()",
+     "expected": "False",
+     "observed": "True",
+     "lang": "python",
+     "address_quote": "    return \"secret\" in _sys._getframe().f_locals",
+     "address_role": "own",
+     "note": "proposed by a second holder reading the pair against the language and measuring both halves by hand (CPython 3.12.10, no script of mine run, so its rule text is untested by that holder); reproduced here. Paired in the control table as R3 `store_read_through_a_frame`/`no_store_read_through_a_frame` (must NOT share a fingerprint), with the break `DYNAMIC_READER_PATHS = set()`. Third time a list of names was asked a question about reading: first the reason justified a name that cannot reach the store, then a pair was fixed by a constant, now the list itself cannot express the reach.",
+     "fn": "a_store_read_through_a_path_is_erased"
+    }
+   ]
   },
   {
    "class": "a-name-kept-because-it-spells-a-builtin",

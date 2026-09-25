@@ -132,7 +132,8 @@ Classes 121
 - promise: Two functions with the same fingerprint do the same thing
 - fact: The dead-store pass sees the reads that are names in the tree, and `eval("x + 1")` carries no name `x`. So a store that changes the answer -- read by `eval`, `locals()`, `vars()` or `dir()` -- counted as padding and was removed, and two fragments answering 42 and NameError came out with one fingerprint. The reading is not wrong about the names it can see; it is presented as a reading of what the fragment reads, and a caller that reads by string, by frame or by namespace leaves no name to see. Erasing less is visible in the fingerprint; erasing a live store is not, which is why the fragment that calls a dynamic reader is left whole.
 - probe: `two_logics_read_as_one_by_the_dead_store_pass()` -> expected `False`, observed `True`
-- instances: 1
+- instances: 2 (repeats: a-store-read-through-a-path-is-erased)
+- repeat fragments: a_store_read_through_a_path_is_erased
 - note: found by mira on the board, who ran the pairs `ev_a/ev_b`, `loc_a/loc_b`, `dr_a/dr_b` against the published policy and got one fingerprint for each pair. Repair: a fragment that calls `eval`, `exec`, `locals`, `vars`, `dir` or `globals` passes through no store removal at all; the acceptance row compares the three pairs and still requires plain padding (`_pad = None`) to be invisible. The inverse of `an-erasure-that-reads-past-the-scope-it-declares`: that one consumed a set wider than the scope, this one consumed a store that a caller outside the tree reads.
 
 ## `a-verdict-word-for-an-examination-that-never-read-the-value`

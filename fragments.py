@@ -1422,6 +1422,21 @@ def store_read_by_no_one():
     return eval("x + 1")
 
 
+def store_read_through_a_frame():
+    """One of a pair that must never share a fingerprint, and one no list of
+    reader NAMES can tell apart from its other half: the store is read through
+    `sys._getframe().f_locals`, a path to the scope's own mapping, so no
+    identifier the guard could name appears in the fragment. On CPython the
+    expression answers `True` here and `False` in the other half."""
+    secret = 1
+    return "secret" in sys._getframe().f_locals
+
+
+def no_store_read_through_a_frame():
+    """The other half: the same reader path, no store to reach."""
+    return "secret" in sys._getframe().f_locals
+
+
 def read_by_eval_and_one_dead_store():
     """One of a pair that must differ: the fragment keeps a store a caller reads
     through `eval`, so it must keep the dead one in front of it too -- the guard
@@ -1609,7 +1624,7 @@ POLICY_RULES = (
     ("R1", "a free name is kept: two modules called by name are not one module"),
     ("R2", "a bound letter is erased: a function renamed and its argument renamed "
            "are one piece of logic"),
-    ("R3", "a store a caller reads through a dynamic reader is kept"),
+    ("R3", "a store a caller reaches through a dynamic reader is kept -- by a name in the reader set or by a path to a scope mapping, since a read is not always a name"),
     ("R4", "a store nobody reads is removed"),
     ("R5", "the dynamic-reader guard is a property of the fragment, not of one store"),
     ("R6", "a bound name is erased even when its letter spells a builtin"),
@@ -1634,6 +1649,7 @@ CONTROL_PAIRS = (
     ("parsed_by_json", "parsed_by_pickle", False, "R1"),
     ("max_of", "biggest_of", True, "R2"),
     ("store_read_by_eval", "store_read_by_no_one", False, "R3"),
+    ("store_read_through_a_frame", "no_store_read_through_a_frame", False, "R3"),
     ("plain_max_of", "padded_max_of", True, "R4"),
     ("read_by_eval_and_one_dead_store", "read_by_eval_only", False, "R5"),
     ("added_over_a_shadowing_name", "added_over_another_shadowing_name", True, "R6"),
@@ -1675,6 +1691,8 @@ POLICY_MUTATIONS = (
      "        return name"),
     ("R3", '    DYNAMIC_READERS = {"eval", "exec", "locals", "vars", "dir"}',
      '    DYNAMIC_READERS = {"locals", "vars", "dir"}'),
+    ("R3", '    DYNAMIC_READER_PATHS = {"f_locals", "f_globals", "f_builtins"}',
+     '    DYNAMIC_READER_PATHS = set()'),
     ("R4", "            if targets and all(t.id not in reads for t in targets):\n"
            "                continue",
      "            if False:\n                continue"),
@@ -1908,6 +1926,54 @@ def a_store_the_guard_keeps_for_a_reader_that_cannot_read_it():
     secret = 1
     return "secret" in globals()
 
+
+
+def fingerprint_under_a_name_only_reader_guard(fn) -> str:
+    """The fingerprint of a fragment when the guard knows only reader NAMES.
+
+    This is the pass as it stood: `_reads_by_a_caller` asked whether any
+    identifier in the reader set appears in the tree, and a store reached through
+    `sys._getframe().f_locals` -- a path, not a name -- was invisible to that
+    question, so the store was dropped. The reconstruction is the pass itself with
+    the path pattern removed, applied here so the lie can be reproduced without
+    reverting the repair.
+    """
+    import ast as _ast
+    import inspect as _inspect
+    import check as _c
+    paths = _c._DropDeadStores.DYNAMIC_READER_PATHS
+    try:
+        _c._DropDeadStores.DYNAMIC_READER_PATHS = set()
+        return _c.fingerprint(fn)
+    finally:
+        _c._DropDeadStores.DYNAMIC_READER_PATHS = paths
+
+
+def a_store_read_through_a_path_is_erased() -> bool:
+    """Two fragments whose ANSWERS differ are erased into one fingerprint.
+
+    The store is read through `sys._getframe().f_locals`, a path into the scope's
+    own mapping, and no identifier of the reader set appears anywhere in either
+    fragment -- so a guard that asks about names cannot see the read, drops the
+    store, and the fragment that answers `True` and the one that answers `False`
+    come out as one piece of logic. True means the lie is present. The pair was
+    proposed by a second holder who measured both halves by hand on 3.12.10 before
+    it existed here; the sentence under test is "every dynamic reader is guarded".
+    """
+    import sys as _sys
+
+    def store_read_through_a_frame():
+        secret = 1
+        return "secret" in _sys._getframe().f_locals
+
+    def no_store_read_through_a_frame():
+        return "secret" in _sys._getframe().f_locals
+
+    if store_read_through_a_frame() == no_store_read_through_a_frame():
+        return False  # the halves agree here, so the pair proves nothing
+    return (fingerprint_under_a_name_only_reader_guard(store_read_through_a_frame)
+            == fingerprint_under_a_name_only_reader_guard(no_store_read_through_a_frame))
+
 NAMESPACES = {
     "a-guard-justified-by-a-reader-that-cannot-reach-the-store": {
         "a_store_the_guard_keeps_for_a_reader_that_cannot_read_it":
@@ -1954,6 +2020,10 @@ NAMESPACES = {
         "a_store_only_a_caller_reads": a_store_only_a_caller_reads,
         "two_logics_read_as_one_by_the_dead_store_pass":
             two_logics_read_as_one_by_the_dead_store_pass,
+        "a_store_read_through_a_path_is_erased":
+            a_store_read_through_a_path_is_erased,
+        "fingerprint_under_a_name_only_reader_guard":
+            fingerprint_under_a_name_only_reader_guard,
     },
     "a-name-kept-because-it-spells-a-builtin": {
         "letters_with_the_builtins_asked_first": letters_with_the_builtins_asked_first,
