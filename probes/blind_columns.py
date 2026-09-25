@@ -209,19 +209,53 @@ def literal_sequence(node):
     return None
 
 
-def bindings_of(target, it, line):
+def named_sequences(tree):
+    """Names bound to a literal sequence of strings, at most once each.
+
+    `FIELDS = ("status", "bytes", "chars", "sha16", "body_head")` followed by
+    `for field in FIELDS: ... want.get(field)` is a read of every one of those
+    fields, and the detector called all five unread, because the loop header
+    iterates a NAME and the literal was one assignment away. A name bound twice
+    to different sequences is left unresolved: guessing which binding a use
+    reaches would print evidence for a loop the reader cannot see.
+    """
+    seen: dict = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+            continue
+        target = node.targets[0]
+        if not isinstance(target, ast.Name):
+            continue
+        seq = literal_sequence(node.value)
+        if seq is None:
+            continue
+        spelled = [literal_str(e) for e in seq]
+        if any(x is None for x in spelled):
+            continue
+        if target.id in seen and seen[target.id][0] != spelled:
+            seen[target.id] = (None, node.lineno)     # ambiguous: do not resolve
+        elif target.id not in seen:
+            seen[target.id] = (spelled, node.lineno)
+    return {k: v for k, v in seen.items() if v[0] is not None}
+
+
+def bindings_of(target, it, line, constants=None):
     """The field names one loop header binds, per name: name -> [(field, line)].
 
     `for field in ("sent", "curl_rc")` binds `field` to each name; so does
     `for field, want in (("answerer", who), ("headers", h))`, which binds
-    positionally out of the literal tuples. A reader of this shape spells the
-    field name once and then reaches it through a variable, so a literal-key
-    detector alone calls such a field unread.
+    positionally out of the literal tuples; and so does `for field in FIELDS`
+    when FIELDS is a name bound once to a literal sequence of strings. A reader
+    of this shape spells the field name once and then reaches it through a
+    variable, so a literal-key detector alone calls such a field unread.
     """
     binds = defaultdict(list)
     elements = literal_sequence(it)
     if elements is None:
-        return binds
+        if constants and isinstance(it, ast.Name) and it.id in constants:
+            elements = [ast.Constant(value=x) for x in constants[it.id][0]]
+        else:
+            return binds
     names = list(target.elts) if isinstance(target, ast.Tuple) else [target]
     for element in elements:
         spelled = literal_str(element)
@@ -241,7 +275,7 @@ def bindings_of(target, it, line):
     return binds
 
 
-def loop_scopes(tree):
+def loop_scopes(tree, constants=None):
     """[(bindings, body, line)] -- one entry per loop that can bind field names.
 
     The body travels with the binding so the evidence stays honest. `field` is
@@ -255,7 +289,7 @@ def loop_scopes(tree):
     scopes = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.For, ast.AsyncFor)):
-            binds = bindings_of(node.target, node.iter, node.lineno)
+            binds = bindings_of(node.target, node.iter, node.lineno, constants)
             if binds:
                 scopes.append((binds, [*node.body, *node.orelse], node.lineno))
         elif isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp,
@@ -265,7 +299,8 @@ def loop_scopes(tree):
             binds = defaultdict(list)
             for gen in node.generators:
                 for name, pairs in bindings_of(
-                        gen.target, gen.iter, getattr(gen.iter, "lineno", 0)).items():
+                        gen.target, gen.iter, getattr(gen.iter, "lineno", 0),
+                        constants).items():
                     binds[name].extend(pairs)
                 body.extend(gen.ifs)
             if binds:
@@ -306,7 +341,7 @@ def index_code(sources):
         except (SyntaxError, ValueError):
             skipped.append(rel)
             continue
-        scopes = loop_scopes(tree)
+        scopes = loop_scopes(tree, named_sequences(tree))
         # An attribute that is *called* is a method, not a record field:
         # `stopping.set()`, `sys.exit(0)` and `row.items()` name no column, and
         # counting them as reads of `set`, `exit` and `items` was the first
@@ -620,7 +655,20 @@ def consume(rec):
     only_write = {"write_only": 1}
     for name in ("loop_read",):
         f = rec[name]
-    return a, b, d, e, f, only_write
+    # A named constant of field names, iterated: the loop variable IS used as a
+    # key here, so every element is a read.
+    for field in NAMED_FIELDS:
+        g = rec.get(field)
+    # The same shape one step short: the constant is iterated and the loop
+    # variable is never used as a key, so nothing is read. Resolving a name to
+    # its sequence must not turn a loop that merely walks it into a reader.
+    for field in WALKED_ONLY:
+        print(field)
+    return a, b, d, e, f, g, only_write
+
+
+NAMED_FIELDS = ("named_loop_read",)
+WALKED_ONLY = ("walked_only",)
 
 
 def kwarg_call(**kw):
@@ -630,7 +678,7 @@ def kwarg_call(**kw):
 CONTROL_RECORD = {"rows": [{
     "subscript_read": 1, "get_read": 1, "membership_read": 1, "kwarg_read": 1,
     "attribute_read": 1, "store_only": 1, "write_only": 1, "loop_read": 1,
-    "unread_field": 1,
+    "unread_field": 1, "named_loop_read": 1, "walked_only": 1,
 }]}
 
 # What the consumer above does, per field. SPENT as the census's answer sheet.
@@ -640,6 +688,8 @@ CONTROL_EXPECT = [
     ("membership_read", "READ"),      # "membership_read" in rec
     ("kwarg_read", "READ"),           # kwarg_call(kwarg_read=1)
     ("loop_read", "READ"),            # for name in ("loop_read",): rec[name]
+    ("named_loop_read", "READ"),      # for field in NAMED_FIELDS: rec.get(field)
+    ("walked_only", "NO READER"),     # for field in WALKED_ONLY: print(field)
     ("attribute_read", "READ?"),      # rec.attribute_read, weak evidence
     ("write_only", "NO READER"),      # only a dict-literal key
     ("store_only", "NO READER"),      # only a subscript store
@@ -648,10 +698,14 @@ CONTROL_EXPECT = [
 
 CONTROL_CHECKS = [
     ("a field that IS read is reported as read",
-     ["subscript_read", "get_read", "membership_read", "kwarg_read", "loop_read"],
+     ["subscript_read", "get_read", "membership_read", "kwarg_read", "loop_read",
+      "named_loop_read"],
      "READ"),
     ("a field that is NOT read is reported as unread",
-     ["unread_field"], "NO READER"),
+     # `walked_only` is the falsifier for resolving a name to its sequence: the
+     # constant IS iterated and the loop variable is never used as a key, so a
+     # loop that merely walks the names must not read as a reader of them.
+     ["unread_field", "walked_only"], "NO READER"),
     ("a field that is read only as a WRITE is reported as unread",
      ["write_only", "store_only"], "NO READER"),
     ("a field resting only on an attribute site is not called a plain read",
