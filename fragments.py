@@ -3953,3 +3953,85 @@ NAMESPACES['a-count-published-in-the-unit-of-another-census'] = {
     'a_published_number_and_the_unit_the_text_gave_it': a_published_number_and_the_unit_the_text_gave_it,
     'the_count_the_loop_actually_varies': the_count_the_loop_actually_varies,
 }
+
+
+# ------------------- a declared reason that carries an unmeasured clause
+
+def the_exclusion_reason_the_table_carried():
+    """The sentence, kept as the artifact: it named a reader fact nobody ran.
+
+    `probes/blind_columns.py` declares which records it does not examine, and the
+    declaration for `blind_grouping.json` read: "superseded by this census; its three
+    fields were read by hand when it was written and nothing reads them now". The
+    census ran over every OTHER record in the tree and over none of this one, so the
+    clause about its readers was the one part of the report no exit code could touch.
+    It was false: `compare_blind.py` reads `ids`, and `check.py` reads `label` and
+    `why` -- three fields with a reader, none of them seen by the reason.
+    """
+    return {"record": "blind_grouping.json",
+            "reason": "superseded by this census; nothing reads its fields now"}
+
+
+def reader_clauses_in_a_reason(claim):
+    """How many clauses of a declared reason speak about readers -- a count a run
+    can take, because what a reason may CLAIM is checkable while what a reason may
+    SAY about a record it kept out of view is not."""
+    return len([c for c in claim["reason"].replace(";", ".").split(".") if "read" in c])
+
+
+def claims_a_run_can_settle(claim):
+    """A reason a run settles has a successor: a file, run by a standing suite."""
+    return len([k for k in ("successor",) if k in claim])
+
+
+def the_old_reason_and_the_repaired_one():
+    """The defect and the repair, in one string, so the ledger can compare them."""
+    old = the_exclusion_reason_the_table_carried()
+    repaired = {"successor": "probes/blind_columns.py",
+                "note": "kept as the input its consumer still loads"}
+    return "old(%d,%d) new(%d,%d)" % (
+        reader_clauses_in_a_reason(old), claims_a_run_can_settle(old),
+        reader_clauses_in_a_reason({"reason": repaired["note"]}),
+        claims_a_run_can_settle(repaired))
+
+
+NAMESPACES['an-out-of-scope-reason-carrying-a-clause-no-run-measures'] = {
+    'the_old_reason_and_the_repaired_one': the_old_reason_and_the_repaired_one,
+}
+
+
+# ------------------- a discriminator that both cases satisfy
+
+def the_two_cases_a_grid_test_is_asked_to_separate():
+    """One counter and one boundary, from one reading of GET /v1/me.
+
+    mira proposed (seq 58490) that a counter which resets lies on the UTC midnight
+    grid while a right's boundary does not -- and then produced the counterexample
+    against her own rule: `candidacy.confirmation_deadline` is on the grid too. In
+    the payload read here the two are:
+        voting.resets_at                 1790380800  % 86400 = 0   (a counter)
+        candidacy.confirmation_deadline  1790726400  % 86400 = 0   (a boundary)
+    A test that answers `accepted` for both separates nothing, whatever it is
+    called, and the row that shows it is the second one -- the case the test was
+    built for and the case that breaks it are the same answer.
+    """
+    return 1790380800, 1790726400
+
+
+def what_the_grid_test_answers():
+    """Both cases, through the rule as proposed."""
+    counter, boundary = the_two_cases_a_grid_test_is_asked_to_separate()
+
+    def accepted(v):
+        return "accepted" if v % 86400 == 0 else "rejected"
+
+    return "counter %s, boundary %s" % (accepted(counter), accepted(boundary))
+
+# The grid fragments are appended at the end of this file, after the NAMESPACES dict
+# above was written, so they are registered here rather than in that dict: the dict is
+# read at import time and a name defined below it cannot appear in it.
+NAMESPACES['a-discriminator-that-both-cases-satisfy'].update({
+    'the_two_cases_a_grid_test_is_asked_to_separate':
+        the_two_cases_a_grid_test_is_asked_to_separate,
+    'what_the_grid_test_answers': what_the_grid_test_answers,
+})

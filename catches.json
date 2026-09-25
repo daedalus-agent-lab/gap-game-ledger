@@ -2612,7 +2612,24 @@
    "expected": "False",
    "observed": "True",
    "lang": "python",
-   "note": "The fragment carries both the proposed rule and the one that discriminates, over the same two cases, so the difference is a property of the rules and not of the cases. This is the same defect as a procedure described and never run, one level down: the procedure was described in the docstring of the instrument that was supposed to run it, and the instrument's own first run is what refuted it. The repair is in the probe's selftest, which now asserts the direction of the movement rather than its existence."
+   "note": "The fragment carries both the proposed rule and the one that discriminates, over the same two cases, so the difference is a property of the rules and not of the cases. This is the same defect as a procedure described and never run, one level down: the procedure was described in the docstring of the instrument that was supposed to run it, and the instrument's own first run is what refuted it. The repair is in the probe's selftest, which now asserts the direction of the movement rather than its existence.",
+   "repeats": [
+    {
+     "address": "ce4e762f-f23e-43e3-abcc-fd2ea92d62d7",
+     "address_role": "quoted",
+     "address_quote": "    return \"counter %s, boundary %s\" % (accepted(counter), accepted(boundary))",
+     "what": "mira's rule for telling a resetting counter from a right's boundary: a counter lies on the UTC midnight grid, a boundary does not",
+     "probe": "the_two_cases_a_grid_test_is_asked_to_separate(), what_the_grid_test_answers()",
+     "expected": "((1790380800, 1790726400), 'counter accepted, boundary rejected')",
+     "observed": "((1790380800, 1790726400), 'counter accepted, boundary accepted')",
+     "note": "She found the counterexample herself: `candidacy.confirmation_deadline` is on the grid although it is a boundary. The second reading in this payload also dissolves it as a coincidence -- that field is the SAME VALUE as `next_election.opens_at`, one instant with two names -- and the separating evidence is structural: `valid_until = renewed_at + validity_seconds` exactly (1209600). The grid is a column, not a verdict.",
+     "id": "the-grid-is-a-column-not-a-verdict",
+     "fn": "what_the_grid_test_answers",
+     "promise": "A rule that tells a resetting counter from a right's boundary must answer differently on the two cases it is asked to separate.",
+     "fact": "both cases are multiples of 86400: `voting.resets_at` 1790380800 and `candidacy.confirmation_deadline` 1790726400, so the grid test answers `accepted` for the counter and for the boundary. The author of the rule found the counterexample herself and downgraded it to a filter; measured, the counterexample is also the SAME VALUE as `next_election.opens_at`, so it is one instant under two names.",
+     "lang": "python"
+    }
+   ]
   },
   {
    "class": "a-field-the-wire-carries-and-the-contract-does-not-declare",
@@ -2928,6 +2945,25 @@
    "observed": "'names 3 / 3'",
    "lang": "python",
    "note": "The exit code was the third half of the defect: the probe returned 0 whether or not anything was noticed, so its headline survived its own failure. It now returns 1 when a varied registration was not a registration or was not silent.",
+   "repeats": []
+  },
+  {
+   "class": "an-out-of-scope-reason-carrying-a-clause-no-run-measures",
+   "first_seen": "probes/blind_columns.py",
+   "address": "probes/blind_columns.py",
+   "address_quote": "    return \"old(%d,%d) new(%d,%d)\" % (",
+   "address_role": "own",
+   "aliases": [
+    "the reason for an exclusion states a fact the exclusion prevented measuring",
+    "a boundary that describes the other side of itself"
+   ],
+   "promise": "A record is left out of a census for a reason, and the reason is a claim like any other: a run settles it or it is prose.",
+   "fact": "`probes/blind_columns.py` declares the records it does not examine. The declaration for `blind_grouping.json` carried free text: 'superseded by this census; its three fields were read by hand when it was written and nothing reads them now'. The census ran over every other record and over none of this one, so the clause about READERS was the only part of the report no exit code could touch -- and it was false: run over that record, the same detector finds `ids` read at `compare_blind.py:34`, `label` at `check.py:1099`, `why` at `check.py:864` -- 3 of 3 fields with a reader. The declaration is now a dict whose claims a run settles: a successor that must exist in the tree, a successor that must be named by the standing suite (a successor nobody runs supersedes nothing, and 'superseded' as a time order is not checkable while 'somebody runs it' is), and NO clause about readers at all -- the census now runs over the declared record too and prints its readers as a number beside the reason. `--selftest` makes each of the three claims fail in turn.",
+   "probe": "the_old_reason_and_the_repaired_one()",
+   "expected": "'old(0,0) new(0,1)'",
+   "observed": "'old(1,0) new(0,1)'",
+   "lang": "python",
+   "note": "The same shape as the discarded-field classes at another level: there the field was written and never read, here the sentence was written and never run. The tell is a clause in a REASON that speaks about an object the reason is used to keep out of view.",
    "repeats": []
   }
  ],

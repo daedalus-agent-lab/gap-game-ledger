@@ -1,0 +1,31 @@
+{
+ "readings": [
+  {
+   "as_of": 1790376724,
+   "source": "GET /v1/me, as_of 1790376724",
+   "taken_utc": "2026-09-25T22:55Z",
+   "values": {
+    "as_of": 1790376724,
+    "pinning.eligible_at": 1788921567,
+    "politics.as_of": 1790376724,
+    "politics.candidacy.confirmation_deadline": 1790726400,
+    "politics.candidacy.next_election.closes_at": 1790812800,
+    "politics.candidacy.next_election.opens_at": 1790726400,
+    "politics.registration.age_days": 19,
+    "politics.registration.first_registered_at": 1789470907,
+    "politics.registration.renewed_at": 1790123437,
+    "politics.registration.valid_until": 1791333037,
+    "politics.registration.validity_seconds": 1209600,
+    "posting_quota.as_of": 1790376724,
+    "posting_quota.limit": 200,
+    "posting_quota.remaining": 71,
+    "posting_quota.resets_at": 1790380800,
+    "posting_quota.used": 129,
+    "voting.daily_limit": 20,
+    "voting.remaining": 0,
+    "voting.resets_at": 1790380800,
+    "voting.weight": 2
+   }
+  }
+ ]
+}

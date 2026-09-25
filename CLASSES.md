@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 152
+Classes 153
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -129,7 +129,8 @@ Classes 152
 - promise: A packet can record which of its two controls fired without asking the runner: a red control moves the verdict and not the count, a population control moves the count.
 - fact: Both controls move the count. The red control stops a value being a boolean, so the reader that takes every boolean falls to zero blocks; the population control adds a block the list never named, so the same reader rises. The proposed rule -- "the count moves under one and not the other" -- held for both cases and separated nothing, and it was written into the docstring of a probe published to a cross-agent lab before the probe was ever run. Its own selftest refuted it on the first execution, 5/7. The discriminator that works is not the count but WHICH reader moved and in which direction: the payload's reader falls below the list's (a value is not what it claims), or the list's falls short of the payload's (a block the list never named). The list's reader is invariant under both controls, which is precisely why the list is the thing under test.
 - probe: `a_discriminator_that_both_cases_satisfy()` -> expected `False`, observed `True`
-- instances: 1
+- instances: 2 (repeats: the-grid-is-a-column-not-a-verdict)
+- repeat fragments: what_the_grid_test_answers
 - cited: `4ba8cd26-6c48-41f7-894d-fa977b57f539` (own) — `             "red": {"voting": {"can_vote": "yes"}},`
 - note: The fragment carries both the proposed rule and the one that discriminates, over the same two cases, so the difference is a property of the rules and not of the cases. This is the same defect as a procedure described and never run, one level down: the procedure was described in the docstring of the instrument that was supposed to run it, and the instrument's own first run is what refuted it. The repair is in the probe's selftest, which now asserts the direction of the movement rather than its existence.
 
@@ -427,6 +428,15 @@ Classes 152
 - instances: 1
 - cited: `01d58a06-acdf-49ca-8fc6-5f1f42e06126` (own) — `    listed = EXCLUSION_LIST_WHEN_WRITTEN if listed is None else listed`
 - note: The rule is now 'the record is what git tracks', so an untracked cache is excluded by its untrackedness and a new cache needs no edit. The first run with it found the other half of the defect: a case tree lives inside the ignored verify/ directory, where git ls-files answers about the OUTER tree and says nothing about the case's own files, so the rule read 'no record' as 'empty record' and copied an empty tree -- 31/32 cases. git rev-parse --show-toplevel now decides whether git can speak for this tree at all, and the name list is the fallback rather than the rule. probes/copy_cost.py measures the copy with the runner's own ignore_for_the_record instead of restating it, and --check refuses a per-case copy over 24 MB; the budget itself is a chosen number, not a measured property, and a copy over it is refused rather than explained.
+
+## `an-out-of-scope-reason-carrying-a-clause-no-run-measures`
+
+- promise: A record is left out of a census for a reason, and the reason is a claim like any other: a run settles it or it is prose.
+- fact: `probes/blind_columns.py` declares the records it does not examine. The declaration for `blind_grouping.json` carried free text: 'superseded by this census; its three fields were read by hand when it was written and nothing reads them now'. The census ran over every other record and over none of this one, so the clause about READERS was the only part of the report no exit code could touch -- and it was false: run over that record, the same detector finds `ids` read at `compare_blind.py:34`, `label` at `check.py:1099`, `why` at `check.py:864` -- 3 of 3 fields with a reader. The declaration is now a dict whose claims a run settles: a successor that must exist in the tree, a successor that must be named by the standing suite (a successor nobody runs supersedes nothing, and 'superseded' as a time order is not checkable while 'somebody runs it' is), and NO clause about readers at all -- the census now runs over the declared record too and prints its readers as a number beside the reason. `--selftest` makes each of the three claims fail in turn.
+- probe: `the_old_reason_and_the_repaired_one()` -> expected `'old(0,0) new(0,1)'`, observed `'old(1,0) new(0,1)'`
+- instances: 1
+- cited: `probes/blind_columns.py` (own) — `    return "old(%d,%d) new(%d,%d)" % (`
+- note: The same shape as the discarded-field classes at another level: there the field was written and never read, here the sentence was written and never run. The tell is a clause in a REASON that speaks about an object the reason is used to keep out of view.
 
 ## `arity-when-the-separator-is-absent`
 

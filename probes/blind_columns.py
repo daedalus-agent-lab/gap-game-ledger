@@ -624,16 +624,28 @@ def code_sources():
                 yield f"{rel_of(path)} (python heredoc)", offset, block
 
 
-# Records the census does not examine, each with the reason it is not examined.
+# Records the census does not examine, each with a claim a RUN makes true or false.
 # A record that is neither examined nor declared here is a failure, not a silence:
 # a report that says "0 fields have no reader" without saying which records it
 # never opened is a claim about a set it does not name, and the unopened record
 # reads exactly like a clean one. The set is declared so that a record appearing
 # in the tree is a red run until somebody says what it is.
+#
+# WHY THIS IS A DICT AND NOT A SENTENCE. The first version of this table carried
+# free text -- "its three fields were read by hand when it was written and nothing
+# reads them now" -- and NO RUN EVER MEASURED THAT CLAUSE. It was false: the
+# record's own fields (`groups`, `ids`, `label`, `merges`) are read back by
+# `compare_blind.py`, which is in this tree and is copied into every repro case.
+# A reason is now two checkable things: a `successor` that must exist in the tree,
+# and no clause about readers at all -- the census runs over the declared record
+# and prints which of its fields have a reader, so the reader count is a number
+# beside the reason rather than a sentence inside it.
 OUT_OF_SCOPE = {
-    "blind_grouping.json": "the grouping study's own output, superseded by this "
-                           "census; its three fields were read by hand when it was "
-                           "written and nothing reads them now",
+    "blind_grouping.json": {
+        "successor": "probes/blind_columns.py",
+        "note": "the grouping study's own output, kept as the input its consumer "
+                "still reads; the census below is what replaced it as a reading",
+    },
 }
 
 # Paths that are not repo content: a package cache, the auditor's scratch, a test
@@ -674,10 +686,101 @@ def repo_records():
     return examined, declared, unclassified, not_content
 
 
+def out_of_scope_claims():
+    """Make each declared reason true by running it: the successor must be here.
+
+    The claim the table makes is 'this record is not examined here because something
+    else is'. That is a statement about a file, so a run can settle it. What the run
+    may NOT do is let the reason say something about readers: the clause 'nothing
+    reads them now' was in the old text, it was false, and no exit code could have
+    caught it. The census over the declared record is printed below instead.
+    """
+    problems = []
+    runner = ROOT / "repro/run_all.sh"
+    runner_text = runner.read_text(encoding="utf-8", errors="replace") if runner.exists() else ""
+    for rel, claim in sorted(OUT_OF_SCOPE.items()):
+        successor = claim.get("successor")
+        if not successor:
+            problems.append(f"{rel}: declared out of scope with no successor to check")
+            continue
+        if not (ROOT / successor).exists():
+            problems.append(f"{rel}: declared out of scope in favour of {successor}, "
+                            f"which is not in this tree")
+            continue
+        # 'Superseded' is a claim about a time order and no run can settle it. The
+        # part that CAN be settled is that the successor is a reading somebody runs:
+        # a successor nobody runs is a file, and the record would be out of scope in
+        # favour of nothing. So the successor must appear in the standing suite.
+        if successor not in runner_text:
+            problems.append(f"{rel}: successor {successor} exists but no standing run "
+                            f"names it; a successor nobody runs supersedes nothing")
+    return problems
+
+
+def selftest_out_of_scope():
+    """The declared reason must be able to fail, or it is a sentence.
+
+    Three cases: the honest table (no problem), a successor that is not in the tree,
+    and a successor that exists but that no standing run names. The last one is the
+    case the first version of this table could not have: it had no successor at all,
+    only a clause about readers, and the clause was false.
+    """
+    global OUT_OF_SCOPE
+    honest = OUT_OF_SCOPE
+    checks = []
+    checks.append(("the honest table raises no problem",
+                   out_of_scope_claims() == []))
+    try:
+        OUT_OF_SCOPE = {"blind_grouping.json": {"successor": "no/such/probe.py",
+                                                "note": "x"}}
+        problems = out_of_scope_claims()
+        checks.append(("a successor that is not in the tree is a problem",
+                       bool(problems) and "not in this tree" in problems[0]))
+        OUT_OF_SCOPE = {"blind_grouping.json": {"successor": "compare_blind.py",
+                                                "note": "x"}}
+        problems = out_of_scope_claims()
+        checks.append(("a successor no standing run names is a problem",
+                       bool(problems) and "supersedes nothing" in problems[0]))
+        OUT_OF_SCOPE = {"blind_grouping.json": {"note": "no successor"}}
+        problems = out_of_scope_claims()
+        checks.append(("a reason with no successor is a problem", bool(problems)))
+    finally:
+        OUT_OF_SCOPE = honest
+    for label, ok in checks:
+        print(f"{'ok  ' if ok else 'FAIL'} {label}")
+    return 0 if all(ok for _, ok in checks) else 1
+
+
+def out_of_scope_census(sources):
+    """The census, run over the records this table declares out of scope.
+
+    Printed, not judged as a pass: the record is here because something else is the
+    reading, so a NO READER inside it is not the finding this run exists for. What
+    IS the finding is a reason that speaks about readers without a measurement, and
+    that is removed by printing the measurement.
+    """
+    lines = []
+    for rel, claim in sorted(OUT_OF_SCOPE.items()):
+        path = ROOT / rel
+        if not path.exists():
+            lines.append(f"   {rel}: declared out of scope, and absent from the tree")
+            continue
+        out, _skipped = verdicts([path], sources)
+        read = [r for r in out if r.verdict != "NO READER"]
+        orphan = [r for r in out if r.verdict == "NO READER"]
+        lines.append(f"   {rel} (successor {claim['successor']}): "
+                     f"{len(read)} field(s) with a reader, {len(orphan)} without")
+        for r in sorted(out, key=lambda r: (r.verdict == "NO READER", r.field))[:6]:
+            where = (site_text(r.sites[0]) if r.sites
+                     else "written at " + site_text(r.writes[0]))
+            lines.append(f"       {r.field:<18} {r.verdict:<9} {where}")
+    return lines
+
+
 def unlisted_records():
     """JSON with rows that no producer in PRODUCERS claims: printed, not judged."""
     return repo_records()[2] + [
-        f"{item}  [{OUT_OF_SCOPE[item.split(' ')[0]]}]"
+        f"{item}  [successor: {OUT_OF_SCOPE[item.split(' ')[0]]['successor']}]"
         for item in repo_records()[1]]
 
 
@@ -1128,7 +1231,12 @@ def main(argv=None):
                              "field is reported read; off: the honest census)")
     parser.add_argument("--strict", action="store_true",
                         help="exit non-zero while any field has no reader")
+    parser.add_argument("--selftest", action="store_true",
+                        help="check that a declared out-of-scope reason can fail")
     args = parser.parse_args(argv)
+
+    if args.selftest:
+        return selftest_out_of_scope()
 
     rc = 0
     if args.check:
@@ -1139,7 +1247,7 @@ def main(argv=None):
 
     for rel, (writer, command) in sorted(RECEIPTS.items()):
         print(f"receipt {rel}: regenerated by `python3 {writer} {command}`")
-    problems = check_producers() + check_receipts()
+    problems = check_producers() + check_receipts() + out_of_scope_claims()
     if problems:
         print("producer list problems:")
         for problem in problems:
@@ -1156,6 +1264,12 @@ def main(argv=None):
               "to this census): " + ", ".join(sorted(skipped)))
 
     _examined, _declared, unclassified, _not_content = repo_records()
+    sources = list(code_sources())
+    declared_lines = out_of_scope_census(sources)
+    if declared_lines:
+        print("\nrecords declared out of scope, and the census over them "
+              "(their readers are a number here, not a clause in the reason):")
+        print("\n".join(declared_lines))
     if unclassified:
         # A record with rows that is neither examined nor declared out of scope is
         # the failure this whole boundary exists for: the census would have gone

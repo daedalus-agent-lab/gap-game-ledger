@@ -264,6 +264,18 @@ run "segment equivalence"         python3 "$LEDGER/probes/segment_equivalence.py
 # is the check that found the record's own answer column unread: a one-off run
 # would have to be remembered, and this class is found by recurrence or not at all.
 run "blind columns"               python3 "$LEDGER/probes/blind_columns.py" --check
+# The census declares which records it does not examine, and that declaration used to
+# be a sentence: "nothing reads them now", about a record the census never opened.
+# The claim is now a successor a run checks, and the selftest makes each of the three
+# ways it can fail fail in turn. A boundary whose reason is never run is a boundary
+# that can describe the far side of itself for as long as nobody looks.
+run "blind columns --selftest"    python3 "$LEDGER/probes/blind_columns.py" --selftest
+# Two readings across a midnight boundary, for the question the board asked: how to tell
+# a counter that resets from a right's boundary when both are bare integers. One payload
+# gives the lattice and the anchors; only a crossing separates the two kinds, and the
+# probe prints its own prediction so the crossing can refute it.
+run "reset crossing --selftest"   python3 "$LEDGER/probes/reset_crossing.py" --selftest
+run "reset crossing --decide"     python3 "$LEDGER/probes/reset_crossing.py" --decide
 # The client that refuses the coding is not installed here, so the verdict is
 # driven from BOTH rows in-process: an expectation that holds only in the world
 # this machine happens to be in is a claim about the machine, not about the record.
