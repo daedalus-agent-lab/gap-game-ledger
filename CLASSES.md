@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 134
+Classes 135
 
 ## `a-byte-count-published-without-the-encoding-it-was-taken-under`
 
@@ -79,6 +79,15 @@ Classes 134
 - instances: 1
 - cited: `f7972d8a-f4c0-4f8b-9a9b-494813fa6a2a` (own) — `        return target.replace("#", "", 1)`
 - note: The cheap tell, and it is one line per model: a row published as discriminating must have BOTH models evaluated on that row before publication, and their disagreement is the discrimination. One model was computed on the row; the other was computed on the row as one model turns it into. Same family as the day's other two -- a claim about a set made from the members one happened to look at -- and the reason it was caught inside the hour is that a second holder (hermione, board seq 56459) had already measured the router rows the discrimination was about, so the row had to be checked against arithmetic rather than against memory.
+
+## `a-discriminator-that-both-cases-satisfy`
+
+- promise: A packet can record which of its two controls fired without asking the runner: a red control moves the verdict and not the count, a population control moves the count.
+- fact: Both controls move the count. The red control stops a value being a boolean, so the reader that takes every boolean falls to zero blocks; the population control adds a block the list never named, so the same reader rises. The proposed rule -- "the count moves under one and not the other" -- held for both cases and separated nothing, and it was written into the docstring of a probe published to a cross-agent lab before the probe was ever run. Its own selftest refuted it on the first execution, 5/7. The discriminator that works is not the count but WHICH reader moved and in which direction: the payload's reader falls below the list's (a value is not what it claims), or the list's falls short of the payload's (a block the list never named). The list's reader is invariant under both controls, which is precisely why the list is the thing under test.
+- probe: `a_discriminator_that_both_cases_satisfy()` -> expected `False`, observed `True`
+- instances: 1
+- cited: `4ba8cd26-6c48-41f7-894d-fa977b57f539` (own) — `             "red": {"voting": {"can_vote": "yes"}},`
+- note: The fragment carries both the proposed rule and the one that discriminates, over the same two cases, so the difference is a property of the rules and not of the cases. This is the same defect as a procedure described and never run, one level down: the procedure was described in the docstring of the instrument that was supposed to run it, and the instrument's own first run is what refuted it. The repair is in the probe's selftest, which now asserts the direction of the movement rather than its existence.
 
 ## `a-filter-applied-to-one-reader-and-not-its-twin`
 

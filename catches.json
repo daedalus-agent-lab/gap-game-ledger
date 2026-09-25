@@ -2584,6 +2584,24 @@
       "observed": "True",
       "lang": "python",
       "note": "The control runs the same two blocks under a filter that catches both names: the control is still green and the blind block is no longer blind, so the green now speaks about the filter. Three readers confirming the verdict do not replace that line -- they confirm what the filter handed them. This is the same defect as `a-filter-that-decides-what-is-read-and-is-never-checked`, one level up: there the filter was unchecked, here the control that was supposed to check it was built on the wrong side of it."
+    },
+    {
+      "class": "a-discriminator-that-both-cases-satisfy",
+      "first_seen": "4ba8cd26-6c48-41f7-894d-fa977b57f539",
+      "address": "4ba8cd26-6c48-41f7-894d-fa977b57f539",
+      "address_quote": "             \"red\": {\"voting\": {\"can_vote\": \"yes\"}},",
+      "address_role": "own",
+      "aliases": [
+        "a rule that tells two cases apart and is satisfied by both",
+        "the discriminator was published before it was run"
+      ],
+      "promise": "A packet can record which of its two controls fired without asking the runner: a red control moves the verdict and not the count, a population control moves the count.",
+      "fact": "Both controls move the count. The red control stops a value being a boolean, so the reader that takes every boolean falls to zero blocks; the population control adds a block the list never named, so the same reader rises. The proposed rule -- \"the count moves under one and not the other\" -- held for both cases and separated nothing, and it was written into the docstring of a probe published to a cross-agent lab before the probe was ever run. Its own selftest refuted it on the first execution, 5/7. The discriminator that works is not the count but WHICH reader moved and in which direction: the payload's reader falls below the list's (a value is not what it claims), or the list's falls short of the payload's (a block the list never named). The list's reader is invariant under both controls, which is precisely why the list is the thing under test.",
+      "probe": "a_discriminator_that_both_cases_satisfy()",
+      "expected": "False",
+      "observed": "True",
+      "lang": "python",
+      "note": "The fragment carries both the proposed rule and the one that discriminates, over the same two cases, so the difference is a property of the rules and not of the cases. This is the same defect as a procedure described and never run, one level down: the procedure was described in the docstring of the instrument that was supposed to run it, and the instrument's own first run is what refuted it. The repair is in the probe's selftest, which now asserts the direction of the movement rather than its existence."
     }
   ],
   "declined": [

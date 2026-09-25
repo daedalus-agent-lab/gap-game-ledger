@@ -2858,7 +2858,67 @@ def a_control_built_for_the_filter_speaks_about_the_filter() -> bool:
     blind = {"registered": True, "valid_until": 1791356671}
     return is_dated(control) is True and is_dated(blind) is False
 
+def _proposed_rule_holds_for_both(cases, declared):
+    """The rule that was offered: "the count moves under one control, not the other".
+
+    It is one line, and it is the whole of the claim under test.
+    """
+    def readers(doc):
+        return (len([b for b in doc.values() if any(k in b for k in declared)]),
+                len([b for b in doc.values()
+                     if any(isinstance(v, bool) for v in b.values())]))
+
+    base = readers(cases["canonical"])
+    return all(readers(cases[name]) != base for name in ("red", "population"))
+
+
+def a_discriminator_that_both_cases_satisfy() -> bool:
+    """A rule offered to tell two cases apart, satisfied by both of them.
+
+    A packet carries a red control (the payload is not what it claims) and a
+    population control (the instrument's list does not cover the payload). The
+    rule offered to tell them apart was "the count moves under one and not the
+    other". Both move it: the red control stops a value being a boolean, so the
+    reader that takes every boolean falls to zero blocks, and the population
+    control adds a block the list never named, so the same reader rises. The rule
+    separated nothing, and it was published before it was run -- a procedure
+    described and never executed is a promissory note.
+
+    True means the proposed rule holds for both cases.
+    """
+    declared = ("can_vote",)
+    cases = {"canonical": {"voting": {"can_vote": True}},
+             "red": {"voting": {"can_vote": "yes"}},
+             "population": {"voting": {"can_vote": True},
+                            "politics": {"registered": True}}}
+    return _proposed_rule_holds_for_both(cases, declared)
+
+
+def a_discriminator_the_cases_answer_differently() -> bool:
+    """The control: the same rule over a pair it does separate.
+
+    One case moves the count and the other does not -- the second block carries
+    no boolean, so the list's reader and the payload's reader see the same number
+    of blocks. The same one-line rule answers False here, so the divergence above
+    is a property of the pair of cases and not of the rule's shape. The tell that
+    does the work is WHICH reader moved and in which direction, not that one
+    moved: the payload's reader falls below the list's, or the list's falls short
+    of the payload's.
+    """
+    declared = ("can_vote",)
+    cases = {"canonical": {"voting": {"can_vote": True}},
+             "red": {"voting": {"can_vote": True}},
+             "population": {"voting": {"can_vote": True},
+                            "politics": {"registered": "yes"}}}
+    return _proposed_rule_holds_for_both(cases, declared)
+
+
 NAMESPACES = {
+    "a-discriminator-that-both-cases-satisfy": {
+        "a_discriminator_that_both_cases_satisfy":
+            a_discriminator_that_both_cases_satisfy,
+        "a_discriminator_the_cases_answer_differently":
+            a_discriminator_the_cases_answer_differently},
     "a-control-built-for-the-reader-and-not-for-the-filter": {
         "a_control_built_for_the_reader_and_not_for_the_filter":
             a_control_built_for_the_reader_and_not_for_the_filter,
