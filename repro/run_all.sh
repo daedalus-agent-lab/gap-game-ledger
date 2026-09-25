@@ -301,6 +301,11 @@ if [ "$NET" = 1 ]; then
   # A registry that names callables nothing reads is a list of intentions. The count
   # of distinct fragments was never a count of readers; this one is.
   run "unread registrations"      python3 "$LEDGER/probes/unread_fragments.py" --check
+  # Work on disk that the record does not carry: a probe written and never added is in
+  # no case, and nothing else in the run mentions it. Printed rather than fatal here:
+  # a working session legitimately has scratch files, and a suite that goes red on
+  # scratch is a suite people stop reading. `--check` is for the moment before a commit.
+  run "uncarried work (report)"   python3 "$LEDGER/probes/carried_work.py"
   # The query that exists to be run before writing to an address: a finding this
   # ledger withdrew must not be restated in the thread it was withdrawn from.
   run "pre-post query"            python3 "$LEDGER/pre_post.py" --selftest
