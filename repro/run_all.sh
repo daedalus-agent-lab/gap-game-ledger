@@ -74,6 +74,12 @@ sha16() { sha256sum | cut -c1-16; }
 normalise() { sed -E 's/\bkey [0-9a-f]{16}\b/key <minted>/g'; }
 declared_lines() { grep -cE '\bkey [0-9a-f]{16}\b'; }
 
+tree_state() {                # a digest of the tree every item is reading
+  { git -C "$LEDGER" rev-parse HEAD 2>/dev/null
+    git -C "$LEDGER" status --porcelain 2>/dev/null
+  } | sha16
+}
+
 if [ "$SELFTEST" = 1 ]; then
   # Two commands, both exit 0, answering different things. An exit code cannot
   # separate them; the digest of what they said can.
@@ -82,6 +88,15 @@ if [ "$SELFTEST" = 1 ]; then
   echo "same exit status (0):  A '$a' -> $da   B '$b' -> $db"
   [ "$da" = "$db" ] && { echo "self-test FAILED: a behaviour change the suite cannot see"; exit 1; }
   echo "self-test: the two runs are separated by the digest and by nothing else"
+  # The tree guard must be able to fire: it is measured, not asserted. A file
+  # appears in the tree and the digest of the tree moves -- so an item whose two
+  # runs straddle that change is reported as unmeasured rather than as unstable.
+  t0="$(tree_state)"
+  probe="$(mktemp -p "$LEDGER" .tree_guard_XXXXXX)"
+  t1="$(tree_state)"; rm -f "$probe"
+  echo "tree before $t0  with one untracked file $t1"
+  [ "$t0" = "$t1" ] && { echo "self-test FAILED: the tree guard cannot see the tree"; exit 1; }
+  echo "self-test: the tree guard reads the tree it certifies"
   exit 0
 fi
 
@@ -99,6 +114,13 @@ env UV_CACHE_DIR="$UV_CACHE_DIR" uv run --with pillow python -c 'pass' >/dev/nul
 run() {                       # run <name> <command...>
   local name="$1"; shift
   local log="/tmp/run_all.$$.log"
+  # The tree the item is about to read, digested BEFORE it reads. An item whose
+  # output depends on the working tree (a provenance row, a dirty-file count) is
+  # stable only while the tree is, so the tree is part of the configuration and
+  # is printed with every row. Two runs of one item under two different trees are
+  # not two readings of one object, and the harness says so instead of calling it
+  # an unstable item -- the same third state the network items get.
+  local tb; tb="$(tree_state)"
   if "$@" > "$log" 2>&1; then st=0; else st=1; fi
   local n; n="$(declared_lines < "$log")"
   norm="$(normalise < "$log")"
@@ -109,6 +131,15 @@ run() {                       # run <name> <command...>
   if [ "$STABLE" = 1 ]; then
     local log2="/tmp/run_all.$$.log2"
     "$@" > "$log2" 2>&1 || true
+    local ta; ta="$(tree_state)"
+    if [ "$tb" != "$ta" ]; then
+      printf 'FAIL %-34s the tree moved under the item (tree %s -> %s)\n' "$name" "$tb" "$ta"
+      printf '     two runs under two trees are not two readings of one tree; the item is not certified\n'
+      fails=$((fails + 1)); rm -f "$log" "$log2"
+      rows="${rows}${name}|2|${d}|${n}|${sd}
+"
+      return
+    fi
     if [ "$(normalise < "$log2")" != "$norm" ]; then
       local d2; d2="$(normalise < "$log2" | sha16)"
       local sd2; sd2="$(normalise < "$log2" | sort | sha16)"
@@ -154,9 +185,9 @@ run() {                       # run <name> <command...>
   fi
 
   if [ $st = 0 ]; then
-    printf 'ok   %-34s out=%s set=%s norm=%d  %s\n' "$name" "$d" "$sd" "$n" "$last"
+    printf 'ok   %-34s out=%s set=%s norm=%d tree=%s  %s\n' "$name" "$d" "$sd" "$n" "$tb" "$last"
   else
-    printf 'FAIL %-34s out=%s set=%s norm=%d\n' "$name" "$d" "$sd" "$n"; sed -n '1,12p' "$log" | sed 's/^/       /'
+    printf 'FAIL %-34s out=%s set=%s norm=%d tree=%s\n' "$name" "$d" "$sd" "$n" "$tb"; sed -n '1,12p' "$log" | sed 's/^/       /'
     fails=$((fails + 1))
   fi
   rows="${rows}${name}|${st}|${d}|${n}|${sd}

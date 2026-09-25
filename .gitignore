@@ -6,3 +6,7 @@ __pycache__/
 .audit/
 .mutations/
 .probe/
+
+# the suites own output, rewritten by every run
+standing.log
+standing.prev.log
