@@ -20,7 +20,9 @@ This item reads the helper rather than the fragment. For every `_readings_of_*` 
     `repr(as_repaired)` equal to that entry's `expected`, so the repaired half is read,
     compared and quoted by a suite item rather than described in prose;
   * at least one ledger entry whose probe reads that helper, so a half cannot be added
-    without something reading it.
+    without something reading it -- a class's own `probe`, or the `fn` of one of its
+    repeats: both records carry `observed`/`expected`, and a reader that walked `probe`
+    alone read a helper named only by a repeat as one nothing reads.
 
     python3 probes/parts_of_a_reading.py            # every helper, and its verdict
     python3 probes/parts_of_a_reading.py --check    # exit 1 when a half is unmeasured
@@ -73,6 +75,29 @@ def probes_that_read(helper: str, defs: dict) -> list:
                   if name != helper and f"{helper}()" in body)
 
 
+def readers_of_entries(ledger: dict) -> dict:
+    """`<fragment>()` -> `(entry index, repeat index or None, the record with the halves)`.
+
+    A helper is read against a record that carries `observed` and `expected`. For a class
+    that record is the entry; for a repeat it is the repeat's own fingers on the same
+    bytes. Walking `probe` alone made a helper named by a repeat's `fn` look unread, so the
+    witness a repeat's fragment gives was not counted.
+    """
+    out = {}
+    for i, entry in enumerate(ledger["entries"]):
+        if entry.get("probe"):
+            out.setdefault(entry["probe"], (i, None, entry))
+        for j, rep in enumerate(entry.get("repeats") or []):
+            if isinstance(rep, dict) and rep.get("fn"):
+                out.setdefault(f"{rep['fn']}()", (i, j, rep))
+    return out
+
+
+def record_name(record: dict) -> str:
+    """What to call the record in a line: its class, or the shape its repeat names."""
+    return record.get("class") or record.get("id") or "an unnamed record"
+
+
 def normalise(answer):
     """A helper's answer as the two halves, whichever of the two shapes it uses.
 
@@ -92,7 +117,7 @@ def readings(root: pathlib.Path):
     source = (root / "fragments.py").read_text(encoding="utf-8")
     defs = defs_of(source)
     mod, ledger = load(root)
-    by_probe = {e.get("probe"): e for e in ledger["entries"]}
+    by_probe = readers_of_entries(ledger)
     rows = []
     for name, _body in defs.items():
         if not HELPER.match(f"def {name}("):
@@ -101,9 +126,10 @@ def readings(root: pathlib.Path):
         readers = probes_that_read(name, defs)
         measured = []
         for reader in readers:
-            entry = by_probe.get(f"{reader}()")
-            if entry is None:
+            found = by_probe.get(f"{reader}()")
+            if found is None:
                 continue
+            entry = found[2]
             measured.append((reader, entry,
                              repr(halves.get("as_written")) == entry["observed"],
                              repr(halves.get("as_repaired")) == entry["expected"]))
@@ -132,9 +158,9 @@ def verdicts(rows) -> list:
         for reader, entry, written_ok, repaired_ok in measured:
             if written_ok and repaired_ok:
                 lines.append(f"ok   {name} -- both halves read against "
-                             f"{entry['class']}")
+                             f"{record_name(entry)}")
             else:
-                lines.append(f"FAIL {entry['class']}: the helper's "
+                lines.append(f"FAIL {record_name(entry)}: the helper's "
                              f"{'written' if not written_ok else 'repaired'} half is not "
                              f"the one the entry records")
                 bad += 1
@@ -148,20 +174,25 @@ REDEFINE = '''
 _first_helper = %s
 def %s():
     r = _first_helper()
-    r["as_repaired"] = r["as_written"]
+    if isinstance(r, dict):
+        r["as_repaired"] = r["as_written"]
+    else:
+        r = (r[0], r[0])
     return r
 '''
 
 
 def entry_index_for(root: pathlib.Path, helper: str):
-    """The index in `catches.json` of the entry whose probe reads this helper."""
+    """Where the record that reads this helper lives: `(entry index, repeat index or None)`."""
     source = (root / "fragments.py").read_text(encoding="utf-8")
     defs = defs_of(source)
     ledger = json.loads((root / "catches.json").read_text(encoding="utf-8"))
     readers = probes_that_read(helper, defs)
-    for i, entry in enumerate(ledger["entries"]):
-        if entry.get("probe") in {f"{r}()" for r in readers}:
-            return i
+    found = readers_of_entries(ledger)
+    for reader in readers:
+        hit = found.get(f"{reader}()")
+        if hit is not None:
+            return hit[0], hit[1]
     return None
 
 
@@ -177,10 +208,16 @@ def patch(root: pathlib.Path, name: str, kind: str) -> None:
     index = entry_index_for(root, name)
     if index is None:
         raise SystemExit(f"the copy under test has no entry reading {name}")
+    i, j = index
+    record = (data["entries"][i] if j is None
+              else data["entries"][i]["repeats"][j])
     if kind == "expected-is-written":
-        data["entries"][index]["expected"] = data["entries"][index]["observed"]
+        record["expected"] = record["observed"]
     elif kind == "no-reader":
-        del data["entries"][index]
+        if j is None:
+            del data["entries"][i]
+        else:
+            del data["entries"][i]["repeats"][j]
     ledger_path.write_text(json.dumps(data, indent=1, ensure_ascii=False, sort_keys=True),
                            encoding="utf-8")
 
@@ -199,8 +236,22 @@ def selftest() -> int:
                               capture_output=True, text=True)
         ok = code.returncode == 0
         bad += 0 if ok else 1
+        # The copy under test is the tree this probe lives in. When that tree carries the
+        # defect, the first refusal is the finding, not a broken fixture -- so the line
+        # names it instead of leaving the reader to guess which of the two happened.
+        why = next((ln for ln in code.stdout.splitlines() if ln.startswith("FAIL")), "")
         print(f"{'ok  ' if ok else 'FAIL'} an untouched copy is not refused "
-              f"(exit {code.returncode})")
+              f"(exit {code.returncode})" + (f": {why}" if why else ""))
+
+        # Every helper in the tree must be REPORTED, not merely looked at: a control that
+        # silently drops a shape from its own universe -- the tuple convention three of
+        # these helpers still use -- shows a shorter list and an unbroken exit code.
+        source_names = set(HELPER.findall((src / "fragments.py").read_text(encoding="utf-8")))
+        unreported = sorted(n for n in source_names if n not in code.stdout)
+        bad += 1 if unreported else 0
+        print(f"{'ok  ' if not unreported else 'FAIL'} every helper in the tree is reported "
+              f"({len(source_names) - len(unreported)}/{len(source_names)})"
+              + (f": unreported {unreported}" if unreported else ""))
 
         rows = readings(base)
         first = rows[0][0] if rows else None
@@ -243,9 +294,9 @@ def main() -> int:
     print(f"helpers with two halves  {len(rows)}")
     print(f"halves not read against an entry  {bad}")
     if args.check and bad:
-        print("REFUSED: a reading's second half is computed and compared by nothing in "
-              "this repository, so the half that says what the repair does can be a "
-              "constant and every suite stays green")
+        print("REFUSED: a helper's half is not the one the entry records, or nothing in this "
+              "repository reads it -- either way the half that says what the repair does is "
+              "unwitnessed, so it can be a constant and every suite stays green")
         return 1
     return 0
 

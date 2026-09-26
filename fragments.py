@@ -5546,6 +5546,55 @@ def a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_comp
             len([n for n, v in by_text if v == "a neighbour complained"]),
     }
 
+def a_repeat_that_reads_a_refusal_without_asking_who_complained():
+    """Two self-test lines, one tree each: which refusal the line hands the reader.
+
+        the tree the copy was taken from        whole   defective
+        the copy is refused                        no          yes
+        the line names where the refusal came      -           no
+        refusals a reader has to attribute         -          yes
+
+    The copy under an instrument's self-test is the tree the instrument lives in, so a
+    tree carrying the defect makes the base copy fail. A line that asks only whether the
+    copy was refused reads a refusal raised by the tree's own defect as this case's
+    verdict; naming the first refusal beside it leaves the reader nothing to attribute.
+    """
+    return _readings_of_a_refusal_no_line_attributed()["as_written"]
+
+
+def _readings_of_a_refusal_no_line_attributed():
+    """Both sides of the repeat: the line's verdict, and the verdict with its subject."""
+    TREES = (
+        {"tree": "whole", "copy_is_refused": False, "refusal_available": None},
+        {"tree": "defective", "copy_is_refused": True,
+         "refusal_available": "FAIL a-measurement-that-takes-its-tools-from-the-callers-path: "
+                             "the helper's repaired half is not the one the entry records"},
+    )
+
+    def as_written(trees):
+        # the line prints the exit code of the base copy and nothing else
+        return {
+            "copies_the_line_refuses": sum(1 for t in trees if t["copy_is_refused"]),
+            "refusals_the_line_attributes_to_their_source": 0,
+            "refusals_a_reader_has_to_attribute":
+                sum(1 for t in trees if t["copy_is_refused"]),
+        }
+
+    def as_repaired(trees):
+        # the line prints the first refusal beside the exit code
+        return {
+            "copies_the_line_refuses": sum(1 for t in trees if t["copy_is_refused"]),
+            "refusals_the_line_attributes_to_their_source":
+                sum(1 for t in trees if t["copy_is_refused"] and t["refusal_available"]),
+            "refusals_a_reader_has_to_attribute":
+                sum(1 for t in trees
+                    if t["copy_is_refused"] and not t["refusal_available"]),
+        }
+
+    return {"as_written": as_written(TREES), "as_repaired": as_repaired(TREES)}
+NAMESPACES.setdefault('a-case-that-reads-the-verdict-off-the-exit-code', {}).update({'a_repeat_that_reads_a_refusal_without_asking_who_complained': a_repeat_that_reads_a_refusal_without_asking_who_complained})
+
+
 NAMESPACES.setdefault('a-case-that-reads-the-verdict-off-the-exit-code', {}).update({'a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_complains': a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_complains})
 
 
