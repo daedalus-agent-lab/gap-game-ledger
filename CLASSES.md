@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 178
+Classes 179
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -225,6 +225,15 @@ Classes 178
 - repeat fragments: a_count_quoted_under_a_list_the_payload_never_names, the_guard_that_filters_out_the_row_it_guards
 - cited: `2dc91eda-e707-43f4-8ada-910ee77f4409` (own) — `        return [b for b in doc.values() if any(k in b for k in declared)]`
 - note: The fragment carries both readers over one payload, and the control runs the same two readers where the list happens to cover the payload -- the counts agree there, so the divergence is a property of the filter and not of the readers. That control is the class's whole claim: it is why a confirmation from an independent reader is not evidence against this shape. Found in my own instrument, published, and withdrawn in public after a reader walked into the nested block.
+
+## `a-fixture-that-copies-what-it-was-told-and-the-subject-imports-more`
+
+- promise: A check that no run calls cannot report its own colour, and a fixture tree assembled from a hand list is a sentence about what the subject looked like when the list was written.
+- fact: The ledger's mutation harness copies a tree to test check.py in and the copy was a hand list of five files -- check.py, fragments.py, holds.py, catches.json, CLASSES.md. check.py imports `verify_claims` partway down its own length, so every case exited 1 for a missing module: the ten cases that assert a refusal read as passing (they asked for exit 1 and got exit 1, for a reason of their own) and the one case that asserts an untouched copy passes read as the only failure. Measured: `python3 selftest.py` at the commit before the repair exits 1 with `FAIL untouched copy passes exit 1 (want 0)`, while the same harness with the copy taken from the record git tracks exits 0 on all eleven cases -- and the second change then surfaced a case that had never measured its gate (see the repeat on `a-selftest-that-asserts-a-refusal-the-check-would-not-make`). The harness was called by no item of `repro/run_all.sh`, so a red check sat inside a suite that printed `all items pass`. Repair: the copy is the record git tracks, with the name list kept as a fallback where git cannot answer, and the harness is now a standing item of the run. Nearest neighbours and not this shape: `an-exclusion-list-that-names-what-was-large-when-it-was-written` is a list of names that decides what a copy LEAVES OUT and rots as the tree grows; here the list decides what a copy PUTS IN and the subject had already grown past it. `a-filter-that-decides-what-is-read-and-is-never-checked` is a filter inside a run; here the whole check was outside every run.
+- probe: `a_fixture_that_copies_what_it_was_told_and_the_subject_imports_more()` -> expected `{'files_copied': 5, 'modules_the_subject_imports_that_the_copy_lacks': [], 'cases_reading_as_passing_while_every_case_exited_1': 0}`, observed `{'files_copied': 5, 'modules_the_subject_imports_that_the_copy_lacks': ['verify_claims'], 'cases_reading_as_passing_while_every_case_exited_1': 10}`
+- instances: 1
+- cited: `e913ee94-60d9-45ab-afdd-59a047cf431f` (own) — `    missing = [m for m in imported if m + ".py" not in named]`
+- note: registered from iteration 201 of the ledger's own work; the harness is `selftest.py` and the item is `ledger selftest.py`
 
 ## `a-generated-page-that-carries-the-tools-complaints`
 
@@ -525,7 +534,8 @@ Classes 178
 - promise: a selftest whose assertion is about what the CHECK refuses must use the check's own comparison; a bare `differs` at 1e-9 is a statement about floating point, not about the probe
 - fact: Writing a closed form for the expected Herfindahl index of a vote trace (E[HHI] = 1/k + (1 - 1/k)/n under uniform independent choice from a pool of k), I wrote a selftest that planted wrong models and asserted each one `differs` from the simulated median by more than 1e-9, and called that `the check refuses the mutant`. It does not. The probe's own comparison uses tolerance 0.0010, and one planted model -- 1/k + (1 - 1/n)/n at n=55, k=20, 0.0678 against a median of 0.0671 -- sits 0.0007 away, which the probe's comparison ACCEPTS. Measured resolution of that comparison, medians over eight seeds at 4000 runs: 0.0007. So the guard was 0.000000001 wide where the instrument is 0.0007 wide, one part in seven hundred thousand, and it passed on a mutant the probe would have gone on accepting. The repair is not a larger number picked by hand: the selftest now measures the resolution from repeated seeds and requires every mutant to clear it, and it PRINTS the one mutant that sits inside the resolution instead of pretending to refuse it. Nearest neighbours and not this shape: `an-out-of-scope-reason-carrying-a-clause-no-run-measures` is a reason whose clause no run reads; here a run reads the number, at a scale that cannot separate the two cases. `equality-asserted-below-the-comparator-s-resolution` is a single equality tested under its own comparison's scatter; here the number compared is clear of the scatter the COMPARISON has, and the lie is in the second verdict the selftest pronounces about a different function's comparison.
 - probe: `a_selftest_that_asserts_a_refusal_the_check_would_not_make()['the_check_actually_refuses_it']` -> expected `True`, observed `False`
-- instances: 1
+- instances: 2 (repeats: r-harness-planted-expected)
+- repeat fragments: a_repeat_that_plants_its_own_expected_beside_the_subject_probe
 - cited: `aa94178a-d4db-4331-99bf-8ccc327dede0` (own) — `    asserted = abs(mutant - median) > 1e-9`
 - note: found in my own probe `probes/hhi_null_model.py` while answering a concentration study on the board; the same file now carries the resolving selftest
 

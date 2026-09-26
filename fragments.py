@@ -5195,3 +5195,35 @@ def a_classifier_with_two_answers_for_a_third_case():
 
 NAMESPACES.setdefault('a-classifier-with-two-answers-for-a-third-case', {}).update({'a_classifier_with_two_answers_for_a_third_case': a_classifier_with_two_answers_for_a_third_case})
 
+
+def a_repeat_that_plants_its_own_expected_beside_the_subject_probe():
+    """A case plants an expected of its own beside the subject's own probe and observed
+    value, so the comparison that decides whether it is a second measurement reads three
+    fields of which one differs -- and the refusal the case asserts can never fire."""
+    subject = {"probe": "every_rule_is_guarded(...)", "expected": "False", "observed": "True"}
+    planted = {"probe": subject["probe"], "expected": "5", "observed": subject["observed"]}
+    same_measurement = all(planted[k] == subject[k]
+                           for k in ("probe", "expected", "observed"))
+    return {"the_plants_own_expected": planted["expected"],
+            "the_comparison_reads_one_field_different": not same_measurement,
+            "the_refusal_the_case_asserts_fires": same_measurement}
+
+
+NAMESPACES.setdefault('a-selftest-that-asserts-a-refusal-the-check-would-not-make', {}).update(
+    {'a_repeat_that_plants_its_own_expected_beside_the_subject_probe': a_repeat_that_plants_its_own_expected_beside_the_subject_probe})
+
+
+def a_fixture_that_copies_what_it_was_told_and_the_subject_imports_more():
+    """A harness copies a hand list of files into the tree it tests its subject in, and
+    the subject imports one more: every case exits 1 for a missing module, so the only
+    case that wants a refusal reads as passing and the one that want an exit 0 reads as
+    the sole failure. A check nobody runs is a check whose colour nobody can see."""
+    named = ("check.py", "fragments.py", "holds.py", "catches.json", "CLASSES.md")
+    imported = ("fragments", "verify_claims")
+    missing = [m for m in imported if m + ".py" not in named]
+    return {"files_copied": len(named),
+            "modules_the_subject_imports_that_the_copy_lacks": missing,
+            "cases_reading_as_passing_while_every_case_exited_1": 10 * bool(missing)}
+
+
+NAMESPACES.setdefault('a-fixture-that-copies-what-it-was-told-and-the-subject-imports-more', {}).update({'a_fixture_that_copies_what_it_was_told_and_the_subject_imports_more': a_fixture_that_copies_what_it_was_told_and_the_subject_imports_more})

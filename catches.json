@@ -3146,7 +3146,22 @@
    "observed": "False",
    "probe": "a_selftest_that_asserts_a_refusal_the_check_would_not_make()['the_check_actually_refuses_it']",
    "promise": "a selftest whose assertion is about what the CHECK refuses must use the check's own comparison; a bare `differs` at 1e-9 is a statement about floating point, not about the probe",
-   "repeats": []
+   "repeats": [
+    {
+     "address": "e913ee94-60d9-45ab-afdd-59a047cf431f",
+     "address_quote": "    planted = {\"probe\": subject[\"probe\"], \"expected\": \"5\", \"observed\": subject[\"observed\"]}",
+     "address_role": "own",
+     "expected": "{'the_plants_own_expected': 'False', 'the_comparison_reads_one_field_different': False, 'the_refusal_the_case_asserts_fires': True}",
+     "fact": "The harness case `a repeat points at the class fragment` planted a repeat with the class's own probe and observed value but an expected of its own (`\"5\"`). The gate that refuses a repeat replaying the class is `same_measurement`, which compares probe, expected AND observed; one of the three differed, so no refusal was due, check.py exited 0, and the case that asserts exit 1 read as passing only because the copy was missing a module and every case exited 1 anyway. Measured: with the copy repaired the case fails (`exit 0 (want 1)`) until the repeat carries the class's expected too, and then it passes. The class here is the same shape at a different scale: a selftest asserting a refusal the check does not make -- there a guard 1e-9 wide against a comparison 0.0007 wide, here a fixture planting its own value in the field the comparison reads.",
+     "first_seen": "2026-09-26",
+     "fn": "a_repeat_that_plants_its_own_expected_beside_the_subject_probe",
+     "id": "r-harness-planted-expected",
+     "lang": "python",
+     "observed": "{'the_plants_own_expected': '5', 'the_comparison_reads_one_field_different': True, 'the_refusal_the_case_asserts_fires': False}",
+     "probe": "a_repeat_that_plants_its_own_expected_beside_the_subject_probe()",
+     "promise": "A case that stands in for a gate must supply the subject's own values in every field the gate reads, or it measures a comparison that never runs."
+    }
+   ]
   },
   {
    "address": "1e2069fc-c42d-47b7-b3ae-26cb3ad0d655",
@@ -3563,6 +3578,25 @@
    "probe": "a_classifier_with_two_answers_for_a_third_case()",
    "probe_run": "python3 -c \"import runpy; ns=runpy.run_path('fragments.py'); print(ns['a_classifier_with_two_answers_for_a_third_case']())\"",
    "promise": "A verdict read from 'the container raised something' is about the write path, not about the container it was applied to.",
+   "repeats": []
+  },
+  {
+   "address": "e913ee94-60d9-45ab-afdd-59a047cf431f",
+   "address_quote": "    missing = [m for m in imported if m + \".py\" not in named]",
+   "address_role": "own",
+   "aliases": [
+    "a red harness nobody ran",
+    "the fixture copy is a list of names and the subject imports one more"
+   ],
+   "class": "a-fixture-that-copies-what-it-was-told-and-the-subject-imports-more",
+   "expected": "{'files_copied': 5, 'modules_the_subject_imports_that_the_copy_lacks': [], 'cases_reading_as_passing_while_every_case_exited_1': 0}",
+   "fact": "The ledger's mutation harness copies a tree to test check.py in and the copy was a hand list of five files -- check.py, fragments.py, holds.py, catches.json, CLASSES.md. check.py imports `verify_claims` partway down its own length, so every case exited 1 for a missing module: the ten cases that assert a refusal read as passing (they asked for exit 1 and got exit 1, for a reason of their own) and the one case that asserts an untouched copy passes read as the only failure. Measured: `python3 selftest.py` at the commit before the repair exits 1 with `FAIL untouched copy passes exit 1 (want 0)`, while the same harness with the copy taken from the record git tracks exits 0 on all eleven cases -- and the second change then surfaced a case that had never measured its gate (see the repeat on `a-selftest-that-asserts-a-refusal-the-check-would-not-make`). The harness was called by no item of `repro/run_all.sh`, so a red check sat inside a suite that printed `all items pass`. Repair: the copy is the record git tracks, with the name list kept as a fallback where git cannot answer, and the harness is now a standing item of the run. Nearest neighbours and not this shape: `an-exclusion-list-that-names-what-was-large-when-it-was-written` is a list of names that decides what a copy LEAVES OUT and rots as the tree grows; here the list decides what a copy PUTS IN and the subject had already grown past it. `a-filter-that-decides-what-is-read-and-is-never-checked` is a filter inside a run; here the whole check was outside every run.",
+   "first_seen": "2026-09-26",
+   "lang": "python",
+   "note": "registered from iteration 201 of the ledger's own work; the harness is `selftest.py` and the item is `ledger selftest.py`",
+   "observed": "{'files_copied': 5, 'modules_the_subject_imports_that_the_copy_lacks': ['verify_claims'], 'cases_reading_as_passing_while_every_case_exited_1': 10}",
+   "probe": "a_fixture_that_copies_what_it_was_told_and_the_subject_imports_more()",
+   "promise": "A check that no run calls cannot report its own colour, and a fixture tree assembled from a hand list is a sentence about what the subject looked like when the list was written.",
    "repeats": []
   }
  ],
