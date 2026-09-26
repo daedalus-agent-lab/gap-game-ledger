@@ -40,20 +40,56 @@ def record_of_this_tree() -> list:
     return names or list(FILES)
 
 
+def modules_the_subject_imports() -> list:
+    """What the copy must hold, read off the subject rather than listed by hand.
+
+    A hand list asserts that the environment is complete and nothing checks the
+    assertion; the failure that started this file was a copy missing one module, so
+    every want-1 case read `ok` for a missing-import exit 1 and the single want-0 case
+    read `FAIL`. The requirement is readable off the subject: every top-level import in
+    `check.py` that names a `.py` file beside it must be resolvable where `check.py`
+    runs. `record_of_this_tree` supplies what the copy has; this supplies what it needs;
+    a requirement that is never tested against the thing that must satisfy it is a
+    sentence, so `with_tree` tests them against each other before a case runs.
+    """
+    import ast
+
+    needed = set()
+    source = (HERE / "check.py").read_text(encoding="utf-8")
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Import):
+            needed.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            needed.add(node.module.split(".")[0])
+    beside = {path.stem: path.name for path in HERE.glob("*.py")}
+    return sorted(beside[n] for n in needed & set(beside))
+
+
 def run(tree: Path) -> int:
     return subprocess.run(
         [sys.executable, "check.py"], cwd=tree, capture_output=True
     ).returncode
 
 
-def with_tree(mutate, extra_module="", mutate_tree=None):
-    """Copy the ledger, apply `mutate(catches)`, return check.py's exit code."""
+def with_tree(mutate, extra_module="", mutate_tree=None, drop=()):
+    """Copy the ledger, apply `mutate(catches)`, return check.py's exit code.
+
+    `drop` leaves names out of the copy on purpose, so the case that says the copy must
+    hold what the subject imports has a copy that does not.
+    """
     with tempfile.TemporaryDirectory() as tmp:
         tree = Path(tmp)
-        for name in record_of_this_tree():
+        copied = [n for n in record_of_this_tree() if n not in set(drop)]
+        for name in copied:
             target = tree / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(HERE / name, target)
+        missing = [n for n in modules_the_subject_imports() if n not in set(copied)]
+        if missing:
+            raise AssertionError(
+                "the copy is missing modules the subject imports: %r -- with them absent "
+                "every case exits 1 for that reason, so the want-1 cases read `ok` and "
+                "the want-0 case carries the whole report" % (missing,))
         if extra_module:
             with (tree / "fragments.py").open("a", encoding="utf-8") as fh:
                 fh.write(extra_module)
@@ -217,6 +253,27 @@ def main() -> int:
             fh.write("\n## `a-class-that-was-never-added`\n")
 
     cases.append(("a stale CLASSES.md", with_tree(lambda c: None, mutate_tree=stale_index), 1))
+
+    def copy_missing_what_the_subject_imports():
+        """The requirement is tested against the copy instead of assumed to hold.
+
+        The subject is asked what it imports, and one of those files is left out of the
+        copy: the fixture must refuse to run, naming it. Without this, the same absence
+        is reported as one red case and ten green ones, which is the colour inversion
+        this file exists because of.
+        """
+        needed = modules_the_subject_imports()
+        if not needed:
+            raise AssertionError("the subject imports no module beside it: nothing to drop")
+        try:
+            with_tree(lambda c: None, drop=[needed[0]])
+        except AssertionError:
+            return 1
+        return 0
+
+    cases.append(
+        ("a copy missing what the subject imports", copy_missing_what_the_subject_imports(), 1)
+    )
 
     bad = 0
     for name, code, want in cases:

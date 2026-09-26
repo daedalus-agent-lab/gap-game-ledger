@@ -5275,3 +5275,38 @@ def a_diagnostic_that_reads_the_name_and_reports_a_replacement_the_bytes_deny():
 
 
 NAMESPACES.setdefault('a-diagnostic-that-reads-the-name-and-reports-a-replacement-the-bytes-deny', {}).update({'a_diagnostic_that_reads_the_name_and_reports_a_replacement_the_bytes_deny': a_diagnostic_that_reads_the_name_and_reports_a_replacement_the_bytes_deny})
+
+
+def a_repeat_that_judges_a_cited_name_against_an_enumeration_the_directory_outgrew():
+    """Second sighting of the shape, on different bytes: the reason reader in
+    `probes/probe_coverage.py` judged every name a reason cites against the PROBE files
+    only, and the directory also holds the data files a reason may cite -- so a reason
+    naming one was refused as a file that is not here. True of the enumeration, false of
+    the directory. Here the wait is the other way round: the world is bigger than the
+    list at the moment the list is read, not only later."""
+    # an enumeration asserts its own completeness, and nothing compares it to the world
+    probe_names = ("carried_work.py", "copy_cost.py", "hhi_null_model.py",
+                   "probe_coverage.py", "raw_segment_cells.py")
+    data_files = ("audit_byte_column.md", "control_mutations.txt", "control_table.md",
+                  "ladder_rungs.json", "launch_truncated_20260926T0154Z.log",
+                  "lookup_alphabet_out.txt", "lookup_boundary_out.txt",
+                  "lookup_refusal_body.bin", "lookup_refusal_out.txt",
+                  "lookup_variants_out.txt", "me_block_20260926T0040Z.json",
+                  "me_reading_20260925T2255Z.json", "me_reading_20260926T0004Z.json",
+                  "meatproxy_capabilities_20260926T0111Z.json",
+                  "name_denominator_20260926T0025Z.json",
+                  "name_denominator_two_clocks_20260926T0027Z.json",
+                  "permission_instant.json", "permission_instant_meatproxy.json",
+                  "politics_n_20260925T2315Z.json", "reading_me_20260925T2340Z.json",
+                  "reading_meatproxy_20260925T2340Z.json", "reset_readings.json",
+                  "v1_prefix_door.json")
+    judge_holds = set(probe_names)
+    cited = "ladder_rungs.json"
+    refused = cited not in judge_holds
+    return {"judged_against": "the probe files only (%d)" % len(judge_holds),
+            "data_files_the_directory_holds": len(data_files),
+            "citations_refused_though_the_file_is_here": int(refused)}
+
+
+NAMESPACES.setdefault("a-fixture-that-copies-what-it-was-told-and-the-subject-imports-more", {}).update(
+    {"a_repeat_that_judges_a_cited_name_against_an_enumeration_the_directory_outgrew": a_repeat_that_judges_a_cited_name_against_an_enumeration_the_directory_outgrew})

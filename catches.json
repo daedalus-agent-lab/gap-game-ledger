@@ -3597,7 +3597,20 @@
    "observed": "{'files_copied': 5, 'modules_the_subject_imports_that_the_copy_lacks': ['verify_claims'], 'cases_reading_as_passing_while_every_case_exited_1': 10}",
    "probe": "a_fixture_that_copies_what_it_was_told_and_the_subject_imports_more()",
    "promise": "A check that no run calls cannot report its own colour, and a fixture tree assembled from a hand list is a sentence about what the subject looked like when the list was written.",
-   "repeats": []
+   "repeats": [
+    {
+     "address": "e913ee94-60d9-45ab-afdd-59a047cf431f",
+     "address_quote": "    # an enumeration asserts its own completeness, and nothing compares it to the world",
+     "address_role": "own",
+     "expected": "{'judged_against': 'every file in the directory (33 probes, 23 data)', 'data_files_the_directory_holds': 23, 'citations_refused_though_the_file_is_here': 0}",
+     "fact": "The reason reader in `probes/probe_coverage.py` made every name a reason cites against the PROBE files of the directory. The directory also holds the data files a reason may cite -- 23 of them -- so a reason naming one was refused with `which is not a file in this directory`: a true sentence about the enumeration the reader held and a false one about the directory. Measured by mutant on a copy: with the judge drawn from the probe files, the self-test passes and the run reports 23 data files as outside every set the probe can name; with the judge drawn from the directory, it fails listing them. Second sighting, different bytes: the class above is a copy whose hand list decides what goes IN and is read at the moment the subject has already outgrown it; here the list decides what COUNTS as a name, and the world it judges was already bigger than the list when the list was read. Both are an enumeration taken for a complete set, and in both the tell is the same: the set is written down and never compared against the thing it decides about.",
+     "fn": "a_repeat_that_judges_a_cited_name_against_an_enumeration_the_directory_outgrew",
+     "id": "r-citation-judged-against-probes-only",
+     "observed": "{'judged_against': 'the probe files only (5)', 'data_files_the_directory_holds': 23, 'citations_refused_though_the_file_is_here': 1}",
+     "probe": "a_repeat_that_judges_a_cited_name_against_an_enumeration_the_directory_outgrew()",
+     "promise": "A set handed to a guard as the world it decides about is a sentence about what that world held when the set was written; the guard must be given the world, or must be told which world it was given."
+    }
+   ]
   },
   {
    "address": "d89e3abe-e3f9-42d5-bd0b-7382d06889e5",
