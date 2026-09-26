@@ -5,14 +5,18 @@ The suite writes what it measured for every tree it ran on, and nothing anywhere
 says WHEN it last ran. A week with no run and a week with nothing to report leave
 the same artefact -- none -- so a run that stopped ticking is byte-identical to a
 run that found nothing. This probe reads a run stamp the runner appends to and
-answers three ways:
+answers four ways, and the state NAME is machine-readable because the reader of a
+verdict should not have to parse a sentence to learn which question was answered:
 
-  fresh      the newest stamp is inside the declared cadence;
-  stale      the newest stamp is older than the cadence, and the refusal NAMES both
-             instants and the cadence it compared;
-  unreadable no stamp file, an unparseable line, or a cadence that is not declared.
-             A missing record is not a quiet week, and a first ever tick is not a
-             verdict: both come back red, each with its own reason.
+  fresh       the newest stamp is inside the declared cadence;
+  stale       the newest stamp is older than the cadence, and the refusal NAMES both
+              instants and the cadence it compared;
+  no_baseline no stamp file at all -- a run that never happened. It is RED, but it
+              is not the same state as a record that cannot be read: the repair
+              differs, so the name differs;
+  unreadable  a stamp line that is not a timestamp, no offset on the newest stamp,
+              or a file that carries no stamp line: the record is here and is not
+              readable.
 
 A declared, dated waiver is the only way a gap is allowed, and it is named when it
 is the reason the gap passed.
@@ -35,10 +39,6 @@ CADENCE_SECONDS = 24 * 3600
 
 def parse_stamp(path: pathlib.Path):
     """(newest instant, reason) -- reason is not None when there is no verdict."""
-    if not path.exists():
-        return None, "no run stamp at %s: a run that never happened and a run with " \
-                     "nothing to report leave the same record, so this is red and not quiet" % (
-                         path.relative_to(REPO) if REPO in path.parents else path)
     newest = None
     for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         line = line.strip()
@@ -82,6 +82,13 @@ def waivers(path: pathlib.Path):
 
 
 def verdict(path, now, cadence):
+    if not path.exists():
+        # Its own state, not a flavour of unreadable: a first-ever tick is repaired by
+        # making the runner tick, a corrupt stamp by fixing the file.
+        return "no_baseline", "no run stamp at %s: a run that never happened and a " \
+                              "run with nothing to report leave the same record, so " \
+                              "this is red and not quiet" % (
+                                  path.relative_to(REPO) if REPO in path.parents else path)
     newest, why = parse_stamp(path)
     if why is not None:
         return "unreadable", why
@@ -121,7 +128,7 @@ def check(path, now, cadence):
               "cadence is %d s: this run has been silent for %.1f cadences" % (
                   newest.isoformat(), int(gap), then.isoformat(), cad, gap / cad))
         return 1
-    print("FAIL %s" % detail)
+    print("FAIL %s %s" % (state.upper(), detail))
     return 1
 
 
@@ -140,15 +147,16 @@ def selftest() -> int:
     day = 24 * 3600
     checks = []
 
-    def case(name, path, want, needle=None, cadence=day, at=now):
+    def case(name, path, want, needle=None, cadence=day, at=now, want_state=None):
         state, detail = verdict(path, at, cadence)
-        text = state if state != "stale" and state != "unreadable" else "red"
-        text = "red" if state in ("stale", "unreadable") else "fresh"
+        text = "red" if state in ("stale", "unreadable", "no_baseline") else "fresh"
         ok = text == want
         if ok and needle is not None:
             rendered = str(detail)
             ok = needle in (rendered if state == "stale" else
                             (detail if isinstance(detail, str) else str(detail)))
+        if ok and want_state is not None:
+            ok = state == want_state
         checks.append((ok, name, text, want))
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -191,6 +199,13 @@ def selftest() -> int:
         same = said(fresh, now) == said(fresh, now + datetime.timedelta(minutes=17))
         red = said(stale, now)
         named = "2026-09-01T04:00:00+00:00" in red and "86400" in red
+        # 9. the two red states are told apart by name, not by a sentence a reader
+        # would have to parse: a first-ever tick and a corrupt stamp are different
+        # repairs. Under a name-only reader they were one state.
+        case("a first ever tick is named apart from a corrupt stamp", missing, "red",
+             "a run that never happened", want_state="no_baseline")
+        case("a corrupt stamp is named apart from a first ever tick", bad, "red",
+             "is not a timestamp", want_state="unreadable")
         checks.append((same and named,
                        "the green line is run-stable, the red line dates the gap",
                        "stable" if same and named else "moves", "stable"))

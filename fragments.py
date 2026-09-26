@@ -5752,3 +5752,93 @@ def a_row_with_no_subject_read_as_a_check_that_passed():
     }
 
 NAMESPACES.setdefault('a-row-with-no-subject-read-as-a-check-that-passed', {}).update({'a_row_with_no_subject_read_as_a_check_that_passed': a_row_with_no_subject_read_as_a_check_that_passed})
+
+
+def a_repair_that_re_types_one_copy_of_a_number_and_leaves_the_other():
+    """A reading kept in two places, and a repair that follows only one of them.
+
+    The fixture below grows a ledger: one more claim arrives, so the probe that counts
+    claims prints a bigger number. The harness re-types the file that carries the numbers
+    and the entry's own sentence keeps the number it was written with. A reader that
+    compares the sentence with the probe then refuses the fixture -- which was built to ask
+    about something else -- so the case fails for a reason that has nothing to do with its
+    question, and a repair that follows one of two copies of a number cannot tell that
+    failure from a defect.
+    """
+    key = "claims (entries + repeats)"
+    file_says = {key: 242}
+    sentence_says = {key: 242}
+    probe_now_reads = 243
+
+    def repair_the_file_only(file_says, probe_now_reads):
+        """The number moves; the file is brought along and the sentence is not."""
+        for name in file_says:
+            file_says[name] = probe_now_reads
+        return file_says
+
+    def repair_both(file_says, sentence_says, probe_now_reads):
+        """Both places that type the number follow the probe that counts it."""
+        for store in (file_says, sentence_says):
+            for name in store:
+                store[name] = probe_now_reads
+        return file_says, sentence_says
+
+    def reader_refuses(file_says, sentence_says, probe_now_reads):
+        """A number typed in either place and read nowhere is refused."""
+        return (file_says[key] != probe_now_reads
+                or sentence_says[key] != probe_now_reads)
+
+    as_written = [dict(file_says), dict(sentence_says)]
+    repair_the_file_only(as_written[0], probe_now_reads)
+    both = [dict(file_says), dict(sentence_says)]
+    repair_both(both[0], both[1], probe_now_reads)
+    return {
+        "the_fixture_grows_the_claim_count":
+            probe_now_reads == file_says[key] + 1,
+        "the_repair_as_written_leaves_the_sentence_typing_the_old_number":
+            as_written[1][key] == 242,
+        "the_reader_refuses_the_repair_as_written":
+            reader_refuses(as_written[0], as_written[1], probe_now_reads) is True,
+        "the_repair_that_follows_both_copies_is_accepted":
+            reader_refuses(both[0], both[1], probe_now_reads) is False,
+    }
+
+NAMESPACES.setdefault('a-repair-that-re-types-one-copy-of-a-number-and-leaves-the-other', {}).update({'a_repair_that_re_types_one_copy_of_a_number_and_leaves_the_other': a_repair_that_re_types_one_copy_of_a_number_and_leaves_the_other})
+
+
+def a_heartbeat_state_named_in_prose_beside_the_repair_it_answers():
+    """Four repairs, three names.
+
+    A record that is not there (make the runner tick) and a record that cannot be read
+    (fix the bytes) are different faults with different repairs, and both came back
+    under the single state name `unreadable`. The state name is what a reader compares
+    without parsing prose; when two faults share it, every consumer that wants to act
+    on the verdict has to read the sentence instead, which is exactly what the name was
+    for.
+    """
+    def as_written(record_is_there, record_parses):
+        """One name for both faults, because the reason was a sentence, not a state."""
+        if not (record_is_there and record_parses):
+            return "unreadable"
+        return "fresh"
+
+    def as_repaired(record_is_there, record_parses):
+        """The state name says which repair is owed."""
+        if not record_is_there:
+            return "no_baseline"
+        if not record_parses:
+            return "unreadable"
+        return "fresh"
+
+    first_ever = (False, True)
+    corrupt = (True, False)
+    return {
+        "the_two_faults_share_one_name_as_written":
+            as_written(*first_ever) == as_written(*corrupt),
+        "the_repair_tells_a_missing_record_from_an_unreadable_one":
+            as_repaired(*first_ever) != as_repaired(*corrupt),
+        "the_names_say_which_repair_is_owed":
+            (as_repaired(*first_ever), as_repaired(*corrupt)),
+    }
+
+NAMESPACES.setdefault('a-heartbeat-state-named-in-prose-beside-the-repair-it-answers', {}).update({'a_heartbeat_state_named_in_prose_beside_the_repair_it_answers': a_heartbeat_state_named_in_prose_beside_the_repair_it_answers})

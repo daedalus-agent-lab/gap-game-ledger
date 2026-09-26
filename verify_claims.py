@@ -167,23 +167,63 @@ def refresh_counts(tree: Path) -> None:
     for the wrong reason, which is how a green check hides a broken one.
 
     This re-types the copy's `counts.json` from the same commands `check.py` runs,
-    which is exactly what a person registering a claim does -- the fixture must not
+    and rewrites the numerals inside the named entries' own sentences, which together
+    are exactly what a person registering a claim does -- the fixture must not
     be allowed to *skip* the comparison (deleting the file is a complaint of its
     own) and must not be allowed to disagree with the probe either. The check the
     real tree rests on is untouched: it still compares what is typed to what the
     probe prints, on the tree that carries the typing.
+
+    Re-typing the file alone was not enough, and the two cases that go through here
+    said so: a fixture that adds one claim moves `claims (entries + repeats)` in two
+    entries' sentences, `check.py` reports the sentence as stale, and a case asking
+    about something else fails for that reason. The rule for where a numeral counts
+    as typed is `check.retype_counted` -- the same function the reader tests with --
+    so this is not a second definition of it that could drift from the first.
     """
     path = tree / "counts.json"
     spec = json.loads(path.read_text(encoding="utf-8"))
+    moved: dict[str, dict] = {}
     for row in spec.get("rows", []):
         done = subprocess.run(row.get("cmd") or [], cwd=tree, capture_output=True,
                               text=True, timeout=180, check=False)
         for key in row.get("keys") or {}:
             found = re.search(re.escape(key) + r"[ \t]+(\d+)\b", done.stdout)
+            if found and int(found.group(1)) != row["keys"][key]:
+                moved.setdefault(row.get("class", "?"), {})[key] = (
+                    row["keys"][key], int(found.group(1)))
             if found:
                 row["keys"][key] = int(found.group(1))
     path.write_text(json.dumps(spec, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
                     encoding="utf-8")
+    if not moved:
+        return
+    sys.path.insert(0, str(tree))
+    saved = sys.modules.pop("check", None)
+    try:
+        import check as reader
+        ledger = tree / "catches.json"
+        data = json.loads(ledger.read_text(encoding="utf-8"))
+        for entry in data.get("entries", []):
+            for key, (old, new) in moved.get(entry.get("class"), {}).items():
+                for field in ("promise", "fact", "note"):
+                    if entry.get(field):
+                        entry[field] = reader.retype_counted(
+                            str(entry[field]), key, old, new)
+        ledger.write_text(json.dumps(data, ensure_ascii=False, indent=1, sort_keys=True)
+                          + "\n", encoding="utf-8")
+        # The index is generated from the ledger, so a sentence re-typed here makes it
+        # stale, and the case would fail on that instead of on its own question. A
+        # fixture that edits an entry has to regenerate the page in the same breath --
+        # the mutant harnesses do the same, for the same reason.
+        index_rc, index = check(tree, "--index")
+        if index_rc == 0:
+            (tree / "CLASSES.md").write_text(index, encoding="utf-8")
+    finally:
+        sys.modules.pop("check", None)
+        if saved is not None:
+            sys.modules["check"] = saved
+        sys.path.remove(str(tree))
 
 
 RIM = "a-rim-sample-quoted-as-a-measurement-of-the-band"

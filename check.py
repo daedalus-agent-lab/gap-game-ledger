@@ -1445,6 +1445,58 @@ def policy_hash() -> str:
 COUNTS = HERE / "counts.json"
 
 
+def key_words(key: str) -> list:
+    """The words of a key that a numeral has to stand beside.
+
+    Short words are dropped: `of`, `the`, `and` appear in every sentence, so a window
+    measured against them measures nothing. Four letters is where a key's own noun
+    starts (`names`, `claims`, `classes`, `registrations`, `objects`).
+    """
+    return [w for w in re.findall(r"[A-Za-z]{4,}", key)]
+
+
+def standing_patterns(key: str, form: str) -> list:
+    """The two ways a numeral stands beside the words of its own key.
+
+    Either the number comes first and the word follows (`186 classes`), or the word
+    comes first and the number follows (`classes: 186`). Both are found inside a short
+    window, and the number is required not to be part of a longer digit run and not to
+    carry a digit separator on the side that faces the word -- `1860 namespaces` and
+    `1,186` are other numbers, not this one.
+    """
+    first = [re.compile(r"(?<![\d,.])%s(?!\d)[^\d]{0,12}\b%s" % (re.escape(form), word))
+             for word in key_words(key)]
+    second = [re.compile(r"\b%s[^\d]{0,3}(?<![\d,.])%s(?!\d)" % (word, re.escape(form)))
+              for word in key_words(key)]
+    return first + second
+
+
+def stands_beside(prose: str, key: str, value: int) -> bool:
+    """True when `value`, plain or comma-grouped, stands beside a word of `key`."""
+    forms = {str(value), format(value, ",")}
+    return any(pattern.search(prose) for form in forms
+               for pattern in standing_patterns(key, form))
+
+
+def retype_counted(prose: str, key: str, old: int, new: int) -> str:
+    """Rewrite a counted numeral inside the sentence that carries it.
+
+    The repair half of the same rule `stands_beside` reads: only the occurrences that
+    stand beside the words of `key` are replaced, so a numeral belonging to another key
+    in the same sentence is left alone. Used where the number moves because the ledger
+    grew -- the typing has to follow the probe, and the rule for what counts as typing
+    is the one the reader uses rather than a second copy of it.
+    """
+    if old == new:
+        return prose
+    forms = {str(old), format(old, ",")}
+    for form in sorted(forms, key=len, reverse=True):
+        replacement = format(new, ",") if "," in form else str(new)
+        for pattern in standing_patterns(key, form):
+            prose = pattern.sub(lambda m: m.group(0).replace(form, replacement), prose)
+    return prose
+
+
 def counted_readings() -> tuple:
     """The numbers an entry types beside the check that counts them, read live.
 
@@ -1517,19 +1569,12 @@ def counted_readings() -> tuple:
                 entry = entries.get(cls) or {}
                 prose = " ".join(str(entry.get(field, ""))
                                  for field in ("promise", "fact", "note"))
-                forms = {str(want), format(want, ",")}
-                words = [w for w in re.findall(r"[A-Za-z]{4,}", key)]
                 # The number must stand beside the WORDS of its own key. A presence test
                 # over the whole entry was satisfied by a numeral in another key's slot:
                 # `311 classes / 186 registrations` left the run green while the file and
-                # the probe both counted 186 classes, so the clause bound nothing.
-                near = any(
-                    re.search(r"(?<![\d,.])%s(?!\d)[^\d]{0,12}\b%s" % (re.escape(form), word),
-                              prose)
-                    or re.search(r"\b%s[^\d]{0,3}(?<![\d,.])%s(?!\d)" % (word, re.escape(form)),
-                                 prose)
-                    for form in forms for word in words)
-                if not near:
+                # the probe both counted 186 classes, so the clause bound nothing. The rule
+                # itself lives in `stands_beside`, and its repair half in `retype_counted`.
+                if not stands_beside(prose, key, want):
                     problems.append(
                         f"{cls}: {key} is read as {want} from {' '.join(cmd)} and the "
                         f"entry's own text does not type {want} beside the words of "
