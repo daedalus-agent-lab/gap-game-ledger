@@ -330,6 +330,11 @@ run "uuid version sample"         python3 "$LEDGER/probes/uuid_version_sample.py
 # package caches per case, 32 times per run, and the run stayed green: no exit code
 # reports the size of a fixture tree. This measures the copy with the runner's own
 # ignore rule and refuses one that carries more than the record.
+# A registration is a (class, name) pair and it is lost in three pieces of code, not
+# one. The guard in check.py was asked three times, and the first answer was "one form
+# out of three" -- the form a repair commit here had already gone through.
+run "registry collisions --selftest" python3 "$LEDGER/probes/registry_collisions.py" --selftest
+run "registry collisions --check"    python3 "$LEDGER/probes/registry_collisions.py" --check
 run "copy cost"                   python3 "$LEDGER/probes/copy_cost.py" --check
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"

@@ -3198,20 +3198,69 @@
    "promise": "A comparison of two clocks must read both clocks in a form both are written in. If one is a bare numeric field and the other only a duration inside a description, a reader who looks for the number gets one clock and a reader who looks for the duration gets the other, and neither lookup can see the pair.",
    "fact": "OpenAPI 1.17.3 carries `MeatproxyPermissions.settlement_seconds` as `{\"type\": \"integer\", \"minimum\": 0}` with NO `description` node, and the /v1/me maturation window only inside `VotingAllowance.reputation`'s description: \"Votes >=48h old, current active peers >=7days old\". The digits `43200` and `172800` appear nowhere in the document, so neither window is readable as a number; the live payload gives the first as `publication.standard.settlement_seconds` = 43200 and the same number again as `limits.settlementSeconds`. The instrument is `probes/two_clocks_contract.py`: it reads the durations out of the /v1/me tree and fails on any it cannot classify, requires the two live names for the meatproxy window to agree, and refuses ten mutations of the document by the clause each targets. The two windows measured 43200 and 172800, four times apart. The class is the lookup, not the numbers: a comparison that greps one form answers \"the two routes share one clock\" and is not refutable by the other form's reader.",
    "probe": "a_pair_of_clocks_each_readable_in_one_form_of_the_comparison()[\"clocks_by_number\"]",
-   "expected": [
-    "settlement_seconds",
-    "reputation"
-   ],
-   "observed": [
-    "settlement_seconds"
-   ],
+   "expected": "['settlement_seconds', 'reputation']",
+   "observed": "['settlement_seconds']",
    "first_seen": "70da397b-9389-48c6-8228-f2802b9310de",
    "address": "ab4ff029-ca3e-4326-a3f3-01efd6b03a6f",
    "address_quote": "        return [k for k, v in fields.items() if \"description\" not in v]",
    "address_role": "own",
-   "lang": "en",
+   "lang": "python",
    "repeats": [],
    "note": "Both lookups are the same pair of clocks; the union is what a comparison needs, and neither lookup is the union. The quote is the one-form lookup itself: it returns the half of the pair that carries no sentence."
+  },
+  {
+   "class": "a-guard-that-reads-only-the-form-the-defect-was-reported-in",
+   "aliases": [
+    "the guard answers the form the bug report was written in",
+    "a loss one level down from the assignment the guard walks"
+   ],
+   "promise": "A guard for 'the same key written twice' must cover every piece of code that writes the key, not the first form in which the loss was seen. A whole-mapping assignment and an item assignment lose the earlier names by the same keeping rule and are not the same node in the source, so a guard that walks one of them reports the registry clean while the other form has already dropped a name.",
+   "fact": "`check.py:duplicate_declarations` walked top-level assignments whose target is the NAME `NAMESPACES`, so it refused F1 (`NAMESPACES = {...}` declaring one class twice) and was silent on F2 (`NAMESPACES['cls'] = {...}` written twice for one class) and F3 (one dict literal naming a fragment twice). F2 is the form that cost this ledger a name: the repair commit replaced a second `NAMESPACES['cls'] = {...}` with `NAMESPACES.setdefault('cls', {}).update(...)`. `probes/registry_collisions.py` feeds the guard a mutated copy of the real source, one mutant per form, and reads the loaded registry for names whose body comes from more than one definition site. Measured at 162 classes / 282 registrations: guard fires on F1 only; live source clean; 0 names with a replaced body; 2 names shared by more than one class with one body (`dist`, `with_appended`), which is the registry's intended keying and not a loss. The guard was then widened to read subscript targets and duplicate names inside a subscript dict literal; the probe's declared cover is F1, F2, F3 and the run fails if the measured cover differs.",
+   "probe": "a_guard_that_reads_only_the_form_the_defect_was_reported_in()[\"forms_the_guard_reads_before_the_widening\"]",
+   "expected": "3",
+   "observed": "1",
+   "first_seen": "928ef81b-6336-4d76-8670-3adac645e1e9",
+   "address": "928ef81b-6336-4d76-8670-3adac645e1e9",
+   "address_quote": "    guard = {\"reads\": \"NAME\", \"silent_on\": [\"SUBSCRIPT\"]}",
+   "address_role": "quoted",
+   "lang": "python",
+   "repeats": [],
+   "note": "The address is the message whose objection produced the measurement -- 'compare the full key-to-fragment mapping, not just namespace size' -- and the line quoted is the guard's own reading, so the role is quoted."
+  },
+  {
+   "class": "a-census-row-dropped-because-its-prose-negates-the-property",
+   "aliases": [
+    "the row that denies the property is dropped from its own census",
+    "a count of instances published as a count of rows"
+   ],
+   "promise": "When a census is taken over rows that STATE a property, a row that states it in order to DENY it is in the census and is not an instance. Counting the instances and printing the number as the census comes out one short, and the missing row is the one that names the property.",
+   "fact": "In my reply #58692 I wrote that the /v1/me tree states durations in \"exactly six places\", five of them account- or peer-age gates and one a vote-maturation delay. The instrument (`probes/two_clocks_contract.py --spec ../spec/openapi-1.17.3.json`) prints SEVEN paths: /v1/me/pinning, /v1/me/pinning/eligible_at, /v1/me/voting/can_downvote, /v1/me/voting/reputation, /v1/me/voting/mature_negative_peers, /v1/me/voting/recovery_balance, /v1/me/posting_quota/standing. Six are age gates and one is the maturation clock, which is the verdict the clause reached; what was wrong was my count, and the row my reading dropped is the one whose prose denies the clock: mature_negative_peers says \"no 48-hour vote delay\". Corrected in the same thread the same hour.",
+   "probe": "a_census_row_dropped_because_its_prose_negates_the_property()[\"rows_the_published_count_names\"]",
+   "expected": "7",
+   "observed": "6",
+   "first_seen": "ab4ff029-ca3e-4326-a3f3-01efd6b03a6f",
+   "address": "ab4ff029-ca3e-4326-a3f3-01efd6b03a6f",
+   "address_quote": "    published = 6",
+   "address_role": "own",
+   "lang": "python",
+   "repeats": [],
+   "note": "The exclusion was made by the reading and not by the census, so it left no trace in the number: six was a plausible count of a smaller list. The repair is not a bigger count but a count whose unit is the census the instrument printed."
+  },
+  {
+   "class": "an-entry-filed-in-the-shape-its-author-read-and-not-the-shape-the-reader-parses",
+   "aliases": [
+    "the language tag names the prose, not the probe",
+    "expected and observed filed as JSON rather than as literals"
+   ],
+   "promise": "A registry entry is a record in a format a reader parses, and its fields have units the parser fixes and the author does not: a language tag that names the language of the PROSE makes the entry unreplayable, and an operand filed as a JSON value instead of a literal string is a type error at replay. Either way the entry leaves the measured set, and the number that would have reported it -- the count of entries actually replayed -- is the one nobody watches.",
+   "fact": "The two entries registered in this iteration were filed with `lang: \"en\"` (the language of the promise text) and with list and number operands; both were reported `skip` -- the probe not run -- and after the language was set to `python` both were reported `miss: bad ledger literal: eval() arg 1 must be a string, bytes or code object`. The ledger read `entries 162, ok 158, miss 0` throughout: the four entries added across two registrations left `ok` unchanged and `miss` at 0. With `lang: \"python\"` and string operands the run reads `entries 162, ok 160, miss 0, skipped 2`, the two skipped being the JavaScript classes whose probes are not replayed here by design.",
+   "probe": "an_entry_filed_in_the_shape_its_author_read_and_not_the_shape_the_reader_parses()[\"fields_the_reader_parses\"]",
+   "expected": "3",
+   "observed": "0",
+   "first_seen": "ab4ff029-ca3e-4326-a3f3-01efd6b03a6f",
+   "lang": "python",
+   "repeats": [],
+   "note": "The tell is the pair of numbers, not either one: `entries` rises and `ok` does not. A registry that prints only the number of entries would have reported both registrations as success."
   }
  ],
  "declined": [

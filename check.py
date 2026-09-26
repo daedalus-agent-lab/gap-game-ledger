@@ -903,27 +903,62 @@ def duplicate_declarations() -> list[str]:
     first and answered by the copy nobody looked at: the dead one carries names
     the live one has never heard of. The source is read as text because the
     collision is invisible once the module is importable.
+
+    The same keeping rule works one level down, and the two earlier versions of
+    this function did not read it there. A registration is a (class, name) pair,
+    and it is lost in three forms that are three different pieces of code:
+
+      F1  `NAMESPACES = {...}` assigns the WHOLE dict; a class declared twice in
+          that literal keeps the last mapping and drops every name the first one
+          carried -- read from the first version of this function;
+      F2  `NAMESPACES['cls'] = {...}` for a class ASSIGNED BEFORE keeps the last
+          mapping the same way -- what actually cost this ledger a name, and what
+          this function stayed silent about until `probes/registry_collisions.py`
+          fed it a mutated copy of the source, one mutant per form;
+      F3  one dict literal naming the same fragment twice, so the first body is
+          replaced rather than dropped.
+
+    A subscript target is read; `NAMESPACES.setdefault(...).update(...)` is not an
+    assignment at all, so the repair for F2 is not reported as a repeat of F2.
     """
     src = Path("fragments.py").read_text(encoding="utf-8")
     tree = ast.parse(src)
     out = []
+    subscripted = {}
     for node in tree.body:
         if not isinstance(node, ast.Assign):
             continue
-        if not any(isinstance(t, ast.Name) and t.id == "NAMESPACES" for t in node.targets):
-            continue
-        outer = node.value
-        keys = [k.value for k in outer.keys if isinstance(k, ast.Constant)]
-        for k in set(keys):
-            if keys.count(k) > 1:
-                out.append(f"NAMESPACES declares {k!r} {keys.count(k)} times; the later mapping is live")
-        for value in outer.values:
-            if not isinstance(value, ast.Dict):
-                continue
-            inner = [k.value for k in value.keys if isinstance(k, ast.Constant)]
-            for k in set(inner):
-                if inner.count(k) > 1:
-                    out.append(f"a class declares the fragment {k!r} {inner.count(k)} times")
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id == "NAMESPACES":
+                outer = node.value
+                if not isinstance(outer, ast.Dict):
+                    continue
+                keys = [k.value for k in outer.keys if isinstance(k, ast.Constant)]
+                for k in set(keys):
+                    if keys.count(k) > 1:
+                        out.append(f"NAMESPACES declares {k!r} {keys.count(k)} times; the later mapping is live")
+                for value in outer.values:
+                    if not isinstance(value, ast.Dict):
+                        continue
+                    inner = [k.value for k in value.keys if isinstance(k, ast.Constant)]
+                    for k in set(inner):
+                        if inner.count(k) > 1:
+                            out.append(f"a class declares the fragment {k!r} {inner.count(k)} times")
+            elif (isinstance(target, ast.Subscript)
+                  and isinstance(target.value, ast.Name) and target.value.id == "NAMESPACES"
+                  and isinstance(target.slice, ast.Constant)):
+                cls = target.slice.value
+                subscripted.setdefault(cls, 0)
+                subscripted[cls] += 1
+                if isinstance(node.value, ast.Dict):
+                    inner = [k.value for k in node.value.keys if isinstance(k, ast.Constant)]
+                    for k in set(inner):
+                        if inner.count(k) > 1:
+                            out.append(f"a class declares the fragment {k!r} {inner.count(k)} times")
+    for cls, n in subscripted.items():
+        if n > 1:
+            out.append(f"NAMESPACES['{cls}'] is assigned {n} times; "
+                       f"the later mapping is live and the earlier names are gone")
     return out
 
 

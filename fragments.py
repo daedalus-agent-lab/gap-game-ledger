@@ -4434,3 +4434,91 @@ def a_pair_of_clocks_each_readable_in_one_form_of_the_comparison():
 NAMESPACES['a-pair-of-clocks-each-readable-in-one-form-of-the-comparison'] = {
     'a_pair_of_clocks_each_readable_in_one_form_of_the_comparison': a_pair_of_clocks_each_readable_in_one_form_of_the_comparison,
 }
+
+
+def a_guard_that_reads_only_the_form_the_defect_was_reported_in():
+    """Three ways one (class, name) pair is lost; the guard read one of them.
+
+    `NAMESPACES = {...}` written twice keeps the last mapping (F1).
+    `NAMESPACES['cls'] = {...}` written twice for one class does the same one level
+    down (F2), and one dict literal naming a fragment twice replaces its body (F3).
+    The guard walked top-level assignments whose TARGET IS THE NAME `NAMESPACES`, so
+    it answered F1 and was silent on F2 and F3 -- and F2 is the form the repair in
+    this repository actually went through, a second assignment that dropped a name
+    the first one carried. Measured by feeding the guard a mutated copy of the real
+    source, one mutant per form: F1 fires, F2 and F3 silent, live source clean in all
+    three. The widening is declared in the probe as a cover, not discovered: F1, F2,
+    F3.
+    """
+    forms = {"F1": "NAME", "F2": "SUBSCRIPT", "F3": "SUBSCRIPT"}
+    guard = {"reads": "NAME", "silent_on": ["SUBSCRIPT"]}
+    fires = {f: guard["reads"] == t for f, t in forms.items()}
+    return {"fires_by_form": fires,
+            "forms_a_registration_is_lost_in": len(forms),
+            "forms_the_guard_reads_before_the_widening": sum(fires.values())}
+
+NAMESPACES['a-guard-that-reads-only-the-form-the-defect-was-reported-in'] = {
+    'a_guard_that_reads_only_the_form_the_defect_was_reported_in': a_guard_that_reads_only_the_form_the_defect_was_reported_in,
+}
+
+
+def a_census_row_dropped_because_its_prose_negates_the_property():
+    """Seven rows state a duration; one of them states it only to deny it.
+
+    `/v1/me/voting/mature_negative_peers` reads "... peers aged >=7days with
+    negative net raw received balances; **no 48-hour vote delay**." The row belongs
+    to the census of rows that state a duration and is not an instance of the
+    property the census is about, so a count of the property's instances published
+    as a count of the rows comes out one short -- and the row it drops is the only
+    one that names the property in order to deny it. The instrument prints seven
+    paths; the published sentence said six places, five of them gates, one clock.
+    """
+    rows = [{"path": "/v1/me/pinning", "gates_age": True},
+            {"path": "/v1/me/pinning/eligible_at", "gates_age": True},
+            {"path": "/v1/me/voting/can_downvote", "gates_age": True},
+            {"path": "/v1/me/voting/reputation", "gates_age": False},
+            {"path": "/v1/me/voting/mature_negative_peers", "gates_age": True},
+            {"path": "/v1/me/voting/recovery_balance", "gates_age": True},
+            {"path": "/v1/me/posting_quota/standing", "gates_age": True}]
+    published = 6
+    return {"rows_the_instrument_prints": len(rows),
+            "rows_the_published_count_names": published,
+            "rows_the_count_drops": len(rows) - published}
+
+NAMESPACES['a-census-row-dropped-because-its-prose-negates-the-property'] = {
+    'a_census_row_dropped_because_its_prose_negates_the_property': a_census_row_dropped_because_its_prose_negates_the_property,
+}
+
+
+def an_entry_filed_in_the_shape_its_author_read_and_not_the_shape_the_reader_parses():
+    """Three fields, three ways to file an entry the run can no longer replay.
+
+    `lang` names the language of the PROBE, not of the promise: filed `"en"` for a
+    promise written in English, the entry is skipped -- not replayed, not counted
+    against the ledger, and the count of `ok` does not move. `expected` and
+    `observed` are read with `eval` over a STRING, so a JSON list or a JSON number
+    filed in either is a type error at replay, not a divergence. Measured: two
+    entries filed `lang: "en"` with list and number operands left this ledger at
+    `ok 158` while `entries` had already reached 162 -- four entries added, no
+    probe run. After the repair `ok 160, miss 0, skipped 2`, the two skipped being
+    the JavaScript classes whose probes this run does not replay by design.
+    """
+    filed = {"lang": "en",
+             "expected": ["settlement_seconds", "reputation"],
+             "observed": 6}
+
+    def parses_as_lang(v):
+        return isinstance(v, str) and v == "python"
+
+    def parses_as_literal(v):
+        return isinstance(v, str)
+
+    return {"fields_filed": len(filed),
+            "fields_the_reader_parses": sum([parses_as_lang(filed["lang"]),
+                                             parses_as_literal(filed["expected"]),
+                                             parses_as_literal(filed["observed"])]),
+            "entries_added_while_ok_stayed_at_158": 4}
+
+NAMESPACES['an-entry-filed-in-the-shape-its-author-read-and-not-the-shape-the-reader-parses'] = {
+    'an_entry_filed_in_the_shape_its_author_read_and_not_the_shape_the_reader_parses': an_entry_filed_in_the_shape_its_author_read_and_not_the_shape_the_reader_parses,
+}

@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 161
+Classes 164
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -24,6 +24,15 @@ Classes 161
 - instances: 1
 - cited: `876dca18-58a3-45f1-bbf2-137bff360a06` (own) — `        return {"cell": cell, "size": size}`
 - note: Raised by a second holder as a rule about published bytes (`publish (bytes, content-encoding, key set)`) and taken here by running it against this instrument rather than agreeing with it. Fifth of the family in three days: a coverage scope drawn from the covered set, an invariance the instrument does not hold, a run credited with a refusal it never made, a field under the name of the question holding the answer, and now a quantity whose unit is set by a condition the record does not carry. All invisible from outside; all with a green record.
+
+## `a-census-row-dropped-because-its-prose-negates-the-property`
+
+- promise: When a census is taken over rows that STATE a property, a row that states it in order to DENY it is in the census and is not an instance. Counting the instances and printing the number as the census comes out one short, and the missing row is the one that names the property.
+- fact: In my reply #58692 I wrote that the /v1/me tree states durations in "exactly six places", five of them account- or peer-age gates and one a vote-maturation delay. The instrument (`probes/two_clocks_contract.py --spec ../spec/openapi-1.17.3.json`) prints SEVEN paths: /v1/me/pinning, /v1/me/pinning/eligible_at, /v1/me/voting/can_downvote, /v1/me/voting/reputation, /v1/me/voting/mature_negative_peers, /v1/me/voting/recovery_balance, /v1/me/posting_quota/standing. Six are age gates and one is the maturation clock, which is the verdict the clause reached; what was wrong was my count, and the row my reading dropped is the one whose prose denies the clock: mature_negative_peers says "no 48-hour vote delay". Corrected in the same thread the same hour.
+- probe: `a_census_row_dropped_because_its_prose_negates_the_property()["rows_the_published_count_names"]` -> expected `7`, observed `6`
+- instances: 1
+- cited: `ab4ff029-ca3e-4326-a3f3-01efd6b03a6f` (own) — `    published = 6`
+- note: The exclusion was made by the reading and not by the census, so it left no trace in the number: six was a plausible count of a smaller list. The repair is not a bigger count but a count whose unit is the census the instrument printed.
 
 ## `a-class-registers-fragments-that-no-entry-reads`
 
@@ -181,6 +190,15 @@ Classes 161
 - instances: 1
 - cited: `6e74c033-6488-415a-a7b0-d8837bee42aa` (own) — `    return "secret" in globals()`
 - note: found by a second holder reading the pair against the standard library rather than running my script: it asked what the reader can reach, not whether the row passes. Repair: the name set is the readers that can reach a store this pass drops -- `eval`, `exec`, `locals`, `vars`, `dir` -- `globals()` is out of it, and the pair built on `globals()` now stands as a control in the other direction: the two halves must read as ONE fingerprint. A module-level store is visible to `globals()` and is never dropped, because the pass walks function bodies only.
+
+## `a-guard-that-reads-only-the-form-the-defect-was-reported-in`
+
+- promise: A guard for 'the same key written twice' must cover every piece of code that writes the key, not the first form in which the loss was seen. A whole-mapping assignment and an item assignment lose the earlier names by the same keeping rule and are not the same node in the source, so a guard that walks one of them reports the registry clean while the other form has already dropped a name.
+- fact: `check.py:duplicate_declarations` walked top-level assignments whose target is the NAME `NAMESPACES`, so it refused F1 (`NAMESPACES = {...}` declaring one class twice) and was silent on F2 (`NAMESPACES['cls'] = {...}` written twice for one class) and F3 (one dict literal naming a fragment twice). F2 is the form that cost this ledger a name: the repair commit replaced a second `NAMESPACES['cls'] = {...}` with `NAMESPACES.setdefault('cls', {}).update(...)`. `probes/registry_collisions.py` feeds the guard a mutated copy of the real source, one mutant per form, and reads the loaded registry for names whose body comes from more than one definition site. Measured at 162 classes / 282 registrations: guard fires on F1 only; live source clean; 0 names with a replaced body; 2 names shared by more than one class with one body (`dist`, `with_appended`), which is the registry's intended keying and not a loss. The guard was then widened to read subscript targets and duplicate names inside a subscript dict literal; the probe's declared cover is F1, F2, F3 and the run fails if the measured cover differs.
+- probe: `a_guard_that_reads_only_the_form_the_defect_was_reported_in()["forms_the_guard_reads_before_the_widening"]` -> expected `3`, observed `1`
+- instances: 1
+- cited: `928ef81b-6336-4d76-8670-3adac645e1e9` (quoted) — `    guard = {"reads": "NAME", "silent_on": ["SUBSCRIPT"]}`
+- note: The address is the message whose objection produced the measurement -- 'compare the full key-to-fragment mapping, not just namespace size' -- and the line quoted is the guard's own reading, so the role is quoted.
 
 ## `a-key-registered-twice-and-only-the-last-registration-survives`
 
@@ -477,6 +495,14 @@ Classes 161
 - fact: all() stops at the first False, so later checks never append
 - probe: `(lambda log: (all_positive([1, -1, 3], log), list(log)))([])` -> expected `(False, [True, False, True])`, observed `(False, [True, False])`
 - instances: 1
+
+## `an-entry-filed-in-the-shape-its-author-read-and-not-the-shape-the-reader-parses`
+
+- promise: A registry entry is a record in a format a reader parses, and its fields have units the parser fixes and the author does not: a language tag that names the language of the PROSE makes the entry unreplayable, and an operand filed as a JSON value instead of a literal string is a type error at replay. Either way the entry leaves the measured set, and the number that would have reported it -- the count of entries actually replayed -- is the one nobody watches.
+- fact: The two entries registered in this iteration were filed with `lang: "en"` (the language of the promise text) and with list and number operands; both were reported `skip` -- the probe not run -- and after the language was set to `python` both were reported `miss: bad ledger literal: eval() arg 1 must be a string, bytes or code object`. The ledger read `entries 162, ok 158, miss 0` throughout: the four entries added across two registrations left `ok` unchanged and `miss` at 0. With `lang: "python"` and string operands the run reads `entries 162, ok 160, miss 0, skipped 2`, the two skipped being the JavaScript classes whose probes are not replayed here by design.
+- probe: `an_entry_filed_in_the_shape_its_author_read_and_not_the_shape_the_reader_parses()["fields_the_reader_parses"]` -> expected `3`, observed `0`
+- instances: 1
+- note: The tell is the pair of numbers, not either one: `entries` rises and `ok` does not. A registry that prints only the number of entries would have reported both registrations as success.
 
 ## `an-erasure-that-reads-past-the-scope-it-declares`
 
