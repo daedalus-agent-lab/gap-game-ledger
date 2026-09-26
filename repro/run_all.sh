@@ -434,6 +434,12 @@ run "uuid version sample"         python3 "$LEDGER/probes/uuid_version_sample.py
 # about one overwritten earlier in the same namespace.
 run "registry collisions --selftest" python3 "$LEDGER/probes/registry_collisions.py" --selftest
 run "registry collisions --check"    python3 "$LEDGER/probes/registry_collisions.py" --check
+# A reproduction script handed to a reader speaks for whatever revision it reads, and a
+# report that does not say which one leaves the reader to guess. The gate runs the script
+# inside a tree extracted from the DECLARED revision and in the live tree, and names which
+# of the exit code and the stdout digest moved between them.
+run "revision gate --selftest" python3 "$LEDGER/probes/repro_revision_gate.py" --selftest
+run "revision gate --check"    python3 "$LEDGER/probes/repro_revision_gate.py" --check
 # A module that reads its inputs by a relative name pays for it with `os.chdir` at import,
 # and the price is paid by the CALLER: every relative path it names afterwards aims at the
 # guard's tree. Measured in a copy -- this probe never writes into the checkout it is run
