@@ -33,7 +33,7 @@ DEFAULT_SPECS = (
 
 
 def load_spec(path):
-    return json.loads(Path(path).read_text())
+    return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
 def find_spec(explicit=None):
@@ -251,7 +251,7 @@ def main(argv):
     routes = []
     problems = []
     for f in files:
-        doc = json.loads(Path(f).read_text())
+        doc = json.loads(Path(f).read_text(encoding="utf-8"))
         prov = doc.get("_provenance") or {}
         claimed = prov.get("route")
         body = doc

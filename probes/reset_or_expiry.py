@@ -197,7 +197,7 @@ def main():
         print("  `--selftest` for the rule, which is measured on the document built here,")
         print("  or pass --spec with a schema of your own.")
         return 2
-    doc = json.loads(Path(args.spec).read_text())
+    doc = json.loads(Path(args.spec).read_text(encoding="utf-8"))
     print(f"specification: {args.spec}")
     print(f"date-shaped suffixes read as such: {', '.join(DATE_SUFFIXES)}\n")
     report(classify(doc))

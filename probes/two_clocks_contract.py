@@ -314,8 +314,8 @@ def main(argv=None):
     if not spec_path.exists():
         print("MISSING spec %s" % spec_path, file=sys.stderr)
         return 2
-    spec = json.loads(spec_path.read_text())
-    live = json.loads(Path(args.live).read_text()) if args.live else None
+    spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    live = json.loads(Path(args.live).read_text(encoding="utf-8")) if args.live else None
 
     if args.selftest:
         return selftest(spec, live)

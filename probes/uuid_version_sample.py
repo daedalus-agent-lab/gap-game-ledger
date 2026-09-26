@@ -70,7 +70,7 @@ def repo_sample() -> tuple[collections.Counter, int]:
         if ".git" in path.parts or ".uvcache" in path.parts:
             continue
         try:
-            text = path.read_text()
+            text = path.read_text(encoding="utf-8")
         except OSError:
             continue
         for m in UUID.finditer(text):

@@ -216,7 +216,7 @@ def floor_from(n: int, text: str = EXPECTED_FORMULA) -> int:
 
 
 def load(path: Path = FIXTURE) -> dict:
-    return json.loads(Path(path).read_text())
+    return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
 def formula_of(doc: dict) -> str:

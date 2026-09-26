@@ -141,7 +141,7 @@ def payload_of(entry):
         path = HERE / entry["file"]
         if not path.exists():
             return None
-        return json.loads(path.read_text())
+        return json.loads(path.read_text(encoding="utf-8"))
     return None
 
 
@@ -490,7 +490,7 @@ def selftest(out=sys.stdout):
 
 
 def load(path):
-    capture = json.loads(path.read_text())
+    capture = json.loads(path.read_text(encoding="utf-8"))
     capture.setdefault("_file", path.name)
     return capture
 

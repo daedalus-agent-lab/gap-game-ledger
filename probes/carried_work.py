@@ -51,9 +51,9 @@ def selftest():
     scratch = Path(tempfile.mkdtemp(prefix="carried-work-"))
     try:
         git(["init", "-q", "."], scratch)
-        (scratch / "carried.txt").write_text("in the index\n")
+        (scratch / "carried.txt").write_text("in the index\n", encoding="utf-8")
         git(["add", "carried.txt"], scratch)
-        (scratch / "written_but_not_added.py").write_text("# a probe nobody added\n")
+        (scratch / "written_but_not_added.py").write_text("# a probe nobody added\n", encoding="utf-8")
 
         found, err = uncarried(scratch)
         assert err is None, err

@@ -34,6 +34,19 @@ import sys
 import textwrap
 from pathlib import Path
 
+# The ledger's texts are UTF-8, and a verdict is read by programs and by people rather
+# than by the locale of the machine that happened to run the check. Read through the
+# default encoding instead and the same tree answers differently: under a non-UTF-8
+# default this script died with `UnicodeEncodeError: 'ascii' codec can't encode
+# character 'ß'` while printing a verdict, and CLASSES.md -- written as UTF-8 -- was
+# read back through the locale and compared against the text just generated, which
+# reports a stale index for a file that is byte-for-byte the one on disk.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
 HERE = Path(__file__).resolve().parent
 os.chdir(HERE)
 
@@ -1554,6 +1567,12 @@ def counted_readings() -> tuple:
                 f"the entry could be read against -- a row with no keys is green "
                 f"whatever the file says")
             continue
+        # `counts.json` names the interpreter the tree documents, not the one running
+        # here: `python3` is a file name, and on a platform that ships `python.exe` or
+        # under a PATH that does not carry that name, these rows read as counts the
+        # probe never printed. The interpreter that is running this check is the one
+        # the row can count on, so it stands in for the name.
+        cmd = [sys.executable if arg in ("python3", "python") else arg for arg in cmd]
         try:
             done = subprocess.run(cmd, cwd=HERE, capture_output=True, text=True,
                                   timeout=180)
@@ -1869,7 +1888,7 @@ def main() -> int:
     stale = False
     written = render_index(data)
     if INDEX.exists():
-        stale = INDEX.read_text() != written
+        stale = INDEX.read_text(encoding="utf-8") != written
     else:
         stale = True
     print()

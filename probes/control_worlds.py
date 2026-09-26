@@ -100,9 +100,9 @@ def drive(mod, tamper: bool):
         table = work / "ladder_rungs.json"
         shutil.copy(ROOT / "probes" / "ladder_rungs.json", table)
         if tamper:
-            rec = json.loads(table.read_text())
+            rec = json.loads(table.read_text(encoding="utf-8"))
             rec["cells"][0]["got"] = [599, 999999, "deadbeefdeadbeef"]
-            table.write_text(json.dumps(rec))
+            table.write_text(json.dumps(rec), encoding="utf-8")
         mod.one = fake
         rc = mod.main(["--check"], table_path=str(table), quiet=True)
         return rc, list(swapped), list(seen)

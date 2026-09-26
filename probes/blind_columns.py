@@ -807,7 +807,7 @@ def selftest_out_of_scope():
     hidden = scratch / "hidden_record.json"
     try:
         scratch.mkdir(parents=True, exist_ok=True)
-        hidden.write_text(json.dumps({"items": [{"a": 1}, {"a": 2}]}))
+        hidden.write_text(json.dumps({"items": [{"a": 1}, {"a": 2}]}), encoding="utf-8")
         examined, declared, unclassified, not_content = repo_records()
         named = ".probe" in " ".join(not_content) or any(
             "hidden_record" in line for line in not_content)

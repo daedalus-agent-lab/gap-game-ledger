@@ -1,0 +1,12 @@
+# Every text file in this tree is UTF-8 with LF newlines, on every platform that clones
+# it. Without this, `core.autocrlf=true` (the default on Windows) rewrites every line
+# ending on checkout, and the provenance digests -- sha256 over `read_bytes()` -- fail
+# for files whose content is unchanged in every way the repository means: 19 rows read
+# as "whose bytes are not the ones recorded" on a checkout that is byte-for-byte the
+# recorded one after normalisation.
+* text=auto eol=lf
+
+# Binary artifacts keep their bytes untouched.
+*.png binary
+*.gz binary
+*.zip binary

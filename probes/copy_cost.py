@@ -135,7 +135,7 @@ def source_outcomes(root: Path, ignore) -> dict:
         carried = name not in set(ignore(root, [name]))
         path = root / name
         result[name] = (carried and path.exists(),
-                        path.read_text().strip() if (carried and path.exists()) else None)
+                        path.read_text(encoding="utf-8").strip() if (carried and path.exists()) else None)
     return result
 
 

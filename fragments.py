@@ -4630,11 +4630,11 @@ def an_exit_code_that_belongs_to_the_launcher_not_to_the_work():
 
     work = Path(tempfile.mkdtemp(prefix="launcher-")) / "work.log"
     inner = "echo started > %s; sleep 15; echo finished >> %s; exit 3" % (
-        shlex.quote(str(work)), shlex.quote(str(work)))
+        shlex.quote(work.as_posix()), shlex.quote(work.as_posix()))
     # the launcher as written: start the work, wait for its first line so that the
     # reading below cannot race it, answer, and leave the work running
     launcher = ("nohup bash -c %s >/dev/null 2>&1 & while [ ! -s %s ]; do sleep 0.01; "
-                "done; echo launched" % (shlex.quote(inner), shlex.quote(str(work))))
+                "done; echo launched" % (shlex.quote(inner), shlex.quote(work.as_posix())))
     rc = subprocess.run(["bash", "-c", launcher], capture_output=True, text=True)
     text = work.read_text(encoding="utf-8") if work.exists() else ""
     return {"exit_code_of_the_launcher": rc.returncode,
@@ -6403,3 +6403,188 @@ def an_instrument_cited_for_a_half_of_the_repair_it_cannot_reach():
     return as_written
 
 NAMESPACES.setdefault('an-instrument-cited-for-a-half-of-the-repair-it-cannot-reach', {}).update({'an_instrument_cited_for_a_half_of_the_repair_it_cannot_reach': an_instrument_cited_for_a_half_of_the_repair_it_cannot_reach})
+
+
+def _readings_of_one_verdict_on_four_machines():
+    """Both readings; the probe returns the first, the ledger's `expected` holds the second.
+
+    Each machine is a pair: the encoding the process reads and writes text files with,
+    and the encoding of the stream the verdict is printed to. The tree's files are UTF-8
+    in every case -- what changes is the machine.
+
+        machine                     as written                     repaired
+        utf-8 / utf-8               ok                             ok
+        ANSI_X3.4-1968 / same       dies printing the verdict       ok
+        cp1252 / cp1252             the index read as stale         ok
+        utf-8 / ANSI_X3.4-1968      dies printing the verdict       ok
+    """
+    VERDICT = "ok    a-reachability-check quoted as a fact   reachable(\u00df) -> True"
+    INDEX_TEXT = "## a-name with a dash \u2014 and a quotation \u201c\u201d\n"
+
+    def as_written(preferred, stream):
+        """Generate the index, read it back, print the verdict -- naming no encoding."""
+        try:
+            VERDICT.encode(stream, "strict")
+        except UnicodeEncodeError:
+            return "no verdict printed (UnicodeEncodeError)"
+        try:
+            read_back = INDEX_TEXT.encode("utf-8").decode(preferred)
+        except UnicodeDecodeError:
+            return "no verdict printed (UnicodeDecodeError)"
+        if read_back != INDEX_TEXT:
+            return "STALE CLASSES.md does not match the ledger"
+        return "ok"
+
+    def as_repaired(preferred, stream):
+        """The same run with the encodings named: utf-8 at the stream and at the file."""
+        del preferred, stream
+        try:
+            VERDICT.encode("utf-8", "strict")
+        except UnicodeEncodeError:
+            return "no verdict printed (UnicodeEncodeError)"
+        read_back = INDEX_TEXT.encode("utf-8").decode("utf-8")
+        if read_back != INDEX_TEXT:
+            return "STALE CLASSES.md does not match the ledger"
+        return "ok"
+
+    machines = (("utf-8", "utf-8"), ("ANSI_X3.4-1968", "ANSI_X3.4-1968"),
+                ("cp1252", "cp1252"), ("utf-8", "ANSI_X3.4-1968"))
+    written = {m: as_written(*m) for m in machines}
+    repaired = {m: as_repaired(*m) for m in machines}
+
+    def shape(readings):
+        return {
+            "the_verdict_is_the_same_on_every_machine":
+                len(set(readings.values())) == 1,
+            "the_verdict_on_this_machine_is_ok": readings[("utf-8", "utf-8")] == "ok",
+            "machines_the_verdict_moves_on":
+                sum(1 for v in readings.values() if v != "ok"),
+            "verdict_per_machine": {"/".join(m): readings[m] for m in machines},
+        }
+
+    return shape(written), shape(repaired)
+
+
+def a_verdict_taken_in_the_encoding_of_the_machine_that_ran_it():
+    """The verdict this tree's own entry point gives on four machines, as written."""
+    return _readings_of_one_verdict_on_four_machines()[0]
+
+
+def _readings_of_counts_taken_through_a_name():
+    """Both readings of four rows, each naming an interpreter the machine may not carry.
+
+        the row names      the machine carries        as written            repaired
+        python3            python3                    runs, counts          runs, counts
+        python3            only `python`              no such file          runs, counts
+        python3            only an absolute path      no such file          runs, counts
+        python               python3                   no such file          runs, counts
+
+    The repaired reading is the row taken through the interpreter that is running the
+    check (`sys.executable`), which is a file this machine certainly carries.
+    """
+    ROWS = [("python3", "python3"), ("python3", "python"),
+            ("python3", "/usr/local/bin/python3"), ("python", "python3")]
+    RUNNING = "python3"
+
+    def as_written(row_names, on_path):
+        return "runs, counts" if row_names in on_path else (
+            "no such file or directory: %r" % row_names)
+
+    def as_repaired(row_names, on_path):
+        del row_names, on_path
+        return "runs, counts" if RUNNING else "no such file or directory"
+
+    written = {r + " via " + p: as_written(r, (p,)) for r, p in ROWS}
+    repaired = {r + " via " + p: as_repaired(r, (p,)) for r, p in ROWS}
+
+    def shape(readings):
+        return {
+            "every_row_measured_a_number": all(v == "runs, counts" for v in readings.values()),
+            "rows_that_never_ran": sum(1 for v in readings.values() if v != "runs, counts"),
+            "the_row_that_never_ran_is_reported_as_a_count_that_differs":
+                any(v != "runs, counts" for v in readings.values()),
+            "answer_per_row": readings,
+        }
+
+    return shape(written), shape(repaired)
+
+
+def a_count_taken_through_a_name_the_machine_need_not_carry():
+    """The three COUNT rows of this ledger, run on a machine whose PATH lacks `python3`."""
+    return _readings_of_counts_taken_through_a_name()[0]
+
+
+def _readings_of_a_digest_over_two_checkouts():
+    """One text, two checkouts, one recorded digest; both readings computed here."""
+    import hashlib
+    LF = ("def dedupe(rows):\n    seen = set()\n"
+          "    return [r for r in rows if not (r in seen or seen.add(r))]\n")
+    recorded = hashlib.sha256(LF.encode("utf-8")).hexdigest()
+
+    def as_written(text):
+        """The bytes this platform's checkout produced, hashed as they lie."""
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+    def as_repaired(text):
+        """The bytes the repository records: the line-ending rule belongs to the repo."""
+        return hashlib.sha256(text.replace("\r\n", "\n").encode("utf-8")).hexdigest()
+
+    crlf = LF.replace("\n", "\r\n")
+    written = {"lf_checkout_matches_the_recorded_digest": as_written(LF) == recorded,
+               "crlf_checkout_matches_the_recorded_digest": as_written(crlf) == recorded}
+    repaired = {"lf_checkout_matches_the_recorded_digest": as_repaired(LF) == recorded,
+                "crlf_checkout_matches_the_recorded_digest": as_repaired(crlf) == recorded}
+
+    def shape(readings):
+        return {
+            "every_checkout_produces_the_recorded_bytes": all(readings.values()),
+            "checkouts_that_read_as_tampered": sum(1 for v in readings.values() if not v),
+            "digest_per_checkout": {"recorded": recorded[:16], "lf": as_written(LF)[:16],
+                                    "crlf": as_written(crlf)[:16]},
+            "per_checkout": readings,
+        }
+
+    return shape(written), shape(repaired)
+
+
+def a_digest_over_bytes_the_checkout_was_allowed_to_rewrite():
+    """The 19 provenance digests, read on a checkout whose platform rewrites line endings."""
+    return _readings_of_a_digest_over_two_checkouts()[0]
+
+
+def the_record_a_rejected_run_replaces_under_a_hijacked_name():
+    """A second sighting of the class, on the shipped runner: a row whose name is not the
+    item's name. The line the first half of the repair stands on is quoted here:
+
+        if [ "$record_ok" = 1 ]; then
+          mv "$newreg" "$reg"
+
+    With the write gated on the row check the record beside the tree is the seed after a
+    refused run; without the gate the refused run's record stands there instead.
+    """
+    SEED = "the record of the previous run"
+
+    def after_a_refused_run(gated):
+        rejected = "a record carrying a name the run never used"
+        return SEED if gated else rejected
+
+    return after_a_refused_run(False) == SEED
+
+
+def the_seed_stands_after_a_refused_run_when_the_write_is_gated():
+    """The same run with the write inside the row check's verdict."""
+    SEED = "the record of the previous run"
+
+    def after_a_refused_run(gated):
+        rejected = "a record carrying a name the run never used"
+        return SEED if gated else rejected
+
+    return after_a_refused_run(True) == SEED
+
+NAMESPACES.setdefault('a-verdict-taken-in-the-encoding-of-the-machine-that-ran-it', {}).update({'a_verdict_taken_in_the_encoding_of_the_machine_that_ran_it': a_verdict_taken_in_the_encoding_of_the_machine_that_ran_it, '_readings_of_one_verdict_on_four_machines': _readings_of_one_verdict_on_four_machines})
+
+NAMESPACES.setdefault('a-count-taken-through-a-name-the-machine-need-not-carry', {}).update({'a_count_taken_through_a_name_the_machine_need_not_carry': a_count_taken_through_a_name_the_machine_need_not_carry, '_readings_of_counts_taken_through_a_name': _readings_of_counts_taken_through_a_name})
+
+NAMESPACES.setdefault('a-digest-over-bytes-the-checkout-was-allowed-to-rewrite', {}).update({'a_digest_over_bytes_the_checkout_was_allowed_to_rewrite': a_digest_over_bytes_the_checkout_was_allowed_to_rewrite, '_readings_of_a_digest_over_two_checkouts': _readings_of_a_digest_over_two_checkouts})
+
+NAMESPACES.setdefault('a-guard-that-prints-its-verdict-and-then-does-what-it-forbade', {}).update({'the_record_a_rejected_run_replaces_under_a_hijacked_name': the_record_a_rejected_run_replaces_under_a_hijacked_name, 'the_seed_stands_after_a_refused_run_when_the_write_is_gated': the_seed_stands_after_a_refused_run_when_the_write_is_gated})

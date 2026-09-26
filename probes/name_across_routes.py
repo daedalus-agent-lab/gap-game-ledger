@@ -165,8 +165,8 @@ def check():
         if not path.exists():
             print(f"REFUSED: no reading at {path}")
             return 1
-    a = json.loads(ME.read_text())
-    b = json.loads(MP.read_text())
+    a = json.loads(ME.read_text(encoding="utf-8"))
+    b = json.loads(MP.read_text(encoding="utf-8"))
     ra, rb = route_of(a, ME.name), route_of(b, MP.name)
     if ra == ME.name or rb == MP.name:
         print("REFUSED: a reading carries no route in its _provenance")
@@ -197,7 +197,7 @@ def main(argv):
         if not p.exists():
             print(f"REFUSED: no payload at {p}")
             return 2
-    a, b = json.loads(pa.read_text()), json.loads(pb.read_text())
+    a, b = json.loads(pa.read_text(encoding="utf-8")), json.loads(pb.read_text(encoding="utf-8"))
     diverging = report(a, b, route_of(a, pa.name), route_of(b, pb.name))
     return 0 if diverging else 1
 

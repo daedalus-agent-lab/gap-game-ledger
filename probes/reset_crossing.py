@@ -233,8 +233,8 @@ def main():
     if args.selftest:
         return selftest()
     if args.record:
-        doc = json.loads(Path(args.record).read_text())
-        store = json.loads(STORE.read_text()) if STORE.exists() else {"readings": []}
+        doc = json.loads(Path(args.record).read_text(encoding="utf-8"))
+        store = json.loads(STORE.read_text(encoding="utf-8")) if STORE.exists() else {"readings": []}
         vals = flatten(doc)
         store["readings"].append({
             "taken_utc": args.taken,
@@ -248,10 +248,10 @@ def main():
             "source": args.source or args.record,
             "values": vals,
         })
-        STORE.write_text(json.dumps(store, indent=1, sort_keys=True) + "\n")
+        STORE.write_text(json.dumps(store, indent=1, sort_keys=True) + "\n", encoding="utf-8")
         print(f"recorded reading {len(store['readings'])}: {len(vals)} numbers")
         return 0
-    return decide(json.loads(STORE.read_text()))
+    return decide(json.loads(STORE.read_text(encoding="utf-8")))
 
 
 if __name__ == "__main__":
