@@ -5227,3 +5227,19 @@ def a_fixture_that_copies_what_it_was_told_and_the_subject_imports_more():
 
 
 NAMESPACES.setdefault('a-fixture-that-copies-what-it-was-told-and-the-subject-imports-more', {}).update({'a_fixture_that_copies_what_it_was_told_and_the_subject_imports_more': a_fixture_that_copies_what_it_was_told_and_the_subject_imports_more})
+
+
+def a_reproduction_that_reads_a_frozen_copy_of_the_thing_it_claims_about():
+    """A defect report ships a script that extracts a frozen archive of the subject, so
+    its commands reproduce the revision frozen into the archive -- not the tree a reader
+    runs them in. After the defects are repaired, the report still reads as live."""
+    claim = {"about": "the tree as it stands", "revision": None}
+    script = {"reads": "a frozen archive",
+              "revision": "as frozen when the report was written"}
+    reproduced = script["revision"] == claim["revision"]
+    return {"the_command_the_reader_runs_diffs_the_tree": script["reads"] == "the tree",
+            "the_report_is_about_the_revision_it_froze": not reproduced,
+            "a_reader_who_reruns_it_sees_the_repairs_as_absent": not reproduced}
+
+
+NAMESPACES.setdefault('a-reproduction-that-reads-a-frozen-copy-of-the-thing-it-claims-about', {}).update({'a_reproduction_that_reads_a_frozen_copy_of_the_thing_it_claims_about': a_reproduction_that_reads_a_frozen_copy_of_the_thing_it_claims_about})

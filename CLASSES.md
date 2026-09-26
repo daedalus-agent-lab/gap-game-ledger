@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 179
+Classes 180
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -482,6 +482,15 @@ Classes 179
 - fact: The gate compared the repeat's `promise` and `fact` to the class's as strings and granted the exemption when either differed, so a repeat that ran the class fragment itself -- same probe, same expected, same observed -- was counted as a second instance after one sentence was paraphrased. In a copy of this ledger the injection took `reported instances` from 179 to 180 with exit 0; putting the promise back into the class's own words refused the same record. Repair: `same_measurement` reads the probe, the expected and the observed result, and a paraphrase of the prose no longer buys an exemption. Run against this ledger the repaired gate immediately refused one existing instance (a-pair-credited-by-a-break-that-does-not-break-its-rule), which measured exactly what its class measured; it is retired with its observation kept in `retired.why`.
 - probe: `exemption_for_a_repeat({'promise': 'a differently worded claim about the same bytes'}, {'promise': 'the class claim'})` -> expected `False`, observed `True`
 - instances: 1
+
+## `a-reproduction-that-reads-a-frozen-copy-of-the-thing-it-claims-about`
+
+- promise: A reproduction is a command and a revision; a report that names only the command makes a claim the reader will measure against different bytes.
+- fact: A review of `probes/probe_coverage.py` shipped ten defects with one repro script, and that script extracts `ledger-pristine.tar`, an archive of the tree as it stood when the review was written. Every command in the report therefore runs the frozen revision, not the tree a reader runs it in. Measured after the repairs landed: case B (delete `probes/v1_door_triggers.py`, leave its name in EXCLUDED) prints on the archive `names with no probe file 0` and `COVERAGE=0 (32 probe(s), 29 wired, 3 excluded, 0 unanswered)` with exit 0 -- the defect live -- and the same mutation on the current tree prints `FAIL these names stand for files that are not here: v1_door_triggers.py` with exit 1. Eight of the ten defects were re-measured against HEAD from a fresh copy; all eight are refused there. So the report is a true statement about a revision and a false statement about the tree, and no line says which. The repair is not to freeze nothing: it is to name the revision in the header and to build the copy from the tree itself (`git archive HEAD | tar -x -C copy`), so a reader after a repair sees the repair. Nearest neighbours and not this shape: `a-stale-checksum-beside-the-run-it-cannot-cover` is a digest of a file that the run beside it no longer runs, and the mismatch is visible in the run; here nothing mismatches -- the command succeeds and prints the old answer under a claim about the current tree. `a-reach-that-depends-on-who-is-asking-quoted-as-a-property-of-the-thing` is a measurement quoted outside the frame that produced it; here the frame is a revision, and the report does not name it.
+- probe: `a_reproduction_that_reads_a_frozen_copy_of_the_thing_it_claims_about()` -> expected `{'the_command_the_reader_runs_diffs_the_tree': True, 'the_report_is_about_the_revision_it_froze': False, 'a_reader_who_reruns_it_sees_the_repairs_as_absent': False}`, observed `{'the_command_the_reader_runs_diffs_the_tree': False, 'the_report_is_about_the_revision_it_froze': True, 'a_reader_who_reruns_it_sees_the_repairs_as_absent': True}`
+- instances: 1
+- cited: `d89e3abe-e3f9-42d5-bd0b-7382d06889e5` (own) — `    reproduced = script["revision"] == claim["revision"]`
+- note: measured while re-running the ten defects of `scratch-critic4/critique-probe-coverage.md` against HEAD; the recheck is `_scratch/critic4_recheck.py`
 
 ## `a-rim-sample-quoted-as-a-measurement-of-the-band`
 
