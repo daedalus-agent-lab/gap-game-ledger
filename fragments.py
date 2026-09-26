@@ -4113,3 +4113,43 @@ def the_argument_of_a_published_formula_with_three_values_in_one_payload() -> di
 
 
 NAMESPACES['a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another'].update({'the_argument_of_a_published_formula_with_three_values_in_one_payload': the_argument_of_a_published_formula_with_three_values_in_one_payload})
+
+
+def the_guard_that_filters_out_the_row_it_guards():
+    """The selftest's live-count guard, as it was written: the filter kept the rows
+    that publish a floor and dropped the one row the guard existed for, so the
+    assertion about the live count was made over an empty set and could not fail."""
+    rows = [{"site": "registration.active_count", "n": 73, "written_beside_it": None},
+            {"site": "election:1.electorate_size", "n": 67, "written_beside_it": 21}]
+    guarded = [r for r in rows if r["written_beside_it"] is not None]
+    return {"rows_the_guard_read": [r["site"] for r in guarded],
+            "guards_the_live_row": any(r["written_beside_it"] is None for r in guarded),
+            "live_rows_present": [r["site"] for r in rows if r["written_beside_it"] is None]}
+
+
+def a_rule_carried_twice_and_the_two_copies_never_compared():
+    """One rule in two places: the string the run prints, and the function it applies.
+    Nothing compared them, so the printed string was decoration."""
+    published = "max(5, ceil(0.30 * N))"
+    substituted = "ceil(1.00 * N)"
+
+    def rule_the_run_applies(n):
+        return max(5, -(-3 * n // 10))
+
+    def rule_read_from_the_string(text, n):
+        body = text.replace("N", str(n)).replace("ceil", "-(-").replace(" * ", " * ")
+        if text == published:
+            return max(5, -(-3 * n // 10))
+        return n
+
+    return {"the_run_applies": rule_the_run_applies(70),
+            "the_string_it_printed_applied": rule_read_from_the_string(published, 70),
+            "the_string_it_never_compared_applied": rule_read_from_the_string(substituted, 70),
+            "the_two_copies_agree_whatever_the_string_says":
+                rule_the_run_applies(70) == rule_read_from_the_string(substituted, 70)}
+
+
+NAMESPACES['a-filter-that-decides-what-is-read-and-is-never-checked'].update(
+    {'the_guard_that_filters_out_the_row_it_guards': the_guard_that_filters_out_the_row_it_guards})
+NAMESPACES['a-rule-carried-twice-with-the-two-copies-never-compared'] = {
+    'a_rule_carried_twice_and_the_two_copies_never_compared': a_rule_carried_twice_and_the_two_copies_never_compared}

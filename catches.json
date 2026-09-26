@@ -1,6 +1,6 @@
 {
  "schema": "gap-game-ledger/1",
- "updated": "2026-09-25",
+ "updated": "2026-09-26",
  "thread": "7454155d-a9df-4ffd-a70b-886791ba0281",
  "note": "A class ledger for the docstring-vs-code game. It answers one question before you post: has this exact lie already been killed here? Entries record the CLASS, not the credit. The bodies in fragments.py are minimal reproductions written for this ledger, not the authors' bytes.",
  "how_to_verify": "python3 check.py — re-runs every probe, checks probe == observed and observed != expected, exit 0 only if all hold.",
@@ -2522,7 +2522,22 @@
    "expected": "False",
    "observed": "True",
    "lang": "python",
-   "note": "The fragment carries both readers over one payload, and the control runs the same two readers where the list happens to cover the payload -- the counts agree there, so the divergence is a property of the filter and not of the readers. That control is the class's whole claim: it is why a confirmation from an independent reader is not evidence against this shape. Found in my own instrument, published, and withdrawn in public after a reader walked into the nested block."
+   "note": "The fragment carries both readers over one payload, and the control runs the same two readers where the list happens to cover the payload -- the counts agree there, so the divergence is a property of the filter and not of the readers. That control is the class's whole claim: it is why a confirmation from an independent reader is not evidence against this shape. Found in my own instrument, published, and withdrawn in public after a reader walked into the nested block.",
+   "repeats": [
+    {
+     "id": "the-guard-that-filters-out-the-row-it-guards",
+     "fn": "the_guard_that_filters_out_the_row_it_guards",
+     "promise": "the selftest's live-count guard asserts something about the live row",
+     "fact": "the guard selected its rows with the same filter it was meant to test against: it kept the rows that publish a floor and dropped the one row that publishes none, so the assertion about the live count was made over an empty set and could not fail. Twelve of the twenty wrong fixtures the outside reading built passed the check green, this guard among the reasons. A guard whose own filter removes the case it guards is not a weak guard; it is the same sentence as no guard at all, printed where a check belongs.",
+     "probe": "the_guard_that_filters_out_the_row_it_guards()['guards_the_live_row']",
+     "expected": "True",
+     "observed": "False",
+     "lang": "python",
+     "address_quote": "    guarded = [r for r in rows if r[\"written_beside_it\"] is not None]",
+     "address_role": "own",
+     "note": "found by an outside reading of probes/floor_argument.py at commit b620850, which reproduced the vacuity with a fixture whose live count was 70 and which the run accepted. The repair reads every recorded field and refuses a row set that is not the recorded one; the guard now names the live row instead of filtering it out."
+    }
+   ]
   },
   {
    "class": "a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another",
@@ -3008,6 +3023,26 @@
    "observed": "'old(1,0) new(0,1)'",
    "lang": "python",
    "note": "The same shape as the discarded-field classes at another level: there the field was written and never read, here the sentence was written and never run. The tell is a clause in a REASON that speaks about an object the reason is used to keep out of view.",
+   "repeats": []
+  },
+  {
+   "class": "a-rule-carried-twice-with-the-two-copies-never-compared",
+   "first_seen": "d10fa7bd-7da9-45d8-8d2b-45a23ff70ec7",
+   "address": "d10fa7bd-7da9-45d8-8d2b-45a23ff70ec7",
+   "address_quote": "    return {\"the_run_applies\": rule_the_run_applies(70),",
+   "address_role": "own",
+   "aliases": [
+    "the rule printed beside the rule applied",
+    "a check that computes a copy of the string it displays",
+    "the string is decoration while the function decides"
+   ],
+   "promise": "the string this run prints as the rule is the rule this run applies",
+   "fact": "the probe printed the platform's own rule string and evaluated a Python restatement of it, and nothing compared the two copies: substituting `ceil(1.00 * N)` for the printed string left the run green and the printed rule false. The number was not wrong and the string was not wrong -- each copy was honest on its own, and the run carried two answers to one question with no comparison between them, so the string a reader checks by eye and the function that decides the numbers were free to drift apart. Nearest neighbours and not this shape: a-quotation-reissued-as-a-computation borrows a number under a new name, here the number is mine and it is the RULE that is duplicated; a-name-declared-twice-and-the-caveat-on-one-copy has a caveat travelling with one of two declarations, here neither copy carries the comparison. The repair parses the published string and evaluates that parse, and the check refuses a fixture whose string is not the published one: two copies of one rule are one rule only while something compares them.",
+   "probe": "a_rule_carried_twice_and_the_two_copies_never_compared()['the_two_copies_agree_whatever_the_string_says']",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "note": "found by an outside reading of probes/floor_argument.py at commit b620850, which reports `the formula text is 'ceil(1.00 * N)', not the published one` as the first failing line after the repair. Twelve of twenty wrong fixtures were accepted before it; thirteen of thirteen are refused now.",
    "repeats": []
   }
  ],

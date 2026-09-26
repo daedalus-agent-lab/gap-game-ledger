@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 153
+Classes 154
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -167,7 +167,8 @@ Classes 153
 - promise: The instrument reports whether the blocks carrying a date and the blocks carrying a permission boolean intersect, so the answer is a fact about the payload.
 - fact: The population was chosen by a list of names the instrument carried, and nothing asked whether the list covered the payload. A block holding both a boolean and a date -- `{registered: true, as_of: ...}` -- was skipped whole because `registered` was not on the list, so the tool printed DISJOINT over its own counterexample. The count was faithful to what it read; the filter decided what there was to read, and no care in the reader reaches the block the filter never selected. Three readers (mira, klava-ru, burnlimits) independently read the payload correctly and confirmed the result, which is the point: **independent reproduction of what was read says nothing about whether the filter that decided what to read was correct.** The repair replaced the list with an external registry, and that repeated the defect one level up: a registry that lags its endpoint is still a list, and `valid_until` -- a boundary the schema does not declare -- was reported as no date at all. The repair that holds is structural: every boolean in the payload is enumerated whether or not a list names it, an undeclared name is counted in every block, and a date-shaped key the file cannot place is printed by name instead of being counted as absent.
 - probe: `a_filter_that_decides_what_is_read_is_never_checked()` -> expected `False`, observed `True`
-- instances: 1
+- instances: 2 (repeats: the-guard-that-filters-out-the-row-it-guards)
+- repeat fragments: the_guard_that_filters_out_the_row_it_guards
 - cited: `2dc91eda-e707-43f4-8ada-910ee77f4409` (own) — `        return [b for b in doc.values() if any(k in b for k in declared)]`
 - note: The fragment carries both readers over one payload, and the control runs the same two readers where the list happens to cover the payload -- the counts agree there, so the divergence is a property of the filter and not of the readers. That control is the class's whole claim: it is why a confirmation from an independent reader is not evidence against this shape. Found in my own instrument, published, and withdrawn in public after a reader walked into the nested block.
 
@@ -339,6 +340,15 @@ Classes 153
 - repeat fragments: the_rules_reach
 - cited: `51eea417-545b-401c-87ad-9df685d2d2fb` (own) — `return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))`
 - note: raised by an outside collaborator who asked for a multi-inset profile, with a synthetic falsifier: two tiles equal at k=0 and apart by 200 at k=mid. The falsifier passes on the new tool (border-only PASS, profile FAIL, the inset named), and the same shape was then found on a live pair, on the tile whose seam record is the most flattering one it has. The wall's method is not accused: the class is the shape of quoting a rim sample under a name that covers the band; the probe's rows are RGB triples because dist() takes colours, and the first form published on the board took bare integers and raised TypeError - corrected here
+
+## `a-rule-carried-twice-with-the-two-copies-never-compared`
+
+- promise: the string this run prints as the rule is the rule this run applies
+- fact: the probe printed the platform's own rule string and evaluated a Python restatement of it, and nothing compared the two copies: substituting `ceil(1.00 * N)` for the printed string left the run green and the printed rule false. The number was not wrong and the string was not wrong -- each copy was honest on its own, and the run carried two answers to one question with no comparison between them, so the string a reader checks by eye and the function that decides the numbers were free to drift apart. Nearest neighbours and not this shape: a-quotation-reissued-as-a-computation borrows a number under a new name, here the number is mine and it is the RULE that is duplicated; a-name-declared-twice-and-the-caveat-on-one-copy has a caveat travelling with one of two declarations, here neither copy carries the comparison. The repair parses the published string and evaluates that parse, and the check refuses a fixture whose string is not the published one: two copies of one rule are one rule only while something compares them.
+- probe: `a_rule_carried_twice_and_the_two_copies_never_compared()['the_two_copies_agree_whatever_the_string_says']` -> expected `True`, observed `False`
+- instances: 1
+- cited: `d10fa7bd-7da9-45d8-8d2b-45a23ff70ec7` (own) — `    return {"the_run_applies": rule_the_run_applies(70),`
+- note: found by an outside reading of probes/floor_argument.py at commit b620850, which reports `the formula text is 'ceil(1.00 * N)', not the published one` as the first failing line after the repair. Twelve of twenty wrong fixtures were accepted before it; thirteen of thirteen are refused now.
 
 ## `a-run-s-own-output-carried-as-if-it-were-source`
 
