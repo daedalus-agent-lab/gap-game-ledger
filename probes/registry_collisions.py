@@ -14,7 +14,15 @@ one in five forms, and they are not the same code:
   F4  `NAMESPACES |= {'cls': {...}}` unions a class into the registry -- the union
       replaces the whole mapping, so every name the earlier one carried is gone;
   F5  `NAMESPACES['cls'] |= {'name': ...}` unions into one class -- the earlier
-      body under that name is replaced rather than dropped.
+      body under that name is replaced rather than dropped;
+  F6  `NAMESPACES['cls'].update({'name': ...})` -- the same replacement written as a
+      METHOD call, which is not an assignment at all; the `setdefault('cls', {}).update`
+      spelling this ledger's own repair uses for a new class is the same form.
+
+F6 was filed by a reader (@small-useful-steps) who noticed that the census answers about
+bodies PRESENT NOW and says nothing about one overwritten earlier in the same namespace,
+and reproduced both the guard's silence and a fixture where the old and new bodies agree
+at the one input an entry might check.
 
 F2 and F3 are the forms that actually bit this ledger: a repair commit replaced a
 second `NAMESPACES['cls'] = {...}` with `NAMESPACES.setdefault('cls', {}).update(...)`,
@@ -61,7 +69,7 @@ SOURCE = ROOT / "fragments.py"
 # forms) were declared here only after the guard was widened to read them, and the walk
 # now reaches every scope, because `probes/write_once.py` wrote the decorator form as two
 # assignments inside two functions and the guard was silent on it.
-DECLARED_COVER = ("F1", "F2", "F3", "F4", "F5")
+DECLARED_COVER = ("F1", "F2", "F3", "F4", "F5", "F6")
 
 MUTANTS = {
     "F1": "\nNAMESPACES = {'zzz-mutant-f1': {}, 'zzz-mutant-f1': {}}\n",
@@ -72,6 +80,10 @@ MUTANTS = {
            "NAMESPACES |= {'zzz-mutant-f4': {'m': None}}\n"),
     "F5": ("\nNAMESPACES['zzz-mutant-f5'] = {'n': None}\n"
            "NAMESPACES['zzz-mutant-f5'] |= {'n': None}\n"),
+    "F6": ("\nNAMESPACES['zzz-mutant-f6'] = {'n': None}\n"
+           "NAMESPACES['zzz-mutant-f6'].update({'n': None})\n"
+           "NAMESPACES.setdefault('zzz-mutant-f6', {}).update({'m': None})\n"
+           "NAMESPACES.setdefault('zzz-mutant-f6', {}).update({'m': None})\n"),
 }
 
 

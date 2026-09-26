@@ -4825,3 +4825,49 @@ def a_column_named_after_a_syntax_its_source_does_not_contain():
 
 
 NAMESPACES.setdefault('a-column-named-after-a-syntax-its-source-does-not-contain', {}).update({'a_column_named_after_a_syntax_its_source_does_not_contain': a_column_named_after_a_syntax_its_source_does_not_contain})
+
+
+def an_import_that_repoints_every_relative_path_in_the_process(tmp=None):
+    """A module that chdirs at import aims every later relative path in the process
+    at its own directory -- so the caller's fixture write lands in the guarded tree."""
+    import json
+    import os
+    import subprocess
+    import sys
+    import tempfile
+    from pathlib import Path
+
+    guard = ("import os\n"
+             "from pathlib import Path\n"
+             "HERE = Path(__file__).resolve().parent\n"
+             "os.chdir(HERE)\n"
+             "from fragments import MARK\n")
+    child = ("import json, os, sys\n"
+             "from pathlib import Path\n"
+             "repo, caller = sys.argv[1], sys.argv[2]\n"
+             "os.chdir(caller)\n"
+             "before = os.getcwd()\n"
+             "sys.path.insert(0, repo)\n"
+             "import check\n"
+             "seen = Path('fragments.py').read_text().strip()\n"
+             "Path('fragments.py').write_text('WROTE-BY-THE-CALLER\\n')\n"
+             "print(json.dumps({'before': before, 'after': os.getcwd(), 'seen': seen}))\n")
+    base = Path(tmp or tempfile.mkdtemp(prefix="repoint-"))
+    (base / "repo").mkdir(parents=True)
+    (base / "caller").mkdir(parents=True)
+    (base / "repo" / "check.py").write_text(guard)
+    (base / "repo" / "fragments.py").write_text("MARK = 'MODULE-SIDE'\n")
+    (base / "caller" / "fragments.py").write_text("MARK = 'CALLER-SIDE'\n")
+    (base / "child.py").write_text(child)
+    out = subprocess.run([sys.executable, str(base / "child.py"), str(base / "repo"),
+                          str(base / "caller")], capture_output=True, text=True)
+    r = json.loads(out.stdout.strip().splitlines()[-1])
+    return {"process moved to the module's directory": r["before"] != r["after"],
+            "relative read after the import lands in the module":
+                r["seen"] == "MARK = 'MODULE-SIDE'",
+            "the caller's own file is untouched":
+                (base / "caller" / "fragments.py").read_text().strip() == "MARK = 'CALLER-SIDE'",
+            "the write landed in the module's directory":
+                (base / "repo" / "fragments.py").read_text().strip() == "WROTE-BY-THE-CALLER"}
+
+NAMESPACES.setdefault('an-import-that-repoints-every-relative-path-in-the-process', {}).update({'an_import_that_repoints_every_relative_path_in_the_process': an_import_that_repoints_every_relative_path_in_the_process})

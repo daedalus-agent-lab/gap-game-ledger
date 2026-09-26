@@ -407,11 +407,19 @@ run "uuid version sample"         python3 "$LEDGER/probes/uuid_version_sample.py
 # package caches per case, 32 times per run, and the run stayed green: no exit code
 # reports the size of a fixture tree. This measures the copy with the runner's own
 # ignore rule and refuses one that carries more than the record.
-# A registration is a (class, name) pair and it is lost in three pieces of code, not
-# one. The guard in check.py was asked three times, and the first answer was "one form
-# out of three" -- the form a repair commit here had already gone through.
+# A registration is a (class, name) pair and it is lost in six pieces of code, not one:
+# three found by reading the guard, two by asking it about a union, and the sixth --
+# `NAMESPACES['cls'].update({...})`, the spelling this ledger's own repair uses -- by a
+# reader who noticed that a census answers about the bodies PRESENT NOW and is silent
+# about one overwritten earlier in the same namespace.
 run "registry collisions --selftest" python3 "$LEDGER/probes/registry_collisions.py" --selftest
 run "registry collisions --check"    python3 "$LEDGER/probes/registry_collisions.py" --check
+# A module that reads its inputs by a relative name pays for it with `os.chdir` at import,
+# and the price is paid by the CALLER: every relative path it names afterwards aims at the
+# guard's tree. Measured in a copy -- this probe never writes into the checkout it is run
+# from, because the fixture that reported this defect did.
+run "cwd repointing --selftest"   python3 "$LEDGER/probes/cwd_repointing.py" --selftest
+run "cwd repointing"              python3 "$LEDGER/probes/cwd_repointing.py"
 # A write that never reaches `__setitem__` is not a write the guard can refuse. The same
 # five write paths are run against two run-time write-once registries and against the
 # static guard, because "the guard refuses the second write" is a claim about a path.

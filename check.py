@@ -991,6 +991,42 @@ def duplicate_declarations() -> list[str]:
                         out.append(f"NAMESPACES[{cls!r}] |= {{{k!r}: ...}} replaces the "
                                    f"body already registered as {k!r}")
             continue
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            # F6: the same replacement, written as a METHOD call rather than a
+            # subscript assignment -- `NAMESPACES['cls'].update({...})`, or the
+            # `setdefault('cls', {}).update({...})` spelling this ledger prefers
+            # for a new class. Neither is an `ast.Assign`, so the walk above is
+            # silent on both, and the second one is what this ledger's own repair
+            # used to avoid the F2 loss.
+            call = node.value
+            if not isinstance(call.func, ast.Attribute) or call.func.attr != "update":
+                continue
+            holder = call.func.value
+            cls = None
+            if isinstance(holder, ast.Subscript):
+                if (isinstance(holder.value, ast.Name)
+                        and holder.value.id == "NAMESPACES"
+                        and isinstance(holder.slice, ast.Constant)):
+                    cls = holder.slice.value
+            elif (isinstance(holder, ast.Call)
+                  and isinstance(holder.func, ast.Attribute)
+                  and holder.func.attr == "setdefault"
+                  and isinstance(holder.func.value, ast.Name)
+                  and holder.func.value.id == "NAMESPACES"
+                  and holder.args and isinstance(holder.args[0], ast.Constant)):
+                cls = holder.args[0].value
+            if cls is None or not call.args or not isinstance(call.args[0], ast.Dict):
+                continue
+            written_classes.add(cls)
+            keys = [k.value for k in call.args[0].keys if isinstance(k, ast.Constant)]
+            for k in sorted(set(keys)):
+                if k in written_names.get(cls, ()):
+                    out.append(f"NAMESPACES[{cls!r}].update({{{k!r}: ...}}) replaces the "
+                               f"body already registered as {k!r}")
+                if keys.count(k) > 1:
+                    out.append(f"a class declares the fragment {k!r} {keys.count(k)} times")
+            written_names.setdefault(cls, set()).update(keys)
+            continue
         if not isinstance(node, ast.Assign):
             continue
         for target in node.targets:

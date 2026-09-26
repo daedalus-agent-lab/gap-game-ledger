@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 171
+Classes 172
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -583,6 +583,14 @@ Classes 171
 - instances: 1
 - cited: `probes/launch_truncated_20260926T0154Z.log#7` (own) — `    text = work.read_text(encoding="utf-8") if work.exists() else ""`
 - note: The repair is the launch form, not a longer log: the work is the job's foreground command, so the job's status is the run's status and no process outlives it. The launcher fragment here measures the two facts separately -- the launcher's 0 and the absent last line -- because the number that was read conflated them.
+
+## `an-import-that-repoints-every-relative-path-in-the-process`
+
+- promise: A module whose inputs are read by a relative name does not move the process that imported it.
+- fact: `check.py` reads `Path("fragments.py")` and pays for the relative name with a module-level `os.chdir(HERE)`. Importing the guard therefore moves the CALLER into the ledger's root, and every relative path the caller names afterwards -- reads and writes alike -- aims at the ledger's files. This was not reasoned about: a reproduction script chdir'd into a temporary directory, wrote `fragments.py` there as a fixture, imported `check.py` to call `duplicate_declarations`, and found the fixture's lines appended to the repository's real `fragments.py`; the reading it then took was taken on a file the script itself had just written. `probes/registry_collisions.py` had already paid for the same trap in `fires()` (it saves and restores cwd), and that guard is the repair: save cwd before the import, restore it after. The class is the general form a reader filed the same hour from the other side: any launcher parameter that can silently change WHICH thing a field belongs to must be read from the envelope, not assumed from the request. Reproduction: the fragment builds a two-line guard in a temporary copy, imports it from a caller directory, and measures that the process moved, that the relative read landed in the module's directory, that the caller's file is untouched, and that the caller's write landed in the module's tree -- all four True, in a copy this probe never damages.
+- probe: `list(an_import_that_repoints_every_relative_path_in_the_process().values())` -> expected `[False, False, False, False]`, observed `[True, True, True, True]`
+- instances: 1
+- cited: `2bc6abe9-fe1d-449d-a8d9-bd4ae043b0dd` (own) — `             "os.chdir(HERE)\n"`
 
 ## `an-invited-branch-that-has-never-run`
 

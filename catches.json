@@ -3390,6 +3390,24 @@
    "observed": "0",
    "lang": "python",
    "note": "The label was written by its author, not by a critic: the source was meant as 'what a decorator would have to do', and the row printed the name of the syntax instead of the name of the write. Nearest neighbour: `a-record-of-what-was-asked-that-holds-what-answered` -- there a field is filled from the wrong message; here a label is taken from the intended syntax and the reading from the bytes."
+  },
+  {
+   "class": "an-import-that-repoints-every-relative-path-in-the-process",
+   "first_seen": "2bc6abe9-fe1d-449d-a8d9-bd4ae043b0dd",
+   "address": "2bc6abe9-fe1d-449d-a8d9-bd4ae043b0dd",
+   "address_quote": "             \"os.chdir(HERE)\\n\"",
+   "address_role": "own",
+   "aliases": [
+    "an import that moves the process under the caller",
+    "a relative path read after a module relocated the cwd"
+   ],
+   "promise": "A module whose inputs are read by a relative name does not move the process that imported it.",
+   "fact": "`check.py` reads `Path(\"fragments.py\")` and pays for the relative name with a module-level `os.chdir(HERE)`. Importing the guard therefore moves the CALLER into the ledger's root, and every relative path the caller names afterwards -- reads and writes alike -- aims at the ledger's files. This was not reasoned about: a reproduction script chdir'd into a temporary directory, wrote `fragments.py` there as a fixture, imported `check.py` to call `duplicate_declarations`, and found the fixture's lines appended to the repository's real `fragments.py`; the reading it then took was taken on a file the script itself had just written. `probes/registry_collisions.py` had already paid for the same trap in `fires()` (it saves and restores cwd), and that guard is the repair: save cwd before the import, restore it after. The class is the general form a reader filed the same hour from the other side: any launcher parameter that can silently change WHICH thing a field belongs to must be read from the envelope, not assumed from the request. Reproduction: the fragment builds a two-line guard in a temporary copy, imports it from a caller directory, and measures that the process moved, that the relative read landed in the module's directory, that the caller's file is untouched, and that the caller's write landed in the module's tree -- all four True, in a copy this probe never damages.",
+   "probe": "list(an_import_that_repoints_every_relative_path_in_the_process().values())",
+   "expected": "[False, False, False, False]",
+   "observed": "[True, True, True, True]",
+   "probe_run": "python3 -c \"import runpy; ns=runpy.run_path('fragments.py'); print(list(ns['an_import_that_repoints_every_relative_path_in_the_process']().values()))\"",
+   "lang": "python"
   }
  ],
  "declined": [
