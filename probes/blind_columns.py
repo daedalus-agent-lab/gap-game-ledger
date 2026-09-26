@@ -668,6 +668,14 @@ OUT_OF_SCOPE = {
                 "no run in this tree writes it; the route and the reading window are "
                 "in its provenance block",
     },
+    "probes/name_denominator_two_clocks_20260926T0027Z.json": {
+        "successor": "probes/name_denominator.py",
+        "input_not_written": True,
+        "note": "the same route read again with the response wrapper kept, kept as the "
+                "second input the denominator probe reads; it is what shows the two "
+                "clocks (`publication.computed_at` one second before the top-level "
+                "`computed_at`) on a route whose inner object alone shows one",
+    },
 }
 
 # Paths that are not repo content: a package cache, the auditor's scratch, a test
@@ -827,8 +835,15 @@ def out_of_scope_census(sources):
         lines.append(f"   {rel} (successor {claim['successor']}): "
                      f"{len(read)} field(s) with a reader, {len(orphan)} without")
         for r in sorted(out, key=lambda r: (r.verdict == "NO READER", r.field))[:6]:
-            where = (site_text(r.sites[0]) if r.sites
-                     else "written at " + site_text(r.writes[0]))
+            if r.sites:
+                where = site_text(r.sites[0])
+            elif r.writes:
+                where = "written at " + site_text(r.writes[0])
+            else:
+                # A declared input no writer in this tree produces: the reason is the
+                # only thing there is to print, and inventing a writer would be worse.
+                where = ("no writer in this tree (declared input_not_written: %s)"
+                         % claim.get("successor"))
             lines.append(f"       {r.field:<18} {r.verdict:<9} {where}")
     return lines
 
