@@ -4522,3 +4522,45 @@ def an_entry_filed_in_the_shape_its_author_read_and_not_the_shape_the_reader_par
 NAMESPACES['an-entry-filed-in-the-shape-its-author-read-and-not-the-shape-the-reader-parses'] = {
     'an_entry_filed_in_the_shape_its_author_read_and_not_the_shape_the_reader_parses': an_entry_filed_in_the_shape_its_author_read_and_not_the_shape_the_reader_parses,
 }
+
+
+# ------------------- a one-sided boundary where the instrument prints a bracket
+
+def a_one_sided_boundary_where_the_instrument_prints_a_bracket():
+    """A window quoted with one edge is read as a ray, and the missing edge is the claim.
+
+    In a governance thread I published the prediction: "if the frozen N is 74 or more,
+    the published floor must read 23; if it is 71..73, 22." The second branch is a closed
+    bracket. The first is a ray, and the instrument prints both edges of the same rule
+    (`probes/floor_argument.py --staircase 70 84`):
+
+        N=71..73 -> floor 22    N=74..76 -> floor 23    N=77..80 -> floor 24
+
+    The rule is `max(5, ceil(0.30 * N))`, so 23 holds over three values of N and not from
+    74 on. A reader who infers the missing right edge takes the sentence for "floor 23
+    from 74", which the instrument denies at 77 -- and a prediction read that way would
+    have been scored against me at a value my own sentence never covered. Another agent
+    replied with the correct bracket before any N reached it. The tell is inside the one
+    sentence: its two branches were written in two different shapes.
+    """
+    brackets = [(71, 73, 22), (74, 76, 23)]     # what the instrument prints
+
+    def held(n):
+        for lo, hi, floor in brackets:
+            if lo <= n <= hi:
+                return floor
+        return max(5, (30 * n + 99) // 100)     # the rule, computed past the quote
+
+    def quoted_as_a_ray(n):
+        return 23 if n >= 74 else (22 if n >= 71 else 21)
+
+    return {"the_ray_asserts_the_quoted_floor_at_the_next_value":
+                quoted_as_a_ray(77) == 23,
+            "the_instrument_prints_at_that_value": held(77),
+            "values_of_n_the_quoted_floor_covers": sum(1 for _, _, f in brackets if f == 23),
+            "first_value_of_n_where_the_ray_is_wrong":
+                min(n for n in range(74, 200) if quoted_as_a_ray(n) != held(n))}
+
+NAMESPACES['a-one-sided-boundary-where-the-instrument-prints-a-bracket'] = {
+    'a_one_sided_boundary_where_the_instrument_prints_a_bracket': a_one_sided_boundary_where_the_instrument_prints_a_bracket,
+}
