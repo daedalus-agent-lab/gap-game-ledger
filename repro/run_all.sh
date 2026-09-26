@@ -47,13 +47,14 @@ cd "$HERE"
 WS="${REPRO_WS:-$HERE}"
 LEDGER="${REPRO_LEDGER:-$(cd "$HERE/.." && pwd)}"
 export UV_CACHE_DIR="${UV_CACHE_DIR:-$WS/.uvcache}"
-REQUIRE=""; NET=0; SELFTEST=0; STABLE=0
+REQUIRE=""; NET=0; SELFTEST=0; STABLE=0; GUARD_CONTROL=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --net) NET=1 ;;
     --stable) STABLE=1 ;;
     --expect) REQUIRE="${2:-}"; shift ;;
     --self-test) SELFTEST=1 ;;
+    --guard-control) GUARD_CONTROL=1 ;;
   esac
   shift
 done
@@ -63,7 +64,11 @@ done
 # only the runner knows that it started. It is appended, never rewritten, so the record
 # keeps a history rather than a status; the line carries an absolute instant with an
 # offset, because a bare local time is not a moment any other machine can compare against.
-python3 "$LEDGER/probes/deadman_tick.py" --stamp || true
+# Not written in --guard-control mode: that mode drives the guard on fixture records and
+# does not run the suite, and a check that appends to the record it reads is not a check.
+if [ "$GUARD_CONTROL" != 1 ]; then
+  python3 "$LEDGER/probes/deadman_tick.py" --stamp || true
+fi
 
 sha16() { sha256sum | cut -c1-16; }
 # Two digests per item, because a receipt is over a PAIR (the bytes, the harness)
@@ -187,6 +192,88 @@ tree_state() {                # a digest of the tree every item is reading
   } | sha16
 }
 
+# The guard on the record, as a function, so that it can be driven on fixture records
+# by --guard-control below. Two numbers read from two places -- the loop's own counter,
+# and the rows the run printed -- because a count printed from the string it is checked
+# against is not a check; and the names read from outside the row string, because a name
+# compared with itself is not a comparison. Both refusals name the number and the item.
+record_guard() {              # record_guard <record json> <names file> <rows file> <items run> <label>
+  local rec="$1" names_file="$2" rows_file="$3" want="$4" label="$5" ran record_names
+  recorded="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["items"]))' "$rec")"
+  printed="$(grep -c . "$rows_file")"
+  if [ "$recorded" != "$want" ] || [ "$printed" != "$want" ]; then
+    printf 'FAIL %-34s the record carries %s row(s) and the run printed %s, for %s item(s) run\n' \
+           "$label" "$recorded" "$printed" "$want"
+    return 1
+  fi
+  ran="$(cat "$names_file")"
+  record_names="$(python3 - "$rec" <<'PY'
+import json, sys
+for item in json.load(open(sys.argv[1]))["items"]:
+    print(item["name"])
+PY
+)"
+  if names_differ "$ran" "$record_names"; then
+    printf 'FAIL %-34s the record carries %s row(s) for %s item(s) run, and its rows are\n' \
+           "$label" "$recorded" "$want"
+    printf '     not the items that ran. First difference:\n'
+    diff <(printf '%s\n' "$ran") <(printf '%s\n' "$record_names") | sed -n '1,6p' | sed 's/^/       /'
+    return 1
+  fi
+  return 0
+}
+
+# A control that has to be remembered is not a control. This mode drives record_guard
+# and row_complaint on fixture records and REQUIRES each of the five readings: a record
+# that is this run's is accepted in silence, one whose rows are not the items that ran is
+# refused by the names, one that is not as long as the run is refused by the count, a row
+# that cannot be read back is named, and readable rows are not refused. It is reached the
+# way a reader reaches the suite -- `bash repro/run_all.sh --guard-control`, and as an item
+# in the default item list below -- so no path that runs the suite can skip it.
+if [ "$GUARD_CONTROL" = 1 ]; then
+  ctl="$(mktemp -d)"
+  printf 'alpha\nbeta\n' > "$ctl/names"
+  printf 'alpha|0|0|aaaaaaaaaaaaaaaa|0|bbbbbbbbbbbbbbbb\nbeta|0|0|cccccccccccccccc|0|dddddddddddddddd\n' > "$ctl/rows"
+  printf '{"items":[{"name":"alpha"},{"name":"beta"}]}\n' > "$ctl/good.json"
+  printf '{"items":[{"name":"alpha"},{"name":"hijacked"}]}\n' > "$ctl/bad-name.json"
+  printf '{"items":[{"name":"alpha"}]}\n' > "$ctl/bad-count.json"
+  ok=1
+  out="$(record_guard "$ctl/good.json" "$ctl/names" "$ctl/rows" 2 "the control")" \
+    || { ok=0; printf 'the control: a record that IS this run was refused:\n%s\n' "$out"; }
+  [ -z "$out" ] || { ok=0; printf 'the control: a faithful record was not accepted in silence:\n%s\n' "$out"; }
+  out="$(record_guard "$ctl/bad-name.json" "$ctl/names" "$ctl/rows" 2 "the control")" || true
+  case "$out" in
+    *'not the items that ran'*) ;;
+    *) ok=0; printf 'the control: a record whose rows are not the items that ran was NOT refused:\n%s\n' "$out" ;;
+  esac
+  out="$(record_guard "$ctl/bad-count.json" "$ctl/names" "$ctl/rows" 2 "the control")" || true
+  # The needle is a phrase only the count refusal carries. The first version matched
+  # `for 2 item(s) run`, which the name refusal also prints, so a mutant with the count
+  # half removed still read as green: a needle a second reading can satisfy is not a
+  # control on this one.
+  case "$out" in
+    *'and the run printed'*) ;;
+    *) ok=0; printf 'the control: a record that is not as long as the run was NOT refused:\n%s\n' "$out" ;;
+  esac
+  out="$(printf 'alpha|0|0|aaaaaaaaaaaaaaaa|0|bbbbbbbbbbbbbbbb\nbe\nta|0|0|cccccccccccccccc|0|dddddddddddddddd\n' | row_complaint 2>&1)"
+  case "$out" in
+    *'does not carry six fields'*) ;;
+    *) ok=0; printf 'the control: a row that cannot be read back was NOT named:\n%s\n' "$out" ;;
+  esac
+  out="$(printf 'alpha|0|0|aaaaaaaaaaaaaaaa|0|bbbbbbbbbbbbbbbb\nbeta|0|0|cccccccccccccccc|0|dddddddddddddddd\n' | row_complaint 2>&1)"
+  case "$out" in
+    *'does not carry six fields'*)
+      ok=0; printf 'the control: readable rows were refused by the row complaint:\n%s\n' "$out" ;;
+  esac
+  rm -rf "$ctl"
+  if [ "$ok" = 1 ]; then
+    echo "the record guard refuses a record that is not this run's, accepts one that is, and names a row it cannot read (five readings)"
+    exit 0
+  fi
+  echo "the record guard did not answer as required: a guard that cannot be shown to fire is not a guard"
+  exit 1
+fi
+
 if [ "$SELFTEST" = 1 ]; then
   # Two commands, both exit 0, answering different things. An exit code cannot
   # separate them; the digest of what they said can.
@@ -308,10 +395,14 @@ add_row() { rows="${rows}$1"$'\n'; items_run=$((items_run + 1)); }
 # call site, this file from the name argument at another, and a row built with some
 # other name disagrees with it while the row count does not.
 NAMES="$(mktemp)"
-# This list belongs to this run alone. A run that leaves it behind leaves a second copy
-# of the item names lying about for the next reader, so every exit path removes it,
+# The rows as a file, because the guard on them is a function and a function is given
+# its readings rather than reaching for a string in the caller's scope. Written once,
+# just before the guard runs, from the same string the record is built from.
+ROWS="$(mktemp)"
+# Both belong to this run alone. A run that leaves them behind leaves a second copy
+# of the item names lying about for the next reader, so every exit path removes them,
 # including the early exits taken when an item fails.
-trap 'rm -f "$NAMES"' EXIT
+trap 'rm -f "$NAMES" "$ROWS"' EXIT
 names_seen() { printf '%s\n' "$1" >> "$NAMES"; }
 
 # `band_profile.py` runs under `uv run --with pillow`. On a fresh clone the first
@@ -423,6 +514,7 @@ run() {                       # run <name> <command...>
 # the fault this item exists to catch. It used to exit 0 with one line of prose;
 # it exits 1 and says which directory was handed to it, because the failure is a
 # fact about the layout, not about the files.
+run "record guard control"        bash "$HERE/run_all.sh" --guard-control
 run "repro MANIFEST.sha256"       bash -c 'cd "$1" || exit 1; if [ ! -f MANIFEST.sha256 ]; then
                                     echo "no checksum file in this layout ($1): nothing was compared, so this item is not a check"
                                     echo "point the run at the mirror, e.g. REPRO_WS=<clone>/repro REPRO_LEDGER=<clone>"
@@ -673,43 +765,22 @@ EOF
     echo "means nothing compared. Items in this run: $(printf '%s' "$rows" | grep -c .)."
   fi
 fi
-# The record must carry one row per item this run ran. It did not: the separator was
-# written as a literal `$'\n'`, so the JSON held a single row while the run printed
-# forty, and every diff against it named one item whose name was all of them. The two
-# numbers are read from two places -- the loop's own counter and the file it wrote --
-# because a count printed from the same string it is checked against is not a check.
-# The file is read only where the rows could be read back: there is no count to print for
-# a record that was never written, and a blank number beside a refusal is not a finding.
+# The record must carry one row per item this run ran, and the rows must be the items
+# that ran. It did not: the separator was written as a literal `$'\n'`, so the JSON held
+# a single row while the run printed forty, and every diff against it named one item whose
+# name was all of them. The same length is not the same record either: the rows were as
+# many as the items ran while the names inside them were not the items that ran, the count
+# guard passed, and the next run was compared against a record of another run. Both halves
+# are one function above, because a guard nothing exercises is a sentence -- and this path
+# is exercised before this line by `record guard control`, an item in the default list.
+# The rows are read only where they could be read back: there is no count to print for a
+# record that was never written, and a blank number beside a refusal is not a finding.
 if [ "$record_ok" = 1 ]; then
-  recorded="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["items"]))' "$newreg")"
-  printed="$(printf '%s' "$rows" | grep -c .)"
-  if [ "$recorded" != "$items_run" ] || [ "$printed" != "$items_run" ]; then
-    printf 'FAIL %-34s the record carries %s row(s) and the run printed %s, for %s item(s) run\n' \
-           "the record" "$recorded" "$printed" "$items_run"
+  printf '%s' "$rows" > "$ROWS"
+  record_guard "$newreg" "$NAMES" "$ROWS" "$items_run" "the record" || {
     fails=$((fails + 1))
     record_ok=0
-  fi
-fi
-# The same length is not the same record. The rows are as many as the items ran and the
-# names inside them are not the items that ran: the count guard passes, the record is of
-# another run, and the next run is compared against it. Read from outside the row string,
-# because a name compared with itself is not a comparison.
-if [ "$record_ok" = 1 ]; then
-  ran_names="$(cat "$NAMES")"
-  record_names="$(python3 - "$newreg" <<'PY'
-import json, sys
-for item in json.load(open(sys.argv[1]))["items"]:
-    print(item["name"])
-PY
-)"
-  if names_differ "$ran_names" "$record_names"; then
-    printf 'FAIL %-34s the record carries %s row(s) for %s item(s) run, and its rows are\n' \
-           "the record" "$recorded" "$items_run"
-    printf '     not the items that ran. First difference:\n'
-    diff <(printf '%s\n' "$ran_names") <(printf '%s\n' "$record_names") | sed -n '1,6p' | sed 's/^/       /'
-    fails=$((fails + 1))
-    record_ok=0
-  fi
+  }
 fi
 # The replacement is the guard's own decision and happens only where the guard passed.
 # Written after the check instead, it destroyed the record the check exists to protect:

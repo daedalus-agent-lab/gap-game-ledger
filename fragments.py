@@ -6723,3 +6723,99 @@ def _readings_of_a_verdict_about_a_broken_probe():
         },
     }
 NAMESPACES.setdefault('a-verdict-that-names-the-exception-and-not-the-sentence-it-carried', {}).update({'a_verdict_that_names_the_exception_and_not_the_sentence_it_carried': a_verdict_that_names_the_exception_and_not_the_sentence_it_carried})
+
+
+def a_guard_whose_only_exercise_is_a_run_that_does_not_run_it():
+    """The tree as written: this guard is read from two paths a default run does not take.
+
+    The probe returns the reading of the tree that carries the defect; the repaired reading
+    is the ledger entry's `expected`, computed by the same helper.
+    """
+    return _where_a_guard_is_read_and_where_it_is_exercised()["as_written"]
+
+
+def _where_a_guard_is_read_and_where_it_is_exercised():
+    """Where a guard is READ from, and where it is EXERCISED.
+
+    The guard on the record has two halves -- the row count and the names of the rows.
+    Before this reading, both halves lived on paths a default run never takes:
+
+        `repro/run_all.sh --self-test`   a flag, typed by whoever remembers it
+        `repro/record_guard_pair.sh`     a script no item calls (cited in the registry,
+                                         invoked by hand)
+
+    A guard is a control only on a path that runs when nobody remembers anything.
+    """
+    # Every place the guard is reachable from, what it does there, and whether a default
+    # run arrives at it. The third place is the repair: it does not exist on the tree as
+    # written, and it is the only one a run nobody has to remember takes.
+    places = (
+        ("repro/run_all.sh --self-test", "reads it", "typed when remembered", True),
+        ("repro/record_guard_pair.sh", "reads it", "run by hand", True),
+        ("an item in the default item list", "exercises it", "runs whenever the suite runs",
+         False),
+    )
+
+    def reachable_by_a_default_run(exists, how):
+        return exists and how == "exercises it"
+
+    def readings(exists_of_the_third):
+        return {
+            "guard_behaviours_the_tree_carries":
+                sum(1 for p in places if exists_of_the_third or p[0] != "an item in the default item list"),
+            "of_them_reachable_by_a_default_run":
+                sum(1 for n, w, h, e in places
+                    if (exists_of_the_third if n == "an item in the default item list" else e)
+                    and reachable_by_a_default_run(True, w)),
+            "a_default_run_exercises_the_guard": exists_of_the_third,
+        }
+
+    as_written = readings(False)
+    as_repaired = readings(True)
+    return {"as_written": as_written, "as_repaired": as_repaired,
+            "where": {name: h for name, _, h, _e in places}}
+
+NAMESPACES.setdefault('a-guard-whose-only-exercise-is-a-run-that-does-not-run-it', {}).update({'a_guard_whose_only_exercise_is_a_run_that_does_not_run_it': a_guard_whose_only_exercise_is_a_run_that_does_not_run_it})
+
+
+def a_control_whose_needle_a_second_refusal_can_satisfy():
+    """The control as written: a needle both refusals print.
+
+    The probe returns the tree's own reading; the repaired reading is the ledger entry's
+    `expected`, computed by the same helper.
+    """
+    return _readings_of_a_control_needle()["as_written"]
+
+
+def _readings_of_a_control_needle():
+    """Two refusals on one path, and a needle taken from one of them.
+
+    The count refusal and the name refusal are printed by the same guard on the same run.
+    A control that reads the count half by a phrase the name half also prints reports a
+    killed mutant for a half that was never reached.
+    """
+    count_refusal = "the record carries 1 row(s) and the run printed 2, for 2 item(s) run"
+    name_refusal = "the record carries 1 row(s) for 2 item(s) run, and its rows are"
+    wide = "for 2 item(s) run"          # printed by BOTH refusals
+    narrow = "and the run printed"      # printed by the count refusal alone
+
+    def matched(needles, text):
+        return sum(1 for n in needles if n in text)
+
+    def caught(needles):
+        """The control passes only when its needle is the count half's own."""
+        return matched(needles, count_refusal) == 1 and matched(needles, name_refusal) == 0
+
+    as_written = {
+        "needles_the_count_refusal_matches": matched([wide, narrow], count_refusal),
+        "needles_the_name_refusal_also_matches": matched([wide, narrow], name_refusal),
+        "a_mutant_with_the_count_half_removed_is_caught": caught([wide]),
+    }
+    as_repaired = {
+        "needles_the_count_refusal_matches": matched([narrow], count_refusal),
+        "needles_the_name_refusal_also_matches": matched([narrow], name_refusal),
+        "a_mutant_with_the_count_half_removed_is_caught": caught([narrow]),
+    }
+    return {"as_written": as_written, "as_repaired": as_repaired}
+
+NAMESPACES.setdefault('a-control-whose-needle-a-second-refusal-can-satisfy', {}).update({'a_control_whose_needle_a_second_refusal_can_satisfy': a_control_whose_needle_a_second_refusal_can_satisfy})
