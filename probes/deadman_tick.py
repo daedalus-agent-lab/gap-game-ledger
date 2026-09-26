@@ -5,12 +5,15 @@ The suite writes what it measured for every tree it ran on, and nothing anywhere
 says WHEN it last ran. A week with no run and a week with nothing to report leave
 the same artefact -- none -- so a run that stopped ticking is byte-identical to a
 run that found nothing. This probe reads a run stamp the runner appends to and
-answers four ways, and the state NAME is machine-readable because the reader of a
+answers five ways, and the state NAME is machine-readable because the reader of a
 verdict should not have to parse a sentence to learn which question was answered.
 Every red line therefore carries its state name, the COMMONEST one included -- a red
 whose name was only in the prose left the reader to grep a sentence:
 
   fresh       the newest stamp is inside the declared cadence;
+  covered     the newest stamp is older than the cadence, and a declared pause reaches
+              over the gap: the silence has an end and a reason, so the repair is to
+              let the pause run out or write a new one;
   stale       the newest stamp is older than the cadence, and the refusal NAMES both
               instants and the cadence it compared;
   no_baseline no entry at that path at all, OR a file that carries no stamp line:
@@ -30,6 +33,14 @@ is the reason the gap passed. A waiver is itself bounded -- a pause longer than
 `MAX_WAIVER_SECONDS` is refused as a reason and NAMED in the refusal -- because a
 waiver without an end is a way to declare the heartbeat silent for good, and one line
 written once would then answer freshness for every future week.
+
+`fresh` and `covered` are two readings of one record that differ in WHICH question was
+answered, not in the colour, so they carry different state words. They have to: the same
+bytes read at two instants can be green by cadence at one and green by a declared pause at
+the next -- a pause that has just begun to do the work it was written for -- and a line
+that carried the pause under the word `fresh` reported a record that had moved when what
+moved was the clock. The green line is stable across runs of a fixed record for a GIVEN
+state and not across states, and naming the state is what makes that difference readable.
 
 A declaration the reader does NOT use is named too, on EVERY verdict -- green, red, and
 the two states that never reach the gap check (`no_baseline`, `unreadable`), where the
@@ -213,7 +224,7 @@ def verdict(path, now, cadence):
         return "fresh", (newest, None), declined
     for start, end, text in usable:
         if start <= newest and now <= end:
-            return "fresh", (newest, "a pause from %s to %s declared: %s" % (
+            return "covered", (newest, "a pause from %s to %s declared: %s" % (
                 start.isoformat(), end.isoformat(), text)), declined
     return "stale", (newest, now, cadence, gap), declined
 
@@ -230,19 +241,22 @@ DECLINED = "REFUSED %s -- a declared pause this run does not use: %s"
 
 def check(path, now, cadence):
     state, detail, declined = verdict(path, now, cadence)
-    if state == "fresh":
+    if state in ("fresh", "covered"):
         # The green line carries no instant, and that is deliberate: this probe is an
         # item of the suite whose own record compares each item's output between runs.
         # A green line naming the newest stamp would differ on every run and make the
         # movement report name an item that has not moved. What has to be named is the
         # SILENCE -- the red line below names both instants and the cadence it compared
-        # -- because a gap nobody can date is a gap nobody can check. A refused pause is
+        # -- because a gap nobody can date is a gap nobody can check. A declined pause is
         # named too, and it is read from the FILE, so it does not move between runs.
         newest, why = detail
-        if why is None:
+        if state == "fresh":
             print("fresh: a run stamp inside the declared cadence of %d s" % cadence)
         else:
-            print("fresh: %s" % why)
+            # The word is `covered`, not `fresh`: the pause is doing the work here, and
+            # naming it a fresher version of the same thing is what let a pair of runs
+            # straddling this boundary report two lines for one unchanged record.
+            print("covered: %s" % why)
         rc = 0
     elif state == "stale":
         newest, then, cad, gap = detail
@@ -452,6 +466,20 @@ def selftest() -> int:
         checks.append((stable,
                        "a green line names no instant of the run",
                        "stable" if stable else "moves", "stable"))
+
+        # 15b. one record, two instants, two green words. The instant a pause begins to do
+        # the work it was written for is a boundary of the STATE, not of the line: the same
+        # bytes are `fresh` while the stamp is inside the cadence and `covered` once the gap
+        # is longer than the cadence and the declared pause reaches over it. Printed under
+        # one word, a run that straddled this boundary reported a moved record where only
+        # the clock had moved; named apart, the state word says which answer was given.
+        at_start = datetime.datetime.fromisoformat("2026-09-20T05:00:00+00:00")
+        inside, _, _ = verdict(waived, at_start, day)
+        crossed, _, _ = verdict(waived, now, day)
+        checks.append((inside == "fresh" and crossed == "covered",
+                       "a pause that has begun to do the work is named apart from a stamp "
+                       "inside the cadence",
+                       "%s/%s" % (inside, crossed), "fresh/covered"))
 
         # 16. the cadence boundary is `<=`, not `<`: a stamp exactly one cadence old is
         # inside it. The comparison's direction is a rule, and a `<` left the selftest
