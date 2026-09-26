@@ -29,6 +29,11 @@ This item reads the helper rather than the fragment. For every `_readings_of_*` 
     tree, by a helper that RETURNS that entry: an independent review built exactly that
     mutant -- two literal dicts equal to the entry -- and the whole suite, this item
     included, stayed green. What a constant cannot do is follow an input.
+  * neither half built from literals alone. A half whose expression calls nothing else
+    in this tree is not a reading of anything: it is the entry written twice, and every
+    comparison against that entry is satisfied by it whether or not the helper declares
+    an input. The shape is refused here, so the survivor above is closed for helpers the
+    `PERTURBATIONS` map cannot reach as well.
 
     python3 probes/parts_of_a_reading.py            # every helper, and its verdict
     python3 probes/parts_of_a_reading.py --check    # exit 1 when a half is unmeasured
@@ -36,10 +41,14 @@ This item reads the helper rather than the fragment. For every `_readings_of_*` 
 
 WHAT THIS DOES NOT DO: it compares the halves against the ENTRY, so an entry whose
 `expected` was typed from the same wrong reading passes here -- the second half is then
-measured against itself. And a helper whose input no caller can vary is still separable
-from a constant by nothing here: the count of those is printed, not claimed away.
+measured against itself. The literal rule reads the expression the half is written as, so
+a helper that computes nothing and calls something which itself returns literals is not
+refused by it. And a helper whose input no caller can vary is separable from a constant
+only in the shape that constant is written in: the count of such helpers is printed, not
+claimed away.
 """
 import argparse
+import ast
 import importlib.util
 import json
 import pathlib
@@ -217,6 +226,98 @@ def helper_names_typed_into(source: str) -> list:
                 break
         if names and all(n.startswith("_readings_of_") for n in names):
             found.append((node.lineno, names))
+    return found
+
+
+MEASURED_NODES = (ast.Call, ast.Attribute, ast.Subscript, ast.BinOp, ast.Compare,
+                  ast.ListComp, ast.DictComp, ast.SetComp, ast.GeneratorExp,
+                  ast.JoinedStr, ast.IfExp, ast.BoolOp, ast.Await, ast.Lambda)
+
+
+def _own_nodes(fn) -> list:
+    """This function's own nodes, nested function definitions left out."""
+    out = []
+
+    def dive(nodes):
+        for node in nodes:
+            if isinstance(node, ast.FunctionDef):
+                continue
+            out.append(node)
+            for child in ast.iter_child_nodes(node):
+                if not isinstance(child, ast.FunctionDef):
+                    dive([child])
+
+    dive(fn.body)
+    return out
+
+
+def _local_names(fn) -> dict:
+    """Local name -> the expression assigned to it; the last assignment wins."""
+    out = {}
+
+    def record(target, value):
+        if isinstance(target, ast.Name):
+            out[target.id] = value
+        elif isinstance(target, (ast.Tuple, ast.List)):
+            for element in target.elts:
+                record(element, value)
+
+    for node in _own_nodes(fn):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                record(target, node.value)
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            record(node.target, node.value)
+        elif isinstance(node, (ast.For, ast.AsyncFor)):
+            record(node.target, node.iter)
+    return out
+
+
+def _measured(expr, local: dict, depth: int = 0) -> bool:
+    """False when the expression is built from nothing but literals."""
+    if depth > 10:
+        return False
+    if isinstance(expr, ast.Name):
+        if expr.id in local:
+            return _measured(local[expr.id], local, depth + 1)
+        return False
+    return any(isinstance(node, MEASURED_NODES) for node in ast.walk(expr))
+
+
+def _halves_of_return(value) -> list:
+    """`[(half name, expression)]` for a returned pair, in either of the two shapes."""
+    if isinstance(value, ast.Dict):
+        keys = [getattr(key, "value", None) for key in value.keys]
+        if {"as_written", "as_repaired"} <= set(keys):
+            return [(key, item) for key, item in zip(keys, value.values)
+                    if key in ("as_written", "as_repaired")]
+    if isinstance(value, ast.Tuple) and len(value.elts) == 2:
+        return [("written", value.elts[0]), ("repaired", value.elts[1])]
+    return []
+
+
+def halves_typed_rather_than_measured(source: str) -> list:
+    """Every half of every helper that is written as a literal, not computed.
+
+    A constant that repeats its own entry satisfies every comparison against that entry,
+    so the comparison is not what refuses it -- this is: a half whose expression calls
+    nothing in this tree is the entry written a second time, whatever else the tree does.
+    The rule reads the expression a half is written as, following local assignments one
+    by one, so `return {"as_written": written}` with `written = {...}` above it is read
+    the same way as the inline dict. Returns `(helper, half, line, expression)`.
+    """
+    tree = ast.parse(source)
+    found = []
+    for fn in ast.walk(tree):
+        if not isinstance(fn, ast.FunctionDef) or not fn.name.startswith("_readings_of_"):
+            continue
+        local = _local_names(fn)
+        for node in _own_nodes(fn):
+            if not isinstance(node, ast.Return) or node.value is None:
+                continue
+            for half, expr in _halves_of_return(node.value):
+                if not _measured(expr, local):
+                    found.append((fn.name, half, node.lineno, ast.unparse(expr)[:90]))
     return found
 
 
@@ -456,6 +557,43 @@ def selftest() -> int:
             print(f"{'ok  ' if caught else 'FAIL'} a helper replaced by a constant equal to "
                   f"its own entry is refused (exit {code.returncode})"
                   + (f": {why}" if why else ""))
+        # The survivor an independent review found, in the shape the input rule cannot
+        # reach: a helper whose halves are literal dicts equal to its own entry. It is
+        # built for a helper with NO declared input, so the refusal can only come from
+        # reading the shape of the half -- and the arm requires the line to say so.
+        quiet = [n for n in sorted(set(HELPER.findall(
+            (src / "fragments.py").read_text(encoding="utf-8"))))
+            if n not in PERTURBATIONS][:1]
+        for name in quiet:
+            tree = pathlib.Path(td) / "typed-halves"
+            tree.mkdir()
+            for f in ("fragments.py", "catches.json"):
+                shutil.copy(src / f, tree / f)
+            index = entry_index_for(tree, name)
+            if index is None:
+                print(f"FAIL the copy under test has no entry reading {name}")
+                return 1
+            i, j = index
+            ledger = json.loads((tree / "catches.json").read_text(encoding="utf-8"))
+            record = (ledger["entries"][i] if j is None
+                      else ledger["entries"][i]["repeats"][j])
+            frag = tree / "fragments.py"
+            frag.write_text(
+                frag.read_text(encoding="utf-8")
+                + "\n\ndef %s(**kw):\n    return {'as_written': %s, 'as_repaired': %s}\n"
+                % (name, record["observed"], record["expected"]),
+                encoding="utf-8")
+            code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
+                                   "--check", "--root", str(tree)],
+                                  capture_output=True, text=True)
+            named = [ln for ln in code.stdout.splitlines()
+                     if ln.startswith("FAIL") and "written as a literal" in ln]
+            caught = code.returncode == 1 and bool(named)
+            bad += 0 if caught else 1
+            print(f"{'ok  ' if caught else 'FAIL'} a helper whose halves are literals equal "
+                  f"to its own entry is refused by the shape of the half, and the line says "
+                  f"so (exit {code.returncode}"
+                  + (f", line: {named[0][:80]}" if named else ", no such line") + ")")
     return 1 if bad else 0
 
 
@@ -481,19 +619,27 @@ def main() -> int:
     orphaned = perturbations_no_helper_answers_to(rows)
     for name in orphaned:
         print(f"FAIL this probe declares an input for {name}, and no helper answers to it")
+    typed = halves_typed_rather_than_measured(source)
+    for name, half, line, expr in typed:
+        print(f"FAIL {name}: the {half} half is written as a literal at "
+              f"fragments.py:{line}: {expr} -- a half that calls nothing is a sentence "
+              f"about the entry, not a reading of the tree")
     unvaryable = sorted(name for name, *_rest, moved in rows if moved is None)
     print(f"helpers with two halves  {len(rows)}")
     print(f"helpers whose input no caller varies  {len(unvaryable)}")
     print(f"halves not read against an entry  {bad}")
+    print(f"halves written as literals rather than measured  {len(typed)}")
     print(f"typed lists that do not cover the file  {len(stale)}")
-    if args.check and (bad or stale or orphaned):
+    if args.check and (bad or stale or orphaned or typed):
         print("REFUSED: a helper's half is not the one the entry records, or nothing in this "
               "repository reads it, or its answer does not move with the input it declares "
               "-- either way the half that says what the repair does is unwitnessed, so it "
               "can be a constant and every suite stays green; or a list typed into "
               "fragments.py no longer covers the helpers the file defines, so a tally taken "
               "from it is a sentence about an older file; or this probe declares an input "
-              "for a helper this tree does not carry, so that control tests nothing")
+              "for a helper this tree does not carry, so that control tests nothing; or a "
+              "half is written as a literal instead of computed, so it is the entry written "
+              "a second time and every comparison against that entry is satisfied by it")
         return 1
     return 0
 
