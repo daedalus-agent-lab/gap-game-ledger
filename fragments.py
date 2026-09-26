@@ -6192,3 +6192,51 @@ def a_runs_own_list_left_in_a_directory_every_run_shares():
         pathlib.Path(house).rmdir()
 
 NAMESPACES.setdefault('a-runs-own-list-left-in-a-directory-every-run-shares', {}).update({'a_runs_own_list_left_in_a_directory_every_run_shares': a_runs_own_list_left_in_a_directory_every_run_shares})
+
+
+def a_boundary_between_two_states_printed_under_one_word():
+    """One declaration, read at two instants, answered with one word.
+
+    A stamp one hour old is inside the declared cadence; the same stamp six days old is
+    outside it and covered by a pause written to reach over it. Those are two answers to
+    two questions -- "did it tick recently" and "is the silence declared and dated" -- and
+    a reader repairing the record has to do different things in each. Under one word the
+    boundary is invisible, and worse: the green line moved between two runs of one
+    unchanged record, because the word was chosen by the clock. The repair gives the
+    second reading its own name, so the word says which question was answered and a run
+    that crosses the boundary reads as a state change rather than as movement.
+    """
+    import datetime
+
+    cadence = 24 * 3600
+    stamp = datetime.datetime.fromisoformat("2026-09-20T04:00:00+00:00")
+    pause = (datetime.datetime.fromisoformat("2026-09-20T00:00:00+00:00"),
+             datetime.datetime.fromisoformat("2026-09-27T00:00:00+00:00"))
+
+    def as_written(now):
+        """One word for both answers."""
+        if (now - stamp).total_seconds() <= cadence:
+            return "fresh"
+        if pause[0] <= stamp and now <= pause[1]:
+            return "fresh"
+        return "stale"
+
+    def as_repaired(now):
+        """The word names the question."""
+        if (now - stamp).total_seconds() <= cadence:
+            return "fresh"
+        if pause[0] <= stamp and now <= pause[1]:
+            return "covered"
+        return "stale"
+
+    soon = datetime.datetime.fromisoformat("2026-09-20T05:00:00+00:00")
+    later = datetime.datetime.fromisoformat("2026-09-26T05:00:00+00:00")
+    written = (as_written(soon), as_written(later))
+    repaired = (as_repaired(soon), as_repaired(later))
+    return {
+        "both_instants_are_green": (repaired[0], repaired[1]) == ("fresh", "covered"),
+        "the_word_names_the_question_that_was_answered": written[0] != written[1],
+        "the_two_greens_share_one_word": written[0] == written[1],
+    }
+
+NAMESPACES.setdefault('a-boundary-between-two-states-printed-under-one-word', {}).update({'a_boundary_between_two_states_printed_under_one_word': a_boundary_between_two_states_printed_under_one_word})
