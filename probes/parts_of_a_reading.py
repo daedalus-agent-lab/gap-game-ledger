@@ -137,6 +137,56 @@ def readings(root: pathlib.Path):
     return rows
 
 
+def helper_names_typed_into(source: str) -> list:
+    """Every literal list of `_readings_of_*` names written into `fragments.py`.
+
+    A list typed into the source is a sentence about the file on the day it was typed.
+    One such list stood beside the comment "every `_readings_of_*` in fragments.py" and
+    named eight of the fourteen helpers the file defines: the class it was the data for
+    published a tally of eight helpers, and nothing compared the list with the file. The
+    question this asks is the one the comment claimed: does the list cover the file?
+    """
+    import ast
+
+    found = []
+    for node in ast.walk(ast.parse(source)):
+        if not isinstance(node, (ast.List, ast.Tuple)) or len(node.elts) < 2:
+            continue
+        names = []
+        for element in node.elts:
+            if isinstance(element, ast.Constant) and isinstance(element.value, str):
+                names.append(element.value)
+            elif isinstance(element, ast.Tuple) and element.elts and isinstance(
+                    element.elts[0], ast.Constant) and isinstance(element.elts[0].value, str):
+                names.append(element.elts[0].value)
+            else:
+                names = []
+                break
+        if names and all(n.startswith("_readings_of_") for n in names):
+            found.append((node.lineno, names))
+    return found
+
+
+def tallies_that_do_not_cover_the_file(source: str) -> list:
+    """The typed lists that do not name every helper this file defines.
+
+    The rule reads the list against the file one way: a list that claims the file and
+    misses some of it is the defect this asks about. Names that no helper answers to are
+    reported with the line but are not a refusal -- a tree under test may name a helper of
+    its neighbour, and the case of a helper REMOVED from the file with its name left behind
+    is a different class, measured in this repository as
+    `a-census-taken-from-the-thing-it-counts`.
+    """
+    defined = set(HELPER.findall(source))
+    out = []
+    for line, names in helper_names_typed_into(source):
+        missing = sorted(defined - set(names))
+        if missing:
+            out.append((line, len(names), sorted(defined), missing,
+                        sorted(set(names) - defined)))
+    return out
+
+
 def verdicts(rows) -> list:
     """One line per helper, and whether this tree may be green."""
     lines, bad = [], 0
@@ -179,6 +229,14 @@ def %s():
     else:
         r = (r[0], r[0])
     return r
+'''
+
+TYPED_LIST = '''
+
+def _a_list_typed_before_the_file_grew():
+    # every _readings_of_* in fragments.py
+    NAMES = [%s]
+    return NAMES
 '''
 
 
@@ -274,6 +332,26 @@ def selftest() -> int:
             bad += 0 if caught else 1
             print(f"{'ok  ' if caught else 'FAIL'} {what} is refused "
                   f"(exit {code.returncode})")
+
+        # A list typed into the source is a tally of the file on the day it was typed. The
+        # one this arm builds names every helper the file defines but one, and the arm that
+        # would have caught the eight-name list standing beside "every _readings_of_*".
+        tree = pathlib.Path(td) / "typed-list"
+        tree.mkdir()
+        for name in ("fragments.py", "catches.json"):
+            shutil.copy(src / name, tree / name)
+        frag = tree / "fragments.py"
+        defined = sorted(set(HELPER.findall((src / "fragments.py").read_text(encoding="utf-8"))))
+        typed = ", ".join('"%s"' % n for n in defined[:-1])
+        frag.write_text(frag.read_text(encoding="utf-8") + TYPED_LIST % typed,
+                        encoding="utf-8")
+        code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
+                               "--check", "--root", str(tree)],
+                              capture_output=True, text=True)
+        caught = code.returncode == 1
+        bad += 0 if caught else 1
+        print(f"{'ok  ' if caught else 'FAIL'} a list typed beside the file that does not "
+              f"name every helper it defines is refused (exit {code.returncode})")
     return 1 if bad else 0
 
 
@@ -287,16 +365,24 @@ def main() -> int:
         return selftest()
 
     root = pathlib.Path(args.root)
+    source = (root / "fragments.py").read_text(encoding="utf-8")
     rows = readings(root)
     lines, bad = verdicts(rows)
     for line in lines:
         print(line)
+    stale = tallies_that_do_not_cover_the_file(source)
+    for line, named, defined, missing, extra in stale:
+        print(f"FAIL fragments.py:{line} types {named} name(s) beside the file's "
+              f"{len(defined)}: never named {missing or '[]'}, not defined {extra or '[]'}")
     print(f"helpers with two halves  {len(rows)}")
     print(f"halves not read against an entry  {bad}")
-    if args.check and bad:
+    print(f"typed lists that do not cover the file  {len(stale)}")
+    if args.check and (bad or stale):
         print("REFUSED: a helper's half is not the one the entry records, or nothing in this "
               "repository reads it -- either way the half that says what the repair does is "
-              "unwitnessed, so it can be a constant and every suite stays green")
+              "unwitnessed, so it can be a constant and every suite stays green; or a list "
+              "typed into fragments.py no longer covers the helpers the file defines, so a "
+              "tally taken from it is a sentence about an older file")
         return 1
     return 0
 

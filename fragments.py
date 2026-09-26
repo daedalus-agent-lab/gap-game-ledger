@@ -7228,13 +7228,25 @@ def a_control_that_varies_an_argument_its_subject_takes_none_of():
 
 def _readings_of_a_control_over_an_argument_no_helper_takes():
     """Both sides of the class: the control's verdict, and the reading it cannot take."""
-    HELPERS = [  # every _readings_of_* in fragments.py, with the parameter count it has
+    HELPERS = [  # every `_readings_of_*` this file defines, and its argument count.
+        # A list typed here is a sentence about the file on the day it was typed: this one
+        # named eight helpers on the day it was written and the file has since defined
+        # fourteen, while the comment beside it said "every". Nothing compared the two, so
+        # the tally below was a claim about an older file. The comparison now exists and is
+        # run by `probes/parts_of_a_reading.py --check`, which names every helper the list
+        # fails to cover.
+        ("_readings_of_a_refusal_no_line_attributed", 0),
+        ("_readings_of_a_survivor_table_two_revisions_apart", 0),
+        ("_readings_of_a_status_the_word_beside_it_replaced", 0),
+        ("_readings_of_a_witness_repeating_the_verdict", 0),
+        ("_readings_of_a_census_taken_from_the_thing_it_counts", 0),
         ("_readings_of_one_verdict_on_four_machines", 0),
         ("_readings_of_counts_taken_through_a_name", 0),
         ("_readings_of_a_digest_over_two_checkouts", 0),
         ("_readings_of_the_tools_the_experiment_looks_for", 0),
         ("_readings_of_a_half_measured_on_one_machine", 0),
         ("_readings_of_a_summary_over_rows_it_did_not_digest", 0),
+        ("_readings_of_a_control_over_an_argument_no_helper_takes", 0),
         ("_readings_of_a_verdict_about_a_broken_probe", 0),
         ("_readings_of_a_control_needle", 0),
     ]
