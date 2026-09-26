@@ -6125,3 +6125,70 @@ def a_record_as_long_as_the_run_and_not_a_record_of_it():
     }
 
 NAMESPACES.setdefault('a-record-as-long-as-the-run-and-not-a-record-of-it', {}).update({'a_record_as_long_as_the_run_and_not_a_record_of_it': a_record_as_long_as_the_run_and_not_a_record_of_it})
+
+
+def a_runs_own_list_left_in_a_directory_every_run_shares():
+    """The names that ran are kept in a file, and the file outlives the run.
+
+    The guard that judges the record by the items that ran -- and not by how many rows
+    it holds -- has to keep the items that ran somewhere while the record is written.
+    It kept them in a file `mktemp` made, and the run removed nothing at the end, so
+    the list stayed in the shared temporary directory. The failure is not a wrong
+    verdict: it is that a run's own account of itself is readable after the run, in a
+    place every later run also writes, and the early exit taken when an item fails
+    leaves it too -- the path the failure most needs cleaned is the one no repair on
+    the success path covers. A trap over the whole run covers both, and the directory
+    is then left as the run found it.
+    """
+    import os
+    import pathlib
+    import tempfile
+
+    names = ["repro MANIFEST.sha256", "resume_cursor.py", "probe_receipts.py"]
+
+    def in_a_hands(house):
+        return sorted(os.listdir(house))
+
+    def as_written(house):
+        """`mktemp` names the file; nothing on any path removes it."""
+        handle, path = tempfile.mkstemp(prefix="names-", dir=house)
+        with os.fdopen(handle, "w", encoding="utf-8") as sink:
+            sink.write("\n".join(names))
+        return path
+
+    def as_repaired(house):
+        """The same file, removed by a trap when the run leaves early."""
+        handle, path = tempfile.mkstemp(prefix="names-", dir=house)
+        sink = os.fdopen(handle, "w", encoding="utf-8")
+        try:
+            sink.write("\n".join(names))
+            raise SystemExit                 # an item failed and the run left early
+        finally:
+            sink.close()
+            os.unlink(path)                  # the trap's one line
+        return path
+
+    house = tempfile.mkdtemp(prefix="leftover-")
+    try:
+        before = in_a_hands(house)
+        written = as_written(house)
+        after_written = in_a_hands(house)
+        kept = pathlib.Path(written).read_text(encoding="utf-8").split("\n")
+        try:
+            as_repaired(house)
+        except SystemExit:
+            pass
+        after_repaired = in_a_hands(house)
+        return {
+            "the_list_is_written_into_a_directory_every_run_shares": after_written != before,
+            "the_list_is_still_there_when_the_run_has_finished":
+                len(after_written) == len(before) + 1,
+            "the_leftover_names_the_items_of_the_run_that_made_it": kept == names,
+            "an_early_exit_removes_the_list_too": after_repaired == before,
+        }
+    finally:
+        for entry in pathlib.Path(house).iterdir():
+            entry.unlink()
+        pathlib.Path(house).rmdir()
+
+NAMESPACES.setdefault('a-runs-own-list-left-in-a-directory-every-run-shares', {}).update({'a_runs_own_list_left_in_a_directory_every_run_shares': a_runs_own_list_left_in_a_directory_every_run_shares})
