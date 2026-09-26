@@ -5926,3 +5926,41 @@ def a_quote_checked_only_where_an_address_stands_beside_it():
     }
 
 NAMESPACES.setdefault('a-quote-checked-only-where-an-address-stands-beside-it', {}).update({'a_quote_checked_only_where_an_address_stands_beside_it': a_quote_checked_only_where_an_address_stands_beside_it})
+
+
+def a_row_separator_written_as_a_literal_and_read_as_one_row():
+    """Four rows, one line, and an item count that agrees with itself.
+
+    The runner joined its rows with `$'\n'` written inside double quotes. An ANSI-C
+    quote is a word of its own; inside double quotes its five characters are literal, so
+    the separator written was not the separator read: every row went into one line, and
+    the record's `items` field then counted 1 while its digests were the LAST row's. The
+    aggregate digest still moved when a row moved, so the record looked alive; what it
+    could no longer do was name any item it had run, which is the property the green line
+    was justified by. The count is taken from the parsed record, not from the string the
+    run printed, because a count printed from the string it counts is not a check.
+    """
+    rows = ["manifest          out=e4da6d2b16df2c8a",
+            "resume_cursor     out=3147e1fdc7f3001f",
+            "probe_receipts    out=84b30b8918c58bd6",
+            "probe_regime_v3   out=47f2e9374c8c348b"]
+    written = "$'\\n'".join(rows)          # five literal characters inside double quotes
+    repaired = "\n".join(rows)
+
+    def record(text):
+        lines = [line for line in text.split("\n") if line]
+        return {"items": len(lines), "names": lines}
+
+    as_written = record(written)
+    as_repaired = record(repaired)
+    return {
+        "the_separator_written_is_a_newline": written.count("\n") == len(rows) - 1,
+        "the_record_reports_one_item": as_written["items"] == 1,
+        "the_record_can_name_each_item_it_ran": as_written["names"] == rows,
+        "the_aggregate_still_moves_when_a_row_moves":
+            written != "$'\\n'".join(rows[:3]),
+        "the_repair_writes_one_row_per_item": as_repaired["items"] == len(rows)
+                                              and as_repaired["names"] == rows,
+    }
+
+NAMESPACES.setdefault('a-row-separator-written-as-a-literal-and-read-as-one-row', {}).update({'a_row_separator_written_as_a_literal_and_read_as_one_row': a_row_separator_written_as_a_literal_and_read_as_one_row})
