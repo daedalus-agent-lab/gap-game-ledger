@@ -4355,3 +4355,44 @@ def a_count_quoted_under_a_list_the_payload_never_names():
             "the_list_is_in_the_payload": "as_of" in payload}
 
 NAMESPACES.setdefault('a-filter-that-decides-what-is-read-and-is-never-checked', {}).update({'a_count_quoted_under_a_list_the_payload_never_names': a_count_quoted_under_a_list_the_payload_never_names})
+
+
+# ------------------- a rule the fixture states and the check never evaluates
+
+def a_rule_the_fixture_states_and_the_check_never_evaluates():
+    """The check compares the rows with its own copy of the rule; the rule the
+    fixture prints about itself is read by no one, so the two may contradict.
+
+    `probes/floor_argument.py` ran three of the fixture's rows through the published
+    floor rule and printed `formula.text` beside them -- the string itself, never
+    parsed. An independent reviewer rewrote that string to a rule under which every
+    row in the fixture is wrong and fed the copy back to the probe's own `check()`:
+    it exited 0. The measurement is 12 of 20 deliberately wrong fixtures accepted
+    before the string was parsed, 0 of 20 after. The arithmetic here is integer, so
+    a reader can run it without a float.
+
+        rule as published   max(5, ceil(0.30 * N))   N=70 -> 21, N=67 -> 21
+        rule as rewritten   max(5, ceil(1.00 * N))   N=70 -> 70, N=67 -> 67
+
+    Both rows carry floor 21, so they are rows of the first rule and statements
+    against the second. A check that evaluates what the fixture says of itself
+    refuses them; a check that recomputes from its own copy accepts them and says
+    the fixture agrees with the rule it no longer carries.
+    """
+    rows = [{"n": 70, "floor": 21}, {"n": 67, "floor": 21}]
+    stated = "max(5, ceil(1.00 * N))"      # what the fixture claims about itself
+    rules = {"max(5, ceil(0.30 * N))": lambda n: max(5, (30 * n + 99) // 100),
+             "max(5, ceil(1.00 * N))": lambda n: max(5, (100 * n + 99) // 100)}
+
+    def accepted(rule):
+        return all(rule(r["n"]) == r["floor"] for r in rows)
+
+    return {"accepted": accepted(rules["max(5, ceil(0.30 * N))"]),
+            "accepted_by_an_evaluation_of_the_stated_rule": accepted(rules[stated]),
+            "rules_evaluated_from_the_input": 0,
+            "rules_the_check_carries_itself": 1,
+            "the_stated_rule_contradicts_the_rows": not accepted(rules[stated])}
+
+NAMESPACES['a-rule-the-fixture-states-and-the-check-never-evaluates'] = {
+    'a_rule_the_fixture_states_and_the_check_never_evaluates': a_rule_the_fixture_states_and_the_check_never_evaluates,
+}

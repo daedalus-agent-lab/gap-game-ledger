@@ -3169,6 +3169,25 @@
    "observed": "1",
    "lang": "python",
    "note": "The address is the message where this defect and its repair were published, not a copy of the reproduction. Measured, not argued: on the same file, replacing the amendment's `.update(` with `=` and running the ledger reproduces MISS + BADADDRESS on the same class, and the key count printed by the registry is 158 either way. What the ledger's guard cannot do is stated in the fact rather than implied: the MISS fires because the probe names the lost fragment, so this guard covers a class whose probe names what it lost and nothing else."
+  },
+  {
+   "class": "a-rule-the-fixture-states-and-the-check-never-evaluates",
+   "aliases": [
+    "the fixture prints the rule and the check recomputes it",
+    "a wrong fixture accepted because nothing parsed its own rule"
+   ],
+   "promise": "A record that states the rule its numbers are supposed to come from must have that rule EVALUATED over those numbers; otherwise the record can contradict itself in print and the check will still agree with it.",
+   "fact": "`probes/floor_argument.py` parses no formula: it prints `formula.text` and computes the floor with the same rule written once as Python. An independent reviewer fed 20 deliberately wrong copies of the fixture to the probe's own `check()`: 12 were accepted, including a copy whose `formula.text` was rewritten to `max(5, ceil(1.00 * N))` (under which every row is wrong), a copy with the snapshot instant of both `election:1` rows zeroed, a copy with the tally version changed, a copy with a fabricated extra site, and a copy with the live-count row deleted. The probe was green throughout, because it compared the fixture against the function that wrote the fixture. The repair is not one more comparison: `formula.text` is now parsed and evaluated over every N, the provenance is checked against the instants it declares, and the probe's own selftest carries these fourteen mutations -- the whole of the reviewer's 20 copies are refused, 0 accepted, reproducible by re-running their script.",
+   "probe": "a_rule_the_fixture_states_and_the_check_never_evaluates()['accepted']",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "found in my own probe `probes/floor_argument.py` by an independent reviewer who mutated the fixture instead of rereading the code; the file now parses the published rule and refuses all 20 mutations",
+   "repeats": [],
+   "first_seen": "77d61456-57f0-4c18-b4ea-a063daaec9dd",
+   "address": "77d61456-57f0-4c18-b4ea-a063daaec9dd",
+   "address_quote": "    return {\"accepted\": accepted(rules[\"max(5, ceil(0.30 * N))\"]),",
+   "address_role": "own"
   }
  ],
  "declined": [

@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 159
+Classes 160
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -377,6 +377,15 @@ Classes 159
 - instances: 1
 - cited: `d10fa7bd-7da9-45d8-8d2b-45a23ff70ec7` (own) — `    return {"the_run_applies": rule_the_run_applies(70),`
 - note: found by an outside reading of probes/floor_argument.py at commit b620850, which reports `the formula text is 'ceil(1.00 * N)', not the published one` as the first failing line after the repair. Twelve of twenty wrong fixtures were accepted before it; thirteen of thirteen are refused now.
+
+## `a-rule-the-fixture-states-and-the-check-never-evaluates`
+
+- promise: A record that states the rule its numbers are supposed to come from must have that rule EVALUATED over those numbers; otherwise the record can contradict itself in print and the check will still agree with it.
+- fact: `probes/floor_argument.py` parses no formula: it prints `formula.text` and computes the floor with the same rule written once as Python. An independent reviewer fed 20 deliberately wrong copies of the fixture to the probe's own `check()`: 12 were accepted, including a copy whose `formula.text` was rewritten to `max(5, ceil(1.00 * N))` (under which every row is wrong), a copy with the snapshot instant of both `election:1` rows zeroed, a copy with the tally version changed, a copy with a fabricated extra site, and a copy with the live-count row deleted. The probe was green throughout, because it compared the fixture against the function that wrote the fixture. The repair is not one more comparison: `formula.text` is now parsed and evaluated over every N, the provenance is checked against the instants it declares, and the probe's own selftest carries these fourteen mutations -- the whole of the reviewer's 20 copies are refused, 0 accepted, reproducible by re-running their script.
+- probe: `a_rule_the_fixture_states_and_the_check_never_evaluates()['accepted']` -> expected `False`, observed `True`
+- instances: 1
+- cited: `77d61456-57f0-4c18-b4ea-a063daaec9dd` (own) — `    return {"accepted": accepted(rules["max(5, ceil(0.30 * N))"]),`
+- note: found in my own probe `probes/floor_argument.py` by an independent reviewer who mutated the fixture instead of rereading the code; the file now parses the published rule and refuses all 20 mutations
 
 ## `a-run-s-own-output-carried-as-if-it-were-source`
 
