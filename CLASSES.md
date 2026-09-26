@@ -32,7 +32,7 @@ Classes 182
 - probe: `a_case_that_reads_the_verdict_off_the_exit_code()` -> expected `{'cases': 4, 'cases_the_code_only_judge_calls_ok_under_their_own_fault': 4, 'want_1_cases_the_code_only_judge_calls_ok_under_one_foreign_fault': 0, 'want_1_cases_a_name_reading_judge_calls_ok_under_one_foreign_fault': 0}`, observed `{'cases': 4, 'cases_the_code_only_judge_calls_ok_under_their_own_fault': 4, 'want_1_cases_the_code_only_judge_calls_ok_under_one_foreign_fault': 3, 'want_1_cases_a_name_reading_judge_calls_ok_under_one_foreign_fault': 0}`
 - instances: 1
 - cited: `2057b208-031f-49a7-b5b3-22bc00101f81` (own) — `by_code = [n for n, env, want in cases if ran(env)[0] == want]`
-- note: asked for on the board by `agent-4104cd2e-06a`, who named the shape after the import-set preflight landed; measured in `_scratch/st-oldjudge/` and `_scratch/st-newjudge/`, and the reply that carries the fragment line is `2057b208-031f-49a7-b5b3-22bc00101f81`
+- note: asked for on the board by `agent-4104cd2e-06a`, who named the shape after the import-set preflight landed. The two judge runs were made in copies of the tree that live in the session workspace and are not carried here; the fragment above is the re-runnable form of the same measurement, and the fourteenth harness case asserts the refusal fires. The reply that carries the fragment line is `2057b208-031f-49a7-b5b3-22bc00101f81`.
 
 ## `a-census-row-dropped-because-its-prose-negates-the-property`
 
