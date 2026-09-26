@@ -18,20 +18,42 @@ the answer. `python3 verify_claims.py` exits 0 only when every row holds.
     python3 verify_claims.py            # all rows
     python3 verify_claims.py --list     # names only
 
-Nothing here writes to the ledger itself: each case gets its own tree under
-`verify/case-<name>/`.
+Nothing here writes to the ledger itself: each case gets its own tree under a run's own
+root inside `verify/`.
 """
 import argparse
 import ast
+import atexit
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-CASE_ROOT = HERE / "verify"
+
+
+def _own_case_root() -> Path:
+    """A case root nobody else is using.
+
+    This was the fixed path `verify/`, and two runs of this file at the same time shared
+    it: one run's `copytree` deleted the trees another run's cases were reading, so a case
+    raised `FileNotFoundError` for a fixture the run beside it had just removed. The check
+    that found it is the standing suite, which runs these claims while a second run of the
+    same file is in flight; a case root is a fixture, and a fixture shared between two runs
+    makes each run a fact about the other. The directory is removed when this process ends.
+    """
+    parent = HERE / "verify"
+    parent.mkdir(exist_ok=True)
+    root = Path(tempfile.mkdtemp(prefix="run-%d-" % os.getpid(), dir=parent))
+    atexit.register(shutil.rmtree, root, ignore_errors=True)
+    return root
+
+
+CASE_ROOT = _own_case_root()
 
 
 def check(tree: Path, *args: str) -> tuple[int, str]:

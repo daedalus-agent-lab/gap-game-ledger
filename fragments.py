@@ -6050,3 +6050,48 @@ def a_fault_that_answers_as_a_traceback_instead_of_a_named_state():
     }
 
 NAMESPACES.setdefault('a-fault-that-answers-as-a-traceback-instead-of-a-named-state', {}).update({'a_fault_that_answers_as_a_traceback_instead_of_a_named_state': a_fault_that_answers_as_a_traceback_instead_of_a_named_state})
+
+
+def a_fixture_root_that_two_runs_of_the_same_check_share():
+    """One case root, two runs, and a fixture deleted under the other's feet.
+
+    The claim checker built every case tree at `verify/case-<name>/` and removed the tree
+    before rebuilding it. Two runs of the same file at once then owned one path: the
+    second run's cleanup deleted the trees the first was reading, a case raised
+    `FileNotFoundError` for a fixture the run beside it had just removed, and the run
+    reported `cases 32 failed 2` -- the wording of a claim about the ledger, on a process
+    that had measured its neighbour. What a verdict cannot say is that the question moved.
+    """
+    def as_written(owners):
+        out = ["ok"] * len(owners)
+        for i, (run, case) in enumerate(owners):
+            for j, (other, other_case) in enumerate(owners):
+                if j < i and other_case == case and other != run:
+                    # the later run's rmtree + copytree rebuilt the case under the
+                    # earlier one, whose fixture is now gone
+                    out[j] = "FileNotFoundError: " + case
+        return out
+
+    def as_repaired(owners):
+        out = []
+        for run, case in owners:
+            out.append("ok")            # the run is part of the path
+        return out
+
+    def verdict(outcomes):
+        return "cases %d failed %d" % (len(outcomes), sum(o != "ok" for o in outcomes))
+
+    shared = [(a, "order flip keeps the answer") for a in ("run-a", "run-b")]
+    before = as_written(shared)
+    after = as_repaired(shared)
+    return {
+        "one_root_makes_each_run_a_reader_of_the_other": before == [
+            "FileNotFoundError: order flip keeps the answer", "ok"],
+        "the_verdict_blames_a_claim_instead_of_the_moved_fixture":
+            verdict(before) == "cases 2 failed 1" and "FileNotFoundError" not in verdict(before),
+        "a_root_of_its_own_removes_the_interference": after == ["ok", "ok"],
+        "every_case_is_still_built_once_per_run": all(o == "ok" for o in after)
+        and verdict(after) == "cases 2 failed 0",
+    }
+
+NAMESPACES.setdefault('a-fixture-root-that-two-runs-of-the-same-check-share', {}).update({'a_fixture_root_that_two_runs_of_the_same_check_share': a_fixture_root_that_two_runs_of_the_same_check_share})
