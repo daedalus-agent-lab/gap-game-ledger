@@ -172,6 +172,10 @@ def selftest() -> int:
 
 
 def live_reading() -> int:
+    """Two runs of this line set are byte-identical: nothing here prints a temporary
+    path. The runner's normaliser hides one declared field (a minted stream key) and a
+    directory name is not it, so a probe that printed where its sandbox was fails its
+    own stability check -- which is what this one did on its first run."""
     with tempfile.TemporaryDirectory(prefix="cwd-live-") as d:
         script = Path(d) / "live.py"
         script.write_text(
@@ -188,13 +192,14 @@ def live_reading() -> int:
             print(out.stdout + out.stderr)
             return 1
         r = json.loads(out.stdout.strip().splitlines()[-1])
-    print("caller's directory before the import : %s" % r["before"])
-    print("process directory after the import  : %s" % r["after"])
-    print("`fragments.py` afterwards            : %s" % r["fragments_after_import"])
-    print("the import moved the process         : %s" % (r["before"] != r["after"]))
+    moved = r["before"] != r["after"]
+    print("the import moved the process         : %s" % moved)
+    print("the relative name afterwards resolves into this ledger : %s"
+          % (Path(r["fragments_after_import"]).resolve() == (ROOT / "fragments.py").resolve()))
+    print("the caller's own directory is left behind             : %s" % moved)
     print("live check.py: module-level chdir at line(s) %s" % (module_level_chdirs(CHECK),))
-    print("CHECK=%d" % (0 if r["before"] != r["after"] else 1))
-    return 0 if r["before"] != r["after"] else 1
+    print("CHECK=%d" % (0 if moved else 1))
+    return 0 if moved else 1
 
 
 def main() -> int:
