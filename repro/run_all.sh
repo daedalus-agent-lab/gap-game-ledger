@@ -214,7 +214,16 @@ if [ "$SELFTEST" = 1 ]; then
   exit 0
 fi
 
-fails=0; rows=""
+fails=0; rows=""; items_run=0
+
+# One row per item, one item per row. The row separator is a real newline, and the
+# guard below is the reason this line is written the way it is: `$'\n'` INSIDE
+# double quotes is not a newline, it is the five characters `$`, `'`, `\`, `n`, `'`,
+# so every row was joined into ONE line, `items in the aggregate` read 1, and the
+# record carried a single row whose `name` was every item's name in one string and
+# whose `out`/`set` were the LAST row's fields. The aggregate digest was computed
+# over that one line: sensitive to every item, unable to name any of them.
+add_row() { rows="${rows}$1"$'\n'; items_run=$((items_run + 1)); }
 
 # `band_profile.py` runs under `uv run --with pillow`. On a fresh clone the first
 # of the two --stable runs prints the download and the second does not, so the
@@ -256,7 +265,7 @@ run() {                       # run <name> <command...>
       printf 'FAIL %-34s the tree moved under the item (tree %s -> %s)\n' "$name" "$tb" "$ta"
       printf '     two runs under two trees are not two readings of one tree; the item is not certified\n'
       fails=$((fails + 1)); rm -f "$log" "$log2"
-      rows="${rows}$(row_of "$name" "$rc" 2 "$d" "$n" "$sd")$'\n'"
+      add_row "$(row_of "$name" "$rc" 2 "$d" "$n" "$sd")"
       return
     fi
     if [ "$(normalise < "$log2")" != "$norm" ]; then
@@ -275,7 +284,7 @@ run() {                       # run <name> <command...>
       fi
       diff <(normalise < "$log") <(normalise < "$log2") | sed -n '1,8p' | sed 's/^/       /'
       fails=$((fails + 1)); rm -f "$log" "$log2"
-      rows="${rows}$(row_of "$name" "$rc" 2 "$d" "$n" "$sd")$'\n'"
+      add_row "$(row_of "$name" "$rc" 2 "$d" "$n" "$sd")"
       return
     fi
     if ! diff "$log" "$log2" | grep -E '^[<>]' | grep -qvE '\bkey [0-9a-f]{16}\b'; then
@@ -287,7 +296,7 @@ run() {                       # run <name> <command...>
       # This row used to be written with the set digest missing, one field fewer than
       # the record writer unpacks, so the branch that fired first would have taken the
       # whole record down with a ValueError instead of recording the item.
-      rows="${rows}$(row_of "$name" "$rc" 2 "$d" "$n" "$sd")$'\n'"
+      add_row "$(row_of "$name" "$rc" 2 "$d" "$n" "$sd")"
       return
     fi
     rm -f "$log2"
@@ -311,7 +320,7 @@ run() {                       # run <name> <command...>
     printf 'FAIL %-34s out=%s set=%s norm=%d tree=%s  the command exited %s\n' "$name" "$d" "$sd" "$n" "$tb" "$rc"; sed -n '1,12p' "$log" | sed 's/^/       /'
     fails=$((fails + 1))
   fi
-  rows="${rows}$(row_of "$name" "$rc" "$cert" "$d" "$n" "$sd")$'\n'"
+  add_row "$(row_of "$name" "$rc" "$cert" "$d" "$n" "$sd")"
   rm -f "$log"
 }
 
@@ -560,6 +569,18 @@ else
   echo "no recorded run beside this tree: the record is this run's own output and is"
   echo "not tracked, so a fresh clone has nothing to compare against. Nothing moved"
   echo "means nothing compared. Items in this run: $(printf '%s' "$rows" | grep -c .)."
+fi
+# The record must carry one row per item this run ran. It did not: the separator was
+# written as a literal `$'\n'`, so the JSON held a single row while the run printed
+# forty, and every diff against it named one item whose name was all of them. The two
+# numbers are read from two places -- the loop's own counter and the file it wrote --
+# because a count printed from the same string it is checked against is not a check.
+recorded="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["items"]))' "$newreg")"
+printed="$(printf '%s' "$rows" | grep -c .)"
+if [ "$recorded" != "$items_run" ] || [ "$printed" != "$items_run" ]; then
+  printf 'FAIL %-34s the record carries %s row(s) and the run printed %s, for %s item(s) run\n' \
+         "the record" "$recorded" "$printed" "$items_run"
+  fails=$((fails + 1))
 fi
 mv "$newreg" "$reg"
 echo
