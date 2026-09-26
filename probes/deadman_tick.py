@@ -13,10 +13,17 @@ whose name was only in the prose left the reader to grep a sentence:
   fresh       the newest stamp is inside the declared cadence;
   stale       the newest stamp is older than the cadence, and the refusal NAMES both
               instants and the cadence it compared;
-  no_baseline no stamp file at all, OR a file that carries no stamp line: nothing was
-              ever recorded, so the repair is to make the runner tick;
-  unreadable  a stamp line that is not a timestamp, or a stamp line with no offset:
-              the record is here and is not readable, so the repair is the file.
+  no_baseline no entry at that path at all, OR a file that carries no stamp line:
+              nothing was ever recorded, so the repair is to make the runner tick;
+  unreadable  an entry that cannot be read as a record -- a stamp line that is not a
+              timestamp, a stamp line with no offset, a directory, bytes that are not
+              UTF-8, a path this process may not open, a link that leads nowhere: the
+              record is here and is not readable, so the repair is the file.
+
+A path that IS an entry and cannot be read is not the same question as a path with
+nothing at it, and the three faults that used to escape as tracebacks answered
+neither -- a reader got `IsADirectoryError` instead of a state. A dangling symlink
+is an entry that exists and holds nothing, which is not an absent file either.
 
 A declared, dated waiver is the only way a gap is allowed, and it is named when it
 is the reason the gap passed. A waiver is itself bounded -- a pause longer than
@@ -24,10 +31,17 @@ is the reason the gap passed. A waiver is itself bounded -- a pause longer than
 waiver without an end is a way to declare the heartbeat silent for good, and one line
 written once would then answer freshness for every future week.
 
-A declaration the reader does NOT use is named too, on every verdict, green or red.
-Dropping it silently made a mistyped `# waiver`, an unbounded pause and a pause whose
-instants cannot be read against the stamp indistinguishable from never having been
-written -- and the writer of a declined pause read a green run as an obeyed one.
+A declaration the reader does NOT use is named too, on EVERY verdict -- green, red, and
+the two states that never reach the gap check (`no_baseline`, `unreadable`), where the
+refusal was returned before the declarations were ever read. Dropping it silently made a
+mistyped `# waiver`, an unbounded pause and a pause whose instants cannot be read against
+the stamp indistinguishable from never having been written -- and the writer of a
+declined pause read a green run as an obeyed one.
+
+What counts as a declaration ATTEMPT is narrower than "the line mentions a waiver": a
+stamp's own annotation that happens to say `waiver not used` is a stamp, not a pause, and
+naming it refused misreports which line was declined. An attempt is a line that mentions
+a pause AND carries the three fields of one (two `|`), and `#` must be its first byte.
 
   python3 probes/deadman_tick.py --stamp            # the runner's line
   python3 probes/deadman_tick.py --check            # the verdict
@@ -35,6 +49,7 @@ written -- and the writer of a declined pause read a green run as an obeyed one.
 """
 import argparse
 import datetime
+import os
 import pathlib
 import sys
 import tempfile
@@ -49,9 +64,38 @@ CADENCE_SECONDS = 24 * 3600
 # a bound lets the bound be widened to 300 days with every case still green.
 MAX_WAIVER_SECONDS = 7 * 24 * 3600
 WAIVER_OPENS = "# waiver "
+# A pause word, and the three fields of a declaration. Both are needed to call a line an
+# attempt: a stamp line annotating itself "waiver not used" mentions a pause and is not a
+# declaration, while `#waive  a | b` is one whose opener is mistyped and must be named.
+PAUSE_WORDS = ("waiv", "pause")
 
 
-def parse_stamp(path: pathlib.Path):
+def read_record(path: pathlib.Path):
+    """(lines, complaint) -- the record's lines, or why the path is not a record at all.
+
+    Distinguishing an absent entry from an entry that cannot be read is the whole point:
+    a directory, a permission failure, non-UTF-8 bytes and a link that leads nowhere each
+    used to end in a traceback with no state name, and a dangling symlink was reported as
+    a record that was never written. `lexists` asks about the entry, `read_text` about the
+    bytes; both answers are needed and neither substitutes for the other.
+    """
+    if not os.path.lexists(path):
+        # Its own state, not a flavour of unreadable: a first-ever tick is repaired by
+        # making the runner tick, a record that cannot be read by fixing the entry.
+        return None, ("no_baseline",
+                      "no run stamp at %s: a run that never happened and a run with "
+                      "nothing to report leave the same record, so this is red and not "
+                      "quiet" % (path.relative_to(REPO) if REPO in path.parents else path))
+    try:
+        return path.read_text(encoding="utf-8").splitlines(), None
+    except (OSError, UnicodeDecodeError) as exc:
+        return None, ("unreadable",
+                      "%s is an entry that cannot be read as a record: %s: %s -- the "
+                      "repair is the file, not a tick" % (
+                          path.name, type(exc).__name__, exc))
+
+
+def parse_stamp(lines, path: pathlib.Path):
     """(newest instant, complaint) -- complaint is (state, message) when there is none.
 
     Two faults do not share a name here. A record that carries no stamp line at all
@@ -60,7 +104,7 @@ def parse_stamp(path: pathlib.Path):
     the second while its repair is the first.
     """
     newest = None
-    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+    for n, line in enumerate(lines, 1):
         line = line.strip()
         if not line or line.startswith("#"):
             continue
@@ -85,7 +129,7 @@ def parse_stamp(path: pathlib.Path):
     return newest, None
 
 
-def declared_waivers(path: pathlib.Path, newest, now):
+def declared_waivers(lines, newest):
     """Every `# waiver` line split into what is usable and what is declined.
 
     Returns (usable, declined): `usable` is (start, end, text) for a bounded pause whose
@@ -93,21 +137,33 @@ def declared_waivers(path: pathlib.Path, newest, now):
     text, reason) for one the reader will not use. A declaration that parses, is bounded
     and simply does not cover this gap is NOT declined: it was read and answered no, which
     is a different thing from never having been read.
+
+    A line is an ATTEMPT only if it mentions a pause AND carries a declaration's three
+    fields: a stamp annotated "waiver not used" is a stamp, and printing it as a refused
+    declaration said the reader had declined a line it had in fact read as the stamp.
+    `newest` may be None (the record carries no readable stamp); the offset comparison
+    against the stamp is then simply not made.
     """
     usable, declined = [], []
-    if not path.exists():
-        return usable, declined
-    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-        if "waiver" not in line.lower():
+    for n, raw in enumerate(lines, 1):
+        line = raw.strip()
+        lowered = line.lower()
+        if not any(word in lowered for word in PAUSE_WORDS):
+            continue
+        if "|" not in line:
+            # Prose that mentions a pause, not a declaration: nothing to decline.
+            continue
+        if not line.startswith("#"):
+            # A stamp or a note whose words mention a pause, and which cannot be one.
             continue
         if not line.startswith(WAIVER_OPENS):
-            declined.append((None, None, line.strip(),
+            declined.append((None, None, line,
                              "line %d does not open the declared form %r, so nothing "
                              "reads it as a pause" % (n, WAIVER_OPENS)))
             continue
         parts = [p.strip() for p in line[len(WAIVER_OPENS):].split("|")]
         if len(parts) < 3:
-            declined.append((None, None, line.strip(),
+            declined.append((None, None, line,
                              "line %d carries %d field(s), and a pause needs a start, an "
                              "end and its reason" % (n, len(parts))))
             continue
@@ -118,9 +174,9 @@ def declared_waivers(path: pathlib.Path, newest, now):
             declined.append((None, None, line.strip(),
                              "line %d has an instant that is not a timestamp" % n))
             continue
-        if (start.tzinfo is None) != (end.tzinfo is None) or \
-                (newest.tzinfo is None) != (start.tzinfo is None):
-            declined.append((start, end, line.strip(),
+        if (start.tzinfo is None) != (end.tzinfo is None) or (
+                newest is not None and (newest.tzinfo is None) != (start.tzinfo is None)):
+            declined.append((start, end, line,
                              "its instants and the stamp are not both read on a clock with "
                              "an offset, so no length or coverage can be read from it"))
             continue
@@ -138,25 +194,28 @@ def declared_waivers(path: pathlib.Path, newest, now):
 
 
 def verdict(path, now, cadence):
-    if not path.exists():
-        # Its own state, not a flavour of unreadable: a first-ever tick is repaired by
-        # making the runner tick, a corrupt stamp by fixing the file.
-        return "no_baseline", "no run stamp at %s: a run that never happened and a " \
-                              "run with nothing to report leave the same record, so " \
-                              "this is red and not quiet" % (
-                                  path.relative_to(REPO) if REPO in path.parents else path)
-    newest, complaint = parse_stamp(path)
+    """(state, detail, declined) -- one shape for every state, so no path skips a name.
+
+    The declined declarations are read BEFORE the state is decided, because they are a
+    fact about the record and not about the gap: returning a stamp complaint first left
+    a mistyped pause silent on exactly the two states where a reader has least else to
+    go on.
+    """
+    lines, complaint = read_record(path)
+    newest = None
+    if complaint is None:
+        newest, complaint = parse_stamp(lines, path)
+    usable, declined = declared_waivers(lines or [], newest)
     if complaint is not None:
-        return complaint
+        return complaint[0], complaint[1], declined
     gap = (now - newest).total_seconds()
-    usable, declined = declared_waivers(path, newest, now)
     if gap <= cadence:
-        return "fresh", (newest, None, declined)
+        return "fresh", (newest, None), declined
     for start, end, text in usable:
         if start <= newest and now <= end:
             return "fresh", (newest, "a pause from %s to %s declared: %s" % (
-                start.isoformat(), end.isoformat(), text), declined)
-    return "stale", (newest, now, cadence, gap, declined)
+                start.isoformat(), end.isoformat(), text)), declined
+    return "stale", (newest, now, cadence, gap), declined
 
 
 def stamp(path, now):
@@ -170,7 +229,7 @@ DECLINED = "REFUSED %s -- a declared pause this run does not use: %s"
 
 
 def check(path, now, cadence):
-    state, detail = verdict(path, now, cadence)
+    state, detail, declined = verdict(path, now, cadence)
     if state == "fresh":
         # The green line carries no instant, and that is deliberate: this probe is an
         # item of the suite whose own record compares each item's output between runs.
@@ -179,24 +238,26 @@ def check(path, now, cadence):
         # SILENCE -- the red line below names both instants and the cadence it compared
         # -- because a gap nobody can date is a gap nobody can check. A refused pause is
         # named too, and it is read from the FILE, so it does not move between runs.
-        newest, why, declined = detail
+        newest, why = detail
         if why is None:
             print("fresh: a run stamp inside the declared cadence of %d s" % cadence)
         else:
             print("fresh: %s" % why)
-        for start, end, text, reason in declined:
-            print(DECLINED % (text, reason))
-        return 0
-    if state == "stale":
-        newest, then, cad, gap, declined = detail
+        rc = 0
+    elif state == "stale":
+        newest, then, cad, gap = detail
         print("FAIL STALE  the newest run stamp is %s, %d s before now at %s, and the "
               "declared cadence is %d s: this run has been silent for %.1f cadences" % (
                   newest.isoformat(), int(gap), then.isoformat(), cad, gap / cad))
-        for start, end, text, reason in declined:
-            print(DECLINED % (text, reason))
-        return 1
-    print("FAIL %s %s" % (state.upper(), detail))
-    return 1
+        rc = 1
+    else:
+        print("FAIL %s %s" % (state.upper(), detail))
+        rc = 1
+    # Every state prints the declarations it did not use -- including the two that never
+    # reach the gap check. One print path, so no verdict can skip a name.
+    for start, end, text, reason in declined:
+        print(DECLINED % (text, reason))
+    return rc
 
 
 FIXTURE = """# a run stamp file
@@ -249,13 +310,14 @@ def selftest() -> int:
     checks = []
 
     def case(name, path, want, needle=None, cadence=day, at=now, want_state=None):
-        state, detail = verdict(path, at, cadence)
+        state, detail, declined = verdict(path, at, cadence)
         text = "red" if state in ("stale", "unreadable", "no_baseline") else "fresh"
         ok = text == want
         if ok and needle is not None:
-            rendered = str(detail)
-            ok = needle in (rendered if state == "stale" else
-                            (detail if isinstance(detail, str) else str(detail)))
+            # Everything the verdict would print: the detail and every refused line, since
+            # the refusal of a pause lives in `declined` now that every state carries it.
+            rendered = "%s %s" % (detail, [d[2:] for d in declined])
+            ok = needle in rendered
         if ok and want_state is not None:
             ok = state == want_state
         checks.append((ok, name, text, want))
@@ -379,12 +441,137 @@ def selftest() -> int:
 
         # 15. the green line is the same on two runs; it names no instant of the run. The
         # refused pause IS named, and it comes from the file, so it does not move either.
+        # "Run-stable" is per CLASSIFICATION: a record kept inside one class is byte-equal
+        # across `now`, and the pause line is equal because it names the file's span, not
+        # the clock. Two greens that differ are two classes, not a moving line.
         same = said(fresh, now) == said(fresh, now + datetime.timedelta(minutes=17))
         same_refusal = (said(both, now) == said(both, now + datetime.timedelta(minutes=17)))
-        stable = same and same_refusal
+        paused_said = said(waived, now)
+        same_pause = paused_said == said(waived, now + datetime.timedelta(hours=13))
+        stable = same and same_refusal and same_pause and "86400" not in paused_said
         checks.append((stable,
-                       "the green line is run-stable, with and without a refused pause",
+                       "a green line names no instant of the run",
                        "stable" if stable else "moves", "stable"))
+
+        # 16. the cadence boundary is `<=`, not `<`: a stamp exactly one cadence old is
+        # inside it. The comparison's direction is a rule, and a `<` left the selftest
+        # green (mutant M1) because no fixture sat on the boundary.
+        edge = tmp / "edge.log"
+        edge.write_text("%s\trun\n" % (now - datetime.timedelta(seconds=day)).isoformat(),
+                        encoding="utf-8")
+        over = tmp / "over.log"
+        over.write_text("%s\trun\n" % (now - datetime.timedelta(seconds=day + 1)).isoformat(),
+                        encoding="utf-8")
+        at_edge = verdict(edge, now, day)[0] == "fresh"
+        past_edge = verdict(over, now, day)[0] == "stale"
+        checks.append((at_edge and past_edge,
+                       "a stamp exactly one cadence old is inside the cadence",
+                       "%s/%s" % (verdict(edge, now, day)[0], verdict(over, now, day)[0]),
+                       "fresh/stale"))
+
+        # 17. coverage is BOTH ends of the pause, and the rule is `and`. A pause that
+        # covers the stamp but ended before now, and one that begins after the stamp and
+        # covers now, are each not a reason -- an `or` here passed an expired waiver off as
+        # a declared one, with the selftest green (mutant M4).
+        expired = tmp / "expired.log"
+        expired.write_text("2026-09-09T00:00:00+00:00\trun\n"
+                           "# waiver 2026-09-09T00:00:00+00:00 | "
+                           "2026-09-12T00:00:00+00:00 | ended a fortnight ago\n",
+                           encoding="utf-8")
+        late = tmp / "late.log"
+        late.write_text("2026-09-09T00:00:00+00:00\trun\n"
+                        "# waiver 2026-09-20T00:00:00+00:00 | "
+                        "2026-10-01T00:00:00+00:00 | starts after the stamp\n",
+                        encoding="utf-8")
+        cov = (verdict(expired, now, day)[0] == "stale"
+               and verdict(late, now, day)[0] == "stale")
+        checks.append((cov, "a pause must cover the stamp AND reach now",
+                       "%s/%s" % (verdict(expired, now, day)[0],
+                                  verdict(late, now, day)[0]), "stale/stale"))
+
+        # 18. the record's newest stamp is chosen by comparing instants, not by position:
+        # a file whose stamps are out of order, and one with a blank line among them,
+        # must both read as the newest one they carry (mutants M5, M6 sit on this).
+        unordered = tmp / "unordered.log"
+        unordered.write_text("2026-09-26T04:00:00+00:00\trun completed\n"
+                             "\n"
+                             "2026-08-01T04:00:00+00:00\tthe older run, written later\n",
+                             encoding="utf-8")
+        checks.append((verdict(unordered, now, day)[0] == "fresh",
+                       "the newest stamp is chosen by instant, blank lines included",
+                       verdict(unordered, now, day)[0], "fresh"))
+
+        # 19. a declaration whose KEYWORD is mistyped is named, like a mistyped opener: a
+        # reader that only greps one spelling reports nothing at all (mutant M10).
+        caps = tmp / "caps.log"
+        caps.write_text("2026-09-01T04:00:00+00:00\trun\n"
+                        "# WAIVER 2026-09-01T00:00:00+00:00 | "
+                        "2026-09-27T00:00:00+00:00 | shouted\n", encoding="utf-8")
+        spelled = said(caps, now)
+        checks.append(("REFUSED" in spelled and "declared form" in spelled,
+                       "a mistyped keyword is named, not silently dropped",
+                       "named" if "REFUSED" in spelled else "silent", "named"))
+
+        # 20. a stamp that merely mentions a pause is not a declined one. Naming it refused
+        # reported the reader as having declined a line it had in fact read as the stamp.
+        mention = tmp / "mention.log"
+        mention.write_text("2026-09-26T04:00:00+00:00\trun completed, waiver not used\n",
+                           encoding="utf-8")
+        mentioned = said(mention, now)
+        prose = tmp / "prose.log"
+        prose.write_text("2026-09-26T04:00:00+00:00\trun\n"
+                         "# the waiver is described in the notes\n", encoding="utf-8")
+        checks.append(("REFUSED" not in mentioned and "REFUSED" not in said(prose, now)
+                       and mentioned.startswith("fresh:"),
+                       "a line that only mentions a pause is not a declined one",
+                       mentioned.splitlines()[0][:20], "fresh:"))
+
+        # 21. a declaration the reader declines is named on the two states that never reach
+        # the gap check as well: those returned the stamp complaint before reading the
+        # declarations, so a mistyped pause was silent exactly where least else is said.
+        silent_typo = tmp / "a_nostamp_typo.log"
+        silent_typo.write_text("# nothing but a comment\n"
+                               "#waiver 2026-09-01T00:00:00+00:00 | "
+                               "2026-09-27T00:00:00+00:00 | mistyped opener\n",
+                               encoding="utf-8")
+        silent_corrupt = tmp / "b_corrupt_typo.log"
+        silent_corrupt.write_text("not a timestamp\n"
+                                  "#waiver 2026-09-01T00:00:00+00:00 | "
+                                  "2026-09-27T00:00:00+00:00 | mistyped opener\n",
+                                  encoding="utf-8")
+        on_all = ("REFUSED" in said(silent_typo, now)
+                  and "REFUSED" in said(silent_corrupt, now))
+        checks.append((on_all,
+                       "a declined declaration is named on every state, not just the gap",
+                       "named" if on_all else "silent", "named"))
+
+        # 22. an entry that cannot be read is a VERDICT, not a traceback: a directory, bytes
+        # that are not UTF-8 and a link that leads nowhere used to end in IsADirectoryError
+        # or UnicodeDecodeError with no state word at all.
+        as_dir = tmp / "dir.log"
+        as_dir.mkdir()
+        binary = tmp / "binary.log"
+        binary.write_bytes(b"2026-09-26T04:00:00+00:00\trun\n\xff\xfe not utf-8\n")
+        dangling = tmp / "dangling.log"
+        dangling.symlink_to(tmp / "nowhere_at_all")
+        outcomes = []
+        for probe_path in (as_dir, binary, dangling):
+            try:
+                outcomes.append(verdict(probe_path, now, day)[0])
+            except Exception as exc:  # a traceback is the defect this case exists for
+                outcomes.append(type(exc).__name__)
+        checks.append((outcomes == ["unreadable"] * 3,
+                       "a record that cannot be read is a state, not a traceback",
+                       "/".join(outcomes), "unreadable/unreadable/unreadable"))
+
+        # 23. the refusal quotes the declaration's REASON, not the raw line: a reader told
+        # "this line was declined" with the timestamp pair quoted back has to guess which
+        # pause was meant (mutant M17).
+        over_reason = "the tree is frozen for good"
+        over_said = said(endless, now)
+        checks.append((("REFUSED %s" % over_reason) in over_said,
+                       "the refusal quotes the declined pause's own reason",
+                       over_said.splitlines()[-1][:20], "REFUSED the tree is fro"))
     failed = [c for c in checks if not c[0]]
     for ok, name, state, want in checks:
         print("ok   %-58s %s" % (name, state) if ok

@@ -5964,3 +5964,89 @@ def a_row_separator_written_as_a_literal_and_read_as_one_row():
     }
 
 NAMESPACES.setdefault('a-row-separator-written-as-a-literal-and-read-as-one-row', {}).update({'a_row_separator_written_as_a_literal_and_read_as_one_row': a_row_separator_written_as_a_literal_and_read_as_one_row})
+
+
+def a_guard_that_prints_its_verdict_and_then_does_what_it_forbade():
+    """A FAIL printed on one line and undone on the next.
+
+    The runner counted the rows of the record it had just written and printed FAIL when
+    the count was not one per item -- and then replaced the record with that same
+    rejected file. The guard's verdict and the write read the same variable, and only the
+    write used it: after one bad run the record beside the tree held 1 row where it had
+    held 44, so the next run had nothing left to be compared against. The object the
+    check exists to protect was the object the check destroyed. Measured here on the two
+    forms: what the record holds after a run whose rows were rejected.
+    """
+    def record(rows):
+        return {"items": len(rows)}
+
+    good = record(list(range(44)))
+    bad = record(["every row folded into this one line"])
+
+    def run(old, guard_gates):
+        new = bad
+        rejected = new["items"] != 44
+        if rejected and guard_gates:
+            return old, rejected
+        return new, rejected
+
+    as_written, noticed_w = run(good, guard_gates=False)
+    as_repaired, noticed_r = run(good, guard_gates=True)
+    return {
+        "the_check_notices_the_bad_record": noticed_w and noticed_r,
+        "the_ungated_replacement_leaves_the_record_it_rejected":
+            as_written["items"] == 1,
+        "the_gated_replacement_keeps_the_record_it_judged":
+            as_repaired["items"] == 44,
+        "the_previous_record_was_the_only_thing_a_later_run_had":
+            good["items"] == 44 and as_repaired == good,
+    }
+
+NAMESPACES.setdefault('a-guard-that-prints-its-verdict-and-then-does-what-it-forbade', {}).update({'a_guard_that_prints_its_verdict_and_then_does_what_it_forbade': a_guard_that_prints_its_verdict_and_then_does_what_it_forbade})
+
+
+def a_fault_that_answers_as_a_traceback_instead_of_a_named_state():
+    """Three entry faults, three tracebacks, and one state given another state's name.
+
+    A verdict is a state a reader can act on; an exception is neither. A directory, a
+    file this process may not open and bytes that are not UTF-8 each ended in a traceback
+    naming a Python class instead of a state naming the repair. A fourth fault was named
+    wrongly rather than unnamed: `exists()` follows a link, so a symlink that leads
+    nowhere -- an entry that IS there and holds nothing -- answered with the state of an
+    entry that was never written. The two questions are asked separately here: whether the
+    entry exists, and whether its bytes can be read.
+    """
+    def as_written(lexists, resolves_to_a_file, readable):
+        if not (lexists and resolves_to_a_file):     # exists() follows the link
+            return "no_baseline"
+        try:
+            if not readable:
+                raise OSError("cannot read this entry")
+            return "fresh"
+        except OSError:
+            return "traceback: OSError"
+
+    def as_repaired(lexists, readable):
+        if not lexists:
+            return "no_baseline"
+        return "fresh" if readable else "unreadable"
+
+    faults = [("a directory", True, True, False),
+              ("non-UTF-8 bytes", True, True, False),
+              ("an entry this user may not open", True, True, False)]
+    before = [as_written(*f[1:]) for f in faults]
+    after = [as_repaired(f[1], f[3]) for f in faults]
+    return {
+        "every_entry_fault_answers_with_a_traceback":
+            all(s.startswith("traceback") for s in before),
+        "a_link_leading_nowhere_answers_with_an_absent_file":
+            as_written(lexists=True, resolves_to_a_file=False, readable=False)
+            == "no_baseline",
+        "an_entry_that_cannot_be_read_is_named_unreadable":
+            after == ["unreadable"] * 3,
+        "a_link_leading_nowhere_is_an_entry_that_holds_nothing":
+            as_repaired(lexists=True, readable=False) == "unreadable"
+            and as_repaired(lexists=False, readable=False) == "no_baseline",
+    }
+
+NAMESPACES.setdefault('a-fault-that-answers-as-a-traceback-instead-of-a-named-state', {}).update({'a_fault_that_answers_as_a_traceback_instead_of_a_named_state': a_fault_that_answers_as_a_traceback_instead_of_a_named_state})

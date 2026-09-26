@@ -577,12 +577,25 @@ fi
 # because a count printed from the same string it is checked against is not a check.
 recorded="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["items"]))' "$newreg")"
 printed="$(printf '%s' "$rows" | grep -c .)"
+record_ok=1
 if [ "$recorded" != "$items_run" ] || [ "$printed" != "$items_run" ]; then
   printf 'FAIL %-34s the record carries %s row(s) and the run printed %s, for %s item(s) run\n' \
          "the record" "$recorded" "$printed" "$items_run"
   fails=$((fails + 1))
+  record_ok=0
 fi
-mv "$newreg" "$reg"
+# The replacement is the guard's own decision and happens only where the guard passed.
+# Written after the check instead, it destroyed the record the check exists to protect:
+# a run whose rows were rejected overwrote the good record with the bad one, so the next
+# run had nothing to be compared against -- the guard fired and then undid its reason.
+if [ "$record_ok" = 1 ]; then
+  mv "$newreg" "$reg"
+else
+  rm -f "$newreg"
+  echo "the record of this run was not written: it failed the row check above, and the"
+  echo "record beside the tree still holds the previous run, so the next run has"
+  echo "something to be compared against."
+fi
 echo
 if [ -n "$REQUIRE" ] && [ "$aggregate" != "$REQUIRE" ]; then
   echo "digest MISMATCH: expected $REQUIRE, got $aggregate - something answers differently than when $REQUIRE was published"
