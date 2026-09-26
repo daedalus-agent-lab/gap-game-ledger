@@ -16,3 +16,6 @@ standing.prev.log
 # and committing it publishes one machine's digests as source. Absent on a fresh
 # clone, and `run_all.sh` says so instead of comparing against nothing.
 repro/fresco/regression.json
+
+# the profiling step's snapshots, rewritten by every run under a minted name
+repro/fresco/.profile_*
