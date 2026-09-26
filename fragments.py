@@ -6240,3 +6240,47 @@ def a_boundary_between_two_states_printed_under_one_word():
     }
 
 NAMESPACES.setdefault('a-boundary-between-two-states-printed-under-one-word', {}).update({'a_boundary_between_two_states_printed_under_one_word': a_boundary_between_two_states_printed_under_one_word})
+
+
+def an_attempt_gate_that_counts_fields_instead_of_reading_the_head():
+    """Three lines, two gates: one asks how many fields, one reads the head.
+
+    A declaration is a `#` comment headed by its pause word. The gate that counted
+    separators instead answered a different question -- how many fields does this line
+    have -- and so named prose as a declined declaration while dropping a declaration
+    whose separators were lost. Both readings are computed here on the same three lines,
+    so the divergence is a value and not a description.
+    """
+    words = ("waiv", "pause")
+    prose = "# we paused the suite for the release | see notes"
+    lost_fields = "#waive 2026-09-01T00:00:00+00:00 the tree is frozen"
+    stamp = "2026-09-26T04:00:00+00:00\trun completed, waiver not used"
+
+    def as_written(line):
+        """An attempt is a line that mentions a pause, carries a `|` and starts with `#`."""
+        if not line.startswith("#") or "|" not in line:
+            return "not an attempt"
+        if not any(word in line.lower() for word in words):
+            return "not an attempt"
+        return "attempt"
+
+    def as_repaired(line):
+        """An attempt is a `#` comment whose first word is a pause word."""
+        if not line.startswith("#"):
+            return "not an attempt"
+        head = line.lstrip("#").strip().split()
+        if not head or not any(word in head[0] for word in words):
+            return "not an attempt"
+        return "attempt"
+
+    written = {
+        "prose_with_a_separator_is_named_as_a_declined_one":
+            as_written(prose) == "attempt",
+        "a_declaration_that_lost_its_separators_is_dropped":
+            as_written(lost_fields) == "not an attempt",
+        "the_head_word_decides_whether_the_line_is_an_attempt":
+            (as_written(prose), as_written(lost_fields)) != ("not an attempt", "attempt"),
+    }
+    return dict(written)
+
+NAMESPACES.setdefault('an-attempt-gate-that-counts-fields-instead-of-reading-the-head', {}).update({'an_attempt_gate_that_counts_fields_instead_of_reading_the_head': an_attempt_gate_that_counts_fields_instead_of_reading_the_head})

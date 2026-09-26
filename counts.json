@@ -8,10 +8,10 @@
     "probes/unread_fragments.py"
    ],
    "keys": {
-    "callable registrations": 317,
-    "claims (entries + repeats)": 254,
-    "distinct objects among them": 314,
-    "namespaces": 201,
+    "callable registrations": 318,
+    "claims (entries + repeats)": 255,
+    "distinct objects among them": 315,
+    "namespaces": 202,
     "registrations named by no claim": 58
    }
   },
@@ -22,10 +22,10 @@
     "probes/registry_collisions.py"
    ],
    "keys": {
-    "classes": 201,
-    "distinct names": 324,
+    "classes": 202,
+    "distinct names": 325,
     "in more than one class": 2,
-    "registrations": 327
+    "registrations": 328
    }
   },
   {

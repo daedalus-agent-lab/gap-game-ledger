@@ -51,8 +51,13 @@ declined pause read a green run as an obeyed one.
 
 What counts as a declaration ATTEMPT is narrower than "the line mentions a waiver": a
 stamp's own annotation that happens to say `waiver not used` is a stamp, not a pause, and
-naming it refused misreports which line was declined. An attempt is a line that mentions
-a pause AND carries the three fields of one (two `|`), and `#` must be its first byte.
+naming it refused misreports which line was declined. An attempt is a `#` comment whose
+FIRST word is a pause word -- `# waiver ...`, `#waive ...`, `# pause ...`. The earlier
+gate asked how many field separators the line carries, which is a question about the
+fields and not about the line: `# we paused the suite for the release | see notes` was
+printed as a refused declaration, while `#waive ... the tree is frozen`, a declaration
+that lost its separators, was dropped in silence. Prose that mentions a pause in its
+middle is neither.
 
   python3 probes/deadman_tick.py --stamp            # the runner's line
   python3 probes/deadman_tick.py --check            # the verdict
@@ -149,23 +154,29 @@ def declared_waivers(lines, newest):
     and simply does not cover this gap is NOT declined: it was read and answered no, which
     is a different thing from never having been read.
 
-    A line is an ATTEMPT only if it mentions a pause AND carries a declaration's three
-    fields: a stamp annotated "waiver not used" is a stamp, and printing it as a refused
-    declaration said the reader had declined a line it had in fact read as the stamp.
-    `newest` may be None (the record carries no readable stamp); the offset comparison
-    against the stamp is then simply not made.
+    A line is an ATTEMPT only if `#` is its first byte and its first word is a pause word:
+    a stamp annotated "waiver not used" is a stamp, and printing it as a refused
+    declaration said the reader had declined a line it had in fact read as the stamp. A
+    prose comment that mentions a pause mid-sentence is not an attempt either, while a
+    declaration that lost its separators still is one -- the head is what is read, because
+    that is where a declaration puts its word. `newest` may be None (the record carries no
+    readable stamp); the offset comparison against the stamp is then simply not made.
     """
     usable, declined = [], []
     for n, raw in enumerate(lines, 1):
         line = raw.strip()
         lowered = line.lower()
-        if not any(word in lowered for word in PAUSE_WORDS):
-            continue
-        if "|" not in line:
-            # Prose that mentions a pause, not a declaration: nothing to decline.
-            continue
         if not line.startswith("#"):
-            # A stamp or a note whose words mention a pause, and which cannot be one.
+            # A stamp or a note whose words mention a pause, and which cannot be one: a
+            # declaration puts its word at the head of a comment.
+            continue
+        # A declaration is HEADED by its pause word. The gate used to count field
+        # separators instead, which asked how many fields the line has rather than
+        # whether it is an attempt: `# we paused the suite | see notes` was reported as a
+        # declined declaration, and a mistyped one whose separators were lost was never
+        # named at all.
+        head = lowered.lstrip("#").strip().split()
+        if not head or not any(word in head[0] for word in PAUSE_WORDS):
             continue
         if not line.startswith(WAIVER_OPENS):
             declined.append((None, None, line,
@@ -600,6 +611,61 @@ def selftest() -> int:
         checks.append((("REFUSED %s" % over_reason) in over_said,
                        "the refusal quotes the declined pause's own reason",
                        over_said.splitlines()[-1][:20], "REFUSED the tree is fro"))
+        # 24. the attempt gate reads the HEAD of the line, not its separator count: prose
+        # that mentions a pause mid-sentence and carries a pipe was printed as a refused
+        # declaration, which reports the reader as having declined a line it never read as
+        # a pause.
+        prose_pipe = tmp / "prose_pipe.log"
+        prose_pipe.write_text("2026-09-26T04:00:00+00:00\trun completed\n"
+                              "# we paused the suite for the release | see notes\n",
+                              encoding="utf-8")
+        pipe_said = said(prose_pipe, now)
+        checks.append(("REFUSED" not in pipe_said,
+                       "prose with a separator is not a declined declaration",
+                       "named" if "REFUSED" in pipe_said else "silent", "silent"))
+
+        # 25. a mistyped declaration that lost its separators is still NAMED. With a gate
+        # on the field count it was dropped in silence -- the writer of a declined pause
+        # read a green run as an obeyed one, which is what the naming exists for.
+        short_fields = tmp / "short_fields.log"
+        short_fields.write_text("2026-09-26T04:00:00+00:00\trun completed\n"
+                                "#waive 2026-09-01T00:00:00+00:00 the tree is frozen\n",
+                                encoding="utf-8")
+        short_said = said(short_fields, now)
+        checks.append(("REFUSED" in short_said,
+                       "a mistyped declaration with no separators is named",
+                       "named" if "REFUSED" in short_said else "silent", "named"))
+
+        # 26. `pause` is a pause word, not only `waiv`. No fixture spelled it, so removing
+        # it from the vocabulary left every check green.
+        pause_word = tmp / "pause_word.log"
+        pause_word.write_text("2026-09-26T04:00:00+00:00\trun completed\n"
+                              "# pause 2026-09-01T00:00:00+00:00 | "
+                              "2026-09-27T00:00:00+00:00 | the tree is frozen\n",
+                              encoding="utf-8")
+        pause_said = said(pause_word, now)
+        checks.append(("REFUSED" in pause_said,
+                       "the word pause opens a declaration like the word waiver",
+                       "named" if "REFUSED" in pause_said else "silent", "named"))
+
+        # 27. the newest stamp is chosen by INSTANT across offsets, not by string. A record
+        # whose string-maximum is 33 h old and whose true newest is 20 h old reads as fresh
+        # when the instants are compared and as a silence when the strings are.
+        offsets = tmp / "offsets.log"
+        offsets.write_text("2026-09-24T23:00:00+00:00\trun completed\n"
+                           "2026-09-25T00:00:00+14:00\tthe same run, written elsewhere\n",
+                           encoding="utf-8")
+        string_now = datetime.datetime.fromisoformat("2026-09-25T19:00:00+00:00")
+        by_instant = verdict(offsets, string_now, day)[0]
+        by_string = max(
+            [l.split("\t")[0] for l in offsets.read_text(encoding="utf-8").splitlines()
+             if l and not l.startswith("#")])
+        checks.append((by_instant == "fresh"
+                       and (string_now - datetime.datetime.fromisoformat(by_string)
+                            ).total_seconds() > day,
+                       "the newest stamp is chosen by instant across offsets",
+                       by_instant, "fresh"))
+
     failed = [c for c in checks if not c[0]]
     for ok, name, state, want in checks:
         print("ok   %-58s %s" % (name, state) if ok
@@ -617,8 +683,15 @@ def main() -> int:
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--now")
     args = ap.parse_args()
-    now = (datetime.datetime.fromisoformat(args.now) if args.now
-           else datetime.datetime.now(datetime.timezone.utc))
+    if args.now:
+        try:
+            now = datetime.datetime.fromisoformat(args.now)
+        except ValueError:
+            # A caller's typo is a sentence about the flag, not a traceback: the probe
+            # answers with states, and a clock it cannot read is one of them.
+            ap.error("--now is not a timestamp: %r" % args.now)
+    else:
+        now = datetime.datetime.now(datetime.timezone.utc)
     if now.tzinfo is None:
         # A clock without an offset cannot be read against a stamp that has one, and
         # assuming UTC would answer a question the caller did not ask.
