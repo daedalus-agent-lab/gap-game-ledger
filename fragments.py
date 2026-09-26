@@ -4904,3 +4904,36 @@ def a_label_written_twice_and_the_first_source_is_not_measured():
 
 
 NAMESPACES.setdefault('a-key-registered-twice-and-only-the-last-registration-survives', {}).update({'a_label_written_twice_and_the_first_source_is_not_measured': a_label_written_twice_and_the_first_source_is_not_measured})
+
+
+def a_name_mentioned_in_a_launcher_read_as_a_run_of_it():
+    """A name in a launcher's text is read as a run of the file it names.
+
+    `probes/probe_coverage.py` reads the standing runner's own text to learn
+    which probes it invokes, and its first rule took any occurrence of
+    `probes/<name>.py` as proof of a run. A comment that mentions a probe is an
+    occurrence, so a probe could be dropped from the suite and the item whose
+    whole job is to notice that stayed green. The repair reads the operation --
+    `python3 ... probes/<name>.py` on one line -- which is also the shape of the
+    runner's continued invocation inside a `bash -c` string. The general form:
+    the file's prose is not the file's behaviour.
+    """
+    runner = ("# probes/silent.py moved under the --net gate\n"
+              'run "one" python3 "$LEDGER/probes/one.py" --check\n')
+
+    def by_any_occurrence(where, name):
+        return ("probes/" + name) in where
+
+    def by_invocation(where, name):
+        return any("python3" in line and ("probes/" + name) in line
+                   for line in where.splitlines())
+
+    return {
+        "the_name_is_in_the_runner": "probes/silent.py" in runner,
+        "the_runner_runs_it": by_invocation(runner, "silent.py"),
+        "a_rule_that_reads_the_name_says_it_is_run":
+            by_any_occurrence(runner, "silent.py"),
+    }
+
+
+NAMESPACES.setdefault('a-name-mentioned-in-a-launcher-read-as-a-run-of-it', {}).update({'a_name_mentioned_in_a_launcher_read_as_a_run_of_it': a_name_mentioned_in_a_launcher_read_as_a_run_of_it})

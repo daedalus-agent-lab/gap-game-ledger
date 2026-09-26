@@ -22,6 +22,17 @@ directory and the runner, never typed here: adding a probe file without wiring i
 or naming it fails this item, which is the only thing that keeps the coverage
 true after today.
 
+A NAME IS WIRED WHERE A COMMAND LINE RUNS THE INTERPRETER ON IT, not where the
+file is mentioned. The first version of `wired()` took any occurrence of
+`probes/<name>.py` in the runner's text, and a runner whose only mention of a
+probe was a comment counted that probe as run -- so a probe could be dropped
+from the suite and this item would stay green, which is the rot it exists to
+catch. Measured before the repair: a fixture runner holding
+`# probes/silent.py moved under the --net gate` reported `wired=['one.py',
+'silent.py'], unanswered=[]`. The rule is now `python3 ... probes/<name>.py` on
+one line, which is also the shape of the runner's continued invocation
+(`python3 "$1/probes/permission_instant.py" --spec "$S"`).
+
     python3 probe_coverage.py --selftest   # the detector, on fixtures
     python3 probe_coverage.py --check      # the live directory, the live runner
 """
@@ -53,9 +64,13 @@ EXCLUDED = {
 }
 
 
+# A mention is not a call: the interpreter and the file on one line.
+INVOKED = re.compile(r"python3[^\n]*?probes/([A-Za-z0-9_]+\.py)")
+
+
 def wired(runner_text: str) -> set:
-    """The probe files the runner names, read from its own text."""
-    return set(re.findall(r"probes/([A-Za-z0-9_]+\.py)", runner_text))
+    """The probe files the runner invokes, read from its own text."""
+    return set(INVOKED.findall(runner_text))
 
 
 def coverage(probe_names, runner_text, excluded):
@@ -111,6 +126,28 @@ def selftest() -> tuple:
     c = coverage(names, runner, {"one.py": "reason"})
     if c["both"] != ["one.py"]:
         bad.append("a probe named both wired and excluded was not reported")
+    checks += 1
+    # A mention is not a call. A runner that only talks about a probe in a
+    # comment does not run it, and a rule that says otherwise lets a probe be
+    # dropped from the suite with this item still green.
+    talker = ("# probes/four.py was moved under the --net gate\n"
+              'run "a" python3 "$LEDGER/probes/one.py" --check\n')
+    if "four.py" in wired(talker):
+        bad.append("a comment that mentions a probe was read as running it: %r"
+                   % (sorted(wired(talker)),))
+    checks += 1
+    if coverage(names, talker, {})["unanswered"] != [
+            "four.py", "three.py", "two.py"]:
+        bad.append("a probe only mentioned in a comment was not reported as "
+                   "unanswered: %r" % (coverage(names, talker, {})["unanswered"],))
+    checks += 1
+    # And the continued invocation the runner really uses -- the file on the
+    # second line of a `bash -c` command -- is still a call.
+    cont = ('run "spec" bash -c \'S="$1/../spec/x.json"\n'
+            '  python3 "$1/probes/two.py" --spec "$S"\' _ "$LEDGER"\n')
+    if wired(cont) != {"two.py"}:
+        bad.append("a continued invocation was not read as a call: %r"
+                   % (sorted(wired(cont)),))
     return bad, checks
 
 
