@@ -137,6 +137,23 @@ def the_first_repeat_with_an_address() -> str:
     raise AssertionError("no repeat carries both an address and a fragment")
 
 
+def the_first_row_with_a_line_and_no_address() -> str:
+    """The row the addressless-quote case mutates, named the way the run prints it.
+
+    Two claims live on a cited row and the run uses the same name for the row whether
+    the line sits on the entry or on one of its repeats: the complaint line is
+    `BADADDRESS  <class>/<repeat id>`, so this returns exactly that.
+    """
+    for entry in LEDGER["entries"]:
+        if entry.get("address_quote") and not entry.get("address"):
+            return entry["class"]
+        for rep in entry.get("repeats") or []:
+            if (isinstance(rep, dict) and rep.get("address_quote")
+                    and not rep.get("address")):
+                return f"{entry['class']}/{rep['id']}"
+    raise AssertionError("no row quotes a line with no address beside it")
+
+
 MISSING_MODULE_CODE = 2  # no case may want this: the fixture refused before it ran
 
 
@@ -502,6 +519,39 @@ def main() -> int:
         ("a repeat's quote from another fragment",
          with_tree(repeat_quote_from_another_fragment), 1,
          the_first_repeat_with_an_address())
+    )
+
+    def a_foreign_line_where_no_address_stands(catches):
+        """The clause this case exists for: a line's own claim, read wherever it stands.
+
+        `citation_fields` tested a quoted line against the fragment the row names only
+        inside the branch that carried an address, so a row quoting another fragment's
+        bytes with no address kept the same claim unread: three rows in this ledger did
+        and the run called them nothing. Here an addressless row's line is replaced by
+        bytes its fragment does not contain, and the run must refuse it -- the address
+        is a second claim about a message, never the condition for reading the first.
+        """
+        broken = False
+        for entry in catches["entries"]:
+            if entry.get("address_quote") and not entry.get("address"):
+                entry["address_quote"] = "     NOT A LINE OF THE FRAGMENT THIS ROW NAMES"
+                broken = True
+                break
+            for rep in entry.get("repeats") or []:
+                if (isinstance(rep, dict) and rep.get("address_quote")
+                        and not rep.get("address")):
+                    rep["address_quote"] = "     NOT A LINE OF THE FRAGMENT THIS ROW NAMES"
+                    broken = True
+                    break
+            if broken:
+                break
+        if not broken:
+            raise AssertionError("no addressless row quotes a line to break")
+
+    cases.append(
+        ("an uncited line that is not a line of its fragment",
+         with_tree(a_foreign_line_where_no_address_stands), 1,
+         the_first_row_with_a_line_and_no_address())
     )
 
     def index_of_a_broken_ledger():

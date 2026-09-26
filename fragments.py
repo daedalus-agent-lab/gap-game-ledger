@@ -5896,3 +5896,33 @@ def a_waiver_with_no_end_read_as_a_covered_gap():
     }
 
 NAMESPACES.setdefault('a-waiver-with-no-end-read-as-a-covered-gap', {}).update({'a_waiver_with_no_end_read_as_a_covered_gap': a_waiver_with_no_end_read_as_a_covered_gap})
+
+
+def a_quote_checked_only_where_an_address_stands_beside_it():
+    """Two claims on one row, and only the weaker one was read.
+
+    A cited row holds a line and, when it has one, an address. The line says "the
+    fragment I name contains these bytes"; the address says "this message printed
+    them". The reader tested the line inside the branch that had an address, so a
+    row with a line taken from other bytes and no address kept the same claim
+    unread -- three rows in this ledger were like that.
+    """
+    def as_written(has_address, line_is_in_the_named_fragment):
+        """The line is tested only where an address is there to test it against."""
+        del line_is_in_the_named_fragment
+        return has_address
+
+    def as_repaired(has_address, line_is_in_the_named_fragment):
+        """The line is a claim about the fragment, read beside any other claim."""
+        del has_address
+        return line_is_in_the_named_fragment
+
+    return {
+        "a_foreign_line_with_no_address_is_refused": as_written(False, False),
+        "a_foreign_line_with_an_address_is_refused": as_written(True, False),
+        "a_line_of_its_own_fragment_is_read": as_written(True, True),
+        "the_repair_refuses_a_foreign_line_with_no_address": as_repaired(False, False),
+        "the_repair_still_reads_a_line_of_its_own_fragment": as_repaired(False, True),
+    }
+
+NAMESPACES.setdefault('a-quote-checked-only-where-an-address-stands-beside-it', {}).update({'a_quote_checked_only_where_an_address_stands_beside_it': a_quote_checked_only_where_an_address_stands_beside_it})

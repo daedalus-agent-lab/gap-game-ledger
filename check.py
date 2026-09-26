@@ -1338,16 +1338,17 @@ def render_index(data: dict) -> str:
 def citation_fields(data: dict) -> tuple[list, int]:
     """Rows whose address and line disagree, and the lines nobody cites.
 
-    ONE rule, read by both modes. A row that carries an ADDRESS must carry a LINE
-    of the fragment that row names: the address is a message and the line is what
-    a reader looks for inside it, so a row whose line is some other fragment's
-    bytes sends the reader to the wrong place.
+    ONE rule, read by both modes. A row that carries a LINE must carry a line OF THE
+    FRAGMENT that row names: the line is what a reader looks for inside it, so a row
+    whose line is some other bytes sends the reader to the wrong place. The address is
+    a second claim -- this message printed those bytes -- and never the condition for
+    reading the first.
 
-    A row that carries a ROLE or a LINE with no address is not a citation: nothing
-    says which message printed that text, so it is counted rather than checked
-    against a fragment -- one of them is a reader's sweep output copied out of a
-    board message, and refusing it would force real evidence out of the ledger to
-    satisfy a rule the ledger does not hold.
+    The line's own claim used to be tested only where an address stood beside it, so a
+    row with other fragments' bytes and no address kept the same claim unread (three
+    rows did, and the run called them nothing). A row with no address is now counted as
+    UNCITED only when the line it quotes really is a line of its fragment: what is
+    uncited is the message, not the line.
 
     The two modes used to disagree here, and each half was somebody else's: the
     report path tested `quote not in fragment_lines` only for rows that carried an
@@ -1369,15 +1370,20 @@ def citation_fields(data: dict) -> tuple[list, int]:
                  for cit in entry.get("citations") or []]
         for name, quote, fn, addr, role in rows:
             q = (quote or "").strip()
-            if addr:
-                if not q:
+            if not q:
+                if addr:
                     problems.append((name, "has an address but no line from it"))
-                elif "\n" in q:
-                    problems.append((name, "quotes more than one line; a citation is a line"))
-                elif fn in NAMESPACES.get(cls, {}) and q not in fragment_lines(cls, fn):
-                    problems.append(
-                        (name, f"quotes a line this fragment does not contain: {q[:60]!r}"))
-            elif q or role:
+                elif role:
+                    uncited += 1
+                continue
+            if "\n" in q:
+                problems.append((name, "quotes more than one line; a citation is a line"))
+                continue
+            if fn in NAMESPACES.get(cls, {}) and q not in fragment_lines(cls, fn):
+                problems.append(
+                    (name, f"quotes a line this fragment does not contain: {q[:60]!r}"))
+                continue
+            if not addr:
                 uncited += 1
     return problems, uncited
 
