@@ -1153,9 +1153,11 @@ def address_resolves(addr: str) -> bool:
     print below now says which of the two the number is.
 
     What the pattern can honestly refuse: a note that is not address-shaped at
-    all, and (since every board id measured here is a version-4 UUID -- 110 of
-    110, `probes/uuid_version_sample.py`) a UUID whose version nibble is not 4,
-    which is what a fabricated placeholder looks like.
+    all, and (since every board id measured here is a version-4 UUID -- 131 of 132
+    distinct identifiers, `probes/uuid_version_sample.py`, the exception being the
+    all-f placeholder this ledger records to show what the refusal catches) a UUID
+    whose version nibble is not 4, which is what a fabricated placeholder looks
+    like.
     """
     a = str(addr).strip()
     if ADDRESS_UUID.match(a):
@@ -1331,6 +1333,53 @@ def render_index(data: dict) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def citation_fields(data: dict) -> tuple[list, int]:
+    """Rows whose address and line disagree, and the lines nobody cites.
+
+    ONE rule, read by both modes. A row that carries an ADDRESS must carry a LINE
+    of the fragment that row names: the address is a message and the line is what
+    a reader looks for inside it, so a row whose line is some other fragment's
+    bytes sends the reader to the wrong place.
+
+    A row that carries a ROLE or a LINE with no address is not a citation: nothing
+    says which message printed that text, so it is counted rather than checked
+    against a fragment -- one of them is a reader's sweep output copied out of a
+    board message, and refusing it would force real evidence out of the ledger to
+    satisfy a rule the ledger does not hold.
+
+    The two modes used to disagree here, and each half was somebody else's: the
+    report path tested `quote not in fragment_lines` only for rows that carried an
+    address, so an eleven-row family of lines with no address was written and read
+    by nothing, and the audit path tested addressless rows and wrote its complaint
+    with a plain `print`, into the file `--index` tells a reader to redirect.
+    """
+    problems: list = []
+    uncited = 0
+    for entry in data["entries"]:
+        cls = entry["class"]
+        rows = [(cls, entry.get("address_quote", ""), primary(entry),
+                 entry.get("address"), entry.get("address_role"))]
+        rows += [(f"{cls}/{rep['id']}", rep.get("address_quote", ""), rep.get("fn"),
+                  rep.get("address"), rep.get("address_role"))
+                 for rep in entry.get("repeats") or [] if isinstance(rep, dict)]
+        rows += [(f"{cls} (cited by {cit.get('by', '?')})", cit.get("address_quote", ""),
+                  primary(entry), cit.get("address"), cit.get("address_role"))
+                 for cit in entry.get("citations") or []]
+        for name, quote, fn, addr, role in rows:
+            q = (quote or "").strip()
+            if addr:
+                if not q:
+                    problems.append((name, "has an address but no line from it"))
+                elif "\n" in q:
+                    problems.append((name, "quotes more than one line; a citation is a line"))
+                elif fn in NAMESPACES.get(cls, {}) and q not in fragment_lines(cls, fn):
+                    problems.append(
+                        (name, f"quotes a line this fragment does not contain: {q[:60]!r}"))
+            elif q or role:
+                uncited += 1
+    return problems, uncited
+
+
 def quick_audit(data: dict) -> int:
     """The ledger's failure code, for the modes that print something else.
 
@@ -1345,6 +1394,13 @@ def quick_audit(data: dict) -> int:
     document -- the tool's own complaint became part of the file it tells the
     reader to publish, and the next run called that file stale. The exit code
     still carries the verdict; the page stays a page.
+
+    The three BADADDRESS complaints were the exception: they were written with a
+    plain `print` while this paragraph stood above them saying otherwise, and a
+    copy with one broken quote put three lines of complaint into `--index`'s
+    output -- the redirect the paragraph names. They go through `say` now, and a
+    case in the harness renders the index of a ledger with a broken quote and
+    compares it with the healthy render.
     """
     bad = 0
     say = lambda *a: print(*a, file=sys.stderr)
@@ -1356,19 +1412,12 @@ def quick_audit(data: dict) -> int:
     for line in problems:
         say(f"DUPE  {'':<50} {line}")
         bad = 1
-    for entry in data["entries"]:
-        for rep in entry.get("repeats") or []:
-            if isinstance(rep, dict) and rep.get("address") and not rep.get("address_quote"):
-                print(f"BADADDRESS  {entry['class']}/{rep['id']}: an address with no line")
-                bad = 1
-        for cit in entry.get("citations") or []:
-            if cit.get("address_quote", "").strip() not in fragment_lines(entry["class"], primary(entry) or ""):
-                print(f"BADADDRESS  {entry['class']} (cited by {cit.get('by', '?')})")
-                bad = 1
-        if entry.get("address") and entry.get("address_quote", "").strip() not in fragment_lines(
-                entry["class"], primary(entry) or ""):
-            print(f"BADADDRESS  {entry['class']}")
-            bad = 1
+    # The same reader the report path uses, so a row is the same colour in every
+    # mode. `_uncited` is a count the report prints; it is not a complaint.
+    bad_rows, _uncited = citation_fields(data)
+    for name, why in bad_rows:
+        say(f"BADADDRESS  {name}: {why}")
+        bad = 1
     return bad
 
 
@@ -1502,14 +1551,7 @@ def main() -> int:
                          cit.get("address_quote", ""), cls, primary(entry),
                          cit.get("address_role", "undeclared"), cit.get("address")))
 
-    bad = []
-    for name, kind, quote, cls, fn, role, _addr in rows:
-        if not quote:
-            bad.append((name, "has an address but no line from it"))
-        elif "\n" in quote.strip():
-            bad.append((name, "quotes more than one line; a citation is a line"))
-        elif quote.strip() not in fragment_lines(cls, fn or ""):
-            bad.append((name, f"quotes a line this fragment does not contain: {quote[:60]!r}"))
+    bad, uncited = citation_fields(data)
     refused = {name for name, _ in bad}
 
     collisions = []
@@ -1612,6 +1654,12 @@ def main() -> int:
             + ", ".join(f"{n} {k}" for k, n in sorted(roles.items()))
             + "  (declared by the ledger's author, not machine-checked: a message that"
               " quotes another message prints the same lines)"
+        )
+    if uncited:
+        print(
+            f"lines with no address {uncited}  (a role or a quoted line recorded where no"
+            " message is cited: nothing here says which message printed that text, so it is"
+            " counted and not checked against a fragment -- a citation needs both halves)"
         )
     cited_again = [(e["class"], c) for e in data["entries"] for c in (e.get("citations") or [])]
     if cited_again:

@@ -12,6 +12,7 @@ Exit 0 means every mutation was caught and the untouched copy still passed.
 """
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -257,6 +258,64 @@ def main() -> int:
                 return
 
     cases.append(("a quote that is not a line of the fragment", with_tree(quote_is_prose), 1))
+
+    def repeat_quote_from_another_fragment(catches):
+        """A repeat's line is read against the fragment the REPEAT names.
+
+        Seventeen repeats cite a message and quote a line, and the audit path never
+        tested those lines -- it tested addressless rows instead -- while the report
+        path tested them and nothing else. A repeat whose line belongs to another
+        fragment's bytes sends a reader following `class -> fragment -> line` to the
+        wrong fragment, and only one of the two modes said so.
+        """
+        for entry in catches["entries"]:
+            for rep in entry.get("repeats") or []:
+                if isinstance(rep, dict) and rep.get("address") and rep.get("fn"):
+                    rep["address_quote"] = "    NOT A LINE OF THE FRAGMENT THIS REPEAT NAMES"
+                    return
+        raise AssertionError("no repeat carries both an address and a fragment")
+
+    cases.append(
+        ("a repeat's quote from another fragment",
+         with_tree(repeat_quote_from_another_fragment), 1)
+    )
+
+    def index_of_a_broken_ledger():
+        """The complaint must not be written into the page the redirect produces.
+
+        The check's own docstring says the remedy for a red ledger is
+        `python3 check.py --index > CLASSES.md`, and three BADADDRESS complaints were
+        written with a plain `print` while that paragraph stood above them: a copy
+        with one broken quote put three lines of complaint into the generated page.
+        Here the page is rendered from a broken copy and the complaint is looked for
+        on both streams.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp) / "ledger"
+            copy_the_ledger(tree)
+            catches = json.loads((tree / "catches.json").read_text(encoding="utf-8"))
+            broken = False
+            for entry in catches["entries"]:
+                if entry.get("address"):
+                    entry["address_quote"] = "     NOT A LINE OF ANY FRAGMENT HERE"
+                    broken = True
+                    break
+            if not broken:
+                raise AssertionError("no entry carries an address to break")
+            (tree / "catches.json").write_text(
+                json.dumps(catches, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            out = subprocess.run([sys.executable, "check.py", "--index"], cwd=tree,
+                                 capture_output=True, text=True)
+            # At the START of a line: two entries describe this complaint inside their
+            # own fact text, so a bare substring test reads a green page as polluted.
+            complaint = re.compile(r"(?m)^BADADDRESS")
+            clean = (not complaint.search(out.stdout) and bool(complaint.search(out.stderr))
+                     and out.returncode == 1)
+            return 1 if clean else 0
+
+    cases.append(
+        ("the index of a broken ledger carries no complaint", index_of_a_broken_ledger(), 1)
+    )
 
     def stale_index(tree):
         """The published index no longer describes the ledger."""
