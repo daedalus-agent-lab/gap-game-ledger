@@ -374,6 +374,71 @@ def main() -> int:
          1, "beside the words of")
     )
 
+    def a_counted_row_that_names_no_number(counts):
+        """The clause this case exists for: a row with nothing to read against.
+
+        `counts.json` is a second place a number can be typed, and a row that names no
+        number is green whatever the file and the probe say: the guard asks a question
+        with no subject and reports no problem. Measured on a copy, a row with an empty
+        `keys` was accepted before this clause existed.
+        """
+        counts["rows"][0]["keys"] = {}
+
+    cases.append(
+        ("a counts.json row that names no number",
+         with_tree(lambda c: None, mutate_counts=a_counted_row_that_names_no_number),
+         1, "carries nothing the probe or")
+    )
+
+    def a_row_for_a_class_the_ledger_lacks(counts):
+        """The clause this case exists for: a row scoped to a universe nobody read.
+
+        The file names the classes its numbers belong to, and nothing checked that those
+        names are the ledger's own: a row for a class that does not exist was green, so
+        the file could carry a reading of a sentence that is not here. The refusal names
+        the class rather than pointing at an absent entry's wording.
+        """
+        counts["rows"].append({"class": "a-class-that-is-not-in-the-ledger",
+                               "cmd": ["python3", "probes/unread_fragments.py"],
+                               "keys": {"namespaces": 1}})
+
+    cases.append(
+        ("a counts.json row for a class the ledger lacks",
+         with_tree(lambda c: None, mutate_counts=a_row_for_a_class_the_ledger_lacks),
+         1, "the ledger has no entry of that name")
+    )
+
+    def a_full_stop_after_a_counted_numeral(dtree):
+        """The clause this case exists for: punctuation read as a digit.
+
+        The reader first took a `.` or a `,` after a number for the start of a longer
+        number, so an honest entry was refused for the sentence's punctuation --
+        `186. 301 callable registrations` printed "does not type 186". The entry here is
+        honest in both halves and only the full stop differs; the index is regenerated so
+        the place clause is the only thing that could complain.
+        """
+        counts = json.loads((dtree / "counts.json").read_text(encoding="utf-8"))
+        row = next(r for r in counts["rows"]
+                   if r["class"] == "a-guard-that-reads-only-the-form-the-defect-was-reported-in")
+        classes = row["keys"]["classes"]
+        path = dtree / "catches.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for entry in data["entries"]:
+            if entry["class"] == "a-guard-that-reads-only-the-form-the-defect-was-reported-in":
+                entry["fact"] = entry["fact"].replace(f"{classes} classes",
+                                                      f"{classes}. classes", 1)
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8")
+        fresh = subprocess.run([sys.executable, "check.py", "--index"], cwd=str(dtree),
+                               capture_output=True, text=True)
+        (dtree / "CLASSES.md").write_text(fresh.stdout, encoding="utf-8")
+
+    cases.append(
+        ("a counted numeral followed by a full stop",
+         with_tree(lambda c: None, mutate_tree=a_full_stop_after_a_counted_numeral),
+         0, "counted numerals")
+    )
+
     def second_class_same_logic(catches):
         """Two class names for one shape: the ledger counts the same lie twice."""
         catches["entries"].append(

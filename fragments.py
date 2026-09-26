@@ -5647,3 +5647,108 @@ def a_guard_that_asks_whether_the_number_is_there_and_not_where_it_stands():
     }
 
 NAMESPACES.setdefault('a-guard-that-asks-whether-the-number-is-there-and-not-where-it-stands', {}).update({'a_guard_that_asks_whether_the_number_is_there_and_not_where_it_stands': a_guard_that_asks_whether_the_number_is_there_and_not_where_it_stands})
+
+
+def a_row_read_as_a_count_of_an_object_that_is_not_here():
+    """A file that names the objects its numbers belong to, read against nothing.
+
+    The reader below walks a count table: for each row it reads the numbers the row names,
+    and the row's `class` is the name of the entry those numbers are meant to be about. The
+    reader never asks whether that name is the ledger's own, so a row for a class that does
+    not exist is read as a reading of it -- the numbers are compared with a probe and the
+    name with nothing. A set that was right for a narrower universe than the one it is read
+    in is not a set that has gone stale: it was never a statement about the ledger at all.
+    """
+    ledger = {"a-class-registers-fragments-that-no-entry-reads",
+              "a-guard-that-reads-only-the-form-the-defect-was-reported-in"}
+    absent = "a-class-that-is-not-in-the-ledger"
+    rows = [{"class": cls, "keys": {"namespaces": 1}} for cls in sorted(ledger)]
+    rows.append({"class": absent, "keys": {"namespaces": 1}})
+
+    def as_written(rows, ledger):
+        """Every row is read; the file's names are never compared with the ledger's."""
+        read = 0
+        for row in rows:
+            for key in row["keys"]:
+                read += 1
+        return read
+
+    def repaired(rows, ledger):
+        """A row whose class is not the ledger's own is refused, not counted."""
+        read = 0
+        for row in rows:
+            if row["class"] not in ledger:
+                raise LookupError(row["class"])
+            read += len(row["keys"])
+        return read
+
+    def refused(fn, rows, ledger):
+        try:
+            fn(rows, ledger)
+        except LookupError:
+            return True
+        return False
+
+    return {
+        "the_file_names_three_classes_and_the_ledger_has_two":
+            len(rows) == 3 and len(ledger) == 2,
+        "the_reader_as_written_reads_the_row_of_the_absent_class":
+            as_written(rows, ledger) == 3,
+        "the_repair_refuses_the_row_of_the_absent_class":
+            refused(repaired, rows, ledger) is True,
+        "the_repair_still_reads_the_rows_the_ledger_has":
+            repaired(rows[:2], ledger) == 2,
+    }
+
+NAMESPACES.setdefault('a-row-read-as-a-count-of-an-object-that-is-not-here', {}).update({'a_row_read_as_a_count_of_an_object_that_is_not_here': a_row_read_as_a_count_of_an_object_that_is_not_here})
+
+
+def a_row_with_no_subject_read_as_a_check_that_passed():
+    """A guard whose subject is optional: a row that names no number passes.
+
+    The reader below walks a count table and, for each row, compares the numbers the row
+    names. A row naming none is walked over without a question being asked and the walk ends
+    green, so the file may carry a row that says nothing while the run reports that every
+    number it types has been read. Nothing in the row is false and nothing is measured
+    either; the guard has no subject and answers all the same.
+    """
+    spec = {"rows": [{"class": "a-class-registers-fragments-that-no-entry-reads",
+                      "keys": {"namespaces": 187}},
+                     {"class": "a-guard-that-reads-only-the-form-the-defect-was-reported-in",
+                      "keys": {}}]}
+
+    def as_written(spec):
+        """Every row is walked; a row with no numbers asks nothing."""
+        read = 0
+        for row in spec["rows"]:
+            for key in row["keys"]:
+                read += 1
+        return read
+
+    def repaired(spec):
+        """A row that names no number is refused: a guard with no subject is not a pass."""
+        read = 0
+        for row in spec["rows"]:
+            if not row["keys"]:
+                raise LookupError(row["class"])
+            read += len(row["keys"])
+        return read
+
+    def refused(fn, spec):
+        try:
+            fn(spec)
+        except LookupError:
+            return True
+        return False
+
+    return {
+        "the_file_carries_a_row_that_names_no_number":
+            any(not row["keys"] for row in spec["rows"]),
+        "the_reader_as_written_walks_over_it_and_ends_green": as_written(spec) == 1,
+        "the_repair_refuses_the_row_with_no_subject":
+            refused(repaired, spec) is True,
+        "the_repair_still_reads_the_row_that_names_a_number":
+            repaired({"rows": [spec["rows"][0]]}) == 1,
+    }
+
+NAMESPACES.setdefault('a-row-with-no-subject-read-as-a-check-that-passed', {}).update({'a_row_with_no_subject_read_as_a_check_that_passed': a_row_with_no_subject_read_as_a_check_that_passed})
