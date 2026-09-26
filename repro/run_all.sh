@@ -139,6 +139,33 @@ if not (moved or gone or fresh):
 PY
 }
 
+# A row is a record only if it can be read back. The row separator is a real newline, so a
+# name that itself carries a newline splits one row into two and the reader of the rows --
+# the JSON heredoc below -- dies with a traceback before the count it feeds exists. The
+# guard fired and protected the record, but the sentence the reader got was a traceback
+# and a blank number, which is not a finding about the run. The offending row is named
+# here instead, from the same row string the run writes the record from.
+row_complaint() {             # row_complaint  (reads the rows on stdin)
+  # Written with `-c` and not a heredoc: a heredoc takes stdin for the SCRIPT, so the rows
+  # piped in would never be read -- the complaint answered "0 line(s)" for a row it had not
+  # looked at, which is the shape of every defect in this registry.
+  python3 -c '
+import sys
+lines = sys.stdin.read().split("\n")
+if lines and lines[-1] == "":
+    lines.pop()
+bad = 0
+for n, line in enumerate(lines, 1):
+    if len(line.rsplit("|", 5)) != 6:
+        print(f"    row {n} of this run does not carry six fields: a name with a newline")
+        print(f"    in it splits one row into two. It reads: {line!r}")
+        bad += 1
+        if bad >= 3:
+            break
+print(f"    {len(lines)} line(s) were printed for the rows of this run")
+'
+}
+
 SUITE_RECORD="$WS/fresco/regression.json"   # this run's own output, declared once
 record_rel="$SUITE_RECORD"
 case "$record_rel" in "$LEDGER"/*) record_rel="${record_rel#"$LEDGER"/}";; *) record_rel="";; esac
@@ -245,6 +272,23 @@ if [ "$SELFTEST" = 1 ]; then
   names_differ "$na" "$nb" \
     && echo "self-test: a record carrying rows in the right NUMBER but not the names the run used is refused by the names, not by the count" \
     || { echo "self-test FAILED: a record whose names are not the run's names passes the guard"; exit 1; }
+  # A row that cannot be read back must be NAMED, not traced: the reader gets the offending
+  # row and a number, not a Python traceback and a blank. Both halves measured here.
+  good_rows="$(printf 'alpha|0|0|aaaaaaaaaaaaaaaa|0|bbbbbbbbbbbbbbbb\nbeta|0|0|cccccccccccccccc|0|dddddddddddddddd')"
+  COMPLAINT="$(mktemp)"
+  bad_rows="$(printf 'alpha|0|0|aaaaaaaaaaaaaaaa|0|bbbbbbbbbbbbbbbb\nbe\nta|0|0|cccccccccccccccc|0|dddddddddddddddd')"
+  printf '%s\n' "$good_rows" | row_complaint > "$COMPLAINT" 2>&1
+  grep -q 'does not carry six fields' "$COMPLAINT" \
+    && { echo "self-test FAILED: three readable rows are refused by the row complaint"; cat "$COMPLAINT"; exit 1; } \
+    || echo "self-test: readable rows are not refused"
+  printf '%s\n' "$bad_rows" | row_complaint > "$COMPLAINT" 2>&1
+  grep -q 'does not carry six fields' "$COMPLAINT" \
+    && echo "self-test: a row that cannot be read back is named, with the number of lines printed" \
+    || { echo "self-test FAILED: a row that cannot be read back is not named"; cat "$COMPLAINT"; exit 1; }
+  grep -qE 'Traceback|Error' "$COMPLAINT" \
+    && { echo "self-test FAILED: the row complaint answers with a traceback"; cat "$COMPLAINT"; exit 1; } \
+    || echo "self-test: the row complaint carries no traceback"
+  rm -f "$COMPLAINT"
   exit 0
 fi
 
@@ -598,8 +642,12 @@ skipped="$(printf '%s' "$rows" | awk -F'|' '$3 != 0 {print $1}' | tr '\n' ' ')"
 # item instead of at the whole suite.
 reg="$WS/fresco/regression.json"
 newreg="$(mktemp)"
-cat > "$newreg" <<EOF
-{"aggregate": "$aggregate", "net": $NET, "normalised_field": "minted stream keys of the form 'key <16 hex>'", "digests": "out = the item's normalised output in order; set = the same lines sorted", "exit_field": "the status the item's own command exited with, exactly as the shell reported it", "cert_field": "the harness's verdict: 0 the item passed, 1 the item failed, 2 the harness could not certify it", "items": $(printf '%s' "$rows" | python3 -c '
+record_ok=1
+# The rows are read back BEFORE anything is decided about them. When this step failed, the
+# count below it printed blank and two tracebacks landed on stderr: the guard fired, the
+# record was protected, and the sentence a reader got named neither the run nor the row.
+rows_json=""
+if ! rows_json="$(printf '%s' "$rows" | python3 -c '
 import sys, json
 out = []
 for line in sys.stdin.read().splitlines():
@@ -607,28 +655,40 @@ for line in sys.stdin.read().splitlines():
     name, rc, cert, d, n, sd = line.rsplit("|", 5)
     out.append({"name": name, "exit": int(rc), "cert": int(cert), "out": d,
                 "set": sd, "normalised": int(n)})
-print(json.dumps(out))')}
+print(json.dumps(out))' 2>/dev/null)"; then
+  printf 'FAIL %-34s the rows this run printed cannot be read back as records:\n' "the record"
+  printf '%s\n' "$rows" | row_complaint
+  fails=$((fails + 1))
+  record_ok=0
+fi
+if [ "$record_ok" = 1 ]; then
+  cat > "$newreg" <<EOF
+{"aggregate": "$aggregate", "net": $NET, "normalised_field": "minted stream keys of the form 'key <16 hex>'", "digests": "out = the item's normalised output in order; set = the same lines sorted", "exit_field": "the status the item's own command exited with, exactly as the shell reported it", "cert_field": "the harness's verdict: 0 the item passed, 1 the item failed, 2 the harness could not certify it", "items": $rows_json}
 EOF
-if [ -f "$reg" ]; then
-  diff_records "$reg" "$newreg"
-else
-  echo "no recorded run beside this tree: the record is this run's own output and is"
-  echo "not tracked, so a fresh clone has nothing to compare against. Nothing moved"
-  echo "means nothing compared. Items in this run: $(printf '%s' "$rows" | grep -c .)."
+  if [ -f "$reg" ]; then
+    diff_records "$reg" "$newreg"
+  else
+    echo "no recorded run beside this tree: the record is this run's own output and is"
+    echo "not tracked, so a fresh clone has nothing to compare against. Nothing moved"
+    echo "means nothing compared. Items in this run: $(printf '%s' "$rows" | grep -c .)."
+  fi
 fi
 # The record must carry one row per item this run ran. It did not: the separator was
 # written as a literal `$'\n'`, so the JSON held a single row while the run printed
 # forty, and every diff against it named one item whose name was all of them. The two
 # numbers are read from two places -- the loop's own counter and the file it wrote --
 # because a count printed from the same string it is checked against is not a check.
-recorded="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["items"]))' "$newreg")"
-printed="$(printf '%s' "$rows" | grep -c .)"
-record_ok=1
-if [ "$recorded" != "$items_run" ] || [ "$printed" != "$items_run" ]; then
-  printf 'FAIL %-34s the record carries %s row(s) and the run printed %s, for %s item(s) run\n' \
-         "the record" "$recorded" "$printed" "$items_run"
-  fails=$((fails + 1))
-  record_ok=0
+# The file is read only where the rows could be read back: there is no count to print for
+# a record that was never written, and a blank number beside a refusal is not a finding.
+if [ "$record_ok" = 1 ]; then
+  recorded="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["items"]))' "$newreg")"
+  printed="$(printf '%s' "$rows" | grep -c .)"
+  if [ "$recorded" != "$items_run" ] || [ "$printed" != "$items_run" ]; then
+    printf 'FAIL %-34s the record carries %s row(s) and the run printed %s, for %s item(s) run\n' \
+           "the record" "$recorded" "$printed" "$items_run"
+    fails=$((fails + 1))
+    record_ok=0
+  fi
 fi
 # The same length is not the same record. The rows are as many as the items ran and the
 # names inside them are not the items that ran: the count guard passes, the record is of
