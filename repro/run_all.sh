@@ -515,6 +515,12 @@ run() {                       # run <name> <command...>
 # it exits 1 and says which directory was handed to it, because the failure is a
 # fact about the layout, not about the files.
 run "record guard control"        bash "$HERE/run_all.sh" --guard-control
+# The registry's entry for the shared case root claims its instance is a pair of
+# processes. A claim about a pair is measured by starting the pair: this item runs two
+# processes over one case root at the revision before the repair and two over per-run
+# roots after it, and refuses a reading where neither arm separates them.
+run "shared root pair --selftest"   python3 "$LEDGER/probes/shared_root_pair.py" --selftest
+run "shared root pair --check"      python3 "$LEDGER/probes/shared_root_pair.py" --check --rounds 4
 run "repro MANIFEST.sha256"       bash -c 'cd "$1" || exit 1; if [ ! -f MANIFEST.sha256 ]; then
                                     echo "no checksum file in this layout ($1): nothing was compared, so this item is not a check"
                                     echo "point the run at the mirror, e.g. REPRO_WS=<clone>/repro REPRO_LEDGER=<clone>"
