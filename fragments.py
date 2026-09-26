@@ -6313,3 +6313,52 @@ def a_difference_line_that_prints_the_fields_that_did_not_move():
     return dict(written)
 
 NAMESPACES.setdefault('a-difference-line-that-prints-the-fields-that-did-not-move', {}).update({'a_difference_line_that_prints_the_fields_that_did_not_move': a_difference_line_that_prints_the_fields_that_did_not_move})
+
+
+def a_refusal_that_prints_a_count_it_never_read():
+    """A row that cannot be read back: is the refusal stating a number?
+
+    The rows below are the two shapes the guard meets. `readable` is what a run prints when
+    every row carries its six fields. `split` is one row whose name carries a newline: the
+    reader of the rows raises on it, so the number the count guard was going to print never
+    existed and it printed the empty string instead.
+
+    The second reading names the row that cannot be read and the number of lines the run
+    actually printed. Both readings are computed on the same two row lists, so the
+    divergence is a value and not a description.
+    """
+    readable = ["alpha|0|0|aaaaaaaaaaaaaaaa|0|bbbbbbbbbbbbbbbb",
+                "beta|0|0|cccccccccccccccc|0|dddddddddddddddd"]
+    split = ["alpha|0|0|aaaaaaaaaaaaaaaa|0|bbbbbbbbbbbbbbbb",
+             "be",
+             "ta|0|0|cccccccccccccccc|0|dddddddddddddddd"]
+
+    def count_read_back(rows):
+        """The number the guard had: each row split on its last five separators."""
+        items = []
+        for row in rows:
+            name, rc, cert, d, n, sd = row.rsplit("|", 5)
+            items.append(name)
+        return str(len(items))
+
+    def named_refusal(rows):
+        """What the guard says now: which row, and how many lines were printed."""
+        bad = [n for n, row in enumerate(rows, 1) if len(row.rsplit("|", 5)) != 6]
+        return {"rows_printed": len(rows), "rows_that_cannot_be_read": bad}
+
+    def blank_where_the_number_belongs(rows):
+        try:
+            return count_read_back(rows)
+        except ValueError:
+            return ""
+
+    reading = named_refusal(split)
+    written = {
+        "a_readable_run_still_yields_a_count": count_read_back(readable) == "2",
+        "the_count_guard_states_the_number_it_read": blank_where_the_number_belongs(split) == "",
+        "the_refusal_names_the_row_that_cannot_be_read": reading["rows_that_cannot_be_read"] == [2],
+        "the_refusal_states_how_many_lines_were_printed": reading["rows_printed"] == len(split),
+    }
+    return written
+
+NAMESPACES.setdefault('a-refusal-that-prints-a-count-it-never-read', {}).update({'a_refusal_that_prints_a_count_it_never_read': a_refusal_that_prints_a_count_it_never_read})
