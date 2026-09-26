@@ -1481,8 +1481,20 @@ def counted_readings() -> tuple:
     for row in spec.get("rows", []):
         cmd = row.get("cmd") or []
         cls = row.get("class", "?")
+        keys = row.get("keys") or {}
+        if entries and cls not in entries:
+            problems.append(
+                f"{cls}: {COUNTS.name} names this class and the ledger has no entry of "
+                f"that name, so its numbers are typed beside no sentence at all")
+            continue
         if not cmd:
             problems.append(f"{cls} names no command to count with")
+            continue
+        if not keys:
+            problems.append(
+                f"{cls}: this row names no number, so it carries nothing the probe or "
+                f"the entry could be read against -- a row with no keys is green "
+                f"whatever the file says")
             continue
         try:
             done = subprocess.run(cmd, cwd=HERE, capture_output=True, text=True,
@@ -1490,7 +1502,7 @@ def counted_readings() -> tuple:
         except (OSError, subprocess.SubprocessError) as exc:
             problems.append(f"{cls}: {' '.join(cmd)} did not run: {exc}")
             continue
-        for key, want in (row.get("keys") or {}).items():
+        for key, want in keys.items():
             read += 1
             found = re.search(re.escape(key) + r"[ \t]+(\d+)\b", done.stdout)
             if not found:
@@ -1506,12 +1518,23 @@ def counted_readings() -> tuple:
                 prose = " ".join(str(entry.get(field, ""))
                                  for field in ("promise", "fact", "note"))
                 forms = {str(want), format(want, ",")}
-                if not any(re.search(r"(?<![\d,.])%s(?![\d,.])" % re.escape(form), prose)
-                           for form in forms):
+                words = [w for w in re.findall(r"[A-Za-z]{4,}", key)]
+                # The number must stand beside the WORDS of its own key. A presence test
+                # over the whole entry was satisfied by a numeral in another key's slot:
+                # `311 classes / 186 registrations` left the run green while the file and
+                # the probe both counted 186 classes, so the clause bound nothing.
+                near = any(
+                    re.search(r"(?<![\d,.])%s(?!\d)[^\d]{0,12}\b%s" % (re.escape(form), word),
+                              prose)
+                    or re.search(r"\b%s[^\d]{0,3}(?<![\d,.])%s(?!\d)" % (word, re.escape(form)),
+                                 prose)
+                    for form in forms for word in words)
+                if not near:
                     problems.append(
                         f"{cls}: {key} is read as {want} from {' '.join(cmd)} and the "
-                        f"entry's own text does not type {want} -- the number is read "
-                        f"from the probe and not from the sentence it belongs to")
+                        f"entry's own text does not type {want} beside the words of "
+                        f"{key!r} -- a number standing in another key's place, or "
+                        f"standing nowhere, says nothing about this key")
     return read, problems
 
 

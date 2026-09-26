@@ -317,11 +317,16 @@ def main() -> int:
         The copy's entry is rewritten to type 200000 where the file counts 186, and the
         index is regenerated so the numeral itself is the only complaint left.
         """
+        spec = json.loads((dtree / "counts.json").read_text(encoding="utf-8"))
+        row = next(r for r in spec["rows"]
+                   if r["class"] == "a-class-registers-fragments-that-no-entry-reads")
+        typed = row["keys"]["namespaces"]
         path = dtree / "catches.json"
         data = json.loads(path.read_text(encoding="utf-8"))
         for entry in data["entries"]:
             if entry["class"] == "a-class-registers-fragments-that-no-entry-reads":
-                entry["fact"] = entry["fact"].replace("186 namespaces", "200000 namespaces")
+                entry["fact"] = entry["fact"].replace(
+                    "%d namespaces" % typed, "200000 namespaces")
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n",
                         encoding="utf-8")
         fresh = subprocess.run([sys.executable, "check.py", "--index"], cwd=str(dtree),
@@ -331,7 +336,42 @@ def main() -> int:
     cases.append(
         ("a numeral typed in the entry that no probe reads",
          with_tree(lambda c: None, mutate_tree=a_numeral_the_entry_types_that_no_probe_reads),
-         1, "does not type 186")
+         1, "and the entry's own text does not type")
+    )
+
+    def a_numeral_that_stands_for_another_key(dtree):
+        """The clause this case exists for: a number in the right entry, in the wrong slot.
+
+        Between the entry and the probe stand two numbers -- the classes count and the
+        registrations count -- and a reader that only asks whether the entry types the
+        first anywhere accepts `registrations classes / classes registrations`, where each
+        numeral is read off the other key's account. The numbers this copy types are the
+        ones the probe counts; only their places are swapped, and the index is regenerated
+        so the places are the only complaint left.
+        """
+        spec = json.loads((dtree / "counts.json").read_text(encoding="utf-8"))
+        row = next(r for r in spec["rows"]
+                   if r["class"] == "a-guard-that-reads-only-the-form-the-defect-was-reported-in")
+        classes = row["keys"]["classes"]
+        regs = row["keys"]["registrations"]
+        path = dtree / "catches.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for entry in data["entries"]:
+            if entry["class"] == "a-guard-that-reads-only-the-form-the-defect-was-reported-in":
+                entry["fact"] = entry["fact"].replace(
+                    f"{classes} classes / {regs} registrations",
+                    f"{regs} classes / {classes} registrations",
+                )
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8")
+        fresh = subprocess.run([sys.executable, "check.py", "--index"], cwd=str(dtree),
+                               capture_output=True, text=True)
+        (dtree / "CLASSES.md").write_text(fresh.stdout, encoding="utf-8")
+
+    cases.append(
+        ("a counted numeral standing for the wrong key",
+         with_tree(lambda c: None, mutate_tree=a_numeral_that_stands_for_another_key),
+         1, "beside the words of")
     )
 
     def second_class_same_logic(catches):

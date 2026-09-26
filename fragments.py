@@ -5571,3 +5571,79 @@ def a_refusal_read_as_an_empty_page():
     }
 
 NAMESPACES.setdefault('a-refusal-read-as-an-empty-page', {}).update({'a_refusal_read_as_an_empty_page': a_refusal_read_as_an_empty_page})
+
+
+def a_second_file_that_carries_the_number(reads_the_sentence: bool = False):
+    """A number carried in the file written to read it, and a sentence read by nothing.
+
+    `counts.json` exists so that a number typed beside the probe that could count it is
+    read rather than believed; it became the third place the number is typed by hand.
+    The reader compared the file with the probe's output and never with the entry the
+    number belongs to, so a sentence two digits behind its own probe left the run green.
+    True here means the reader reports the number and the sentence as agreeing.
+    """
+    counted_by_the_probe = 186
+    carried_in_the_file = 186
+    typed_in_the_entry = 184
+    reported_agreement = carried_in_the_file == counted_by_the_probe
+    if reads_the_sentence:
+        reported_agreement = (reported_agreement
+                              and carried_in_the_file == typed_in_the_entry)
+    return reported_agreement
+
+
+NAMESPACES.setdefault("a-count-typed-beside-the-checks-instead-of-counted", {}).update({"a_second_file_that_carries_the_number": a_second_file_that_carries_the_number})
+
+
+def a_guard_that_asks_whether_the_number_is_there_and_not_where_it_stands():
+    """A check that verifies a sentence against a count table, then loses the places.
+
+    The reader below compares two independent records -- a sentence and the counts a
+    program printed -- and having agreed on the numbers, asks only whether each number
+    occurs in the sentence. Both records are honest and the sentence is not: the two
+    numbers stand in each other's place, so every reader that checks presence alone
+    certifies a claim neither record makes. The place reader, which requires the
+    number to stand beside a word of its own key, refuses the same sentence.
+
+    Nothing here is about parsing prose in general; the defect is that a comparison
+    between two records was completed by a question about one record only, and that
+    question -- "is the number there at all" -- is the weakest one that can be asked
+    of a number that has a place.
+    """
+    import re
+
+    counted = {"classes": 186, "registrations": 312}
+    as_written = "186 classes / 312 registrations"
+    swapped = "312 classes / 186 registrations"
+
+    def presence_reader(prose, numbers):
+        """The reader as it was written: every number occurs in the sentence."""
+        return all(
+            re.search(r"(?<![\d,.])%d(?![\d,.])" % value, prose)
+            for value in numbers.values()
+        )
+
+    def place_reader(prose, numbers):
+        """The repair: each number stands beside a word of its own key."""
+        for key, value in numbers.items():
+            words = [w for w in re.findall(r"[A-Za-z]{4,}", key)]
+            forms = {str(value), format(value, ",")}
+            found = any(
+                re.search(r"(?<![\d,.])%s(?!\d)[^\d]{0,12}\b%s" % (re.escape(f), w), prose)
+                or re.search(r"\b%s[^\d]{0,3}(?<![\d,.])%s(?!\d)" % (w, re.escape(f)), prose)
+                for f in forms for w in words
+            )
+            if not found:
+                return False
+        return True
+
+    return {
+        "the_swapped_sentence_carries_every_number": presence_reader(swapped, counted),
+        "the_presence_reader_accepts_each_number_in_the_other_s_place":
+            presence_reader(swapped, counted),
+        "the_place_reader_refuses_the_swapped_sentence": place_reader(swapped, counted) is False,
+        "the_place_reader_still_accepts_the_sentence_as_written":
+            place_reader(as_written, counted) is True,
+    }
+
+NAMESPACES.setdefault('a-guard-that-asks-whether-the-number-is-there-and-not-where-it-stands', {}).update({'a_guard_that_asks_whether_the_number_is_there_and_not_where_it_stands': a_guard_that_asks_whether_the_number_is_there_and_not_where_it_stands})

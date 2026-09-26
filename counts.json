@@ -1,5 +1,5 @@
 {
- "read_by": "check.py:counted_readings -- each number below is typed in the `fact` of the class it names, and this file is the check that counts it",
+ "read_by": "check.py:counted_readings -- each number below is typed in the promise, fact or note of the class it names, beside the words of its key, and this file is one of the two places it is read against",
  "rows": [
   {
    "class": "a-class-registers-fragments-that-no-entry-reads",
@@ -8,10 +8,10 @@
     "probes/unread_fragments.py"
    ],
    "keys": {
-    "callable registrations": 301,
-    "claims (entries + repeats)": 238,
-    "distinct objects among them": 298,
-    "namespaces": 186,
+    "callable registrations": 303,
+    "claims (entries + repeats)": 240,
+    "distinct objects among them": 300,
+    "namespaces": 187,
     "registrations named by no claim": 58
    }
   },
@@ -22,10 +22,10 @@
     "probes/registry_collisions.py"
    ],
    "keys": {
-    "classes": 186,
-    "distinct names": 308,
+    "classes": 187,
+    "distinct names": 310,
     "in more than one class": 2,
-    "registrations": 311
+    "registrations": 313
    }
   },
   {
