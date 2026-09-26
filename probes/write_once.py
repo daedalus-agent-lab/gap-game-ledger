@@ -7,8 +7,9 @@ run time, by a dict that raises when a key is written twice. The static guard se
 code it is handed; the run-time guard sees only the writes that reach it, and Python's
 dict has several write paths that do not all go through `__setitem__`.
 
-This probe runs both questions over the same five write paths, because "the guard
-refuses the second write" is a claim about a path, not about the guard:
+This probe runs both questions over the same write paths, because "the guard
+refuses the second write" is a claim about a path, not about the guard. The paths are
+named by `PATHS` and `SOURCES`, never by a number written beside them:
 
   []=         R['k'] = v              -- calls `__setitem__`
   update      R.update(k=v)           -- C `dict.update` does not call `__setitem__`
@@ -17,6 +18,9 @@ refuses the second write" is a claim about a path, not about the guard:
                                          loss is the other way round from the others
   decorator   @register('k')          -- the helper writes through `registry['k']`, so
                                          the write reaches the container like `[]=`
+
+A label is not a path. `decorator` above is a helper whose body is `R['k'] = v`; a real
+`@decorator` applied twice is a different piece of code and a separate column.
 
 A silent path is not one outcome: `second-wins` means the first registration is gone,
 `first-wins` means the second one is. Both are losses and both are printed.
@@ -28,9 +32,12 @@ counting it as the container's refusal is exactly the mistake this probe exists 
 avoid: with the checking helper the plain-dict deafness check fires, and the probe
 reports it.
 
-Asked of the LEDGER's guard as well: the same five paths written as source text, run
-through the guard this ledger uses, so a reader can see which paths a static guard can
-cover that a run-time one cannot -- and which it misses anyway.
+Asked of the LEDGER's guard as well: the same paths written as source text, run through
+the guard this ledger uses, so a reader can see which paths a static guard can cover
+that a run-time one cannot -- and which it misses anyway. Three sources below are loss
+shapes the guard is silent on and that the runtime columns do not reach either, because
+the reply this probe answers named them as the same defect and a silent path is one
+reading per source, not a footnote.
 
     python3 write_once.py            # the table, measured
     python3 write_once.py --check    # the table must equal what this file declares
@@ -70,18 +77,23 @@ DECLARED = {
                                 "setdefault": "first-wins"}},
     "checking helper": {"refused_on": ["dict", "OnceDict", "OnceUserDict"]},
     "ledger guard": {"fires": ["[]=", "|=", "subscript-union", "two assignment sites"],
-                     "silent": ["real decorator", "setdefault", "update"]},
+                     "silent": ["real decorator", "setdefault", "two subscript unions",
+                                "two whole-registry unions", "union then assign",
+                                "update (method)", "update (tool call)"]},
 }
 
-# The write paths as source, twice each, for the static guard. Six, because the two
-# union forms are two different pieces of code and the guard reads them separately.
+# The write paths as source, twice each, for the static guard. The two union forms are
+# two different pieces of code and the guard reads them separately; the real decorator,
+# the tool-call `update` and the two unions before an assignment are here because the
+# guard reads them as NOTHING, which is the column a reader asked for.
 SOURCES = {
     "[]=": ("NAMESPACES = {}\n"
             "NAMESPACES['c'] = {'n': lambda: 1}\n"
             "NAMESPACES['c'] = {'m': lambda: 2}\n"),
-    "update": ("NAMESPACES = {}\n"
-               "NAMESPACES['c'] = {'n': lambda: 1}\n"
-               "NAMESPACES['c'].update({'m': lambda: 2})\n"),
+    # `.update(...)` as a method on the registry name.
+    "update (method)": ("NAMESPACES = {}\n"
+                        "NAMESPACES['c'] = {'n': lambda: 1}\n"
+                        "NAMESPACES['c'].update({'m': lambda: 2})\n"),
     "|=": ("NAMESPACES = {}\n"
            "NAMESPACES['c'] = {'n': lambda: 1}\n"
            "NAMESPACES |= {'c': {'m': lambda: 2}}\n"),
@@ -96,6 +108,24 @@ SOURCES = {
                   "    NAMESPACES['c'] = {'n': lambda: 1}\n"
                   "def register_m():\n"
                   "    NAMESPACES['c'] = {'m': lambda: 2}\n"),
+    # `.update(...)` as a tool call rather than as a method on the registry name.
+    "update (tool call)": ("NAMESPACES = {}\n"
+               "NAMESPACES['c'] = {'n': lambda: 1}\n"
+               "d = {'m': lambda: 2}\n"
+               "NAMESPACES['c'].update(**d)\n"),
+    # Union before the assignment that follows it: the union is lost wholesale.
+    "union then assign": ("NAMESPACES = {}\n"
+                          "NAMESPACES |= {'c': {'n': lambda: 1}}\n"
+                          "NAMESPACES['c'] = {'m': lambda: 2}\n"),
+    # Two whole-registry unions for one class: the second replaces the class body.
+    "two whole-registry unions": ("NAMESPACES = {}\n"
+                                  "NAMESPACES |= {'c': {'n': lambda: 1}}\n"
+                                  "NAMESPACES |= {'c': {'m': lambda: 2}}\n"),
+    # Two subscript unions against one literal: the same key is written twice into one
+    # mapping and the guard needs both writes to see it.
+    "two subscript unions": ("NAMESPACES = {'c': {}}\n"
+                             "NAMESPACES['c'] |= {'n': lambda: 1}\n"
+                             "NAMESPACES['c'] |= {'n': lambda: 2}\n"),
     # A REAL decorator: one write site, two call sites. The loss is real (the second
     # call replaces the first mapping) and the guard sees one assignment, so it is
     # silent -- which the row above, made of two visible assignments, is not. Printed
@@ -250,8 +280,12 @@ def table() -> list:
 
 def _render(m: dict) -> list:
     lines = []
-    for guard in ("OnceDict", "OnceUserDict", "checking helper", "ledger guard",
+    for guard in ("OnceDict", "OnceUserDict", "checking helper",
+                  "-- the ledger's static guard, on source text --", "ledger guard",
                   "decorator is another name"):
+        if guard.startswith("--"):
+            lines.append(guard)
+            continue
         row = m[guard]
         if guard == "decorator is another name":
             lines.append("%-15s %s" % (
@@ -306,7 +340,42 @@ def selftest() -> tuple:
         if fired and not declared_fires:
             bad.append("the guard fired on the %s form, which this file declares it "
                        "does not cover -- the declaration is stale" % label)
+    # A label written twice in one dict literal is not a dict with two entries: the
+    # later source silently replaces the earlier one and the row for the first is
+    # measured on a source nothing declares. This probe was written with that
+    # defect -- two `update` keys, one source dropped -- so the counts below are
+    # read from the file's own text rather than from the object they built.
+    checks += 1
+    dupes = duplicated_source_labels()
+    if dupes:
+        bad.append("these source labels are written twice in one literal, so the first "
+                   "source is not the one measured: %s" % ", ".join(dupes))
+    checks += 1
+    written = len(source_literal_keys())
+    if written != len(SOURCES) or written != len(DECLARED["ledger guard"]["fires"]) \
+            + len(DECLARED["ledger guard"]["silent"]):
+        bad.append("the SOURCES literal holds %d entry/entries, the object holds %d and "
+                   "the declaration names %d: a count in a literal is not a count"
+                   % (written, len(SOURCES),
+                      len(DECLARED["ledger guard"]["fires"])
+                      + len(DECLARED["ledger guard"]["silent"])))
     return bad, checks
+
+
+def source_literal_keys() -> list:
+    """The keys of the SOURCES literal as written, duplicates included."""
+    import ast
+    tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == "SOURCES":
+            return [k.value for k in node.value.keys]
+    return []
+
+
+def duplicated_source_labels() -> list:
+    keys = sorted(l for l in source_literal_keys()
+                  if source_literal_keys().count(l) > 1)
+    return keys
 
 
 def check(measured: dict) -> list:

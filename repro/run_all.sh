@@ -382,14 +382,28 @@ run "hhi null model --check"        python3 "$LEDGER/probes/hhi_null_model.py" -
 # driven from BOTH rows in-process: an expectation that holds only in the world
 # this machine happens to be in is a claim about the machine, not about the record.
 run "control worlds"              python3 "$LEDGER/probes/control_worlds.py" --check
+# Every probe in `probes/` is either invoked above or named as excluded, and the list is
+# read from the directory and from this file rather than typed in the probe. The question
+# it answers was asked by a reader: "not wired into check.py". check.py is the ledger's
+# gate, not the suite -- this runner is -- and before this item existed nothing said which
+# probes the suite reached, so "the suite runs the probes" was a sentence about a directory.
+run "probe coverage --selftest"   python3 "$LEDGER/probes/probe_coverage.py" --selftest
+run "probe coverage --check"      python3 "$LEDGER/probes/probe_coverage.py" --check
+# Two windows of one right, compared against the contract rather than against each other:
+# the pair that counts is the one whose two members carry two lengths for one name.
+run "two clocks contract --check" python3 "$LEDGER/probes/two_clocks_contract.py" --check
+# A fingerprint that erases names erases the subject before the verb, and this probe is
+# the measurement behind that rule: two calls that differ in nothing but their receiver
+# text must not read as two logics. In the standing set because the rule is published.
+run "zenith attribute pair"       python3 "$LEDGER/probes/zenith_attribute_pair.py"
 # The packet probe, in the standing set because its own docstring carried a rule
 # that had never been run -- and the first execution refuted it. A probe whose
 # falsifier is only ever read is a promissory note; this one is run every time.
 run "population control"          python3 "$LEDGER/probes/population_control.py" --selftest
-# A threshold published as a formula over a name the payload defines three times.
-# The probe applies the published formula to every N the payload carries, says which
-# published floor each one reproduces and, the part a reader cannot see by eye,
-# which pairs of N no floor number can separate.
+# A threshold published as a formula over a name the payload carries under more than
+# one key, each of them named in the probe's own rows. The probe applies the published
+# formula to every N the payload carries, says which published floor each one reproduces
+# and, the part a reader cannot see by eye, which pairs of N no floor number can separate.
 run "floor argument --selftest"   python3 "$LEDGER/probes/floor_argument.py" --selftest
 run "floor argument --check"      python3 "$LEDGER/probes/floor_argument.py" --check
 # The floor is a staircase, not a gauge: above the clamp it stands still for up to 4
@@ -421,8 +435,10 @@ run "registry collisions --check"    python3 "$LEDGER/probes/registry_collisions
 run "cwd repointing --selftest"   python3 "$LEDGER/probes/cwd_repointing.py" --selftest
 run "cwd repointing"              python3 "$LEDGER/probes/cwd_repointing.py"
 # A write that never reaches `__setitem__` is not a write the guard can refuse. The same
-# five write paths are run against two run-time write-once registries and against the
-# static guard, because "the guard refuses the second write" is a claim about a path.
+# write paths are run against two run-time write-once registries and against the static
+# guard, because "the guard refuses the second write" is a claim about a path, and the
+# paths are the ones `PATHS` and `SOURCES` name -- a numeral in this comment is the very
+# defect the probe measures (it printed a path count of five while SOURCES declared six).
 run "write once --selftest"       python3 "$LEDGER/probes/write_once.py" --selftest
 run "write once --check"          python3 "$LEDGER/probes/write_once.py" --check
 run "copy cost"                   python3 "$LEDGER/probes/copy_cost.py" --check
