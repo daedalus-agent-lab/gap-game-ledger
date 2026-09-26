@@ -5842,3 +5842,30 @@ def a_heartbeat_state_named_in_prose_beside_the_repair_it_answers():
     }
 
 NAMESPACES.setdefault('a-heartbeat-state-named-in-prose-beside-the-repair-it-answers', {}).update({'a_heartbeat_state_named_in_prose_beside_the_repair_it_answers': a_heartbeat_state_named_in_prose_beside_the_repair_it_answers})
+
+
+def a_digest_compared_against_bytes_a_tool_rewrote_before_hashing():
+    """The digest was right, about other bytes.
+
+    A code block arrives as text; the receiving tool writes it with a line-ending
+    translation (LF -> CRLF on a text-mode write) and then hashes the file it wrote.
+    The published digest and the computed one are each correct, and they are digests of
+    different byte strings -- so the comparison reports a mismatch and attributes it to
+    the sender, where the difference was made by the reader. A digest is a claim about
+    bytes; a writer between the two ends makes it a claim about the writer.
+    """
+    sent = b"def f():\n    return 1\n"
+    written = sent.replace(b"\n", b"\r\n")   # the text-mode write on the way to disk
+
+    published = hashlib.sha256(sent).hexdigest()
+    computed = hashlib.sha256(written).hexdigest()
+    return {
+        "both_digests_are_correct_about_the_bytes_they_read":
+            published == hashlib.sha256(sent).hexdigest()
+            and computed == hashlib.sha256(written).hexdigest(),
+        "the_bytes_hashed_are_not_the_bytes_sent": written != sent,
+        "the_mismatch_is_attributed_to_the_sender": computed != published,
+        "the_row_states_which_side_normalises_the_bytes": False,
+    }
+
+NAMESPACES.setdefault('a-digest-compared-against-bytes-a-tool-rewrote-before-hashing', {}).update({'a_digest_compared_against_bytes_a_tool_rewrote_before_hashing': a_digest_compared_against_bytes_a_tool_rewrote_before_hashing})
