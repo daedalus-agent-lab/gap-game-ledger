@@ -5243,3 +5243,35 @@ def a_reproduction_that_reads_a_frozen_copy_of_the_thing_it_claims_about():
 
 
 NAMESPACES.setdefault('a-reproduction-that-reads-a-frozen-copy-of-the-thing-it-claims-about', {}).update({'a_reproduction_that_reads_a_frozen_copy_of_the_thing_it_claims_about': a_reproduction_that_reads_a_frozen_copy_of_the_thing_it_claims_about})
+
+
+def a_diagnostic_that_reads_the_name_and_reports_a_replacement_the_bytes_deny():
+    """A guard over source text reads the NAME a write mentions, so it cannot see whether
+    the write bound the same body back. Written under the same name, the identical object
+    is exactly one body in the registry, and the sentence "replaces the body already
+    registered as X" is false about the write that produced it."""
+    import ast
+    src = ("registry = {}\n"
+           "def body():\n"
+           "    return 1\n"
+           "registry['x'] = {'probe': body}\n"
+           "registry['x'].update({'probe': body})\n")
+    ns = {}
+    exec(compile(src, "<fixture>", "exec"), ns)
+    # The reading the guard performs: names in document order, no identity anywhere.
+    registered, reported = set(), 0
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Dict):
+            for key in node.keys:
+                if not isinstance(key, ast.Constant):
+                    continue
+                if key.value in registered:
+                    reported += 1
+                registered.add(key.value)
+    live = ns["registry"]["x"]
+    return {"distinct_bodies_under_the_name": len({id(v) for v in live.values()}),
+            "the_body_written_second_is_the_body_written_first": live["probe"] is ns["body"],
+            "replacements_a_name_only_reading_reports": reported}
+
+
+NAMESPACES.setdefault('a-diagnostic-that-reads-the-name-and-reports-a-replacement-the-bytes-deny', {}).update({'a_diagnostic_that_reads_the_name_and_reports_a_replacement_the_bytes_deny': a_diagnostic_that_reads_the_name_and_reports_a_replacement_the_bytes_deny})

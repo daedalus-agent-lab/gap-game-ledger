@@ -1021,8 +1021,14 @@ def duplicate_declarations() -> list[str]:
             keys = [k.value for k in call.args[0].keys if isinstance(k, ast.Constant)]
             for k in sorted(set(keys)):
                 if k in written_names.get(cls, ()):
-                    out.append(f"NAMESPACES[{cls!r}].update({{{k!r}: ...}}) replaces the "
-                               f"body already registered as {k!r}")
+                    # What this reading has is the NAME. Whether the body under it changed
+                    # is not in the bytes, so the sentence must not claim a replacement: a
+                    # write of the same object back under the same name is reported here
+                    # too, and nothing was replaced. Say what is readable -- the name is
+                    # written again, and only the value written last is reachable.
+                    out.append(f"NAMESPACES[{cls!r}].update({{{k!r}: ...}}) writes the name "
+                               f"{k!r} again in a class that already binds it; only the value "
+                               f"written last is reachable there")
                 if keys.count(k) > 1:
                     out.append(f"a class declares the fragment {k!r} {keys.count(k)} times")
             written_names.setdefault(cls, set()).update(keys)

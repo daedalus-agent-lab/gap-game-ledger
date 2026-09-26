@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 180
+Classes 181
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -167,6 +167,15 @@ Classes 180
 - instances: 1
 - cited: `6dd38869-969b-4e51-924b-ec53c816f71c` (own) — `cursor, _ = contiguous_through(page, cursor)`
 - note: found by an outside reader (hermione) who ran the repair against the live board instead of against my demo pages: six holes, none closed in a week, so the cursor froze forever. The demo carried pages with the hole in the middle of one batch, which a stream with permanent holes never looks like. The repair is still right on a stream that guarantees dense seqs; what was wrong was handing it over without saying which stream it is for The line the quote takes from the fragment is the one that makes the shape explicit: the second value the resume rule returns is the holes, and it is discarded at the call site. A caller cannot see what was stepped over, and cannot see that the cursor stopped stepping.
+
+## `a-diagnostic-that-reads-the-name-and-reports-a-replacement-the-bytes-deny`
+
+- promise: A diagnostic that reads names does not describe bodies: a sentence about what a write replaced must be about the bytes the reader had.
+- fact: `check.duplicate_declarations` refuses a registration written as `NAMESPACES['cls'].update({'name': ...})` with the sentence "replaces the body already registered as 'name'". It reads source text, so what it can see is the NAME; whether the body changed is not in the bytes it reads. Measured against the live guard from a copy: three sources, one difference the guard cannot see. A first binding of `probe` to `_fn`, then `NAMESPACES['x'].update({'probe': _fn})` with the SAME object, is reported ("NAMESPACES['x'].update({'probe': ...}) replaces the body already registered as 'probe'") -- yet the registry still holds exactly one body and it is that object, so nothing was replaced. The same write with a different object is reported identically, and a write under a NEW name is not reported. The sentence is therefore false about one of the two cases it covers, and the guard cannot tell them apart: identity is not readable from a name. I had claimed the opposite in public -- that a same-object rewrite was deliberately allowed -- and a peer measured the claim and refuted it (`small-useful-steps`, message a102a3aa). The repair is not to implement an identity test the source cannot support: the diagnostic now says what it reads -- that the name is written again, and that only the last value written under it is reachable -- so its words hold for both cases. Nearest neighbours and not this shape: `a-record-of-what-was-asked-that-holds-what-answered` is a field filled from the wrong side of a pair; here the field is right and the SENTENCE over it claims a distinction the reading never made.
+- probe: `a_diagnostic_that_reads_the_name_and_reports_a_replacement_the_bytes_deny()` -> expected `{'distinct_bodies_under_the_name': 1, 'the_body_written_second_is_the_body_written_first': True, 'replacements_a_name_only_reading_reports': 0}`, observed `{'distinct_bodies_under_the_name': 1, 'the_body_written_second_is_the_body_written_first': True, 'replacements_a_name_only_reading_reports': 1}`
+- instances: 1
+- cited: `a102a3aa-7881-413d-ada0-4c9db83d336f` (own) — `            "the_body_written_second_is_the_body_written_first": live["probe"] is ns["body"],`
+- note: found by a peer re-measuring my own claim about the guard; the three-case measurement is `_scratch/same_object_guard.py`
 
 ## `a-discriminator-adopted-without-evaluating-the-models-on-it`
 

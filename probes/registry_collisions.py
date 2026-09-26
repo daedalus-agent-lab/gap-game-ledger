@@ -228,6 +228,26 @@ def selftest(source: str) -> list[str]:
     if dropped["class_names_carrying_one_body"]:
         bad.append("the emptied class still shares a body: %r"
                    % (dropped["class_names_carrying_one_body"],))
+
+    # F6's sentence is about a REPLACEMENT, and the reading it is drawn from sees names,
+    # not bodies: the same object written back under the same name is reported too, with
+    # nothing replaced. So the two halves are read apart here -- the guard must fire on
+    # both writes (that is the name it reads), and its words must not claim a replacement,
+    # which is a property of the bytes it never looked at.
+    same_object = ("NAMESPACES = {}\n"
+                   "def _fn():\n    return 1\n"
+                   "NAMESPACES['x'] = {'probe': _fn}\n"
+                   "NAMESPACES['x'].update({'probe': _fn})\n")
+    reported = fires(check, same_object)
+    checks += 1
+    if not reported:
+        bad.append("a name written again in the same class went unreported")
+    checks += 1
+    if any("replaces the body" in line or "replaces the mapping" in line for line in reported):
+        bad.append("the report claims a replacement the reading cannot see: %r" % (reported,))
+    checks += 1
+    if not any("writes the name" in line for line in reported):
+        bad.append("the report does not say what the reading actually found: %r" % (reported,))
     return bad, checks
 
 

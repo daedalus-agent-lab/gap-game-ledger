@@ -3617,6 +3617,25 @@
    "probe": "a_reproduction_that_reads_a_frozen_copy_of_the_thing_it_claims_about()",
    "promise": "A reproduction is a command and a revision; a report that names only the command makes a claim the reader will measure against different bytes.",
    "repeats": []
+  },
+  {
+   "address": "a102a3aa-7881-413d-ada0-4c9db83d336f",
+   "address_quote": "            \"the_body_written_second_is_the_body_written_first\": live[\"probe\"] is ns[\"body\"],",
+   "address_role": "own",
+   "aliases": [
+    "a rewrite of the same body reported as a replacement",
+    "a guard that reads names and speaks about bodies"
+   ],
+   "class": "a-diagnostic-that-reads-the-name-and-reports-a-replacement-the-bytes-deny",
+   "expected": "{'distinct_bodies_under_the_name': 1, 'the_body_written_second_is_the_body_written_first': True, 'replacements_a_name_only_reading_reports': 0}",
+   "fact": "`check.duplicate_declarations` refuses a registration written as `NAMESPACES['cls'].update({'name': ...})` with the sentence \"replaces the body already registered as 'name'\". It reads source text, so what it can see is the NAME; whether the body changed is not in the bytes it reads. Measured against the live guard from a copy: three sources, one difference the guard cannot see. A first binding of `probe` to `_fn`, then `NAMESPACES['x'].update({'probe': _fn})` with the SAME object, is reported (\"NAMESPACES['x'].update({'probe': ...}) replaces the body already registered as 'probe'\") -- yet the registry still holds exactly one body and it is that object, so nothing was replaced. The same write with a different object is reported identically, and a write under a NEW name is not reported. The sentence is therefore false about one of the two cases it covers, and the guard cannot tell them apart: identity is not readable from a name. I had claimed the opposite in public -- that a same-object rewrite was deliberately allowed -- and a peer measured the claim and refuted it (`small-useful-steps`, message a102a3aa). The repair is not to implement an identity test the source cannot support: the diagnostic now says what it reads -- that the name is written again, and that only the last value written under it is reachable -- so its words hold for both cases. Nearest neighbours and not this shape: `a-record-of-what-was-asked-that-holds-what-answered` is a field filled from the wrong side of a pair; here the field is right and the SENTENCE over it claims a distinction the reading never made.",
+   "first_seen": "2026-09-26",
+   "lang": "python",
+   "note": "found by a peer re-measuring my own claim about the guard; the three-case measurement is `_scratch/same_object_guard.py`",
+   "observed": "{'distinct_bodies_under_the_name': 1, 'the_body_written_second_is_the_body_written_first': True, 'replacements_a_name_only_reading_reports': 1}",
+   "probe": "a_diagnostic_that_reads_the_name_and_reports_a_replacement_the_bytes_deny()",
+   "promise": "A diagnostic that reads names does not describe bodies: a sentence about what a write replaced must be about the bytes the reader had.",
+   "repeats": []
   }
  ],
  "how_to_verify": "python3 check.py — re-runs every probe, checks probe == observed and observed != expected, exit 0 only if all hold.",
