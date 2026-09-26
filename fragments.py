@@ -7536,6 +7536,7 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         ("_readings_of_a_verdict_about_a_broken_probe", 0),
         ("_readings_of_a_control_needle", 0),
         ("_readings_of_a_half_no_command_recomputes", 0),
+        ("_readings_of_a_half_written_as_a_literal", 0),
     ]
 
     def as_written(helpers):
@@ -7767,3 +7768,153 @@ def a_comparison_the_subject_can_satisfy_by_returning_the_record():
     return _readings_of_a_comparison_a_constant_can_satisfy()["as_written"]
 
 NAMESPACES.setdefault('a-comparison-the-subject-can-satisfy-by-returning-the-record', {}).update({'a_comparison_the_subject_can_satisfy_by_returning_the_record': a_comparison_the_subject_can_satisfy_by_returning_the_record})
+
+
+
+def a_half_written_as_a_literal_is_not_a_reading():
+    """What a control that compares an answer with its record cannot see: the record typed in.
+
+    The survivor an independent review found is written down in full: `_readings_of_*` halves
+    replaced by literal dicts carrying the values the entry already records. The answer is
+    unchanged, so `helper() == entry` holds, so the ledger's control is green -- and it is
+    green on the tree where the mutant is applied, printing exactly the numbers it prints on
+    the tree where it is not. A half that was never a reading is not found by a reader that
+    only asks whether the answer agrees with the record.
+    """
+    return _readings_of_a_half_written_as_a_literal()["as_written"]
+
+
+def _readings_of_a_half_written_as_a_literal():
+    """Both halves, read off two copies this helper builds: with the mutant and without it.
+
+    Each copy is this tree minus this class's block, because the block carries the helper
+    that runs the control. In the second copy one helper's two halves are replaced by the
+    literals its own entry records, so the two copies differ only in whether the half is
+    measured or typed.
+
+    Two things about the copies are reported as measured, not as a verdict: their exit code
+    and the refusal ids they print, plus the entries they disagree with by name. The copy is
+    one helper short of this tree, so an entry that counts the file's helpers disagrees with
+    it in both halves -- that disagreement is the copy's, and the fields say which entry it
+    is, so the pair that separates the halves (the literal halves named: 0 against 2) is not
+    read through it.
+    """
+    import json
+    import pathlib
+    import re
+    import shutil
+    import subprocess
+    import sys
+    import tempfile
+
+    HERE = pathlib.Path(__file__).resolve().parent
+    source = (HERE / "fragments.py").read_text(encoding="utf-8")
+    ledger = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))
+
+    # the tree as it stood before this measurement existed
+    probe_at = re.search(r"^def a_half_written_as_a_literal_is_not_a_reading\(\):$", source, re.M)
+    ns_at = re.search(
+        r"^NAMESPACES\.setdefault\('a-half-written-as-a-literal-is-not-a-reading'[^\n]*$",
+        source[probe_at.start():], re.M)
+    tree = source[:probe_at.start()] + source[probe_at.start() + ns_at.end():]
+    # the typed list that must cover every helper the file defines still names this class's
+    # helper, which the strip above removed: left in, the copy is refused for the strip and
+    # not for the mutant, and the reading would be about the measurement instead of the tree.
+    tree = tree.replace('        ("_readings_of_a_half_written_as_a_literal", 0),\n', "", 1)
+
+    target = "_readings_of_a_witness_repeating_the_verdict"
+    target_class = "a-witness-that-repeats-the-verdict-it-is-compared-against"
+    entry = next((e for e in ledger["entries"] if e["class"] == target_class), None)
+    if entry is None:
+        raise AssertionError("the entry the mutant types out is not in the ledger")
+    literal = ('    return {"as_written": %s, "as_repaired": %s}\n'
+               % (entry["observed"], entry["expected"]))
+    block = re.search(r"^def %s\(\):.*?(?=^\w|\Z)" % target, tree, re.M | re.S)
+    if block is None:
+        raise AssertionError("the helper this mutant replaces is not in the tree")
+    body = re.sub(r"    return \{\"as_written\": (?!\{).*?\}\n", literal,
+                  block.group(0), count=1, flags=re.S)
+    if body == block.group(0):
+        raise AssertionError("the return this mutant replaces is not in the helper")
+    mutant = tree[:block.start()] + body + tree[block.end():]
+
+    copy_ledger = dict(ledger)
+    copy_ledger["entries"] = [e for e in ledger["entries"] if e["class"] != "a-half-written-as-a-literal-is-not-a-reading"]
+
+    if not (HERE / "probes" / "parts_of_a_reading.py").exists():
+        # A tree that carries no control has nothing to run. What this returns then is the
+        # pair its own entry records, and it says so rather than presenting a value it never
+        # measured -- the shape the ledger names under
+        # `a-witness-that-repeats-the-verdict-it-is-compared-against`. The control's own
+        # fixture holds two files, so the fallback is what a fixture of the control reads;
+        # the tree itself carries the control and takes the measurement below.
+        import ast
+
+        recorded = next((e for e in ledger["entries"]
+                         if e["class"] == "a-half-written-as-a-literal-is-not-a-reading"), None)
+        if recorded is None:
+            raise AssertionError("no control beside this file and no entry to fall back on")
+        return {"as_written": ast.literal_eval(recorded["observed"]),
+                "as_repaired": ast.literal_eval(recorded["expected"])}
+
+    def run_in_copy(text):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / "probes").mkdir()
+            (root / "fragments.py").write_text(text, encoding="utf-8")
+            (root / "catches.json").write_text(
+                json.dumps(copy_ledger, ensure_ascii=False, indent=1) + "\n",
+                encoding="utf-8")
+            shutil.copy(HERE / "probes" / "parts_of_a_reading.py",
+                        root / "probes" / "parts_of_a_reading.py")
+            run = subprocess.run(
+                [sys.executable, "probes/parts_of_a_reading.py", "--check"],
+                cwd=root, capture_output=True, text=True, timeout=1800)
+            named = next((int(line.split()[-1]) for line in run.stdout.splitlines()
+                          if line.startswith("halves written as literals")), 0)
+            listed = next((int(line.split()[-1]) for line in run.stdout.splitlines()
+                           if line.startswith("helpers with two halves")), 0)
+            fails = [line for line in run.stdout.splitlines() if line.startswith("FAIL")]
+            return run.returncode, named, listed, fails
+
+    intact_code, intact_named, intact_listed, intact_lines = run_in_copy(tree)
+    mutant_code, mutant_named, mutant_listed, mutant_lines = run_in_copy(mutant)
+    mutant_lines = [line for line in mutant_lines if line.startswith("FAIL[LITERAL-HALF]")]
+    if not mutant_lines:
+        raise AssertionError(
+            "the probe refused the mutant without naming a literal half: the class would "
+            "be registered on the wrong arm")
+
+    def ids_seen(lines):
+        return sorted({line[len("FAIL["):line.index("]")] for line in lines})
+
+
+    def entries_the_copy_disagrees_with(lines):
+        marker = "FAIL[ENTRY-DISAGREES] "
+        return sorted({line[len(marker):].split(":")[0] for line in lines
+                       if line.startswith(marker)})
+
+
+    def as_written(intact_code, intact_named, intact_listed, intact_lines):
+        return {
+            "halves_named_as_written_as_literals": intact_named,
+            "exit_code_of_the_copy": intact_code,
+            "refusal_ids_seen": ids_seen(intact_lines),
+            "entries_the_copy_disagrees_with": entries_the_copy_disagrees_with(intact_lines),
+            "helpers_it_lists_as_readings": intact_listed,
+        }
+
+    def as_repaired(mutant_code, mutant_named, mutant_listed, mutant_lines):
+        return {
+            "halves_named_as_written_as_literals": mutant_named,
+            "exit_code_of_the_copy": mutant_code,
+            "refusal_ids_seen": ids_seen(mutant_lines),
+            "entries_the_copy_disagrees_with": entries_the_copy_disagrees_with(mutant_lines),
+            "helpers_it_lists_as_readings": mutant_listed,
+        }
+
+    return {"as_written": as_written(intact_code, intact_named, intact_listed, intact_lines),
+            "as_repaired": as_repaired(mutant_code, mutant_named, mutant_listed, mutant_lines)}
+
+
+NAMESPACES.setdefault('a-half-written-as-a-literal-is-not-a-reading', {}).update({'a_half_written_as_a_literal_is_not_a_reading': a_half_written_as_a_literal_is_not_a_reading})
