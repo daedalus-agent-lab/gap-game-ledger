@@ -5080,3 +5080,117 @@ def a_generated_page_that_carries_the_tools_complaints():
 
 
 NAMESPACES.setdefault('a-generated-page-that-carries-the-tools-complaints', {}).update({'a_generated_page_that_carries_the_tools_complaints': a_generated_page_that_carries_the_tools_complaints})
+
+
+def a_guard_that_watches_the_container_while_the_write_lands_in_its_store():
+    """A guard on the container and a second write that reaches the store under it.
+
+    `probes/write_once.py` measures which write paths a write-once container
+    refuses. Both containers it builds guard the path a caller takes through the
+    container's own protocol. `collections.UserDict` keeps its mapping in the
+    attribute `data`, and a writer that knows the type can write there directly:
+    `registry.data['k'] = v` never calls `__setitem__`, so the guard records no
+    refusal, the container still reports one key, and the second value is the one
+    that survives. A reader named this path on the board; the six paths the probe
+    measured did not include it, and the column was published as if they were all.
+
+    The four numbers are `refusals, keys, value` for a write through the guard and
+    then for the same two writes aimed at the store under it.
+    """
+    class Guarded:
+        """A one-write container whose guard sits on `__setitem__` only."""
+
+        def __init__(self):
+            self.data = {}
+            self.refusals = 0
+
+        def __setitem__(self, key, value):
+            if key in self.data:
+                self.refusals += 1
+                raise KeyError(key)
+            self.data[key] = value
+
+        def __getitem__(self, key):
+            return self.data[key]
+
+        def __len__(self):
+            return len(self.data)
+
+    def through_the_container(registry, value):
+        registry["k"] = value
+
+    def into_the_store(registry, value):
+        registry.data["k"] = value
+
+    def two_writes(op):
+        registry = Guarded()
+        try:
+            op(registry, 1)
+            op(registry, 2)
+        except KeyError:
+            pass
+        return [registry.refusals, len(registry), registry["k"]]
+
+    return two_writes(through_the_container) + two_writes(into_the_store)
+
+
+NAMESPACES.setdefault('a-guard-that-watches-the-container-while-the-write-lands-in-its-store', {}).update({'a_guard_that_watches_the_container_while_the_write_lands_in_its_store': a_guard_that_watches_the_container_while_the_write_lands_in_its_store})
+
+
+def a_classifier_with_two_answers_for_a_third_case():
+    """A verdict read from `did it raise` calls a shape it cannot apply a refusal.
+
+    `probes/write_once.py` scored a write path by applying it twice and asking
+    whether the container raised. A path outside the container's vocabulary --
+    `registry.data['k'] = v` on a plain dict, which has no `data` -- raises
+    AttributeError, so the two-answer reading returns `refused`: the probe
+    reports a refusal it never observed and the caller cannot tell a guard that
+    worked from a harness that cannot answer. The repair returns a third value,
+    `not-applicable`, and a fourth for a path that leaves the probed key absent
+    (`not-this-key`), and the selftest now asserts each of the three containers
+    answers as declared.
+    """
+    class Guarded:
+        def __init__(self):
+            self.data = {}
+
+        def __setitem__(self, key, value):
+            if key in self.data:
+                raise KeyError(key)
+            self.data[key] = value
+
+    def refusable(registry, value):
+        registry["k"] = value
+
+    def not_a_path_here(registry, value):
+        registry.data["k"] = value
+
+    def two_answers(container, op):
+        """`refused` when the container raised anything, `silent` otherwise."""
+        raised = False
+        try:
+            op(container, 1)
+            op(container, 2)
+        except Exception:
+            raised = True
+        return "refused" if raised else "silent"
+
+    def what_the_run_shows(container, op):
+        """What happened, read from the container the op was applied to."""
+        try:
+            op(container, 1)
+            op(container, 2)
+        except KeyError:
+            return "refused"
+        except (AttributeError, TypeError):
+            return "not-applicable"
+        return "silent"
+
+    plain = {}
+    return [two_answers(plain, refusable), what_the_run_shows(plain, refusable),
+            two_answers(plain, not_a_path_here),
+            what_the_run_shows(plain, not_a_path_here),
+            "data" in plain]
+
+
+NAMESPACES.setdefault('a-classifier-with-two-answers-for-a-third-case', {}).update({'a_classifier_with_two_answers_for_a_third_case': a_classifier_with_two_answers_for_a_third_case})

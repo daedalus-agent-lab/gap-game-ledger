@@ -63,7 +63,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 
 PATHS = ("[]=", "update", "|=", "setdefault", "decorator",
-         "decorator-update")
+         "decorator-update", "data[]")
 # Measured by this file, declared here so that a change to the paths or to the two
 # guards fails `--check` instead of quietly printing a different table.
 DECLARED = {
@@ -71,10 +71,17 @@ DECLARED = {
                  "silent": {"update": "second-wins",
                             "|=": "second-wins",
                             "setdefault": "first-wins",
-                            "decorator-update": "second-wins"}},
+                            "decorator-update": "second-wins"},
+                 # `data[]` is UserDict's own store; a plain dict has no such name.
+                 "not_applicable": ["data[]"]},
     "OnceUserDict": {"refused": ["[]=", "update", "decorator", "decorator-update"],
                      "silent": {"|=": "second-wins",
-                                "setdefault": "first-wins"}},
+                                "setdefault": "first-wins",
+                                # The second write goes into the inner mapping, past
+                                # `__setitem__`, and survives: a reader named this
+                                # path and it was not among the six measured here.
+                                "data[]": "second-wins"},
+                     "not_applicable": []},
     "checking helper": {"refused_on": ["dict", "OnceDict", "OnceUserDict"]},
     "ledger guard": {"fires": ["[]=", "|=", "subscript-union", "two assignment sites"],
                      "silent": ["real decorator", "setdefault", "two subscript unions",
@@ -203,14 +210,24 @@ OPERATIONS = {
     "setdefault": lambda R, v: R.setdefault("k", v),
     "decorator": lambda R, v: register(R, v)(lambda: None),
     "decorator-update": lambda R, v: register_via_update(R, v)(lambda: None),
+    # UserDict keeps its mapping in `.data`; writing there does not pass through the
+    # container's `__setitem__` at all.
+    "data[]": lambda R, v: R.data.__setitem__("k", v),
 }
 
 
 def run_path(cls, op) -> tuple:
-    """Apply one write path twice to a fresh registry: refused, or which write survives.
+    """Apply one write path twice to a fresh registry: refused, silent, or unreadable.
 
     A sentinel class with `__setitem__` that raises nothing is the blindness check:
     if it refuses, the harness is broken rather than the guard working.
+
+    Three answers rather than two, because a write path can lie outside the container
+    the harness is asking about: `data[]` on a plain dict raises AttributeError -- a
+    path that cannot be applied is NOT a refusal -- and a path writing a name the
+    container does not read back leaves the harness unable to say who won. Both used
+    to crash the caller, which reads as "the probe is broken" rather than "the probe
+    cannot judge this path".
     """
     registry = cls()
     try:
@@ -218,7 +235,13 @@ def run_path(cls, op) -> tuple:
         op(registry, 2)
     except KeyError:
         return "refused", None
-    return "silent", ("second-wins" if registry["k"] == 2 else "first-wins")
+    except (AttributeError, TypeError):
+        return "not-applicable", None
+    try:
+        seen = registry["k"]
+    except KeyError:
+        return "not-this-key", None
+    return "silent", ("second-wins" if seen == 2 else "first-wins")
 
 
 def load_guard():
@@ -245,14 +268,20 @@ def guard_over(text: str) -> list:
 def measure() -> dict:
     out = {}
     for cls in (OnceDict, OnceUserDict):
-        refused, silent = [], {}
+        refused, silent, not_applicable, not_this_key = [], {}, [], []
         for label in PATHS:
             verdict, who = run_path(cls, OPERATIONS[label])
             if verdict == "refused":
                 refused.append(label)
+            elif verdict == "not-applicable":
+                not_applicable.append(label)
+            elif verdict == "not-this-key":
+                not_this_key.append(label)
             else:
                 silent[label] = who
-        out[cls.__name__] = {"refused": refused, "silent": silent}
+        out[cls.__name__] = {"refused": refused, "silent": silent,
+                             "not_applicable": not_applicable,
+                             "not_this_key": not_this_key}
     # Is the decorator column an independent path, or the same write under a second
     # name? Measured per container rather than assumed from the helper's text.
     out["decorator is another name"] = {
@@ -300,6 +329,11 @@ def _render(m: dict) -> list:
             lines.append("%-15s silent on: %s" % (
                 "", ", ".join("%s (%s)" % (k, v) for k, v in sorted(row["silent"].items()))
                 or "none"))
+            lines.append("%-15s not applicable: %s" % (
+                "", ", ".join(row.get("not_applicable") or []) or "none"))
+            if row.get("not_this_key"):
+                lines.append("%-15s leaves this key untouched: %s" % (
+                    "", ", ".join(row["not_this_key"])))
         else:
             lines.append("%-15s fires on %d of %d: %s" % (
                 guard, len(row["fires"]), len(SOURCES), ", ".join(row["fires"])))
@@ -315,13 +349,32 @@ def selftest() -> tuple:
     for label in PATHS:
         checks += 1
         verdict, _ = run_path(dict, OPERATIONS[label])
-        if verdict != "silent":
+        # `not-applicable` is allowed: `data[]` is UserDict's store and a plain dict
+        # has no such name. What must never appear is a refusal, which would be the
+        # harness inventing a guard where there is none.
+        if verdict not in ("silent", "not-applicable"):
             bad.append("a plain dict refused %s: the harness reports refusals it did "
                        "not observe" % label)
     checks += 1
     if run_path(OnceDict, OPERATIONS["[]="])[0] != "refused":
         bad.append("the write-once dict did not refuse a second `[]=`: the harness "
                    "cannot see a refusal")
+    # Three answers, not two: a write path that does not apply to a container is not a
+    # refusal, and a path that writes a name the container does not read back cannot be
+    # scored at all. Both used to raise out of `run_path`, which reads as a broken probe.
+    for label, container, expected in (("data[]", OnceDict, "not-applicable"),
+                                       ("[]=", OnceDict, "refused"),
+                                       ("data[]", OnceUserDict, "silent")):
+        checks += 1
+        got = run_path(container, OPERATIONS[label])[0]
+        if got != expected:
+            bad.append("run_path(%s, %s) answered %r, declared %r"
+                       % (container.__name__, label, got, expected))
+    checks += 1
+    outside = run_path(OnceDict, lambda R, v: R.__dict__.__setitem__("elsewhere", v))[0]
+    if outside != "not-this-key":
+        bad.append("a write path that never touches the key was scored %r instead of "
+                   "`not-this-key`" % outside)
     # The static column must move with the source: a source with one write only is not
     # a loss, so the guard must stay silent on it.
     checks += 1
@@ -393,6 +446,10 @@ def check(measured: dict) -> list:
         if "silent" in declared and got.get("silent") != declared["silent"]:
             bad.append("%s silent: declared %r, measured %r"
                        % (guard, declared["silent"], got.get("silent")))
+        if "not_applicable" in declared \
+                and sorted(got.get("not_applicable") or []) != sorted(declared["not_applicable"]):
+            bad.append("%s not-applicable: declared %r, measured %r"
+                       % (guard, declared["not_applicable"], got.get("not_applicable")))
     return bad
 
 

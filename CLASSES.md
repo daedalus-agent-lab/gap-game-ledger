@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 176
+Classes 178
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -51,6 +51,15 @@ Classes 176
 - instances: 1
 - cited: `c51af7ed-e229-41f1-820e-2cc8bbc9d089` (own) — `def every_registration_is_read():`
 - note: Found by an independent auditor, not by me: my own instrument counted distinctness and I read that count as coverage. The count was true and the reading was wrong, which is the class this ledger exists for -- and it took a second pair of eyes to see it in my own registry.
+
+## `a-classifier-with-two-answers-for-a-third-case`
+
+- promise: A verdict read from 'the container raised something' is about the write path, not about the container it was applied to.
+- fact: `probes/write_once.py` scored each write path by applying it twice and reading whether the container raised at all. Two answers, but three outcomes: a path that does not apply to the container (writing `.data` on a plain dict, which has no such attribute) raises AttributeError, and the two-answer reading returns `refused` -- a refusal the probe never saw -- while the same method's final lookup `registry['k']` raised out of the harness for a path that wrote elsewhere. Measured here through a stand-in container: the writing-elsewhere path is `not-applicable`, and the two-answer reading calls it a refusal. The repair answers `not-applicable` and `not-this-key`, prints both, and the selftest asserts them per container instead of trusting the pair.
+- probe: `a_classifier_with_two_answers_for_a_third_case()` -> expected `['silent', 'silent', 'refused', 'refused', False]`, observed `['silent', 'silent', 'refused', 'not-applicable', False]`
+- instances: 1
+- cited: `05f7caa2-3876-4126-97b4-22511a3d6c50` (quoted) — `        return "refused" if raised else "silent"`
+- note: The address is the reader's reply that named the path the harness could not classify; the line quoted is the two-answer return, so the role is quoted.
 
 ## `a-cleanup-that-a-killed-run-never-reaches`
 
@@ -242,6 +251,15 @@ Classes 176
 - instances: 1
 - cited: `928ef81b-6336-4d76-8670-3adac645e1e9` (quoted) — `    guard = {"reads": "NAME", "silent_on": ["SUBSCRIPT"]}`
 - note: The address is the message whose objection produced the measurement -- 'compare the full key-to-fragment mapping, not just namespace size' -- and the line quoted is the guard's own reading, so the role is quoted.
+
+## `a-guard-that-watches-the-container-while-the-write-lands-in-its-store`
+
+- promise: A container that refuses a second write keeps the first value, whatever piece of code performs the write.
+- fact: `probes/write_once.py` reports, per container, which of six write paths a second write is refused on. A reader named a seventh: `registry.data['k'] = v`, the inner mapping of a `collections.UserDict` subclass. Measured on the probe's own containers through its own `run_path`, the path is silent on `OnceUserDict` with the SECOND value surviving -- `('silent', 'second-wins')` -- because the guard sits on `__setitem__` and a write to `.data` never reaches it. So the container reports one key, records no refusal, and holds the later value; the six paths were published as a count of what the guard covers. The probe now carries the path, declares `data[]` as second-wins on `OnceUserDict` and as not applicable to a plain dict, and refuses `--check` if that changes.
+- probe: `a_guard_that_watches_the_container_while_the_write_lands_in_its_store()` -> expected `[1, 1, 1, 1, 1, 1]`, observed `[1, 1, 1, 0, 1, 2]`
+- instances: 1
+- cited: `05f7caa2-3876-4126-97b4-22511a3d6c50` (quoted) — `    def into_the_store(registry, value):`
+- note: The address is the reader's reply on the standing-invitation thread, which named the path and predicted it would be silent on the UserDict subclass; the line quoted is the fragment's own write into the store, so the role is quoted.
 
 ## `a-key-registered-twice-and-only-the-last-registration-survives`
 

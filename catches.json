@@ -3524,6 +3524,46 @@
    "observed": "[3, 2, 1]",
    "probe": "list(a_generated_page_that_carries_the_tools_complaints().values())",
    "promise": "A command documented as `tool > file` writes the artifact and nothing else into that file."
+  },
+  {
+   "address": "05f7caa2-3876-4126-97b4-22511a3d6c50",
+   "address_quote": "    def into_the_store(registry, value):",
+   "address_role": "quoted",
+   "aliases": [
+    "a write that goes around the guard by reaching the store",
+    "the guard watches the container, the value lands in its attribute"
+   ],
+   "class": "a-guard-that-watches-the-container-while-the-write-lands-in-its-store",
+   "expected": "[1, 1, 1, 1, 1, 1]",
+   "fact": "`probes/write_once.py` reports, per container, which of six write paths a second write is refused on. A reader named a seventh: `registry.data['k'] = v`, the inner mapping of a `collections.UserDict` subclass. Measured on the probe's own containers through its own `run_path`, the path is silent on `OnceUserDict` with the SECOND value surviving -- `('silent', 'second-wins')` -- because the guard sits on `__setitem__` and a write to `.data` never reaches it. So the container reports one key, records no refusal, and holds the later value; the six paths were published as a count of what the guard covers. The probe now carries the path, declares `data[]` as second-wins on `OnceUserDict` and as not applicable to a plain dict, and refuses `--check` if that changes.",
+   "first_seen": "05f7caa2-3876-4126-97b4-22511a3d6c50",
+   "lang": "python",
+   "note": "The address is the reader's reply on the standing-invitation thread, which named the path and predicted it would be silent on the UserDict subclass; the line quoted is the fragment's own write into the store, so the role is quoted.",
+   "observed": "[1, 1, 1, 0, 1, 2]",
+   "probe": "a_guard_that_watches_the_container_while_the_write_lands_in_its_store()",
+   "probe_run": "python3 -c \"import runpy; ns=runpy.run_path('fragments.py'); print(ns['a_guard_that_watches_the_container_while_the_write_lands_in_its_store']())\"",
+   "promise": "A container that refuses a second write keeps the first value, whatever piece of code performs the write.",
+   "repeats": []
+  },
+  {
+   "address": "05f7caa2-3876-4126-97b4-22511a3d6c50",
+   "address_quote": "        return \"refused\" if raised else \"silent\"",
+   "address_role": "quoted",
+   "aliases": [
+    "a class the classifier cannot name read as the one it can",
+    "two answers for three outcomes"
+   ],
+   "class": "a-classifier-with-two-answers-for-a-third-case",
+   "expected": "['silent', 'silent', 'refused', 'refused', False]",
+   "fact": "`probes/write_once.py` scored each write path by applying it twice and reading whether the container raised at all. Two answers, but three outcomes: a path that does not apply to the container (writing `.data` on a plain dict, which has no such attribute) raises AttributeError, and the two-answer reading returns `refused` -- a refusal the probe never saw -- while the same method's final lookup `registry['k']` raised out of the harness for a path that wrote elsewhere. Measured here through a stand-in container: the writing-elsewhere path is `not-applicable`, and the two-answer reading calls it a refusal. The repair answers `not-applicable` and `not-this-key`, prints both, and the selftest asserts them per container instead of trusting the pair.",
+   "first_seen": "05f7caa2-3876-4126-97b4-22511a3d6c50",
+   "lang": "python",
+   "note": "The address is the reader's reply that named the path the harness could not classify; the line quoted is the two-answer return, so the role is quoted.",
+   "observed": "['silent', 'silent', 'refused', 'not-applicable', False]",
+   "probe": "a_classifier_with_two_answers_for_a_third_case()",
+   "probe_run": "python3 -c \"import runpy; ns=runpy.run_path('fragments.py'); print(ns['a_classifier_with_two_answers_for_a_third_case']())\"",
+   "promise": "A verdict read from 'the container raised something' is about the write path, not about the container it was applied to.",
+   "repeats": []
   }
  ],
  "how_to_verify": "python3 check.py — re-runs every probe, checks probe == observed and observed != expected, exit 0 only if all hold.",
