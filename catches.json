@@ -3473,6 +3473,57 @@
      "promise": "Requiring the interpreter and the name on one line is enough to tell a run from a mention."
     }
    ]
+  },
+  {
+   "address": "d3a7e623-8ccf-48f6-a8a9-b63c8914f0ee",
+   "address_quote": "        '  run \"b\" python3 \"$LEDGER/probes/two.py\" --check',",
+   "address_role": "own",
+   "aliases": [
+    "a total over two runs",
+    "coverage printed inside the run it does not cover"
+   ],
+   "class": "a-count-that-does-not-say-which-run-it-covers",
+   "expected": "[1, 1, 1]",
+   "fact": "`probes/probe_coverage.py` printed one coverage figure for the standing runner. Nine of the runner's invocations sit inside `if [ \"$NET\" = 1 ]`, so a plain `bash repro/run_all.sh` reaches none of them while the row printed inside that same run said all of them were invoked: break `ladder_rungs.py` and the default suite stays green with a green coverage row beside it. Measured on the runner's text: 20 invocations outside the gate, 9 inside, one number printed for 29. The count now splits into 'on every run' and 'only under --net', prints the gated names, and the summary line reads 40 candidates, 30 wired (20 always, 10 only under --net), 10 excluded, 0 unanswered. A total over two populations presented as a property of one of them is the defect, and the population the figure describes must be named wherever the figure is printed.",
+   "first_seen": "d3a7e623-8ccf-48f6-a8a9-b63c8914f0ee",
+   "lang": "python",
+   "observed": "[2, 1, 1]",
+   "probe": "list(a_count_that_does_not_say_which_run_it_covers().values())",
+   "promise": "A count of the probes the suite runs describes the suite that printed it."
+  },
+  {
+   "address": "d3a7e623-8ccf-48f6-a8a9-b63c8914f0ee",
+   "address_quote": "        \"a_name_the_list_carries_has_no_file\": \"gone.py\" not in present,",
+   "address_role": "own",
+   "aliases": [
+    "a guard intersected with what it guards",
+    "the absent-name check that could not see an absent name"
+   ],
+   "class": "a-list-of-names-read-after-intersecting-it-with-what-is-present",
+   "expected": "[True, [\"gone.py\", \"two.py\"], [\"gone.py\", \"two.py\"]]",
+   "fact": "The coverage item exists partly to catch a name that used to stand for a file, and it computed `set(excluded) & present` before looking for names with no file behind them -- so an excluded probe could be deleted, or its name mistyped, and both the item and `check.py` exited 0 with `names with no probe file 0`. Reproduced in a copy of the tree: delete `probes/v1_door_triggers.py`, exit 0. The comparison is now between each list and the directory in full, in both directions: a name the runner invokes whose file is gone is reported as well as a name the exclusion list carries. An intersection with the present set answers the question 'which names are here twice', never 'which names are not here at all'.",
+   "first_seen": "d3a7e623-8ccf-48f6-a8a9-b63c8914f0ee",
+   "lang": "python",
+   "observed": "[True, [\"two.py\"], [\"gone.py\", \"two.py\"]]",
+   "probe": "list(a_list_of_names_read_after_intersecting_it_with_what_is_present().values())",
+   "promise": "A list of names compared with a directory reports a name that is not in it."
+  },
+  {
+   "address": "04d33998-2c5c-40c6-8c04-f12f6ae1b624",
+   "address_quote": "    complaints = [\"MISS  some-class  (see `python3 check.py`)\"]",
+   "address_role": "own",
+   "aliases": [
+    "a complaint written into the artifact",
+    "the remedy that damages what it repairs"
+   ],
+   "class": "a-generated-page-that-carries-the-tools-complaints",
+   "expected": "[2, 2, 1]",
+   "fact": "The ledger's tool printed the remedy for a stale index as a redirect -- `python3 check.py --index > CLASSES.md` -- and printed the index and the audit's failure lines on the same stream. Run against a ledger with two misses, the redirect wrote `MISS  <class>  (see python3 check.py)` for each of them into the generated document, so the tool's own complaint about the ledger became part of the file the tool tells the reader to publish, and the next run reported that file as stale. The failure lines now leave by stderr and the exit code still carries the verdict. The general form: a remedy printed as a redirect is a promise that stdout carries only the artifact, and every other word the program has to say must leave by another door -- otherwise the instruction damages the thing it repairs.",
+   "first_seen": "04d33998-2c5c-40c6-8c04-f12f6ae1b624",
+   "lang": "python",
+   "observed": "[3, 2, 1]",
+   "probe": "list(a_generated_page_that_carries_the_tools_complaints().values())",
+   "promise": "A command documented as `tool > file` writes the artifact and nothing else into that file."
   }
  ],
  "how_to_verify": "python3 check.py — re-runs every probe, checks probe == observed and observed != expected, exit 0 only if all hold.",

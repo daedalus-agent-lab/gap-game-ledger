@@ -4973,3 +4973,110 @@ def a_commented_out_invocation_read_as_a_call():
 
 
 NAMESPACES.setdefault('a-name-mentioned-in-a-launcher-read-as-a-run-of-it', {}).update({'a_commented_out_invocation_read_as_a_call': a_commented_out_invocation_read_as_a_call})
+
+def a_count_that_does_not_say_which_run_it_covers():
+    """One number over two runs, printed inside the one it does not cover.
+
+    The coverage item counted every invocation in the standing runner and
+    printed a single figure. Some of those invocations sit inside
+    `if [ "$NET" = 1 ]`, so a plain run reaches none of them while the number
+    printed beside it claims they are all covered: a probe can be broken and
+    the default suite stays green. The figure was true and the claim was not,
+    and nothing in the output said which run it described.
+    """
+    LF = chr(10)
+    runner = LF.join([
+        'run "a" python3 "$LEDGER/probes/one.py" --check',
+        'if [ "$NET" = 1 ]; then',
+        '  run "b" python3 "$LEDGER/probes/two.py" --check',
+        'fi',
+    ]) + LF
+
+    def split_by_gate(where):
+        inside = always = 0
+        gated = False
+        for line in where.splitlines():
+            if line.strip().startswith('if [ "$NET" = 1 ]'):
+                gated = True
+                continue
+            if gated and line.startswith('fi'):
+                gated = False
+                continue
+            if 'probes/' in line and '--check' in line:
+                if gated:
+                    inside += 1
+                else:
+                    always += 1
+        return [always, inside]
+
+    always, inside = split_by_gate(runner)
+    return {
+        "the_number_the_item_printed": always + inside,
+        "reached_by_a_plain_run": always,
+        "reached_only_under_the_gate": inside,
+    }
+
+
+NAMESPACES.setdefault('a-count-that-does-not-say-which-run-it-covers', {}).update({'a_count_that_does_not_say_which_run_it_covers': a_count_that_does_not_say_which_run_it_covers})
+
+
+def a_list_of_names_read_after_intersecting_it_with_what_is_present():
+    """A name list intersected with the directory cannot report a name that left.
+
+    The check existed to catch a rule rotting -- a name that used to stand for
+    a file. It computed `set(excluded) & present` first, so the one state it
+    was written for was the one state it could not see: delete an excluded
+    probe, or mistype its name, and the answer was empty and the item green.
+    A guard intersected with what it guards is a guard that cannot fail; the
+    comparison must be between the list and the directory, in full.
+    """
+    excluded = {"gone.py": "reason"}
+    present = {"one.py"}
+
+    def read_after_the_intersection(present, excluded):
+        declared = set(excluded) & present
+        return sorted((declared | ({'two.py'} - present)) - present)
+
+    def read_in_full(present, excluded):
+        return sorted((set(excluded) | {'two.py'}) - present)
+
+    return {
+        "a_name_the_list_carries_has_no_file": "gone.py" not in present,
+        "names_reported_by_the_intersected_rule":
+            read_after_the_intersection(present, excluded),
+        "names_reported_by_the_full_comparison": read_in_full(present, excluded),
+    }
+
+
+NAMESPACES.setdefault('a-list-of-names-read-after-intersecting-it-with-what-is-present', {}).update({'a_list_of_names_read_after_intersecting_it_with_what_is_present': a_list_of_names_read_after_intersecting_it_with_what_is_present})
+
+
+def a_generated_page_that_carries_the_tools_complaints():
+    """A generated page that carries the tool's own complaints.
+
+    `check.py` prints the audit's failure lines and, in `--index` mode, prints
+    the index on the same stream. The remedy the tool names is a redirect --
+    `python3 check.py --index > CLASSES.md` -- so one miss wrote a MISS line
+    into the document a reader is told to publish, and the next run called
+    that document stale. The complaints belong on another stream: the exit
+    code carries the verdict, the page carries the page.
+    """
+    complaints = ["MISS  some-class  (see `python3 check.py`)"]
+    page = ["# Classes", ""]
+
+    def one_stream(complaints, page):
+        return complaints + page
+
+    def two_streams(complaints, page):
+        return complaints, page
+
+    together = one_stream(complaints, page)
+    said, document = two_streams(complaints, page)
+    return {
+        "lines_the_redirect_writes_into_the_document": len(together),
+        "lines_the_document_should_hold": len(document),
+        "complaints_a_reader_still_sees": len(said),
+    }
+
+
+NAMESPACES.setdefault('a-generated-page-that-carries-the-tools-complaints', {}).update({'a_generated_page_that_carries_the_tools_complaints': a_generated_page_that_carries_the_tools_complaints})

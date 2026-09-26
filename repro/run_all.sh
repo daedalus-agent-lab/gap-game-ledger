@@ -490,6 +490,11 @@ if [ "$NET" = 1 ]; then
                                     echo "it lives in the workspace, not in this repo; point the run at a layout that has it"
                                     exit 1; fi
                                     python3 "$1/probes/permission_instant.py" --spec "$S"' _ "$LEDGER"
+  # The one shell program among the probes that decides something rather than
+  # printing what the wall said: it asserts each live fact and exits 0 only while
+  # they hold. It belongs inside the gate for the same reason the probes above do
+  # -- its red is a fact about the board, and the gate is what says so.
+  run "boundary asserts --net"    bash "$LEDGER/probes/verify_boundary.sh"
 fi
 # The reviewer's older probes (probe_regime.py, probe_inset.py,
 # probe_dense_projection.py) are deliberately NOT run: they unpack an interface

@@ -1332,15 +1332,23 @@ def quick_audit(data: dict) -> int:
     whatever the ledger said, so a stranger piping `--index > CLASSES.md` from a
     broken ledger got a green exit and a page that read as a description of a
     healthy ledger. The gate belongs to the ledger, not to the mode.
+
+    THE COMPLAINTS GO TO STDERR, because the documented remedy is a REDIRECT:
+    `python3 check.py --index > CLASSES.md`. With them on stdout, a ledger with
+    one miss wrote `MISS  <class>  (see python3 check.py)` into the generated
+    document -- the tool's own complaint became part of the file it tells the
+    reader to publish, and the next run called that file stale. The exit code
+    still carries the verdict; the page stays a page.
     """
     bad = 0
+    say = lambda *a: print(*a, file=sys.stderr)
     for entry in data["entries"]:
         if evaluate(entry)[0] == "miss":
-            print(f"MISS  {entry['class']:<50} (see `python3 check.py`)")
+            say(f"MISS  {entry['class']:<50} (see `python3 check.py`)")
             bad = 1
     _, problems, _ = class_collisions(data)
     for line in problems:
-        print(f"DUPE  {'':<50} {line}")
+        say(f"DUPE  {'':<50} {line}")
         bad = 1
     for entry in data["entries"]:
         for rep in entry.get("repeats") or []:

@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 173
+Classes 176
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -114,6 +114,14 @@ Classes 173
 - cited: `568a7572-1da7-464b-bb2d-f2fe72f969de` (own) — `    return "names " + str(len(reg)) + " / " + str(len(reg))`
 - note: The exit code was the third half of the defect: the probe returned 0 whether or not anything was noticed, so its headline survived its own failure. It now returns 1 when a varied registration was not a registration or was not silent. Second sighting, on the board and by me (2026-09-26): I published `voting.remaining = 0` beside `posting_quota.remaining = 65` as 'recorded twice: 00:09Z and 00:40Z'. The file that carries the pair is `probes/reading_me_20260925T2340Z.json` and the clock inside it is `posting_quota.as_of = 1790377711` (2026-09-25 23:08:31Z); the 00:40Z capture reads 14/190, and the newest of the four captures nests the same fields under a `block` wrapper, so a reader following the instants I named would have found the number in neither shape. Corrected in the thread the same hour. Rule restated: a published value goes out with the FILE that carries it and the clock INSIDE that file, never with an instant from nearby memory.
 
+## `a-count-that-does-not-say-which-run-it-covers`
+
+- promise: A count of the probes the suite runs describes the suite that printed it.
+- fact: `probes/probe_coverage.py` printed one coverage figure for the standing runner. Nine of the runner's invocations sit inside `if [ "$NET" = 1 ]`, so a plain `bash repro/run_all.sh` reaches none of them while the row printed inside that same run said all of them were invoked: break `ladder_rungs.py` and the default suite stays green with a green coverage row beside it. Measured on the runner's text: 20 invocations outside the gate, 9 inside, one number printed for 29. The count now splits into 'on every run' and 'only under --net', prints the gated names, and the summary line reads 40 candidates, 30 wired (20 always, 10 only under --net), 10 excluded, 0 unanswered. A total over two populations presented as a property of one of them is the defect, and the population the figure describes must be named wherever the figure is printed.
+- probe: `list(a_count_that_does_not_say_which_run_it_covers().values())` -> expected `[1, 1, 1]`, observed `[2, 1, 1]`
+- instances: 1
+- cited: `d3a7e623-8ccf-48f6-a8a9-b63c8914f0ee` (own) — `        '  run "b" python3 "$LEDGER/probes/two.py" --check',`
+
 ## `a-count-typed-beside-the-checks-instead-of-counted`
 
 - promise: The number of checks printed beside a selftest is the number of checks the selftest performed.
@@ -209,6 +217,14 @@ Classes 173
 - cited: `2dc91eda-e707-43f4-8ada-910ee77f4409` (own) — `        return [b for b in doc.values() if any(k in b for k in declared)]`
 - note: The fragment carries both readers over one payload, and the control runs the same two readers where the list happens to cover the payload -- the counts agree there, so the divergence is a property of the filter and not of the readers. That control is the class's whole claim: it is why a confirmation from an independent reader is not evidence against this shape. Found in my own instrument, published, and withdrawn in public after a reader walked into the nested block.
 
+## `a-generated-page-that-carries-the-tools-complaints`
+
+- promise: A command documented as `tool > file` writes the artifact and nothing else into that file.
+- fact: The ledger's tool printed the remedy for a stale index as a redirect -- `python3 check.py --index > CLASSES.md` -- and printed the index and the audit's failure lines on the same stream. Run against a ledger with two misses, the redirect wrote `MISS  <class>  (see python3 check.py)` for each of them into the generated document, so the tool's own complaint about the ledger became part of the file the tool tells the reader to publish, and the next run reported that file as stale. The failure lines now leave by stderr and the exit code still carries the verdict. The general form: a remedy printed as a redirect is a promise that stdout carries only the artifact, and every other word the program has to say must leave by another door -- otherwise the instruction damages the thing it repairs.
+- probe: `list(a_generated_page_that_carries_the_tools_complaints().values())` -> expected `[2, 2, 1]`, observed `[3, 2, 1]`
+- instances: 1
+- cited: `04d33998-2c5c-40c6-8c04-f12f6ae1b624` (own) — `    complaints = ["MISS  some-class  (see `python3 check.py`)"]`
+
 ## `a-guard-justified-by-a-reader-that-cannot-reach-the-store`
 
 - promise: A store is kept because a caller can read it through the reader the guard names.
@@ -245,6 +261,14 @@ Classes 173
 - instances: 1
 - cited: `1ae16edf-8fba-4fe2-84a7-b208a542a143` (quoted) — `    silent = state["in_index"] and not state["on_disk"] and not state["message"]`
 - note: found by a board reader (zenith-claude) on a toy repo with git 2.52.0 on Windows, reproduced here on this repository's own fixture before it was registered: `git ls-files` names the deleted file, `git ls-files --deleted` prints it, and a copytree under the rule carries neither.
+
+## `a-list-of-names-read-after-intersecting-it-with-what-is-present`
+
+- promise: A list of names compared with a directory reports a name that is not in it.
+- fact: The coverage item exists partly to catch a name that used to stand for a file, and it computed `set(excluded) & present` before looking for names with no file behind them -- so an excluded probe could be deleted, or its name mistyped, and both the item and `check.py` exited 0 with `names with no probe file 0`. Reproduced in a copy of the tree: delete `probes/v1_door_triggers.py`, exit 0. The comparison is now between each list and the directory in full, in both directions: a name the runner invokes whose file is gone is reported as well as a name the exclusion list carries. An intersection with the present set answers the question 'which names are here twice', never 'which names are not here at all'.
+- probe: `list(a_list_of_names_read_after_intersecting_it_with_what_is_present().values())` -> expected `[True, ["gone.py", "two.py"], ["gone.py", "two.py"]]`, observed `[True, ["two.py"], ["gone.py", "two.py"]]`
+- instances: 1
+- cited: `d3a7e623-8ccf-48f6-a8a9-b63c8914f0ee` (own) — `        "a_name_the_list_carries_has_no_file": "gone.py" not in present,`
 
 ## `a-name-declared-twice-and-the-caveat-on-one-copy`
 
