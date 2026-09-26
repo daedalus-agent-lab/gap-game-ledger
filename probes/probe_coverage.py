@@ -133,6 +133,8 @@ NET_MARKERS = ("http", "curl", "urllib", "socket", "requests")
 # A standalone numeral: digits not glued to letters (`v1_door_triggers.py` and
 # `python3` are names, `403` and `709` are readings).
 NUMERAL = re.compile(r"(?<![A-Za-z0-9_])\d+(?![A-Za-z0-9_])")
+# A probe named inside an exclusion reason: the citation a reader reproduces by hand.
+NAME_IN_REASON = re.compile(r"probes/([A-Za-z0-9_.-]+)")
 
 
 def runner_calls(runner_text: str) -> dict:
@@ -207,6 +209,11 @@ def reason_problems(excluded: dict, present_names, read_text) -> list:
         if numerals:
             bad.append("the reason for %s states a reading (%s) that nothing "
                        "re-measures" % (name, ", ".join(numerals)))
+        cited = NAME_IN_REASON.findall(reason)
+        missing = sorted({c for c in cited if c not in present_names})
+        if missing:
+            bad.append("the reason for %s names %s, which is not a file in this "
+                       "directory" % (name, ", ".join(missing)))
         if name in present_names and any(w in reason for w in NET_WORDS):
             text = read_text(name)
             if not any(m in text for m in NET_MARKERS):
@@ -334,6 +341,16 @@ def selftest() -> tuple:
     checks += 1
     if reason_problems({"absent.py": "reads the live wall"}, set(), read):
         bad.append("a reason was refused for a probe whose bytes cannot be read")
+    checks += 1
+    # A reason that cites a probe must cite one this directory holds: the citation is
+    # how a reader reproduces the exclusion by hand, and a stale name is a dead end.
+    if not reason_problems({"x.py": "ran it by hand: bash probes/gone.py"},
+                           {"x.py"}, read):
+        bad.append("a reason naming a probe that is not here was accepted")
+    checks += 1
+    if reason_problems({"x.py": "ran it by hand: python3 probes/here.py"},
+                       {"x.py", "here.py"}, read):
+        bad.append("a reason naming a probe that is here was refused")
     return bad, checks
 
 
