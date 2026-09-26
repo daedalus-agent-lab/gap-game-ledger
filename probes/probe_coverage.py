@@ -195,6 +195,15 @@ def coverage(candidate_names, runner_text: str, excluded: dict) -> dict:
     }
 
 
+def present_in_directory() -> set:
+    """The names a reason's citation may point at: the FILES this directory holds.
+
+    Files, not the probes among them. The refusal says "not a file in this directory",
+    and a reason may cite the rows a probe wrote, which are here and are not probes.
+    """
+    return {p.name for p in PROBES.iterdir() if p.is_file()}
+
+
 def judgeable(c: dict) -> bool:
     """The runner's text invokes at least one probe in this directory."""
     return bool(c["wired_on_every_run"] or c["only_under_net"])
@@ -365,10 +374,34 @@ def selftest() -> tuple:
                        {"x.py", "here.py"}, read):
         bad.append("a citation with a directory prefix was refused")
     checks += 1
+    # The refusal says "not a file in this directory", so the set it is judged against
+    # must be the files in the directory -- not only the probes among them. A reason may
+    # cite a data file it left beside the probe, and a message about FILES that refuses a
+    # file would be false in its own words.
+    if reason_problems({"x.py": "the rows it wrote are in probes/rows.json"},
+                       {"x.py", "rows.json"}, read):
+        bad.append("a citation of a data file this directory holds was refused")
+    checks += 1
+    if not reason_problems({"x.py": "the rows it wrote are in probes/rows.json"},
+                           {"x.py"}, read):
+        bad.append("a citation of a file this directory does not hold was accepted")
+    checks += 1
+    # The set the reader is judged against must be the files this directory holds, data
+    # files included -- the refusal's own words are about files, and a reason may cite the
+    # rows a probe wrote. Judging citations against the probes alone would refuse a file
+    # that is here. This reads the set the run uses, not a copy of it, so shrinking that
+    # set fails here.
+    judged_against = present_in_directory()
+    data_names = set(classify([(p.name, os.access(p, os.X_OK))
+                               for p in PROBES.iterdir() if p.is_file()])["data"])
+    if not data_names <= judged_against:
+        bad.append("the reason reader is judged against a set that leaves out the data "
+                   "files a reason may cite: %s"
+                   % ", ".join(sorted(data_names - judged_against)))
+    checks += 1
     for reason in EXCLUDED.values():
         cited = NAME_IN_REASON.findall(reason)
-        if cited and any(c not in {p.name for p in PROBES.iterdir() if p.is_file()}
-                         for c in cited):
+        if cited and any(c not in judged_against for c in cited):
             bad.append("a reason in the file cites a name this rule refuses: %r" % (reason,))
     return bad, checks
 
@@ -443,7 +476,7 @@ def main() -> int:
                    "whether they are probes is unanswered: %s"
                    % ", ".join(kinds["unknown"]))
     bad += reason_problems(EXCLUDED,
-                           {p.name for p in PROBES.iterdir() if p.is_file()},
+                           present_in_directory(),
                            lambda name: (PROBES / name).read_text(
                                encoding="utf-8", errors="replace"))
     for line in bad:
