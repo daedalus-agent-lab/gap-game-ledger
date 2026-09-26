@@ -333,7 +333,7 @@ def check(doc: dict, out=sys.stdout) -> int:
         fail("the formula text is %r, not the published %r" % (text, EXPECTED_FORMULA))
     try:
         tree = parse_formula(text)
-        ok("the formula string parses and is the published one: %s" % text)
+        ok("the formula string parses: %s" % text)
     except ValueError as exc:
         fail("the formula text does not parse: %s" % exc)
 
@@ -558,6 +558,14 @@ def selftest(out=sys.stdout) -> int:
     checks.append(("two different N give one floor, so a floor cannot separate them", floor_from(67) == floor_from(70)))
     checks.append(("one step of N can move the floor, so a live count can be contradicted", floor_from(70) != floor_from(73)))
 
+    # the CLI: a form the parser does not read is an error, not a default
+    code, said = _refuses_an_argument(["--fixture", "politics_mutant.json"])
+    checks.append(("an argument the parser does not read is refused, not ignored",
+                   code == 2 and "not a form this probe reads" in said))
+    code, said = _refuses_an_argument(["--staircase", "10"])
+    checks.append(("a form missing an operand is refused rather than read as the default",
+                   code == 2 and "not a form this probe reads" in said))
+
     doc = load()
     rs = rows(doc)
     checks.append(("fixture: the term floor reproduces its own N", any(r["computed"] == 21 and r["n"] == 70 and r["published"] == 21 for r in rs)))
@@ -600,6 +608,16 @@ def selftest(out=sys.stdout) -> int:
     return 1 if failed else 0
 
 
+def _refuses_an_argument(argv: list[str]) -> tuple[int, str]:
+    """Run the CLI on one argv and keep what it said, so the refusal is a reading."""
+    err, real = io.StringIO(), sys.stderr
+    sys.stderr = err
+    try:
+        return main(argv), err.getvalue()
+    finally:
+        sys.stderr = real
+
+
 def _refuses(fn) -> bool:
     try:
         fn()
@@ -609,18 +627,29 @@ def _refuses(fn) -> bool:
 
 
 def main(argv: list[str]) -> int:
-    if "--selftest" in argv:
+    """Every argument is either read or refused.
+
+    A flag this parser does not know is a flag whose effect nothing measured:
+    `--fixture mutant.json` was passed to this probe and silently ignored, so the
+    run printed the shipped fixture's rows and exited 0 -- which reads exactly
+    like a run that used the mutant. The form is spelled out on refusal, and an
+    unread form is an error rather than a default.
+    """
+    if not argv:
+        report(load())
+        return 0
+    if argv == ["--selftest"]:
         return selftest()
-    if "--check" in argv:
+    if argv == ["--check"]:
         return check(load())
-    if "--predict" in argv:
-        i = argv.index("--predict")
-        return predict(int(argv[i + 1]))
-    if "--staircase" in argv:
-        i = argv.index("--staircase")
-        return staircase(int(argv[i + 1]), int(argv[i + 2]))
-    report(load())
-    return 0
+    if len(argv) == 2 and argv[0] == "--predict":
+        return predict(int(argv[1]))
+    if len(argv) == 3 and argv[0] == "--staircase":
+        return staircase(int(argv[1]), int(argv[2]))
+    sys.stderr.write(
+        "refused: %r is not a form this probe reads. Forms: (no argument) | "
+        "--selftest | --check | --predict N | --staircase LO HI\n" % (argv,))
+    return 2
 
 
 if __name__ == "__main__":

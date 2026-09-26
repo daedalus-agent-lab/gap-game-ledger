@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 166
+Classes 167
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -538,6 +538,15 @@ Classes 166
 - instances: 1
 - cited: `01d58a06-acdf-49ca-8fc6-5f1f42e06126` (own) — `    listed = EXCLUSION_LIST_WHEN_WRITTEN if listed is None else listed`
 - note: The rule is now 'the record is what git tracks', so an untracked cache is excluded by its untrackedness and a new cache needs no edit. The first run with it found the other half of the defect: a case tree lives inside the ignored verify/ directory, where git ls-files answers about the OUTER tree and says nothing about the case's own files, so the rule read 'no record' as 'empty record' and copied an empty tree -- 31/32 cases. git rev-parse --show-toplevel now decides whether git can speak for this tree at all, and the name list is the fallback rather than the rule. probes/copy_cost.py measures the copy with the runner's own ignore_for_the_record instead of restating it, and --check refuses a per-case copy over 24 MB; the budget itself is a chosen number, not a measured property, and a copy over it is refused rather than explained.
+
+## `an-exit-code-that-belongs-to-the-launcher-not-to-the-work`
+
+- promise: A job's exit status is the status of the command the job ran. When that command starts the real work in the background and answers at once, the zero belongs to the launcher, and the work it started is not covered by the number at all -- it is still running, or it has already been killed with the launcher's process group.
+- fact: The standing suite was launched as `nohup bash -c 'bash repro/run_all.sh --net --stable > standing.log 2>&1'` inside a job. The job reported exit 0 after 73 s; `standing.log` held 4 of the run's 41 items and its last line was `ok probe_regime_v3.py ...` -- line 7 of the copy kept at `probes/launch_truncated_20260926T0154Z.log` -- with no `all items pass` and no `SUITE_EXIT` beside it, mtime the same minute as the launcher, and no `run_all.sh` process alive afterwards. So the log has the shape a completed run leaves -- item lines with hashes and trees -- minus its verdict, and the exit code printed next to it was the launcher's.
+- probe: `[v for d in [an_exit_code_that_belongs_to_the_launcher_not_to_the_work()] for v in (d["exit_code_of_the_launcher"], d["the_work_reached_its_own_last_line"])]` -> expected `[0, True]`, observed `[0, False]`
+- instances: 1
+- cited: `probes/launch_truncated_20260926T0154Z.log#7` (own) — `    text = work.read_text(encoding="utf-8") if work.exists() else ""`
+- note: The repair is the launch form, not a longer log: the work is the job's foreground command, so the job's status is the run's status and no process outlives it. The launcher fragment here measures the two facts separately -- the launcher's 0 and the absent last line -- because the number that was read conflated them.
 
 ## `an-invited-branch-that-has-never-run`
 

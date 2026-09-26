@@ -1,0 +1,7 @@
+ok   repro MANIFEST.sha256              out=f0ec7e6b731b2b1c set=fc0a29bc26b4a9e8 norm=0 tree=b8d2d8ac2287ab6f  compared 7 file(s) named in the manifest, all 
+     moved over the declared field (key): key 0000000000000000 
+ok   resume_cursor.py                   out=3147e1fdc7f3001f set=423ba4044afd4263 norm=2 tree=b8d2d8ac2287ab6f  all demonstrations hold
+     moved over the declared field (key): key 0000000000000000 
+ok   probe_receipts.py                  out=84b30b8918c58bd6 set=d0015ea3d25e36f4 norm=2 tree=b8d2d8ac2287ab6f  12 of 12 checks pass
+     moved over the declared field (key): key 962895ced0fc1275 key ba0c11fa1de2a946 
+ok   probe_regime_v3.py                 out=47f2e9374c8c348b set=602a2fcf8b39f20d norm=1 tree=b8d2d8ac2287ab6f  12 of 12 checks pass

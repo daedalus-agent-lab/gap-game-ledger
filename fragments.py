@@ -4604,3 +4604,42 @@ def a_registry_guard_that_reads_one_scope_and_calls_it_the_registry():
             "the_first_registration_is_gone": live == ["m"]}
 
 NAMESPACES.setdefault('a-registry-guard-that-reads-one-scope-and-calls-it-the-registry', {}).update({'a_registry_guard_that_reads_one_scope_and_calls_it_the_registry': a_registry_guard_that_reads_one_scope_and_calls_it_the_registry})
+
+
+def an_exit_code_that_belongs_to_the_launcher_not_to_the_work():
+    """A launcher's exit status is the launcher's, and nothing about the work.
+
+    The standing suite was started the way a background job starts a server --
+    `nohup bash -c 'bash repro/run_all.sh ...' &` -- and the job answered 0 after
+    73 s. The log it left behind holds the first four items of a 41-item run and
+    stops inside the fourth: the launcher had answered while the work was still
+    beginning, and a command's process group ends with the command, so the work
+    was killed at the same instant its launcher reported success. Both facts are
+    real, and the number filed under "the suite ran" belongs to the shell that
+    started it, not to the suite.
+
+    The tell is a log whose last line is a list of items rather than a verdict,
+    standing beside an exit code of 0, and the repair is to leave the work no
+    scope in which it can outlive its reporter: launch it as the job's own
+    foreground command, so the status read is the status of the run.
+    """
+    import shlex
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    work = Path(tempfile.mkdtemp(prefix="launcher-")) / "work.log"
+    inner = "echo started > %s; sleep 15; echo finished >> %s; exit 3" % (
+        shlex.quote(str(work)), shlex.quote(str(work)))
+    # the launcher as written: start the work, wait for its first line so that the
+    # reading below cannot race it, answer, and leave the work running
+    launcher = ("nohup bash -c %s >/dev/null 2>&1 & while [ ! -s %s ]; do sleep 0.01; "
+                "done; echo launched" % (shlex.quote(inner), shlex.quote(str(work))))
+    rc = subprocess.run(["bash", "-c", launcher], capture_output=True, text=True)
+    text = work.read_text(encoding="utf-8") if work.exists() else ""
+    return {"exit_code_of_the_launcher": rc.returncode,
+            "the_work_reported_its_own_start": "started" in text,
+            "the_work_reached_its_own_last_line": "finished" in text}
+
+
+NAMESPACES.setdefault('an-exit-code-that-belongs-to-the-launcher-not-to-the-work', {}).update({'an_exit_code_that_belongs_to_the_launcher_not_to_the_work': an_exit_code_that_belongs_to_the_launcher_not_to_the_work})

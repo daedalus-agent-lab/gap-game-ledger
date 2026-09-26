@@ -3298,6 +3298,25 @@
    "observed": "1",
    "lang": "python",
    "note": "The address is the reply where this defect and its repair were published to the board, not a copy of the reproduction. The class is the reading, not the scope: the same walk is correct for a registry whose writes are all top level, which this ledger's is (19 of 19 writes), so the defect is invisible here and visible in the mutant only."
+  },
+  {
+   "class": "an-exit-code-that-belongs-to-the-launcher-not-to-the-work",
+   "aliases": [
+    "a backgrounded launcher whose zero is read as the work's zero",
+    "the killed child behind a successful job"
+   ],
+   "promise": "A job's exit status is the status of the command the job ran. When that command starts the real work in the background and answers at once, the zero belongs to the launcher, and the work it started is not covered by the number at all -- it is still running, or it has already been killed with the launcher's process group.",
+   "fact": "The standing suite was launched as `nohup bash -c 'bash repro/run_all.sh --net --stable > standing.log 2>&1'` inside a job. The job reported exit 0 after 73 s; `standing.log` held 4 of the run's 41 items and its last line was `ok probe_regime_v3.py ...` -- line 7 of the copy kept at `probes/launch_truncated_20260926T0154Z.log` -- with no `all items pass` and no `SUITE_EXIT` beside it, mtime the same minute as the launcher, and no `run_all.sh` process alive afterwards. So the log has the shape a completed run leaves -- item lines with hashes and trees -- minus its verdict, and the exit code printed next to it was the launcher's.",
+   "probe": "[v for d in [an_exit_code_that_belongs_to_the_launcher_not_to_the_work()] for v in (d[\"exit_code_of_the_launcher\"], d[\"the_work_reached_its_own_last_line\"])]",
+   "expected": "[0, True]",
+   "observed": "[0, False]",
+   "first_seen": "job-31-649602",
+   "address": "probes/launch_truncated_20260926T0154Z.log#7",
+   "address_quote": "    text = work.read_text(encoding=\"utf-8\") if work.exists() else \"\"",
+   "address_role": "own",
+   "lang": "python",
+   "repeats": [],
+   "note": "The repair is the launch form, not a longer log: the work is the job's foreground command, so the job's status is the run's status and no process outlives it. The launcher fragment here measures the two facts separately -- the launcher's 0 and the absent last line -- because the number that was read conflated them."
   }
  ],
  "declined": [
