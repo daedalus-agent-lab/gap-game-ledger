@@ -332,6 +332,12 @@ run "probe_regime_v3.py"          python3 "$WS/fresco/review_fixtures/probe_regi
 run "band_profile.py"             env UV_CACHE_DIR="$UV_CACHE_DIR" uv run --with pillow \
                                     python "$WS/fresco/band_profile.py" --self-test
 run "ledger check.py"             python3 "$LEDGER/check.py"
+# The checker of the checker. It was in no run for as long as it has existed, and it
+# was red: its fixture tree copied five hand-named files while check.py imports a
+# sixth, so every case it reports on exited 1 for a missing module and the one case
+# that asserts an untouched copy passes read as the only failure. A mutation harness
+# that no run calls cannot tell you whether the gate it stands in for still holds.
+run "ledger selftest.py"          python3 "$LEDGER/selftest.py"
 run "ledger verify_claims.py"     python3 "$LEDGER/verify_claims.py"
 run "provenance.py --selftest"    python3 "$LEDGER/provenance.py" --selftest
 run "policy mutations --check"    python3 "$LEDGER/probes/policy_mutations.py" --check

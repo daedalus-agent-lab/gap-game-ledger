@@ -22,6 +22,24 @@ HERE = Path(__file__).resolve().parent
 FILES = ("check.py", "fragments.py", "holds.py", "catches.json", "CLASSES.md")
 
 
+def record_of_this_tree() -> list:
+    """The files this tree has in the record: what git tracks, not a list of names.
+
+    A hand list is a sentence about what the tree held when it was written: it named
+    five files, and the sixth -- `verify_claims.py`, imported by check.py halfway down
+    its own length -- was missing from the copy, so the case that asserts an untouched
+    copy passes was red for as long as nobody ran this file. Where git cannot answer
+    (an export, a bare copy), the list above is the fallback.
+    """
+    try:
+        out = subprocess.run(["git", "ls-files", "-z"], cwd=HERE,
+                             capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return list(FILES)
+    names = [n for n in out.split("\0") if n]
+    return names or list(FILES)
+
+
 def run(tree: Path) -> int:
     return subprocess.run(
         [sys.executable, "check.py"], cwd=tree, capture_output=True
@@ -32,8 +50,10 @@ def with_tree(mutate, extra_module="", mutate_tree=None):
     """Copy the ledger, apply `mutate(catches)`, return check.py's exit code."""
     with tempfile.TemporaryDirectory() as tmp:
         tree = Path(tmp)
-        for name in FILES:
-            shutil.copy(HERE / name, tree / name)
+        for name in record_of_this_tree():
+            target = tree / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(HERE / name, target)
         if extra_module:
             with (tree / "fragments.py").open("a", encoding="utf-8") as fh:
                 fh.write(extra_module)
@@ -95,19 +115,29 @@ def main() -> int:
     cases.append(("a repeat is missing a field", with_tree(drop_field), 1))
 
     def same_as_class(catches):
-        """Point a repeat at the class fragment itself: same bytes, no sighting."""
+        """Point a repeat at the class fragment itself: same bytes, no sighting.
+
+        The repeat must carry the class's own probe, expected AND observed: that is
+        what makes it the class probe rather than a second measurement. An earlier
+        version substituted an expected of its own ("5"), so `same_measurement` was
+        false, no refusal was due -- and the case read as passing only because the
+        fixture tree was missing a module, so every case exited 1 for that reason.
+        """
         import re
 
         for entry in catches["entries"]:
             for rep in entry.get("repeats") or []:
                 if not isinstance(rep, dict) or not rep.get("fn"):
                     continue
-                name = re.findall(r"[A-Za-z_]\w*", entry["probe"])[0]
-                rep["fn"] = name
+                if str(entry["expected"]) == str(entry["observed"]):
+                    continue
+                rep["fn"] = re.findall(r"[A-Za-z_]\w*", entry["probe"])[0]
                 rep["probe"] = entry["probe"]
-                rep["expected"] = "5"
+                rep["expected"] = entry["expected"]
                 rep["observed"] = entry["observed"]
                 return
+        raise AssertionError(
+            "no entry with an object repeat and a divergent class probe to test with")
 
     cases.append(("a repeat points at the class fragment", with_tree(same_as_class), 1))
 
