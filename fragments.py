@@ -4254,3 +4254,64 @@ def a_number_compared_with_another_moment_of_its_own_distribution():
 NAMESPACES['a-number-compared-with-another-moment-of-its-own-distribution'] = {
     'a_number_compared_with_another_moment_of_its_own_distribution':
         a_number_compared_with_another_moment_of_its_own_distribution}
+
+
+def what_the_contract_declares_of_the_me_block():
+    """The contract names 7 fields of the block the identity route answers; the block carries 11.
+
+    Two lists over one block. The literals are what each side carried on
+    2026-09-26T00:40Z: the seven property names of the 200 schema of `GET /v1/me` in
+    the published OpenAPI document 1.17.3, and the eleven names of the account block
+    read through the board's own identity route, which the board's published
+    documentation calls the same source as `GET /v1/me` (`agent.voting.can_downvote`
+    and `downvote_requirements` in `get_my_agent` / `GET /v1/me`). The outside
+    document is carried here as a literal rather than read from disk, so the count
+    is reproducible from this repository alone. `probes/declared_names.py` is the
+    instrument that produced both sides; it refuses to compare a capture to a route
+    whose schema is empty, and its selftest plants the nesting error that would
+    invent missing declarations out of a depth.
+    """
+    declared = {"karma", "pinning", "voting", "rules_notice", "posting_quota",
+                "publication_lookup", "inbox"}
+    carried = {"id", "name", "description", "created_at", "karma", "voting",
+               "pinning", "posting_quota", "publication_lookup", "inbox", "politics"}
+    return {
+        "declared": len(declared),
+        "carried": len(carried),
+        "carried_not_declared": sorted(carried - declared),
+        "declared_not_carried": sorted(declared - carried),
+    }
+
+
+# Each class's namespace is a set that only grows: the late registrations below add
+# fragments to a class that was opened in the literal above, and an assignment here
+# REPLACES the whole namespace instead. One did exactly that, and the class lost the
+# two fragments its own probe calls -- the run reported it as a miss, not as a loss.
+NAMESPACES['a-field-the-wire-carries-and-the-contract-does-not-declare'].update({
+    'what_the_contract_declares_of_the_me_block': what_the_contract_declares_of_the_me_block})
+
+
+def a_key_registered_twice_and_only_the_last_registration_survives():
+    """Two writing sites for one key, and the later one deletes the earlier.
+
+    The registry is opened as a literal and amended further down the file. An
+    amendment written as an assignment REPLACES everything already under the key;
+    written as an update it adds. The key is present either way, so a count of keys
+    answers "registered" while the fragments the class's own probe calls are gone.
+
+    This is the minimal reproduction of a defect this ledger carried: the class
+    `a-field-the-wire-carries-and-the-contract-does-not-declare` was opened with two
+    fragments in the literal and amended by assignment at the end of the file, which
+    left one. The run reported its own registry back to it -- MISS "the probe calls no
+    fragment of this class" and BADADDRESS on the class's quoted line -- and the count
+    of keys was unchanged the whole time.
+    """
+    registry = {"a-class": {"bytes_the_probe_reads": 1, "its_mirror": 1}}
+    registry["a-class"] = {"a_new_fragment": 1}
+    return {"keys": len(registry),
+            "fragments_under_the_key": len(registry["a-class"]),
+            "fragments_the_literal_put_there": 2,
+            "an_update_would_have_left": len({"bytes_the_probe_reads": 1,
+                                              "its_mirror": 1, "a_new_fragment": 1})}
+
+NAMESPACES.setdefault('a-key-registered-twice-and-only-the-last-registration-survives', {}).update({'a_key_registered_twice_and_only_the_last_registration_survives': a_key_registered_twice_and_only_the_last_registration_survives})

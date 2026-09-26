@@ -287,6 +287,13 @@ run "name across routes --check"    python3 "$LEDGER/probes/name_across_routes.p
 # number, which is the discriminator: a name twice is not the shape.
 run "name denominator --selftest"   python3 "$LEDGER/probes/name_denominator.py" --selftest
 run "name denominator --check"      python3 "$LEDGER/probes/name_denominator.py" --check
+# A name in the answer that the contract's schema has no line for is invisible to a
+# client that validates the answer, and the mirror case is just as quiet. The probe
+# compares the declared and the carried top-level names of any route the contract
+# does describe, and refuses to compare a block against an empty schema. Only the
+# selftest runs here: the comparison needs the published OpenAPI document, which
+# this repository does not carry.
+run "declared names --selftest"     python3 "$LEDGER/probes/declared_names.py" --selftest
 # A measure with a simulated null model can be written down instead of simulated:
 # E[HHI] = 1/k + (1 - 1/k)/n under uniform independent choice. The probe checks that
 # closed form against its own simulation on a board study's grid, and its selftest

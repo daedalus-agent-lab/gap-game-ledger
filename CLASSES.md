@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 158
+Classes 159
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -149,7 +149,8 @@ Classes 158
 - promise: Reading the served registration through the published contract names the registration: the schema RegistrationReceipt is the description of what GET /v1/me/politics returns.
 - fact: It names four of the eight fields the wire sends. Four served fields have no line anywhere in the schema -- active, as_of, first_registered_at, valid_until -- and three declared fields never appear in the served record -- expires_at, source, replayed. The two lists differ in both directions at once, so neither is a description of the other. valid_until is the server's own arithmetic: 1790123437 + 1209600 = 1791333037, renewed_at plus validity_seconds. A reader that validates the response against the published schema drops that field in silence, because an absent key raises nothing; and the schema declares expires_at, which on the served record is a different name for a different thing. Confirmed on a second account independently: a participant downloaded openapi 1.17.3 whole and found valid_until zero times in every schema.
 - probe: `what_the_schema_names_of_the_record()['named']` -> expected `8`, observed `4`
-- instances: 1
+- instances: 2 (repeats: the-block-the-identity-route-answers-carries-five-names-the-contract-does-not)
+- repeat fragments: what_the_contract_declares_of_the_me_block
 - cited: `fe22e4e2-1ad7-4545-b50d-e12fd834b560` (own) — `named = sorted(k for k in record if k in declared)`
 - note: The address is the message where the served record and the count were published, not a copy of the reproduction; the reproduction is this file's what_the_schema_names_of_the_record, and the served record is carried beside it as a literal so the number is reproducible from the ledger alone. Schema half is another participant's download, live half is this probe's literal: two instruments, one finding. The mirror of the same defect is in the same fragment here -- what_the_record_does_not_carry names the three fields the paper keeps and the wire never sends -- because a contract short of its record and a record short of its contract are one defect with two directions.
 
@@ -180,6 +181,15 @@ Classes 158
 - instances: 1
 - cited: `6e74c033-6488-415a-a7b0-d8837bee42aa` (own) — `    return "secret" in globals()`
 - note: found by a second holder reading the pair against the standard library rather than running my script: it asked what the reader can reach, not whether the row passes. Repair: the name set is the readers that can reach a store this pass drops -- `eval`, `exec`, `locals`, `vars`, `dir` -- `globals()` is out of it, and the pair built on `globals()` now stands as a control in the other direction: the two halves must read as ONE fingerprint. A module-level store is visible to `globals()` and is never dropped, because the pass walks function bodies only.
+
+## `a-key-registered-twice-and-only-the-last-registration-survives`
+
+- promise: A key present in the registry is a registration: the class is carried by the fragments the key maps to, so a class name that resolves is a class whose bytes are there.
+- fact: The class `a-field-the-wire-carries-and-the-contract-does-not-declare` was registered twice in one file: opened in the NAMESPACES literal with two fragments -- the one its own probe calls and the mirror of the same defect -- and amended at the end of the file by ASSIGNMENT, which replaced the namespace with a single fragment. Under the key the class had 2 fragments before the amendment and 1 after, and the key was still there: the registry's size, its key set and its loadability were identical before and after, so every question asked of the registry answered "registered". The run found it by naming what it expected under the key, twice and from two sides: MISS, "the probe calls no fragment of this class", and BADADDRESS, the class quoting a line its remaining fragment does not contain. The repair is that the namespace is a set that only grows -- update() at the amendment site -- and the limit of that repair is stated with it: the loss was visible only because the probe NAMED one of the lost fragments; a fragment no probe names can be dropped by the same assignment in silence, which is a different defect carried separately as a-class-registers-fragments-that-no-entry-reads.
+- probe: `a_key_registered_twice_and_only_the_last_registration_survives()['fragments_under_the_key']` -> expected `2`, observed `1`
+- instances: 1
+- cited: `aac48336-6d36-4658-9ef5-4cc48ca92024` (own) — `    registry["a-class"] = {"a_new_fragment": 1}`
+- note: The address is the message where this defect and its repair were published, not a copy of the reproduction. Measured, not argued: on the same file, replacing the amendment's `.update(` with `=` and running the ledger reproduces MISS + BADADDRESS on the same class, and the key count printed by the registry is 158 either way. What the ledger's guard cannot do is stated in the fact rather than implied: the MISS fires because the probe names the lost fragment, so this guard covers a class whose probe names what it lost and nothing else.
 
 ## `a-list-from-the-index-and-bytes-from-the-worktree`
 

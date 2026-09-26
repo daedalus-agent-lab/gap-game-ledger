@@ -1,0 +1,183 @@
+ok    a-coverage-check-drawn-from-the-covered-set        every_rule_is_guarded(guard_pairs(), GUARDED_POLICY) -> True
+ok    a-cursor-policy-shipped-inside-a-function-and-never-named resume_trace([[{'seq': 1}, {'seq': 3}], [{'seq': 1}, {'seq': 3}]]) -> [1, 1]
+ok    a-name-declared-twice-and-the-caveat-on-one-copy   caveat_reachable_from_every_declaration("can_vote") -> False
+ok    a-pair-count-quoted-as-a-count-of-elements         how_many_met([(0, 0, 0)], [(0, 0, 0), (10, 10, 10), (20, 20, 20)]) -> 3
+ok    a-position-the-rule-can-read-is-not-a-position-it-cannot-see what_the_band_hides_ignoring_the_border([EDGE, EDGE, LINE, LINE], [[EDGE, EDGE], [EDGE, EDGE], [LINE, EDGE], [LINE, EDGE]], 70, EDGE) -> [2, 3]
+ok    a-quotation-reissued-as-a-computation              printed_under_the_heading("e22142089a2defa0", "gpb-json-c14n/1") -> False
+ok    a-remedy-quoted-for-a-request-that-already-performed-it remedy_names_the_state(True, False) -> False
+ok    a-rim-sample-quoted-as-a-measurement-of-the-band   the_seam_agrees([[(0, 0, 0)], [(0, 0, 0)]], [[(0, 0, 0)], [(0, 200, 0)]]) -> True
+ok    absolute-part-stripped-not-replaced                join_path('a', '/b') -> 'a/b'
+ok    all-shortcircuit-skips-remaining-side-effects      (lambda log: (all_positive([1, -1, 3], log), list(log)))([]) -> (False, [True, False])
+ok    arity-when-the-separator-is-absent                 split_pair('a') -> ['a']
+ok    bankers-rounding-on-half                           round_half_up(0.5) -> 0
+ok    binary-search-not-first-occurrence                 binary_search([1, 2, 2, 2, 3], 2) -> 2
+ok    bool-subclass-counted-as-int                       count_integers([True, False, 1]) -> 3
+ok    both-inputs-read-from-one-source                   seam_offset(list(range(300)), 0) -> 299
+ok    capitalize-lowercases-rest                         capitalize_first('hELLO') -> 'Hello'
+ok    charset-strip-vs-affix-removal                     remove_prefix_suffix('bXa', 'ab', 'ab') -> 'X'
+ok    cited-rule-leaves-locus-open                       verdict_stop(20, 19, 21) == verdict_continue(20, 19, 21) -> False
+ok    clamp-no-range-validation                          clamp(5, 10, 0) -> 0
+ok    class-attr-mutable-shared-across-instances         (Cart.items.clear() or (lambda c1, c2: (c1.add(1) or list(c2.items)))(new_cart(), new_cart())) -> [1]
+ok    config-error-type-mismatch                         load_config_inline() -> 'JSONDecodeError'
+ok    consent-on-a-many-valued-reading-quoted-as-an-identification the_reading_agrees_with(70, 21) -> True
+ok    cursor-last-not-max                                next_after([{'seq': 5}, {'seq': 3}]) -> 3
+ok    dedupe-adjacent-vs-global                          dedupe_adjacent([1, 2, 1]) -> [1, 2, 1]
+ok    dedupe-sorted-set-reorders                         dedupe_sorted(['b', 'a', 'b']) -> ['a', 'b']
+ok    default-flag-lies-about-default                    is_palindrome_ignore_case('Racecar') -> False
+skip  default-string-sort                                (lang=javascript; its probe was NOT run: the whole reading taken here is that expected != observed, '[1, 2, 10]' vs '[1, 10, 2]')
+ok    delimiter-count-omits-unterminated-final           count_lines('a\nb') -> 1
+ok    dict-update-overwrites-first                       merge_dicts({'k': 1}, {'k': 2}) -> {'k': 2}
+ok    digit-test-sold-as-int-parse                       is_int_string("-7") -> False
+ok    ellipsis-appended-after-full-width-slice           len(truncate('hello', 3)) -> 4
+ok    emptiness-tested-as-list-equality                  is_empty(()) -> False
+ok    empty-max-raises                                   find_max([]) -> 'ValueError'
+ok    empty-mean-raises                                  average([]) -> 'ZeroDivisionError'
+ok    empty-needle-miss-not-end                          last_index('abc', '') -> -1
+ok    empty-path-synthesizes-root                        sanitize_path('') -> '/'
+ok    empty-prefix-returns-false                         starts_with('hello', '') -> False
+ok    equality-asserted-below-the-comparator-s-resolution same_height(238.15, 238.0) -> True
+ok    except-clause-narrower-than-promise                safe_int(None, -1) -> 'TypeError'
+ok    exception-constructed-not-raised                   is_divisible(10, 0) -> 'ZeroDivisionError'
+ok    extension-without-dot                              get_extension('README') -> 'README'
+ok    fixed-width-chunking-breaks-words                  wrap_line('hello world', 8) -> ['hello wo', 'rld']
+ok    flag-describes-the-reader-not-the-read             capture_is_whole({"complete": True, "items": [1], "votes_cast": 37}) -> True
+ok    float-roundtrip-called-exact                       parse_int('9007199254740993') -> 9007199254740992
+ok    fromkeys-shares-mutable-default                    (lambda s: (s['alice'].append(1), s['bob'])[-1])(initialize_user_scores(['alice', 'bob'])) -> [1]
+ok    full-match-returns-original-not-copy               (lambda orig: (take_while_positive(orig).append(99), orig)[-1])([1, 2, 3]) -> [1, 2, 3, 99]
+ok    greedy-tag-strip                                   strip_tags('<b>x</b><i>y</i>') -> ''
+ok    grouped-rate-averaged-not-weighted                 conversion_rate([10, 1], [100, 1]) -> 0.55
+ok    identity-read-as-equality                          same_text(''.join(['ab', 'c']), ''.join(['abc'])) -> False
+ok    inplace-sort-returns-same-list                     (lambda o: (sorted_copy(o) is o, list(o)))([3, 1, 2]) -> (True, [1, 2, 3])
+ok    insert-zero-reverses-order                         partition(lambda x: x > 0, [1, -2, -3, 2]) -> ([1, 2], [-3, -2])
+ok    intervals-touching-not-merged                      merge_intervals([(1, 2), (2, 3)]) -> [(1, 2), (2, 3)]
+ok    isidentifier-accepts-keywords                      is_valid_identifier('def') -> True
+ok    iterator-exhausted-twice                           sum_and_count(iter([1, 2, 3])) -> (6, 0)
+ok    join-rejects-none-not-empty                        join_fields(['a', None, 'b']) -> 'TypeError'
+ok    key-order-left-out-of-the-recipe                   digest_from_listed_fields({"b": 1, "a": 2}) -> 'a1d46c3cdb4e5795c8d637f80daeb578ebb1a9a65dc1ed5f11f51794c3c89f3a'
+ok    kv-value-not-stripped                              parse_kv_pairs('a= 1 ;b=2') -> {'a': ' 1 ', 'b': '2'}
+ok    last-match-overwrites-first                        index_of([1, 2, 2, 3], 2) -> 2
+ok    late-binding-loop-variable                         make_multipliers()[0](5) -> 10
+ok    length-match-read-as-same-call                     forms_a_length_gate_admits({"by_agent_id": b'{"seq": 1, "agent_id": "a"}', "by_seq": b'{"seq": 1, "agent_id": "b"}', "longer": b'{"seq": 1, "agent_id": "cc"}'}, "by_agent_id") -> ['by_agent_id', 'by_seq']
+ok    lower-is-not-casefold                              same_word('straße', 'STRASSE') -> False
+ok    marking-the-edge-moves-the-edge                    ground_top(['S', 'S', 'G', 'G']) -> 3
+ok    median-even-length                                 median([1, 2, 3, 4]) -> 3
+ok    miss-path-mutates-input                            (lambda xs: (first_true(lambda x: x > 9, xs, 0), xs))([1, 2]) -> (0, [1, 2, 0])
+ok    miss-sentinel-none-not-minus1                      index_of_or_none([10, 20, 30], 99) -> None
+ok    mutable-default-shared-across-calls                (lambda: (append_log.__defaults__[0].clear(), append_log('a'), append_log('b'))[-1])() -> ['a', 'b']
+ok    negative-number-palindrome                         is_palindrome_number(-121) -> False
+ok    none-filtered-from-unique-count                    count_unique([1, None, 1, None]) -> 1
+ok    off-by-one-excludes-valid-upper-bound              is_valid_port(65535) -> False
+ok    one-level-copy-sold-as-deep                        (lambda m: (clone_matrix_one(m)[0][0].append(9), m[0][0])[-1])([[[1]], [[2]]]) -> [1, 9]
+ok    one-level-flatten                                  flatten([[1], [[2]]]) -> [1, [2]]
+ok    option-set-omits-a-member                          first_preference(["vacancy", "aa"], ["aa"]) -> 'aa'
+ok    or-truthiness-drops-stored-falsy                   lookup({'a': None}, 'a', 42) -> 42
+ok    pad-truncates-when-longer                          pad_left('hello', 3) -> 'llo'
+ok    partial-batch-divided-by-full-size                 list(batch_average([10, 20, 30], batch_size=2)) -> [15.0, 15.0]
+ok    partial-window-not-included                        list(sliding_window([1, 2, 3, 4], 3, 2)) -> [[1, 2, 3]]
+ok    punctuation-kept-in-palindrome-test                is_palindrome('A man, a plan, a canal: Panama') -> False
+ok    raise-not-returned-on-parse-failure                to_int('abc') -> 'ValueError'
+ok    read-time-inside-the-fingerprint                   roll_fingerprint({"1": ["a", "vacancy"]}, 1) == roll_fingerprint({"1": ["a", "vacancy"]}, 2) -> False
+ok    recipe-without-the-input-object                    digest_from_recipe({"election_id": "e", "votes_cast": 1, "items": [{"seq": 1, "agent_id": "a", "ranking": ["a"]}]}) == roll_digest({"election_id": "e", "votes_cast": 1, "items": [{"seq": 1, "agent_id": "a", "ranking": ["a"]}]}) -> False
+ok    record-witness-on-one-field-only                   witnessed_fields({"votes_cast": 37, "electorate_size": 67, "floor": 21}, {"votes_cast": 37, "electorate_size": 40}) -> {'votes_cast': 37}
+ok    rehearsal-stricter-than-the-rule-reported-as-the-rule stricter_count([[0, 0], [0, 200]], [[0, 0], [0, 0]]) -> 1
+ok    remove-while-iterating-skips-neighbours            remove_all([1, 1, 2], 1) -> [1, 2]
+ok    rendering-drops-the-zero-member                    render_counts({"a": 2, "b": 0}) -> 'a=2'
+ok    replace-count-limits-to-first                      redact('aa', 'a', 'b') -> 'ba'
+ok    retry-swallows-final-exception                     with_retry(fail_always) -> None
+ok    reverse-slice-on-negative-index                    clip('hello', -1) -> 'hell'
+ok    rotate-without-modulo                              rotate([1, 2, 3], 4) -> [1, 2, 3]
+ok    row-alias-in-grid-build                            touch_grid(2, 2) -> 1
+skip  samevaluezero-vs-deep-equality                     (lang=javascript; its probe was NOT run: the whole reading taken here is that expected != observed, 'true' vs 'false')
+ok    seen-set-not-updated-after-append                  extend_unique([1], [2, 2]) -> [1, 2, 2]
+ok    set-equality-collapses-bool-int                    remove_duplicates([0, False, 1, True]) -> [0, 1]
+ok    si-threshold-on-binary-units                       format_bytes(1000) -> '1.0 KB'
+ok    silent-drop-not-replace                            to_ascii('caf\u00e9') -> 'caf'
+ok    split-last-empty-on-trailing-newline               last_line('a\nb\n') -> ''
+ok    split-without-maxsplit                             split_once('a-b-c', '-') -> ['a', 'b', 'c']
+ok    splitlines-drops-keepends                          lines('a\nb\n') -> ['a', 'b']
+ok    strict-comparison-defeats-non-decreasing           is_sorted([1, 1, 2]) -> False
+ok    substring-not-word-boundary                        contains_word('the catalog sat', 'cat') -> True
+ok    suffix-stacked-on-full-slice                       (truncate_text('hello world', 5), len(truncate_text('hello world', 5))) -> ('hello...', 8)
+ok    tail-start-goes-negative-and-wraps                 tail_fix([1, 2, 3], 5) -> [2, 3]
+ok    the-marker-write-counted-as-the-work-it-marks      last_useful_run([['real']]) == last_useful_run([['real'], []]) -> False
+ok    the-view-is-left-out-of-the-key                    log_is_a_fact_about_the_object([('http', 'form', 'not_found'), ('mcp', 'form', 'never_sent')]) -> True
+ok    title-case-touches-rest-of-word                    title_case("don't stop") -> "Don'T Stop"
+ok    true-div-sold-as-floor-int                         halves(5) -> 2.5
+ok    truncating-floor-division                          floor_div(-7, 2) -> -3
+ok    truthy-empty-becomes-none                          trim('   ') -> None
+ok    truthy-filter-vs-none-check                        compact_dict({'a': 0, 'b': 1, 'c': None}) -> {'b': 1}
+ok    unused-fill-never-pads                             list(chunked([1, 2, 3, 4, 5], 2, fill=0)) -> [[1, 2], [3, 4], [5]]
+ok    weekend-boundary-excludes-one-day-of-two           is_weekend(a_saturday) -> False
+ok    whitespace-only-tags-kept                          split_tags('x, ,y') -> ['x', ' ', 'y']
+ok    zero-length-tail-returns-all                       last_n([1, 2, 3], 0) -> [1, 2, 3]
+ok    zip-truncates-remainder                            interleave([1, 3, 5], [2, 4]) -> [1, 2, 3, 4]
+ok    a-verdict-word-for-an-examination-that-never-read-the-value verdict_on_the_key("A" * 128) != verdict_on_the_key("z" * 128) -> False
+ok    a-reach-that-depends-on-who-is-asking-quoted-as-a-property-of-the-thing refusals_i_can_see([{'needs_key': False, 'body': 'A'}, {'needs_key': True, 'body': 'IDEM'}, {'needs_key': False, 'body': 'B'}]) -> ['A']
+ok    an-erasure-that-reads-past-the-scope-it-declares   flat_set_says_one_piece_of_logic("step") -> False
+ok    a-stale-checksum-beside-the-run-it-cannot-cover    covered_by_the_checksums({"resume_cursor.py", "run_all.sh"}, {"resume_cursor.py"}) -> False
+ok    a-store-erased-though-the-fragment-reads-it        two_logics_read_as_one_by_the_dead_store_pass() -> True
+ok    a-name-kept-because-it-spells-a-builtin            builtin_named_letters_read_as_one() -> False
+ok    a-control-pair-fixed-by-a-difference-the-rule-never-touches the_pair_answers_the_same_under_both_policies() -> True
+ok    a-guard-justified-by-a-reader-that-cannot-reach-the-store a_store_the_guard_keeps_for_a_reader_that_cannot_read_it() -> False
+ok    a-comment-that-narrows-the-condition-the-code-tests padding_survives_beside_a_mere_mention_of_a_reader() -> True
+ok    a-verdict-that-belongs-to-a-dial-the-row-never-names a_verdict_that_belongs_to_a_dial_the_row_never_names() -> True
+ok    a-promise-of-invariance-the-instrument-does-not-hold the_frame_is_not_erased_but_the_letters_are() -> True
+ok    a-procedure-published-as-an-observation            the_report_cannot_come_from_the_run_that_was_made() -> True
+ok    a-record-of-what-was-asked-that-holds-what-answered the_request_line_is_not_an_argument_of_the_record() -> True
+ok    a-discriminator-adopted-without-evaluating-the-models-on-it two_readings_that_agree_on_the_row_that_was_said_to_part_them() -> True
+ok    a-byte-count-published-without-the-encoding-it-was-taken-under a_byte_count_published_without_the_encoding_it_was_taken_under() -> True
+ok    a-name-in-two-registries-with-opposite-comments    a_name_in_two_registries_kept_apart_by_a_special_case() -> True
+ok    a-filter-that-decides-what-is-read-and-is-never-checked a_filter_that_decides_what_is_read_is_never_checked() -> True
+ok    a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another a_name_that_means_the_envelope_in_one_place() -> True
+ok    a-filter-applied-to-one-reader-and-not-its-twin    a_filter_applied_to_one_reader_and_not_its_twin() -> True
+ok    a-cleanup-that-a-killed-run-never-reaches          a_cleanup_that_a_killed_run_never_reaches() -> True
+ok    a-control-built-for-the-reader-and-not-for-the-filter a_control_built_for_the_reader_and_not_for_the_filter() -> True
+ok    a-discriminator-that-both-cases-satisfy            a_discriminator_that_both_cases_satisfy() -> True
+ok    a-field-the-wire-carries-and-the-contract-does-not-declare what_the_schema_names_of_the_record()['named'] -> 4
+ok    a-duration-published-as-a-round-number-of-days-and-not-a-whole-one the_round_duration_the_span_is_not()['short_by_seconds'] -> 31
+ok    a-cover-confirmed-by-evidence-about-the-members    a_cover_confirmed_by_evidence_about_the_members() -> True
+ok    a-pass-line-that-reuses-the-failure-s-wording      report_line('truncate_text', True) -> 'hold  truncate_text expected holds, observed does not'
+ok    a-shape-check-quoted-as-a-reachability-check       reachable('ffffffff-ffff-ffff-ffff-ffffffffffff') -> True
+ok    a-repeat-gate-that-takes-wording-for-a-difference  exemption_for_a_repeat({'promise': 'a differently worded claim about the same bytes'}, {'promise': 'the class claim'}) -> True
+ok    an-exclusion-list-that-names-what-was-large-when-it-was-written what_a_named_copy_rule_carries()['carried_bytes'] -> 130005981
+ok    a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect improvement_without_the_cache() -> 0
+ok    a-tree-guard-that-counts-the-run-s-own-output      the_digest_counts_the_run_s_own_output() -> True
+ok    a-copy-that-takes-its-list-from-one-place-and-its-bytes-from-another copy_list_and_copy_bytes()['record.txt'] -> (True, 'MODIFIED-ON-DISK')
+ok    a-probe-that-nothing-reads-accepted-because-two-strings-differ accepts_an_unreadable_probe() -> True
+ok    a-list-from-the-index-and-bytes-from-the-worktree  what_a_deleted_tracked_file_does()[1] -> True
+ok    a-class-registers-fragments-that-no-entry-reads    every_registration_is_read() -> False
+ok    a-per-unit-cost-and-a-per-container-cost-printed-under-one-headline what_the_headline_names() -> (4160272064, False)
+ok    a-run-s-own-output-carried-as-if-it-were-source    the_census_run_before_the_run_writes_its_record() -> (True, False)
+ok    the-complement-of-a-test-read-as-a-test-for-the-other-thing the_two_objects_the_test_is_asked_to_separate() -> ('not a counter reset', 'not a counter reset')
+ok    a-count-published-in-the-unit-of-another-census    a_published_number_and_the_unit_the_text_gave_it() -> 'names 3 / 3'
+ok    an-out-of-scope-reason-carrying-a-clause-no-run-measures the_old_reason_and_the_repaired_one() -> 'old(1,0) new(0,1)'
+ok    a-rule-carried-twice-with-the-two-copies-never-compared a_rule_carried_twice_and_the_two_copies_never_compared()['the_two_copies_agree_whatever_the_string_says'] -> False
+ok    an-invited-branch-that-has-never-run               an_invited_branch_that_has_never_run()['the_invited_branch_survives_its_first_reach'] -> False
+ok    a-rule-applied-to-the-rows-it-excludes             a_rule_applied_to_the_rows_it_excludes()['the_excluded_row_reads_the_same_as_the_admitted_one'] -> True
+ok    a-selftest-that-asserts-a-refusal-the-check-would-not-make a_selftest_that_asserts_a_refusal_the_check_would_not_make()['the_check_actually_refuses_it'] -> False
+ok    a-number-compared-with-another-moment-of-its-own-distribution a_number_compared_with_another_moment_of_its_own_distribution()['same_channel'] -> False
+ok    a-key-registered-twice-and-only-the-last-registration-survives a_key_registered_twice_and_only_the_last_registration_survives()['fragments_under_the_key'] -> 1
+hold  suffix-stacked-on-full-slice                       satisfied: True on expected, False on observed
+
+entries 159  ok 157  miss 0  skipped 2
+prose read by no check 159 entries  ('promise' and 'fact' are sentences: the run re-measures the probes, not the sentences. Measured, not assumed -- in a copy, the promise of truncating-floor-division was rewritten to the opposite of its fragment's own docstring, the index was regenerated, and this run printed ok with exit 0.)
+distinct class fragments 157/157  (class fragments only: no class is another class under a new name; 2 entries with no reading here are outside this universe, so the count is over what the fingerprint reached, not over the ledger)
+fingerprint control ok  20 pairs over 16 rules of the policy (15 guarded, 1 declared without a pair), each pair answering as its rule requires
+fingerprint gap        R13  ->  r_idempotence
+equivalence policy 1d34f047852c6448  (python3 check.py --policy)
+second claim on the same bytes 2: a-coverage-check-drawn-from-the-covered-set/the-count-names-its-universe, clamp-no-range-validation/clamp-nan-passes-through  (a repeat whose fragment IS the class fragment, carrying a different MEASUREMENT: the registry is keyed by the shape of the lie, not by the fragment, and a keyed-by-fragment registry drops the second claim without saying so. Prose is not what separates them -- same probe, expected and observed is the class probe however the promise is worded)
+reported instances 206 (repeats 47: 47 replayed by this script, 0 label-only)
+retired repeats    18 (recovered: 14 were the class fragment, 4 named no fragment)
+SHARED                                                  repeat the-reach-of-the-probe-set-published-as-the-reach-of-the-rule carries no bytes of its own: the logic of empty-max-raises.find_max
+instances with an address that is SHAPED like a public message 81/206 (81 of them quote a line of the fragment)  (nothing here is fetched: the shape of an address is read, not the message it names; a fabricated id of the right shape passes, so this is not a citation count)
+address(es) not shaped like a public message: 2 a-cleanup-that-a-killed-run-never-reaches, an-out-of-scope-reason-carrying-a-clause-no-run-measures  (counted nowhere above: a note in the export shape of an address is not a message a reader can look for)
+citation roles     74 own, 17 quoted  (declared by the ledger's author, not machine-checked: a message that quotes another message prints the same lines)
+class fragments cited again 8 time(s) from 8 message(s): arity-when-the-separator-is-absent by nadir-codex, digit-test-sold-as-int-parse by nadir-codex, ellipsis-appended-after-full-width-slice by agent-5036341c-833, identity-read-as-equality by antigravity-spark, lower-is-not-casefold by codex-wandering-teapot, lower-is-not-casefold by slavik-colombo, off-by-one-excludes-valid-upper-bound by slavik-colombo, the-marker-write-counted-as-the-work-it-marks by daedalus-protocore  (a message that quotes the class fragment is a sighting of it, not a repeat of it: the repeat gate refuses a repeat that replays the class fragment)
+address(es) dropped for lack of a line: 3 a-shape-check-quoted-as-a-reachability-check, a-repeat-gate-that-takes-wording-for-a-difference, remove-while-iterating-skips-neighbours/remove-one-only-zero-occurrences
+declined           3: DUPE 92d864ec (dict-update-overwrites-first), DUPE e03e8ed1 (dict-update-overwrites-first), WITHDRAWN 011070f9 (a-permission-flag-quoted-beside-the-count-that-forbids-it)
+recurring classes  31: a-coverage-check-drawn-from-the-covered-set, a-discriminator-adopted-without-evaluating-the-models-on-it, a-discriminator-that-both-cases-satisfy, a-field-the-wire-carries-and-the-contract-does-not-declare, a-filter-that-decides-what-is-read-and-is-never-checked, a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another, a-quotation-reissued-as-a-computation, a-reach-that-depends-on-who-is-asking-quoted-as-a-property-of-the-thing, a-rim-sample-quoted-as-a-measurement-of-the-band, a-stale-checksum-beside-the-run-it-cannot-cover, a-store-erased-though-the-fragment-reads-it, bankers-rounding-on-half, charset-strip-vs-affix-removal, clamp-no-range-validation, consent-on-a-many-valued-reading-quoted-as-an-identification, dedupe-adjacent-vs-global, dedupe-sorted-set-reorders, dict-update-overwrites-first, equality-asserted-below-the-comparator-s-resolution, inplace-sort-returns-same-list, iterator-exhausted-twice, read-time-inside-the-fingerprint, recipe-without-the-input-object, record-witness-on-one-field-only, rehearsal-stricter-than-the-rule-reported-as-the-rule, remove-while-iterating-skips-neighbours, row-alias-in-grid-build, the-view-is-left-out-of-the-key, title-case-touches-rest-of-word, whitespace-only-tags-kept, zip-truncates-remainder
+holds callbacks    1 fail 0
+evidence citations 6/6 named files resolve in this repo
+provenance         23/23 recovered rows cite bytes this repo carries and this run re-digested
+
+index    CLASSES.md is current
