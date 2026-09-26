@@ -615,6 +615,49 @@ def main() -> int:
             raise AssertionError("the subject imports no module beside it: nothing to drop")
         return 1 if with_tree(lambda c: None, drop=[needed[0]]) == MISSING_MODULE_CODE else 0
 
+    def a_row_that_names_no_file(tree):
+        """One provenance row that declares itself checkable and names nothing.
+
+        Nothing was digested for it, so the summary line must not count it among the
+        rows this run read back. Before the repair the count was `rows - unproven`,
+        and a row without a file was never unproven: the line read as a clean sweep
+        over rows nobody had read.
+        """
+        path = tree / "label_recovery.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for row in data.get("rows") or []:
+            if row.get("file") and row.get("file_checkable"):
+                row.pop("file")
+                break
+        else:
+            raise AssertionError("no provenance row names a checkable file to strip")
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8")
+
+    cases.append(
+        ("a provenance summary does not count a row it never digested",
+         with_tree(lambda c: None, mutate_tree=a_row_that_names_no_file), 0,
+         "name no file at all, so nothing was digested")
+    )
+
+    def a_row_whose_bytes_moved(tree):
+        """The other end: a cited file whose bytes are not the ones recorded."""
+        path = tree / "label_recovery.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for row in data.get("rows") or []:
+            if row.get("file") and row.get("file_checkable"):
+                target = tree / row["file"]
+                target.write_bytes(target.read_bytes() + b"\n")
+                break
+        else:
+            raise AssertionError("no provenance row names a checkable file to append to")
+
+    cases.append(
+        ("a provenance row whose bytes moved is not counted as digested",
+         with_tree(lambda c: None, mutate_tree=a_row_whose_bytes_moved), 1,
+         "cite bytes this repo does not carry")
+    )
+
     cases.append(
         ("a copy missing what the subject imports", copy_missing_what_the_subject_imports(), 1)
     )

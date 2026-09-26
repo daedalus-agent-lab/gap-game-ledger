@@ -1239,7 +1239,7 @@ def evidence_citations(data: dict) -> tuple[int, list[str]]:
     return len(seen), missing
 
 
-def provenance_record() -> tuple[int, list[str], list[str]]:
+def provenance_record() -> tuple[int, list[str], list[str], list[str]]:
     """Read `label_recovery.json`, the provenance behind the recovered labels.
 
     A row there says which file a recovered fragment's bytes were taken from. That
@@ -1248,11 +1248,14 @@ def provenance_record() -> tuple[int, list[str], list[str]]:
     under `provenance/`, and this reads them back -- the digest recorded at
     recovery time against the file on disk, and the function name against the text.
 
-    Returns (rows read, problems, unproven). A row that says its file is checkable
-    and whose digest or function does not match is a problem: the record claims a
-    provenance the repo does not carry. A row that declares its file uncheckable
-    (the bytes were only ever in a workspace outside this repo) is printed as
-    unproven and is not a failure -- the honest status, not a hidden one.
+    Returns (rows read, problems, unproven, rows that name no file). A row that says
+    its file is checkable and whose digest or function does not match is a problem:
+    the record claims a provenance the repo does not carry. A row that declares its
+    file uncheckable (the bytes were only ever in a workspace outside this repo) is
+    printed as unproven and is not a failure -- the honest status, not a hidden one.
+    A row that declares itself checkable and names no file is returned as nameless:
+    nothing was digested for it, so it must not be counted among the rows this run
+    re-digested.
     """
     path = HERE / "label_recovery.json"
     if not path.exists():
@@ -1261,6 +1264,7 @@ def provenance_record() -> tuple[int, list[str], list[str]]:
     rows = data.get("rows") or []
     problems: list[str] = []
     unproven: list[str] = []
+    nameless: list[str] = []
     for row in rows:
         label = row.get("label", "?")
         named = row.get("file") or ""
@@ -1268,6 +1272,7 @@ def provenance_record() -> tuple[int, list[str], list[str]]:
             problems.append(f"{label} does not say whether its provenance is checkable")
             continue
         if not named:
+            nameless.append(f"{label} names no file, so nothing was digested")
             continue
         if not row["file_checkable"]:
             unproven.append(f"{label} ({named})")
@@ -1298,7 +1303,7 @@ def provenance_record() -> tuple[int, list[str], list[str]]:
     overlap = set(data.get("missing") or []) & {r.get("label") for r in rows}
     for label in sorted(overlap):
         problems.append(f"{label} is listed both as a row and as a label with no source")
-    return len(rows), problems, unproven
+    return len(rows), problems, unproven, nameless
 
 
 def render_index(data: dict) -> str:
@@ -1869,13 +1874,21 @@ def main() -> int:
               f"/{cited} named files resolve in this repo")
     for line in cited_missing:
         print(f"UNPROVEN  {'':<48} {line}")
-    prov_rows, prov_bad, prov_unproven = provenance_record()
+    prov_rows, prov_bad, prov_unproven, prov_nameless = provenance_record()
     if prov_rows:
-        checkable = prov_rows - len(prov_unproven)
-        print(f"provenance         {checkable}/{prov_rows} recovered rows cite bytes this "
+        # The count is of rows this run DIGESTED: a row whose bytes did not match was
+        # digested and is not among them, and a row that names no file was not
+        # digested at all. Counting either as proved is the sentence beside the
+        # verdict -- the run exits 1 while this line reads as a clean sweep.
+        digested = prov_rows - len(prov_unproven) - len(prov_nameless) - len(prov_bad)
+        print(f"provenance         {digested}/{prov_rows} recovered rows cite bytes this "
               f"repo carries and this run re-digested"
               + (f"; {len(prov_unproven)} name a file that is only a memory of the run: "
-                 + ", ".join(prov_unproven) if prov_unproven else ""))
+                 + ", ".join(prov_unproven) if prov_unproven else "")
+              + (f"; {len(prov_nameless)} name no file at all, so nothing was digested"
+                 if prov_nameless else "")
+              + (f"; {len(prov_bad)} cite bytes this repo does not carry"
+                 if prov_bad else ""))
     for line in prov_bad:
         print(f"UNPROVEN  {'':<48} {line}")
     counts_read, counts_bad = counted_readings()

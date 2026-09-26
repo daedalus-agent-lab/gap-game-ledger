@@ -6733,6 +6733,53 @@ def _readings_of_a_half_measured_on_one_machine():
 NAMESPACES.setdefault('a-second-half-a-constant-on-a-fixture-that-never-varies', {}).update({'a_second_half_a_constant_on_a_fixture_that_never_varies': a_second_half_a_constant_on_a_fixture_that_never_varies})
 
 
+def a_summary_that_counts_the_rows_it_never_digested():
+    """The provenance summary of `label_recovery.json`, read two ways.
+
+    One record of recovered rows; both readings walk the same rows.
+
+        the rows                                  as written   repaired
+        19 name a file whose bytes were digested      19          19
+        4 name no file at all                          4           4
+        rows the summary calls digested               23          19
+
+    A row that names no file was not digested, and a row whose bytes moved was
+    digested and did not match. The summary counts what the run read back, not how
+    many rows the record happens to carry.
+    """
+    return _readings_of_a_summary_over_rows_it_did_not_digest()["as_written"]
+
+
+def _readings_of_a_summary_over_rows_it_did_not_digest():
+    """Both sides of the class: the rows carried, and the rows read back."""
+    ROWS = tuple(
+        [{"names_a_file": True, "declares_uncheckable": False,
+          "bytes_match_the_record": True}] * 19
+        + [{"names_a_file": False, "declares_uncheckable": False,
+            "bytes_match_the_record": False}] * 4
+    )
+
+    def as_written(rows):
+        # the rule the line took: every row the record carries, minus the rows that
+        # declare themselves uncheckable -- a row that names no file was skipped
+        # before this count and is added back here as if it had been read
+        unproven = [r for r in rows if r["names_a_file"] and r["declares_uncheckable"]]
+        return {
+            "rows_the_record_carries": len(rows),
+            "rows_the_summary_calls_digested": len(rows) - len(unproven),
+        }
+
+    def as_repaired(rows):
+        return {
+            "rows_the_record_carries": len(rows),
+            "rows_the_summary_calls_digested": sum(
+                1 for r in rows if r["names_a_file"] and r["bytes_match_the_record"]),
+        }
+
+    return {"as_written": as_written(ROWS), "as_repaired": as_repaired(ROWS)}
+NAMESPACES.setdefault('a-summary-that-counts-the-rows-it-never-digested', {}).update({'a_summary_that_counts_the_rows_it_never_digested': a_summary_that_counts_the_rows_it_never_digested})
+
+
 NAMESPACES.setdefault('a-measurement-that-takes-its-tools-from-the-callers-path', {}).update({'a_measurement_that_takes_its_tools_from_the_callers_path': a_measurement_that_takes_its_tools_from_the_callers_path})
 
 
