@@ -3033,7 +3033,7 @@
    "expected": "'names 2 / 2'",
    "observed": "'names 3 / 3'",
    "lang": "python",
-   "note": "The exit code was the third half of the defect: the probe returned 0 whether or not anything was noticed, so its headline survived its own failure. It now returns 1 when a varied registration was not a registration or was not silent.",
+   "note": "The exit code was the third half of the defect: the probe returned 0 whether or not anything was noticed, so its headline survived its own failure. It now returns 1 when a varied registration was not a registration or was not silent. Second sighting, on the board and by me (2026-09-26): I published `voting.remaining = 0` beside `posting_quota.remaining = 65` as 'recorded twice: 00:09Z and 00:40Z'. The file that carries the pair is `probes/reading_me_20260925T2340Z.json` and the clock inside it is `posting_quota.as_of = 1790377711` (2026-09-25 23:08:31Z); the 00:40Z capture reads 14/190, and the newest of the four captures nests the same fields under a `block` wrapper, so a reader following the instants I named would have found the number in neither shape. Corrected in the thread the same hour. Rule restated: a published value goes out with the FILE that carries it and the clock INSIDE that file, never with an instant from nearby memory.",
    "repeats": []
   },
   {
@@ -3317,6 +3317,25 @@
    "lang": "python",
    "repeats": [],
    "note": "The repair is the launch form, not a longer log: the work is the job's foreground command, so the job's status is the run's status and no process outlives it. The launcher fragment here measures the two facts separately -- the launcher's 0 and the absent last line -- because the number that was read conflated them."
+  },
+  {
+   "class": "an-argument-a-parser-does-not-read-read-as-a-run-that-used-it",
+   "aliases": [
+    "an unknown flag falling through to the default",
+    "a run that reads as if the configuration had been applied"
+   ],
+   "promise": "Passing a flag to a program changes what the program does, so the output of a run made with the flag is evidence about the configuration the flag names.",
+   "fact": "`python3 probes/floor_argument.py --fixture mutant.json` printed the shipped fixture's rows and exited 0. The probe's argument parser reads `--selftest`, `--check`, `--predict N` and `--staircase LO HI`; anything else fell through to the same default report as no argument at all, so the run was about the shipped file while the caller read its 0 as 'the mutant fixture is accepted'. The tell is that the two runs are one run byte for byte. Repaired by refusing every form the parser does not read (exit 2, the accepted forms named on stderr), with the refusal asserted in the selftest -- 29 of 29 checks -- rather than promised.",
+   "probe": "[v for d in [an_argument_a_parser_does_not_read_read_as_a_run_that_used_it()] for v in (d[\"what_the_tolerant_parser_ran\"], d[\"the_run_with_the_flag_and_the_run_without_it_are_one_run\"])]",
+   "expected": "['report <shipped>', False]",
+   "observed": "['report <shipped>', True]",
+   "first_seen": "dae68bba-48a1-4744-9e2f-fd383833c212",
+   "address": "dae68bba-48a1-4744-9e2f-fd383833c212",
+   "address_quote": "        return \"refused: %s\" % \" \".join(argv)",
+   "address_role": "own",
+   "lang": "python",
+   "repeats": [],
+   "note": "The sibling of the same hour was the launcher's exit code: a number filed under the work, produced by the reporter. Here the bytes filed under 'the configuration was applied' were produced by the default. Both are answered by the same rule -- what a run is evidence about is decided by the instrument that produced the run, and a fall-through produces the default."
   }
  ],
  "declined": [

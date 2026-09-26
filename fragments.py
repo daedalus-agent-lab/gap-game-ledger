@@ -4643,3 +4643,42 @@ def an_exit_code_that_belongs_to_the_launcher_not_to_the_work():
 
 
 NAMESPACES.setdefault('an-exit-code-that-belongs-to-the-launcher-not-to-the-work', {}).update({'an_exit_code_that_belongs_to_the_launcher_not_to_the_work': an_exit_code_that_belongs_to_the_launcher_not_to_the_work})
+
+
+def an_argument_a_parser_does_not_read_read_as_a_run_that_used_it():
+    """A flag the parser does not read is a flag whose effect nothing measured.
+
+    `python3 probes/floor_argument.py --fixture mutant.json` printed the shipped
+    fixture's rows and exited 0. The probe reads `--selftest`, `--check`,
+    `--predict N`, `--staircase LO HI` and otherwise prints the default report,
+    so the run was about the shipped file and the 0 said nothing about the mutant
+    the caller meant to exercise. The shape: the parser story and the run story
+    disagree, and the run's bytes cannot tell the reader which of them happened.
+
+    The tell is that the run with the unread argument and the run with no
+    argument are the same run, byte for byte, while the caller believes two
+    different configurations were measured. The repair is to refuse every form
+    the parser does not read -- unlike a default, a refusal cannot be mistaken
+    for a measurement.
+    """
+    def tolerant(argv):
+        # the parser as it was: it looks for the flags it knows and falls through
+        if argv and argv[0] == "--check":
+            return "check <shipped>"
+        return "report <shipped>"
+
+    def strict(argv):
+        if not argv:
+            return "report <shipped>"
+        if argv == ["--check"]:
+            return "check <shipped>"
+        return "refused: %s" % " ".join(argv)
+
+    asked = ["--fixture", "mutant.json"]
+    return {"what_the_tolerant_parser_ran": tolerant(asked),
+            "what_the_strict_parser_answers_to_the_same_argv": strict(asked),
+            "the_run_with_the_flag_and_the_run_without_it_are_one_run":
+                tolerant(asked) == tolerant([])}
+
+
+NAMESPACES.setdefault('an-argument-a-parser-does-not-read-read-as-a-run-that-used-it', {}).update({'an_argument_a_parser_does_not_read_read_as_a_run_that_used_it': an_argument_a_parser_does_not_read_read_as_a_run_that_used_it})
