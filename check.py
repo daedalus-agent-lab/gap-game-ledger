@@ -895,6 +895,26 @@ def lookup(query: str) -> int:
     return 0
 
 
+def nested_statements(body) -> list:
+    """Every statement reachable from a body, in document order, at any depth.
+
+    A registration can be written from inside a function, and the walk that only
+    reads `tree.body` cannot see that write at all: it is not a question of the form,
+    it is a question of the scope. Order is document order -- the order a reader
+    reads the file -- and not a claim about what runs first.
+    """
+    out = []
+    for node in body:
+        out.append(node)
+        for field in ("body", "orelse", "finalbody"):
+            sub = getattr(node, field, None)
+            if isinstance(sub, list) and sub and isinstance(sub[0], ast.stmt):
+                out.extend(nested_statements(sub))
+        for handler in getattr(node, "handlers", []) or []:
+            out.extend(nested_statements(handler.body))
+    return out
+
+
 def duplicate_declarations() -> list[str]:
     """A class or fragment name declared twice in NAMESPACES, the later one live.
 
@@ -920,12 +940,57 @@ def duplicate_declarations() -> list[str]:
 
     A subscript target is read; `NAMESPACES.setdefault(...).update(...)` is not an
     assignment at all, so the repair for F2 is not reported as a repeat of F2.
+
+    Two more forms were silent here until `probes/registry_collisions.py` and
+    `probes/write_once.py` ran a mutant of each and counted the registrations the
+    loaded dict still held. Both are an augmented assignment, so the `ast.Assign`
+    walk above cannot see them, and both LOSE a registration the same way the
+    three forms above do:
+
+      F4  `NAMESPACES |= {'cls': {...}}` -- the union replaces the class's whole
+          mapping, so every name the earlier mapping carried is gone;
+      F5  `NAMESPACES['cls'] |= {'name': ...}` -- the union merges into the
+          mapping, and a name the class already registered keeps only the new
+          value, so the earlier body is replaced.
+
+    The declared cover is `probes/registry_collisions.py`'s to state; this
+    function only reads the forms.
+
+    The walk reads EVERY statement in the module, not only the module's top level.
+    `probes/write_once.py` wrote the decorator form -- a factory that assigns
+    `NAMESPACES[cls] = {...}` inside its own body, twice -- and this function was
+    silent on it: the second registration is lost exactly as in F2, one scope down.
+    All nineteen writes in this ledger's own `fragments.py` are top level, so
+    reading deeper costs nothing here; a registration written from inside a function
+    now reports too. Statements are read in document order, which is the order a
+    reader reads them, not a claim about call order.
     """
     src = Path("fragments.py").read_text(encoding="utf-8")
     tree = ast.parse(src)
     out = []
     subscripted = {}
-    for node in tree.body:
+    written_classes = set()
+    written_names = {}
+    for node in nested_statements(tree.body):
+        if isinstance(node, ast.AugAssign) and isinstance(node.op, ast.BitOr) \
+                and isinstance(node.value, ast.Dict):
+            target = node.target
+            keys = [k.value for k in node.value.keys if isinstance(k, ast.Constant)]
+            if isinstance(target, ast.Name) and target.id == "NAMESPACES":
+                for k in sorted(set(keys)):
+                    if k in written_classes:
+                        out.append(f"NAMESPACES |= {{{k!r}: ...}} replaces the mapping "
+                                   f"already registered for {k!r}")
+            elif (isinstance(target, ast.Subscript)
+                  and isinstance(target.value, ast.Name)
+                  and target.value.id == "NAMESPACES"
+                  and isinstance(target.slice, ast.Constant)):
+                cls = target.slice.value
+                for k in sorted(set(keys)):
+                    if k in written_names.get(cls, ()):
+                        out.append(f"NAMESPACES[{cls!r}] |= {{{k!r}: ...}} replaces the "
+                                   f"body already registered as {k!r}")
+            continue
         if not isinstance(node, ast.Assign):
             continue
         for target in node.targets:
@@ -937,10 +1002,14 @@ def duplicate_declarations() -> list[str]:
                 for k in set(keys):
                     if keys.count(k) > 1:
                         out.append(f"NAMESPACES declares {k!r} {keys.count(k)} times; the later mapping is live")
-                for value in outer.values:
+                for cls_key, value in zip(outer.keys, outer.values):
+                    if not isinstance(cls_key, ast.Constant):
+                        continue
+                    written_classes.add(cls_key.value)
                     if not isinstance(value, ast.Dict):
                         continue
                     inner = [k.value for k in value.keys if isinstance(k, ast.Constant)]
+                    written_names.setdefault(cls_key.value, set()).update(inner)
                     for k in set(inner):
                         if inner.count(k) > 1:
                             out.append(f"a class declares the fragment {k!r} {inner.count(k)} times")
@@ -950,8 +1019,10 @@ def duplicate_declarations() -> list[str]:
                 cls = target.slice.value
                 subscripted.setdefault(cls, 0)
                 subscripted[cls] += 1
+                written_classes.add(cls)
                 if isinstance(node.value, ast.Dict):
                     inner = [k.value for k in node.value.keys if isinstance(k, ast.Constant)]
+                    written_names.setdefault(cls, set()).update(inner)
                     for k in set(inner):
                         if inner.count(k) > 1:
                             out.append(f"a class declares the fragment {k!r} {inner.count(k)} times")

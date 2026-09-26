@@ -335,6 +335,11 @@ run "uuid version sample"         python3 "$LEDGER/probes/uuid_version_sample.py
 # out of three" -- the form a repair commit here had already gone through.
 run "registry collisions --selftest" python3 "$LEDGER/probes/registry_collisions.py" --selftest
 run "registry collisions --check"    python3 "$LEDGER/probes/registry_collisions.py" --check
+# A write that never reaches `__setitem__` is not a write the guard can refuse. The same
+# five write paths are run against two run-time write-once registries and against the
+# static guard, because "the guard refuses the second write" is a claim about a path.
+run "write once --selftest"       python3 "$LEDGER/probes/write_once.py" --selftest
+run "write once --check"          python3 "$LEDGER/probes/write_once.py" --check
 run "copy cost"                   python3 "$LEDGER/probes/copy_cost.py" --check
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"

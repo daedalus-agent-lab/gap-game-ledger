@@ -10,11 +10,17 @@ one in three forms, and they are not the same code:
   F2  `NAMESPACES['cls'] = {...}` is written twice for one class -- same keeping
       rule, one level down: the first assignment's fragment name is gone;
   F3  one dict literal declares the same fragment name twice, so the first fragment
-      body is replaced by the second.
+      body is replaced by the second;
+  F4  `NAMESPACES |= {'cls': {...}}` unions a class into the registry -- the union
+      replaces the whole mapping, so every name the earlier one carried is gone;
+  F5  `NAMESPACES['cls'] |= {'name': ...}` unions into one class -- the earlier
+      body under that name is replaced rather than dropped.
 
 F2 and F3 are the forms that actually bit this ledger: a repair commit replaced a
 second `NAMESPACES['cls'] = {...}` with `NAMESPACES.setdefault('cls', {}).update(...)`,
 because the second assignment had silently dropped a name the first one carried.
+F4 and F5 were silent until this probe asked the guard about them, and they are here
+because the guard's `ast.Assign` walk could not see an augmented assignment at all.
 
 `check.py:duplicate_declarations` is the guard. This probe asks it the question three
 times, on three mutated copies of the real source, one per form -- the rule is called
@@ -47,15 +53,22 @@ ROOT = HERE.parent
 SOURCE = ROOT / "fragments.py"
 
 # Which forms the guard in check.py is DECLARED to cover. F1 alone is what it covered
-# before this probe existed: it walks top-level assignments whose target is the NAME
-# `NAMESPACES`, which is the whole-dict form only.
-DECLARED_COVER = ("F1", "F2", "F3")
+# before this probe existed: it walked the module's top-level assignments whose target is
+# the NAME `NAMESPACES`, which is the whole-dict form only. F4 and F5 (the two union
+# forms) were declared here only after the guard was widened to read them, and the walk
+# now reaches every scope, because `probes/write_once.py` wrote the decorator form as two
+# assignments inside two functions and the guard was silent on it.
+DECLARED_COVER = ("F1", "F2", "F3", "F4", "F5")
 
 MUTANTS = {
     "F1": "\nNAMESPACES = {'zzz-mutant-f1': {}, 'zzz-mutant-f1': {}}\n",
     "F2": ("\nNAMESPACES['zzz-mutant-f2'] = {'n': None}\n"
            "NAMESPACES['zzz-mutant-f2'] = {'m': None}\n"),
     "F3": "\nNAMESPACES['zzz-mutant-f3'] = {'n': None, 'n': None}\n",
+    "F4": ("\nNAMESPACES['zzz-mutant-f4'] = {'n': None}\n"
+           "NAMESPACES |= {'zzz-mutant-f4': {'m': None}}\n"),
+    "F5": ("\nNAMESPACES['zzz-mutant-f5'] = {'n': None}\n"
+           "NAMESPACES['zzz-mutant-f5'] |= {'n': None}\n"),
 }
 
 
