@@ -6819,3 +6819,56 @@ def _readings_of_a_control_needle():
     return {"as_written": as_written, "as_repaired": as_repaired}
 
 NAMESPACES.setdefault('a-control-whose-needle-a-second-refusal-can-satisfy', {}).update({'a_control_whose_needle_a_second_refusal_can_satisfy': a_control_whose_needle_a_second_refusal_can_satisfy})
+
+
+
+
+def a_pair_of_processes_that_were_never_alive_together(as_written: bool = False):
+    """A two-process measurement whose processes are started one after the other.
+
+    The first version of `probes/shared_root_pair.py` launched the rebuilder and then the
+    reader, each to completion. The rebuilder removed and copied the case tree before the
+    reader had built its own, so the two never overlapped: eight rounds of the arm that
+    carries the defect reported `failed 0`, and the instrument printed `CHECK=1 (not
+    reproduced as a pair of processes)` on a tree where six of six rounds collide as soon
+    as the reader announces its built tree and the rebuild starts at that line. The file's
+    own `rmtree`-to-`copytree` window was never widened; only the order changed.
+    """
+    caught_when_started_one_after_the_other, rounds_as_written = 0, 8
+    caught_when_both_alive_at_once, rounds_repaired = 6, 6
+    if as_written:
+        return caught_when_started_one_after_the_other > 0
+    return caught_when_both_alive_at_once > 0
+
+
+NAMESPACES.setdefault("a-pair-of-processes-that-were-never-alive-together", {}).update({"a_pair_of_processes_that_were_never_alive_together": a_pair_of_processes_that_were_never_alive_together})
+
+
+def a_copy_rule_that_takes_the_index_for_the_tree():
+    """Two readings of "what a copy of this tree carries", on one small tree.
+
+    The fixture holds three paths: `a.py` in the index, `b.py` on disk and not added and
+    not ignored, and an ignored cache. The first rule takes the index, so `b.py` is not in
+    the copy although it is in the tree the copy was taken from; the second takes the index
+    plus the untracked paths the ignore rules do not hide. Both readings are computed here
+    on the same fixture, so the divergence is a value and not a sentence.
+    """
+    index = ("a.py",)
+    ignored = ("cache",)
+    on_disk_the_tree_holds = ("a.py", "b.py")
+
+    def as_written():
+        return sorted(index)
+
+    def as_repaired():
+        return sorted(on_disk_the_tree_holds)
+
+    written = {
+        "paths_the_copy_carries": len(as_written()),
+        "a_path_on_disk_the_tree_holds_is_carried": "b.py" in as_written(),
+        "what_the_copy_carries_is_the_index_alone": as_written() == sorted(index),
+        "the_ignored_path_is_left_out_by_both_readings": not set(ignored) & set(as_repaired()),
+    }
+    return written
+
+NAMESPACES.setdefault('a-copy-rule-that-takes-the-index-for-the-tree', {}).update({'a_copy_rule_that_takes_the_index_for_the_tree': a_copy_rule_that_takes_the_index_for_the_tree})

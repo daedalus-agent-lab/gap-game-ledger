@@ -66,8 +66,24 @@ def check(tree: Path, *args: str) -> tuple[int, str]:
 FALLBACK_IGNORE = ("verify", "__pycache__", ".git", ".uvcache")
 
 
-def tracked_files(root: Path) -> set[str] | None:
-    """The paths git calls the record, relative to `root`; None when git cannot answer.
+def paths_a_copy_carries(root: Path) -> set[str] | None:
+    """The paths a copy of this tree must carry; None when git cannot answer.
+
+    `git ls-files -c -o --exclude-standard`: the files in the index PLUS the files on
+    disk that the tree's ignore rules do not hide. The reading used to be the index
+    alone, and that made the copy a copy of the COMMIT under the name of the tree: a
+    probe written and not yet added was in the tree, in no case, and the copy built
+    from the index left it out -- so `check.py` run in that copy named two entries
+    UNPROVEN over a file it did not have, and `selftest.py`'s "an untouched copy
+    passes" went red about a copy that was not the tree it was taken from. A copy
+    whose verdicts are quoted about this desk must carry what the desk has.
+
+    What stays out is what the ignore rules say stays out, and that is a rule the
+    TREE carries rather than one a tool happens to drop: a cache is excluded by an
+    ignore entry, not by being uncommitted. `.uvcache` is ignored in `.gitignore` for
+    exactly that reason -- the two package caches were once excluded only because uv
+    leaves a `.gitignore` containing `*` inside itself, which is the tool's rule and
+    not this repository's.
 
     None comes back when `root` is not the top of a checkout. That case is real and
     was found by the case that mutates the policy: a case tree lives inside this
@@ -83,7 +99,8 @@ def tracked_files(root: Path) -> set[str] | None:
                              cwd=root, capture_output=True, text=True)
         if top.returncode != 0 or Path(top.stdout.strip()).resolve() != root.resolve():
             return None
-        out = subprocess.run(["git", "ls-files", "-z"], cwd=root, capture_output=True, text=True)
+        out = subprocess.run(["git", "ls-files", "-z", "-c", "-o", "--exclude-standard"],
+                             cwd=root, capture_output=True, text=True)
     except OSError:
         return None
     if out.returncode != 0:
@@ -94,19 +111,19 @@ def tracked_files(root: Path) -> set[str] | None:
 def ignore_for_the_record(root: Path):
     """What a copy of the ledger must not carry.
 
-    The record is what git tracks, so a cache, a virtual environment or an
-    auditor's scratch directory is excluded by its untrackedness and not by its
-    name. That is the repair of a measured defect: the first rule was a list of
-    three names -- `verify`, `__pycache__`, `.git` -- written when those were the
-    large directories, and the tree has since grown two package caches that no
+    What stays out is what the tree's ignore rules hide, so a cache, a virtual
+    environment or an auditor's scratch directory is excluded by an ignore entry and
+    not by a name list. That is the repair of a measured defect: the first rule was a
+    list of three names -- `verify`, `__pycache__`, `.git` -- written when those were
+    the large directories, and the tree has since grown two package caches that no
     name on the list covered. A copy carried 130.0 MB of which 127.7 MB was
     `.uvcache` and `repro/.uvcache`, 32 times per run, and the run stayed green:
     a cost nobody's exit code reports is a cost nobody removes. A name list goes
-    stale the moment a new tool drops a new cache in the tree; an untracked file
-    is untracked whatever it is called. `probes/copy_cost.py` measures the result
-    and `--check` refuses a copy that carries more than the record.
+    stale the moment a new tool drops a new cache in the tree; an ignored file is
+    ignored whatever it is called. `probes/copy_cost.py` measures the result and
+    `--check` refuses a copy that carries more than the record.
     """
-    files = tracked_files(root)
+    files = paths_a_copy_carries(root)
     if files is None:
         return shutil.ignore_patterns(*FALLBACK_IGNORE)
     keep_files = set(files)

@@ -1,3 +1,6 @@
+# a package cache: excluded by THIS repository's rule, not by the tool's habit of
+# leaving a .gitignore containing `*` inside its own cache directory
+.uvcache/
 verify/
 __pycache__/
 *.pyc

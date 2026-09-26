@@ -8,9 +8,9 @@ those were the large ones, and a package cache that arrived later was not on the
 list. Every case then carried 130.0 MB of which 127.7 MB was uv's cache, 32 times
 per run, and no exit code said a word about it.
 
-The rule is now "the record is what git tracks", which cannot go stale the way a
-list of names does. This probe measures both, from the same source the runner
-uses -- it imports `ignore_for_the_record` from `verify_claims.py` instead of
+The rule is now "a copy carries the tree minus what the ignore rules hide", which cannot
+go stale the way a list of names does. This probe measures both, from the same source the
+runner uses -- it imports `ignore_for_the_record` from `verify_claims.py` instead of
 restating it, so a probe and the runner cannot drift apart.
 
     python3 probes/copy_cost.py            # what a copy carries now
@@ -21,8 +21,9 @@ restating it, so a probe and the runner cannot drift apart.
 a case must carry the record, not the tooling, and the record is a few megabytes
 while a cache is three orders of magnitude larger, so a line between them catches
 a cache without tripping on ordinary growth. The second reading is the property
-itself, and needs no number from me: **every file a copy carries is tracked, and
-every file it leaves out is not**, name by name over the whole tree. The first
+itself, and needs no number from me: **every file a copy carries is a path git reports
+for this tree -- tracked, or untracked and not ignored -- and every file it leaves out is
+ignored**, name by name over the whole tree. The first
 version of this probe printed only the budget and called that a check.
 
 **The `before` column must not be a property of the machine that ran it.** The first
@@ -43,11 +44,12 @@ with git's index; it does not show that a case NEEDS the files it carries. A cop
 can be small, exact and still the wrong copy; that is what the cases test.
 
 THE RULE HAS TWO SOURCES, and the probe reads both rather than the sentence. The
-LIST of what a copy is taken over comes from the index (`git ls-files`); the BYTES
-come from the working tree. So a file that git has added and never committed IS in
-the copy, at its worktree content, while a file on disk that was never `git add`ed
-is NOT -- three states of one file, three different answers, and a green run on a
-dirty worktree certifies neither the commit nor the tree.
+LIST of what a copy is taken over comes from git -- the index and the files on disk the
+ignore rules do not hide; the BYTES come from the working tree. The reading used to be
+the index alone, and that made the copy a copy of the COMMIT wearing the name of the tree:
+a file written and not yet `git add`ed was left out, and a verdict run in that copy read
+as doubt about an entry that cites it. `probes/carried_work.py` reports the same file
+from the other side -- work on the tree that no committed case reads.
 """
 import argparse
 import importlib.util
@@ -96,18 +98,23 @@ def tree_state(root: Path) -> str:
 
 
 def plant_fixture(root: Path) -> Path:
-    """A tiny checkout that carries an untracked cache -- the difference, manufactured.
+    """A tiny checkout that ignores a cache -- the difference, manufactured.
 
     Built here rather than found in the working tree, so that the comparison between
-    the two rules reproduces from a clean clone. The fixture lives in the system
-    temporary directory on purpose: it is a git repository of its own, and a second
+    the two rules reproduces from a clean clone. The cache is excluded because the
+    fixture's own `.gitignore` says so: an untracked cache is NOT excluded any more,
+    and the earlier fixture got its exclusion from the tool's habit of leaving an
+    ignore file inside itself. The fixture lives in the system temporary directory on
+    purpose: it is a git repository of its own, and a second
     checkout inside the ledger root would appear in every other probe's file walk.
     """
     (root / "record").mkdir(parents=True)
     (root / "record" / "a.py").write_text("a = 1\n", encoding="utf-8")
     (root / "record" / "b.json").write_text('{"b": 2}\n', encoding="utf-8")
+    (root / ".gitignore").write_text(f"{PLANTED_DIR}/\n", encoding="utf-8")
     subprocess.run(["git", "init", "-q"], cwd=root, check=True, capture_output=True)
-    subprocess.run(["git", "add", "--", "record"], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "add", "--", "record", ".gitignore"], cwd=root, check=True,
+                   capture_output=True)
     cache = root / PLANTED_DIR
     cache.mkdir()
     per_file = PLANTED_BYTES // PLANTED_FILES
@@ -167,7 +174,10 @@ def plant_source_fixture(root: Path) -> Path:
 SOURCE_EXPECTED = {
     "record.txt": (True, "MODIFIED-ON-DISK"),      # in the index, bytes from disk
     "staged.py": (True, "print('staged')"),        # added, never committed, still carried
-    "new-probe.py": (False, None),                 # on disk, never added, dropped
+    "new-probe.py": (True, "print('new')"),        # on disk, never added, carried -- this
+                                                   # is the state the copy rule used to
+                                                   # drop, and the drop made a verdict in
+                                                   # the copy read as doubt about the entry
     "gone.py": (False, None),                      # in the index, gone from disk, dropped
                                                    # in silence -- see the docstring
 }
@@ -215,24 +225,24 @@ def measure(root: Path, ignore) -> tuple[int, int, list[tuple[int, str]]]:
     return total, files, largest
 
 
-def rule_errors(root: Path, ignore, tracked: set[str] | None) -> list[tuple[str, bool, bool]]:
-    """Where the rule disagrees with the trackedness of what it was asked about.
+def rule_errors(root: Path, ignore, carried: set[str] | None) -> list[tuple[str, bool, bool]]:
+    """Where the rule disagrees with the paths git reports for this tree.
 
-    A budget is a number I chose; `rel not in tracked` is the property the rule is
-    supposed to have, and it can be read directly. Every name the rule is asked
-    about under `root` is compared with the one answer the record defines: a file
-    git does not track must be left out, and a file git tracks must be carried.
+    A budget is a number I chose; the reading of the tree is the property the rule is
+    supposed to have, and it can be read directly. Every name the rule is asked about
+    under `root` is compared with the one answer the tree defines: a path the ignore
+    rules hide must be left out, and a path the tree holds must be carried.
 
     Returns (relative path, should be left out, was left out) for each disagreement.
 
-    A directory is carried when anything under it is tracked, so the comparison
-    uses the directory prefixes of the tracked paths as well as the paths
+    A directory is carried when anything under it is carried, so the comparison
+    uses the directory prefixes of the reported paths as well as the paths
     themselves.
     """
-    if tracked is None:
+    if carried is None:
         return []
     prefixes = set()
-    for t in tracked:
+    for t in carried:
         parts = t.split("/")
         for i in range(1, len(parts)):
             prefixes.add("/".join(parts[:i]))
@@ -242,7 +252,7 @@ def rule_errors(root: Path, ignore, tracked: set[str] | None) -> list[tuple[str,
             left_out = set(ignore(dirpath, names))
             for name in names:
                 rel = (Path(dirpath) / name).relative_to(root).as_posix()
-                below = rel in tracked or rel in prefixes
+                below = rel in carried or rel in prefixes
                 should = not below
                 was = name in left_out
                 if should != was:
@@ -262,9 +272,9 @@ def main() -> int:
     cases = len(runner.CASES)
 
     rule = runner.ignore_for_the_record(LEDGER)
-    tracked = runner.tracked_files(LEDGER)
+    carried = runner.paths_a_copy_carries(LEDGER)
     now_bytes, now_files, largest = measure(LEDGER, rule)
-    wrong = rule_errors(LEDGER, rule, tracked)
+    wrong = rule_errors(LEDGER, rule, carried)
     old_rule = runner.FALLBACK_IGNORE[:3]
     old_bytes, old_files, _ = measure(
         LEDGER, lambda _d, names, keep=old_rule: [n for n in names if n in keep])
@@ -289,14 +299,15 @@ def main() -> int:
     if old_bytes > BUDGET_BYTES:
         print(f"the rule it replaced would have failed this budget by "
               f"{old_bytes / BUDGET_BYTES:.1f}x")
-    # The stronger reading, and the one that needs no number from me: every file a
-    # copy carries is tracked, and every file it leaves out is untracked.
-    if tracked is None:
-        print("the copy root is not the top of a checkout: git cannot say what the record is")
+    # The stronger reading, and the one that needs no number from me: every path a
+    # copy carries is one git reports for this tree, and every path it leaves out is one
+    # the ignore rules hide.
+    if carried is None:
+        print("the copy root is not the top of a checkout: git cannot say what this tree holds")
     else:
-        print(f"every file a copy carries is tracked, and every one it leaves out is not: "
-              f"{'yes' if not wrong else f'NO, {len(wrong)} disagree'}"
-              f"  (over {len(tracked)} tracked paths)")
+        print(f"every path a copy carries is one this tree holds, and every one it leaves "
+              f"out is ignored: {'yes' if not wrong else f'NO, {len(wrong)} disagree'}"
+              f"  (over {len(carried)} reported paths)")
         for rel, should, was in wrong[:5]:
             print(f"    {rel}: should {'be left out' if should else 'be carried'}, "
                   f"was {'left out' if was else 'carried'}")
@@ -305,25 +316,26 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="copy-cost-fixture-") as td:
         fx = plant_fixture(Path(td))
         fx_rule = runner.ignore_for_the_record(fx)
-        fx_tracked = runner.tracked_files(fx)
+        fx_carried = runner.paths_a_copy_carries(fx)
         fx_now_b, fx_now_f, _ = measure(fx, fx_rule)
         fx_old_b, fx_old_f, _ = measure(
             fx, lambda _d, names, keep=old_rule: [n for n in names if n in keep])
         difference = fx_old_b - fx_now_b
         planted_ok = (difference == PLANTED_BYTES
-                      and fx_tracked is not None and len(fx_tracked) == 2
-                      and fx_now_f == 2
-                      and fx_old_f == 2 + PLANTED_FILES)
+                      and fx_carried is not None
+                      and set(fx_carried) == {".gitignore", "record/a.py", "record/b.json"}
+                      and fx_now_f == 3
+                      and fx_old_f == 3 + PLANTED_FILES)
         print(f"fixture built by this probe, {PLANTED_BYTES:,} B in {PLANTED_FILES} "
-              f"files under {PLANTED_DIR}/ (untracked, cache-shaped):")
+              f"files under {PLANTED_DIR}/ (ignored by the fixture's own .gitignore):")
         print(f"    rule now in use:       {fx_now_b:>12,} B  {fx_now_f:>6} files")
         print(f"    the rule it replaced:  {fx_old_b:>12,} B  {fx_old_f:>6} files")
         print(f"    the two rules differ by exactly the planted cache: "
               f"{'yes' if planted_ok else 'NO'}  ({difference:,} B, planted {PLANTED_BYTES:,} B)")
 
-    # The two sources of one copy, measured. The list is the index, the bytes are the
-    # working tree: a rule stated as "what git tracks" is one sentence about two
-    # answers, and this is where the difference between them is read.
+    # The two sources of one copy, measured. The list is what git reports for the tree,
+    # the bytes are the working tree: a rule stated as "what git tracks" is one sentence
+    # about two answers, and this is where the difference between them is read.
     sources_ok = None
     with tempfile.TemporaryDirectory(prefix="copy-cost-sources-") as td:
         fx = plant_source_fixture(Path(td) / "checkout")
