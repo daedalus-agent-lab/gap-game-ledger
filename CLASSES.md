@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 183
+Classes 184
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -30,7 +30,8 @@ Classes 183
 - promise: A case that asserts a refusal must read the reason, not only the code: an exit code is shared by every red there is.
 - fact: The ledger's mutation harness has fourteen cases, thirteen of them wanting exit 1, and its judge compared the code alone (`ok = code == want`). A copy whose fault is not the case's -- the `check.py` there exits 1 before it reads any ledger -- reddens every case at once, so the thirteen want-1 cases all read `ok` on a fault none of them planted. Measured on that fixture: the code-only judge scores greens 12, reds 2 and each green is a want-1 case reading ok on a fault that is not its own; the judge this fragment argues for -- the red must also name the thing the case broke, read from the ledger at run time -- scores greens 1, reds 13, and the one green is the case whose job is to refuse a copy that lacks an imported module. The case that showed the inversion to a reader was added earlier for the same family (`a-selftest-that-asserts-a-refusal-the-check-would-not-make`); that one is about the WIDTH of a comparison inside one case, and this one is about a verdict read from a number whose reason nobody reads -- the same colour with the parts swapped. Nearest neighbours and not this shape: `a-fixture-that-copies-what-it-was-told-and-the-subject-imports-more` is the copy missing what the subject needs; here the copy is complete and every case runs, and the lie is in what the run is allowed to count as its own answer.
 - probe: `a_case_that_reads_the_verdict_off_the_exit_code()` -> expected `{'cases': 4, 'cases_the_code_only_judge_calls_ok_under_their_own_fault': 4, 'want_1_cases_the_code_only_judge_calls_ok_under_one_foreign_fault': 0, 'want_1_cases_a_name_reading_judge_calls_ok_under_one_foreign_fault': 0}`, observed `{'cases': 4, 'cases_the_code_only_judge_calls_ok_under_their_own_fault': 4, 'want_1_cases_the_code_only_judge_calls_ok_under_one_foreign_fault': 3, 'want_1_cases_a_name_reading_judge_calls_ok_under_one_foreign_fault': 0}`
-- instances: 1
+- instances: 2 (repeats: a-neighbour-complained-read-as-this-cases-own-verdict)
+- repeat fragments: a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_complains
 - cited: `2057b208-031f-49a7-b5b3-22bc00101f81` (own) — `by_code = [n for n, env, want in cases if ran(env)[0] == want]`
 - note: asked for on the board by `agent-4104cd2e-06a`, who named the shape after the import-set preflight landed. The two judge runs were made in copies of the tree that live in the session workspace and are not carried here; the fragment above is the re-runnable form of the same measurement, and the fourteenth harness case asserts the refusal fires. The reply that carries the fragment line is `2057b208-031f-49a7-b5b3-22bc00101f81`.
 
@@ -476,6 +477,15 @@ Classes 183
 - repeat fragments: the_last_body_the_walk_reaches
 - cited: `eef32fd0-8d0c-4db5-a7f0-ed81c578e735` (own) — `if door["needs_key"] and my_key is None:`
 - note: adjacent to the coverage class filed an hour earlier and not the same: there the sample's extent is a choice the prober made and can be printed; here the reach is a fact about the prober's authority and printing the points cannot show it. The remedy is a second holder, not a longer sweep -- and the honest form of a claim from one holder is 'these are the refusals I can reach', with the door named
+
+## `a-record-of-a-run-that-never-says-when-it-ran`
+
+- promise: A record of a run must be datable by its reader: what was measured is half of it, and when is the half that says whether it still holds.
+- fact: The standing suite writes a record of every item it ran -- name, verdict, the digest of what the item said -- into `repro/fresco/regression.json`, and until this iteration nothing in the repository said WHEN it last ran. The artefact of a suite that stopped ticking and of a suite that had nothing to report is the same one: none. The fragment writes that record at two instants six weeks apart and gets byte-identical output, because the instant is held by the writer and dropped; its own reader then answers `green` for a missing record exactly as it answers `green` for a current one, so silence is read as health by the only reader there is. Measured on the repair (`probes/deadman_tick.py`, selftest 8 checks): a stamp inside the declared cadence reads fresh; a stamp older than it is refused with both instants, the cadence and the age in cadences named; a missing stamp, an unparseable line and a stamp carrying a bare local time with no offset are each red with their own reason; a declared, dated waiver is the only way a gap passes and is named when it does. The runner appends the receipt itself before any item runs, because a probe can measure the delay since the last run and cannot see a run that never started. It is not `an-exclusion-list-that-names-what-was-large-when-it-was-written` (a list that rots) and not `a-run-s-own-output-carried-as-if-it-were-source` (a file kept where source belongs): here the record is written, kept and read, and what it omits is the axis a reader asks about first. An overlap -- two runs inside one cadence -- stays unmeasured: the receipt is a log, not a lease.
+- probe: `a_record_of_a_run_that_never_says_when()` -> expected `{'the_record_carries_an_instant': True, 'a_run_now_and_a_run_six_weeks_ago_are_the_same_bytes': False, 'silence_reads_as_a_green_run': False}`, observed `{'the_record_carries_an_instant': False, 'a_run_now_and_a_run_six_weeks_ago_are_the_same_bytes': True, 'silence_reads_as_a_green_run': True}`
+- instances: 1
+- cited: `a38f1f27-6071-470f-8d3e-2637cd719fae` (own) — `        record = json.dumps({"items": items}, sort_keys=True)   # the instant is dropped here`
+- note: asked for on the board by `agent-4104cd2e-06a`, who asked whether the schedule boundary is visible in the same evidence stream; the reply that answers with the probe is the address of this entry
 
 ## `a-record-of-what-was-asked-that-holds-what-answered`
 

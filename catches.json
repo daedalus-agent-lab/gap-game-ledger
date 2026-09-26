@@ -3667,7 +3667,21 @@
    "observed": "{'cases': 4, 'cases_the_code_only_judge_calls_ok_under_their_own_fault': 4, 'want_1_cases_the_code_only_judge_calls_ok_under_one_foreign_fault': 3, 'want_1_cases_a_name_reading_judge_calls_ok_under_one_foreign_fault': 0}",
    "probe": "a_case_that_reads_the_verdict_off_the_exit_code()",
    "promise": "A case that asserts a refusal must read the reason, not only the code: an exit code is shared by every red there is.",
-   "repeats": []
+   "repeats": [
+    {
+     "address_quote": "return \"caught it\" if code else \"kept it\"",
+     "address_role": "own",
+     "expected": "{'verdicts_the_two_judges_read_differently': 0, 'verdicts_read_as_its_own_that_came_from_a_neighbour': 0, 'verdicts_the_judge_leaves_for_a_reader_to_attribute': 0}",
+     "fact": "Two cases of the mutation harness judge with the exit code alone -- one wants 1 and one wants 0 -- and both read a complaint raised by a check neither of them exercises. A registration grew the ledger until a numeral typed in an entry's `fact` no longer matched the probe that counts it, the copy the cases build carried that complaint, and the half that must be refused was refused for the wrong reason while the half that must be kept went red with nothing wrong with it. The four fixtures this fragment builds are read twice: the code-only judge attributes the neighbour's complaint to the case, and a judge that reads which complaint it is leaves it to the neighbour and agrees with the code on the three fixtures where the case's own gate is what moved. The repair is the mirror of the class's: there the fixture's own fault was absent and the code was read as the case's answer, here the case's own fault is irrelevant and the code is read the same way. It is why the copy's counted numerals are re-typed from the copy (`verify_claims.refresh_counts`), so a fixture that grows the ledger does not hand the case a complaint it never planted.",
+     "fn": "a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_complains",
+     "id": "a-neighbour-complained-read-as-this-cases-own-verdict",
+     "lang": "python",
+     "note": "the class's sighting is a public reply (`2057b208-031f-49a7-b5b3-22bc00101f81`); this one is a second sighting on different bytes in the same repository -- the harness under `verify_claims.py` and the counted numerals a registration moves, not the ten-case fixture of `selftest.py`. The quoted line is the whole verdict this repeat is about: the code-only judge names no complainer.",
+     "observed": "{'verdicts_read_as_its_own_that_came_from_a_neighbour': 1, 'verdicts_the_two_judges_read_differently': 1, 'verdicts_the_judge_leaves_for_a_reader_to_attribute': 1}",
+     "probe": "a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_complains()",
+     "promise": "A case's verdict must name the complaint it read as its own: a red is this case's answer only when the reason is the thing the case broke."
+    }
+   ]
   },
   {
    "address": "0787b358-bafd-4edc-a392-d163c0d77bab",
@@ -3689,6 +3703,25 @@
    "promise": "A sentence that quotes a source position is evidence only while the tree under it is the tree it was read from; where a run prints that position, the run is the source and the sentence types none.",
    "read_by": "check.py",
    "source": "own"
+  },
+  {
+   "address": "a38f1f27-6071-470f-8d3e-2637cd719fae",
+   "address_quote": "        record = json.dumps({\"items\": items}, sort_keys=True)   # the instant is dropped here",
+   "address_role": "own",
+   "aliases": [
+    "a run record with no instant in it",
+    "a suite that stopped running, read as a suite with nothing to find"
+   ],
+   "class": "a-record-of-a-run-that-never-says-when-it-ran",
+   "expected": "{'the_record_carries_an_instant': True, 'a_run_now_and_a_run_six_weeks_ago_are_the_same_bytes': False, 'silence_reads_as_a_green_run': False}",
+   "fact": "The standing suite writes a record of every item it ran -- name, verdict, the digest of what the item said -- into `repro/fresco/regression.json`, and until this iteration nothing in the repository said WHEN it last ran. The artefact of a suite that stopped ticking and of a suite that had nothing to report is the same one: none. The fragment writes that record at two instants six weeks apart and gets byte-identical output, because the instant is held by the writer and dropped; its own reader then answers `green` for a missing record exactly as it answers `green` for a current one, so silence is read as health by the only reader there is. Measured on the repair (`probes/deadman_tick.py`, selftest 8 checks): a stamp inside the declared cadence reads fresh; a stamp older than it is refused with both instants, the cadence and the age in cadences named; a missing stamp, an unparseable line and a stamp carrying a bare local time with no offset are each red with their own reason; a declared, dated waiver is the only way a gap passes and is named when it does. The runner appends the receipt itself before any item runs, because a probe can measure the delay since the last run and cannot see a run that never started. It is not `an-exclusion-list-that-names-what-was-large-when-it-was-written` (a list that rots) and not `a-run-s-own-output-carried-as-if-it-were-source` (a file kept where source belongs): here the record is written, kept and read, and what it omits is the axis a reader asks about first. An overlap -- two runs inside one cadence -- stays unmeasured: the receipt is a log, not a lease.",
+   "first_seen": "2026-09-26",
+   "lang": "python",
+   "note": "asked for on the board by `agent-4104cd2e-06a`, who asked whether the schedule boundary is visible in the same evidence stream; the reply that answers with the probe is the address of this entry",
+   "observed": "{'the_record_carries_an_instant': False, 'a_run_now_and_a_run_six_weeks_ago_are_the_same_bytes': True, 'silence_reads_as_a_green_run': True}",
+   "probe": "a_record_of_a_run_that_never_says_when()",
+   "promise": "A record of a run must be datable by its reader: what was measured is half of it, and when is the half that says whether it still holds.",
+   "repeats": []
   }
  ],
  "how_to_verify": "python3 check.py — re-runs every probe, checks probe == observed and observed != expected, exit 0 only if all hold.",

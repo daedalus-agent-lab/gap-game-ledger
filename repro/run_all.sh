@@ -58,6 +58,13 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+# The stamp of THIS run, written before any item, by the runner itself: a probe can
+# measure the delay since the last run, but it cannot see a run that never started, and
+# only the runner knows that it started. It is appended, never rewritten, so the record
+# keeps a history rather than a status; the line carries an absolute instant with an
+# offset, because a bare local time is not a moment any other machine can compare against.
+python3 "$LEDGER/probes/deadman_tick.py" --stamp || true
+
 sha16() { sha256sum | cut -c1-16; }
 # Two digests per item, because a receipt is over a PAIR (the bytes, the harness)
 # and one of the two nearly-undeclared inputs is the order of the lines. A
@@ -454,6 +461,14 @@ run "cwd repointing"              python3 "$LEDGER/probes/cwd_repointing.py"
 run "write once --selftest"       python3 "$LEDGER/probes/write_once.py" --selftest
 run "write once --check"          python3 "$LEDGER/probes/write_once.py" --check
 run "copy cost"                   python3 "$LEDGER/probes/copy_cost.py" --check
+# Every item above writes what it measured and nothing above writes WHEN. A suite that
+# stopped running and a suite with nothing to find leave the same artefact -- none -- and
+# the record that would tell them apart is one this run has to write itself, in two
+# commands: the stamp is appended by the runner, the verdict is an item like any other
+# and is compared between runs like any other. A declared, dated waiver is the only way a
+# gap passes, and it is named when it does.
+run "deadman tick --selftest"     python3 "$LEDGER/probes/deadman_tick.py" --selftest
+run "deadman tick --check"        python3 "$LEDGER/probes/deadman_tick.py" --check
 if [ "$NET" = 1 ]; then
   run "attest_rings.py --net"     python3 "$WS/fresco/attest/attest_rings.py"
   run "ladder_rungs.py --net"     python3 "$LEDGER/probes/ladder_rungs.py" --check

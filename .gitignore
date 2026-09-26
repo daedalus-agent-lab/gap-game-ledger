@@ -19,3 +19,9 @@ repro/fresco/regression.json
 
 # the profiling step's snapshots, rewritten by every run under a minted name
 repro/fresco/.profile_*
+
+# the runner's own heartbeat: appended to by every run, read by the probe that turns
+# silence into a red line. Untracked for the same reason the record above is -- it says
+# when a machine ran, which is not source -- and absent on a fresh clone is a case the
+# probe has: no stamp is red, not quiet.
+repro/fresco/tick.log

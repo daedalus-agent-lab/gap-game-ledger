@@ -157,6 +157,35 @@ def inject_fragment(tree: Path, namespace: str, name: str, source: str) -> None:
     path.write_text(head + "\n" + source.rstrip() + "\n" + marker + tail, encoding="utf-8")
 
 
+def refresh_counts(tree: Path) -> None:
+    """Re-type the counted numerals of the copy from the copy's own probes.
+
+    A case that grows the ledger -- one more claim, one more fragment -- moves the
+    numbers an entry types beside the probe that counts them, and `check.py` then
+    reports those numbers as stale: a true complaint about a tree the case built
+    to ask a different question. Left in place it would make every such case fail
+    for the wrong reason, which is how a green check hides a broken one.
+
+    This re-types the copy's `counts.json` from the same commands `check.py` runs,
+    which is exactly what a person registering a claim does -- the fixture must not
+    be allowed to *skip* the comparison (deleting the file is a complaint of its
+    own) and must not be allowed to disagree with the probe either. The check the
+    real tree rests on is untouched: it still compares what is typed to what the
+    probe prints, on the tree that carries the typing.
+    """
+    path = tree / "counts.json"
+    spec = json.loads(path.read_text(encoding="utf-8"))
+    for row in spec.get("rows", []):
+        done = subprocess.run(row.get("cmd") or [], cwd=tree, capture_output=True,
+                              text=True, timeout=180, check=False)
+        for key in row.get("keys") or {}:
+            found = re.search(re.escape(key) + r"[ \t]+(\d+)\b", done.stdout)
+            if found:
+                row["keys"][key] = int(found.group(1))
+    path.write_text(json.dumps(spec, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
+                    encoding="utf-8")
+
+
 RIM = "a-rim-sample-quoted-as-a-measurement-of-the-band"
 EMPTY_MAX = "empty-max-raises"
 CLAMP = "clamp-no-range-validation"
@@ -257,6 +286,7 @@ def f_repeat_replaying_another_class(tree):
     rep["observed"] = "3"
     rep["expected"] = "200"
     save(tree, data)
+    refresh_counts(tree)
     code, out = check(tree)
     return code == 0 and "SHARED" in out, "a repeat's own bytes are named"
 
@@ -988,6 +1018,7 @@ def y_a_second_claim_needs_a_different_measurement(tree):
         "observed": entry["observed"], "fn": "clamp",
     })
     save(tree, data)
+    refresh_counts(tree)
     code_same, out_same = check(tree)
 
     data = load(tree)

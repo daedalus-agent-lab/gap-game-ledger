@@ -5425,3 +5425,93 @@ def a_position_typed_into_prose_beside_the_probe_that_prints_it():
 NAMESPACES['a-position-typed-into-prose-beside-the-probe-that-prints-it'] = {
     'a_position_typed_into_prose_beside_the_probe_that_prints_it': a_position_typed_into_prose_beside_the_probe_that_prints_it,
 }
+def a_record_of_a_run_that_never_says_when():
+    """A harness writes down every number a reader needs about WHAT it measured, and
+    nothing anywhere says WHEN. A run that stopped ticking and a run that had nothing to
+    find leave the same artefact -- none -- so a reader asking "is this current?" is
+    answered by the absence of a defect in the voice of the absence of a run. The record
+    below is written the same way at two instants six weeks apart: the instant is the one
+    thing the writer holds and the one thing it drops, and a green reading is manufactured
+    out of the silence. Repair: the runner appends a dated receipt of its own before any
+    item runs, and a declared, dated waiver -- not a default -- is the only way a gap
+    passes; absence and an unreadable line are red, each with its own reason.
+    """
+    import datetime
+    import json
+
+    def run_the_harness(at):            # `at` is the moment the run happened
+        # what the harness decided to keep: every item, its verdict, its digest
+        items = [{"name": "check.py", "exit": 0, "out": "4f2a"},
+                 {"name": "selftest.py", "exit": 0, "out": "91bc"}]
+        record = json.dumps({"items": items}, sort_keys=True)   # the instant is dropped here
+        return record
+
+    def read_the_record(record):
+        """The only reader there is: does this record say the run is current?"""
+        if "when" in record or "at" in record:
+            return "dated"
+        return "green"                  # nothing contradicts it, so it reads as fresh
+
+    def silence_or_a_green_run(record):
+        """A missing record beside a green one: the two are the same question."""
+        return read_the_record(record) == read_the_record("")
+
+    early, late = (datetime.datetime(2026, 8, 1, tzinfo=datetime.timezone.utc),
+                   datetime.datetime(2026, 9, 12, tzinfo=datetime.timezone.utc))
+    a, b = run_the_harness(early), run_the_harness(late)
+    return {"the_record_carries_an_instant": ("2026-" in a),
+            "a_run_now_and_a_run_six_weeks_ago_are_the_same_bytes": a == b,
+            "silence_reads_as_a_green_run": silence_or_a_green_run(a)}
+NAMESPACES.setdefault("a-record-of-a-run-that-never-says-when-it-ran", {}).update({"a_record_of_a_run_that_never_says_when": a_record_of_a_run_that_never_says_when})
+
+
+def a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_complains():
+    """A case that judges by the exit code cannot tell its own refusal from a
+    complaint raised by something else in the same tree -- in either direction.
+
+    The class was registered in the direction of a false green: one foreign reason
+    reddened every case of a fixture and the want-1 cases read `ok`. The other
+    direction arrived while repairing `verify_claims.py`: two cases of the harness
+    judge with `code == 1` and `code == 0`, a registration grew the ledger until a
+    numeral typed in an entry's `fact` no longer matched the probe that counts it,
+    and the cases read that complaint as their own gate firing (the half that must
+    be refused was refused for the wrong reason) and as their gate broken (the half
+    that must be kept went red with nothing wrong with it). The repair was not to
+    loosen the case but to keep the copy's counted numerals in step with the copy,
+    and what this fragment measures is the judge's own blindness, not the fixture's
+    fault.
+    """
+    def run_the_case(gate_fires, a_neighbour_complained):
+        """The exit code a case sees: 1 whenever anything in the tree complained."""
+        return 1 if (gate_fires or a_neighbour_complained) else 0
+
+    def code_only_judge(code):
+        """The whole verdict of the case as it was written."""
+        return "caught it" if code else "kept it"
+
+    def complaint_reading_judge(gate_fires, a_neighbour_complained):
+        """A verdict a reader can audit: whose complaint is this one?"""
+        if gate_fires:
+            return "caught it"
+        return "a neighbour complained" if a_neighbour_complained else "kept it"
+
+    fixtures = [
+        ("its own gate fired", True, False),
+        ("a neighbour complained", False, True),
+        ("a neighbour complained while its own gate fired", True, True),
+        ("nothing complained", False, False),
+    ]
+    by_code = [(name, code_only_judge(run_the_case(fired, elsewhere)))
+               for name, fired, elsewhere in fixtures]
+    by_text = [(name, complaint_reading_judge(fired, elsewhere))
+               for name, fired, elsewhere in fixtures]
+    return {
+        "verdicts_read_as_its_own_that_came_from_a_neighbour":
+            len([n for n, v in by_code if v == "caught it" and n == "a neighbour complained"]),
+        "verdicts_the_two_judges_read_differently":
+            len([n for (n, a), (m, b) in zip(by_code, by_text) if a != b]),
+        "verdicts_the_judge_leaves_for_a_reader_to_attribute":
+            len([n for n, v in by_text if v == "a neighbour complained"]),
+    }
+
+NAMESPACES.setdefault('a-case-that-reads-the-verdict-off-the-exit-code', {}).update({'a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_complains': a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_complains})

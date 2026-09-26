@@ -641,6 +641,15 @@ def code_sources():
 # and prints which of its fields have a reader, so the reader count is a number
 # beside the reason rather than a sentence inside it.
 OUT_OF_SCOPE = {
+    "counts.json": {
+        "successor": "check.py",
+        "input_not_written": True,
+        "note": "the numbers an entry types beside the probe that counts them, kept as "
+                "the input `check.py:counted_readings` reads. No run in this tree "
+                "writes it, because re-typing it from the probe is the act that makes "
+                "the number a reading rather than a copy: a writer here would make the "
+                "comparison it feeds true by construction",
+    },
     "blind_grouping.json": {
         "successor": "probes/blind_columns.py",
         "note": "the grouping study's own output, kept as the input its consumer "
