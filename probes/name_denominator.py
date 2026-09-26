@@ -247,6 +247,17 @@ def report(capture, out=sys.stdout):
             " | %d of %d payloads list this account as not eligible\n"
             % (name, shape, twice, excluded, total_named)
         )
+
+    # What this instrument cannot settle, printed so a reader does not have to guess
+    # the boundary. Each line names something the bytes in the capture do not carry.
+    out.write("\non trust, and named because the instrument cannot read it\n")
+    out.write("  the selection of the sample: which accounts were read and why they\n"
+              "    are in it, for the captures whose provenance names no rule\n")
+    out.write("  that the accounts are different operators, not one account's copies\n")
+    out.write("  that the instants the payloads carry are the instants the route wrote\n"
+              "    them, and not the clock of something in front of the route\n")
+    out.write("  whether an expired window (expires_at = computed_at + 60) means the\n"
+              "    number was computed then, or replayed then\n")
     return total
 
 
