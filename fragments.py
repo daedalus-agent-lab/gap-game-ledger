@@ -5649,6 +5649,68 @@ def _readings_of_a_survivor_table_two_revisions_apart():
 
 NAMESPACES.setdefault('a-survivor-table-read-as-a-property-of-the-mutation', {}).update({'a_survivor_table_read_as_a_property_of_the_mutation': a_survivor_table_read_as_a_property_of_the_mutation})
 
+def a_status_read_from_a_word_that_spawned_its_own_last_command():
+    """Four readings of one command that returns 7, taken the way a shell script takes them.
+
+        in the word it was run in            rc=7
+        after a command substitution         rc=0   <- basename's status, not the command's
+        after a pipeline through `head -1`   rc=0   <- head's status, not the command's
+        saved into a variable first          rc=7
+
+    The two polluted readings are not noise: a script that reports its own verdict this way
+    keeps a red run green, and the number it prints is a real number about a command that did
+    run -- the substitution's. The repair is to save the status into a variable before any
+    other command can move it (`rc=$?` immediately after the command), which the fourth line
+    does.
+    """
+    return _readings_of_a_status_the_word_beside_it_replaced()["as_written"]
+
+
+def _readings_of_a_status_the_word_beside_it_replaced():
+    """Both halves: the four numbers the words printed, and which of them belong to the command."""
+    SCRIPT = (
+        "f() { return 7; }\n"
+        "f >/dev/null 2>&1; echo \"plain=$?\"\n"
+        "f >/dev/null 2>&1; echo \"$(basename x.y) in_word=$?\"\n"
+        "out=$(f 2>&1 | head -1); echo \"pipeline=$?\"\n"
+        "f >/dev/null 2>&1; saved=$?; echo \"saved=$saved\"\n"
+    )
+    import subprocess
+
+    run = subprocess.run(["bash", "-c", SCRIPT], capture_output=True, text=True, check=False)
+    printed = dict(
+        line.split("=", 1) for line in run.stdout.splitlines() if "=" in line
+    )
+    statuses = {name: int(value) for name, value in printed.items()}
+    the_command_returns = 7
+
+    def as_written(statuses):
+        # each printed number read as THE command's status: four identical commands, and the
+        # reading reports that two of them returned 0
+        return {
+            "commands_run": 4,
+            "statuses_read_from_the_word": len(statuses),
+            "commands_the_reading_reports_as_zero":
+                sum(1 for v in statuses.values() if v == 0),
+            "rows_it_reports_the_command_returned_=%d" % the_command_returns:
+                sum(1 for v in statuses.values() if v == the_command_returns),
+        }
+
+    def as_repaired(statuses):
+        return {
+            "commands_run": 4,
+            "every_command_returns": the_command_returns,
+            "rows_the_word_reports_the_wrong_status_for":
+                sum(1 for v in statuses.values() if v != the_command_returns),
+            "rows_where_the_status_was_saved_first":
+                int(statuses.get("saved") == the_command_returns),
+        }
+
+    return {"as_written": as_written(statuses), "as_repaired": as_repaired(statuses)}
+
+
+NAMESPACES.setdefault('a-status-read-from-a-word-that-spawned-its-own-last-command', {}).update({'a_status_read_from_a_word_that_spawned_its_own_last_command': a_status_read_from_a_word_that_spawned_its_own_last_command})
+
 NAMESPACES.setdefault('a-case-that-reads-the-verdict-off-the-exit-code', {}).update({'a_repeat_that_reads_a_refusal_without_asking_who_complained': a_repeat_that_reads_a_refusal_without_asking_who_complained})
 
 
