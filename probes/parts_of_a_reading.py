@@ -22,16 +22,22 @@ This item reads the helper rather than the fragment. For every `_readings_of_*` 
   * at least one ledger entry whose probe reads that helper, so a half cannot be added
     without something reading it -- a class's own `probe`, or the `fn` of one of its
     repeats: both records carry `observed`/`expected`, and a reader that walked `probe`
-    alone read a helper named only by a repeat as one nothing reads.
+    alone read a helper named only by a repeat as one nothing reads;
+  * for every helper that DECLARES an input a caller may move (the `PERTURBATIONS` map
+    below) the answer under the moved input, different from the answer under the default
+    one. Comparing a helper's answer with the entry it records is satisfied, on every
+    tree, by a helper that RETURNS that entry: an independent review built exactly that
+    mutant -- two literal dicts equal to the entry -- and the whole suite, this item
+    included, stayed green. What a constant cannot do is follow an input.
 
     python3 probes/parts_of_a_reading.py            # every helper, and its verdict
     python3 probes/parts_of_a_reading.py --check    # exit 1 when a half is unmeasured
-    python3 probes/parts_of_a_reading.py --selftest # build four trees, require three reds
+    python3 probes/parts_of_a_reading.py --selftest # build five trees, require four reds
 
 WHAT THIS DOES NOT DO: it compares the halves against the ENTRY, so an entry whose
 `expected` was typed from the same wrong reading passes here -- the second half is then
-measured against itself. What it does reach is the case that occurred: a repaired half
-that nothing called at all.
+measured against itself. And a helper whose input no caller can vary is still separable
+from a constant by nothing here: the count of those is printed, not claimed away.
 """
 import argparse
 import importlib.util
@@ -133,8 +139,55 @@ def readings(root: pathlib.Path):
             measured.append((reader, entry,
                              repr(halves.get("as_written")) == entry["observed"],
                              repr(halves.get("as_repaired")) == entry["expected"]))
-        rows.append((name, halves, readers, measured))
+        rows.append((name, halves, readers, measured,
+                     moved_by_its_input(mod, name, halves)))
     return rows
+
+
+# The input each helper lets a caller move. A helper whose input no caller can vary is a
+# helper a written-down answer can stand in for: the probe's whole instrument is
+# `helper() == entry`, and a helper that RETURNS the entry satisfies it on every tree.
+# Where a helper declares a settable input this probe moves it and requires the answer to
+# move with it -- a constant cannot follow the input, and that is measured rather than
+# argued. The helpers not named here are the bound: nothing in this repository can
+# separate them from a constant, and the class `a-half-no-command-recomputes` records it.
+PERTURBATIONS = {
+    "_readings_of_a_survivor_table_two_revisions_apart": {
+        "rows": (
+            {"mutation": "the same mutation", "revision": "older", "survives": True},
+            {"mutation": "the same mutation", "revision": "current", "survives": False},
+        ),
+    },
+    "_readings_of_a_status_the_word_beside_it_replaced": {"the_command_returns": 3},
+}
+
+
+def moved_by_its_input(mod, name: str, halves):
+    """`None` when the helper declares nothing a caller may move, else `(moved, why)`.
+
+    `why` is the refusal's reason when the answer did not move, or did not come back:
+    an answer that is the same under a moved input is an answer the input does not feed.
+    """
+    spec = PERTURBATIONS.get(name)
+    if spec is None:
+        return None
+    helper = getattr(mod, name)
+    try:
+        moved = normalise(helper(**spec))
+    except TypeError as exc:
+        return None, (f"declares the input {sorted(spec)} and will not take it: {exc}")
+    except Exception as exc:  # noqa: BLE001 -- the reason is the finding
+        return None, (f"raised under the moved input {sorted(spec)}: "
+                      f"{type(exc).__name__}: {exc}")
+    if moved == halves:
+        return moved, (f"answers the same with {sorted(spec)} moved: the answer does not "
+                       f"come from that input, so a constant returning the entry's own "
+                       f"halves answers this control too")
+    if isinstance(moved, dict) and set(moved) == {"as_written", "as_repaired"} \
+            and repr(moved["as_written"]) == repr(moved["as_repaired"]):
+        return moved, (f"answers with two halves of one value under the moved input "
+                       f"{sorted(spec)}")
+    return moved, None
 
 
 def helper_names_typed_into(source: str) -> list:
@@ -190,7 +243,7 @@ def tallies_that_do_not_cover_the_file(source: str) -> list:
 def verdicts(rows) -> list:
     """One line per helper, and whether this tree may be green."""
     lines, bad = [], 0
-    for name, halves, readers, measured in rows:
+    for name, halves, readers, measured, moved in rows:
         if not isinstance(halves, dict) or set(halves) != {"as_written", "as_repaired"}:
             lines.append(f"FAIL {name} does not answer with two halves: "
                          f"{type(halves).__name__} {halves!r}"[:160])
@@ -199,6 +252,9 @@ def verdicts(rows) -> list:
         if repr(halves["as_written"]) == repr(halves["as_repaired"]):
             lines.append(f"FAIL {name} has two halves with one value: the repaired "
                          f"reading is the written one")
+            bad += 1
+        if moved is not None and moved[1] is not None:
+            lines.append(f"FAIL {name} {moved[1]}"[:200])
             bad += 1
         if not measured:
             lines.append(f"FAIL {name} is read by no ledger entry: "
@@ -215,6 +271,16 @@ def verdicts(rows) -> list:
                              f"the one the entry records")
                 bad += 1
     return lines, bad
+
+
+def perturbations_no_helper_answers_to(rows) -> list:
+    """The names this probe declares an input for and no helper in the tree answers to.
+
+    A perturbation naming a helper that is gone is a control that has quietly stopped
+    testing anything: it must be refused, not reported as a short list.
+    """
+    defined = {name for name, *_rest in rows}
+    return sorted(set(PERTURBATIONS) - defined)
 
 
 # ---------------------------------------------------------------- selftest
@@ -352,6 +418,44 @@ def selftest() -> int:
         bad += 0 if caught else 1
         print(f"{'ok  ' if caught else 'FAIL'} a list typed beside the file that does not "
               f"name every helper it defines is refused (exit {code.returncode})")
+
+        # The strongest mutant an independent review could build: the helper replaced by a
+        # constant that REPEATS its own entry, byte for byte. Every comparison of the
+        # helper's output with the entry -- this probe's whole instrument, and check.py's --
+        # is satisfied by it, so the refusal has to come from the input: the tree built
+        # here is only red if the control moves the declared input and the answer must
+        # follow, which a constant cannot do.
+        moved_names = [n for n in PERTURBATIONS
+                       if n in set(HELPER.findall(
+                           (src / "fragments.py").read_text(encoding="utf-8")))][:1]
+        for name in moved_names:
+            tree = pathlib.Path(td) / "constant-equals-entry"
+            tree.mkdir()
+            for f in ("fragments.py", "catches.json"):
+                shutil.copy(src / f, tree / f)
+            index = entry_index_for(tree, name)
+            if index is None:
+                print(f"FAIL the copy under test has no entry reading {name}")
+                return 1
+            i, j = index
+            ledger = json.loads((tree / "catches.json").read_text(encoding="utf-8"))
+            record = (ledger["entries"][i] if j is None
+                      else ledger["entries"][i]["repeats"][j])
+            frag = tree / "fragments.py"
+            frag.write_text(
+                frag.read_text(encoding="utf-8")
+                + "\n\ndef %s(**kw):\n    return {'as_written': %s, 'as_repaired': %s}\n"
+                % (name, record["observed"], record["expected"]),
+                encoding="utf-8")
+            code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
+                                   "--check", "--root", str(tree)],
+                                  capture_output=True, text=True)
+            caught = code.returncode == 1
+            bad += 0 if caught else 1
+            why = next((ln for ln in code.stdout.splitlines() if ln.startswith("FAIL")), "")
+            print(f"{'ok  ' if caught else 'FAIL'} a helper replaced by a constant equal to "
+                  f"its own entry is refused (exit {code.returncode})"
+                  + (f": {why}" if why else ""))
     return 1 if bad else 0
 
 
@@ -374,15 +478,22 @@ def main() -> int:
     for line, named, defined, missing, extra in stale:
         print(f"FAIL fragments.py:{line} types {named} name(s) beside the file's "
               f"{len(defined)}: never named {missing or '[]'}, not defined {extra or '[]'}")
+    orphaned = perturbations_no_helper_answers_to(rows)
+    for name in orphaned:
+        print(f"FAIL this probe declares an input for {name}, and no helper answers to it")
+    unvaryable = sorted(name for name, *_rest, moved in rows if moved is None)
     print(f"helpers with two halves  {len(rows)}")
+    print(f"helpers whose input no caller varies  {len(unvaryable)}")
     print(f"halves not read against an entry  {bad}")
     print(f"typed lists that do not cover the file  {len(stale)}")
-    if args.check and (bad or stale):
+    if args.check and (bad or stale or orphaned):
         print("REFUSED: a helper's half is not the one the entry records, or nothing in this "
-              "repository reads it -- either way the half that says what the repair does is "
-              "unwitnessed, so it can be a constant and every suite stays green; or a list "
-              "typed into fragments.py no longer covers the helpers the file defines, so a "
-              "tally taken from it is a sentence about an older file")
+              "repository reads it, or its answer does not move with the input it declares "
+              "-- either way the half that says what the repair does is unwitnessed, so it "
+              "can be a constant and every suite stays green; or a list typed into "
+              "fragments.py no longer covers the helpers the file defines, so a tally taken "
+              "from it is a sentence about an older file; or this probe declares an input "
+              "for a helper this tree does not carry, so that control tests nothing")
         return 1
     return 0
 

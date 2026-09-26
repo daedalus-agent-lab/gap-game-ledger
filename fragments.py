@@ -5609,16 +5609,26 @@ def a_survivor_table_read_as_a_property_of_the_mutation():
     return _readings_of_a_survivor_table_two_revisions_apart()["as_written"]
 
 
-def _readings_of_a_survivor_table_two_revisions_apart():
-    """Both halves: the table keyed by mutation alone, and keyed by mutation and revision."""
-    ROWS = (
-        {"mutation": "dropped the entry comparison", "revision": "older", "survives": True},
-        {"mutation": "dropped the entry comparison", "revision": "current", "survives": False},
-        {"mutation": "the repaired half compared to the observed", "revision": "older",
-         "survives": True},
-        {"mutation": "the repaired half compared to the observed", "revision": "current",
-         "survives": False},
-    )
+A_SURVIVOR_TABLE_TWO_REVISIONS_APART = (
+    {"mutation": "dropped the entry comparison", "revision": "older", "survives": True},
+    {"mutation": "dropped the entry comparison", "revision": "current", "survives": False},
+    {"mutation": "the repaired half compared to the observed", "revision": "older",
+     "survives": True},
+    {"mutation": "the repaired half compared to the observed", "revision": "current",
+     "survives": False},
+)
+
+
+def _readings_of_a_survivor_table_two_revisions_apart(
+        rows=A_SURVIVOR_TABLE_TWO_REVISIONS_APART):
+    """Both halves: the table keyed by mutation alone, and keyed by mutation and revision.
+
+    The table is a parameter, not a constant of the function: a helper whose input no
+    caller can move is a helper an answer written down once can stand in for, because
+    `helper() == entry` is satisfied by a helper that returns the entry. With the table
+    settable, the control moves it and requires both halves to move with it.
+    """
+    ROWS = rows
 
     def as_written(rows):
         # one row per mutation name, the first seen -- the revision column is dropped
@@ -5666,11 +5676,13 @@ def a_status_read_from_a_word_that_spawned_its_own_last_command():
     return _readings_of_a_status_the_word_beside_it_replaced()["as_written"]
 
 
-def _readings_of_a_status_the_word_beside_it_replaced():
-    """Both halves: the four numbers the words printed, and which of them belong to the command."""
-    # The declared return is written into the script, not asserted beside it: a constant
-    # typed in two places is one edit away from disagreeing with the fixture it describes.
-    the_command_returns = 7
+def _readings_of_a_status_the_word_beside_it_replaced(the_command_returns=7):
+    """Both halves: the four numbers the words printed, and which of them belong to the command.
+
+    The status the fixture returns is a parameter: the script is built from it rather than
+    declared beside it, so a constant typed in two places cannot drift from the fixture it
+    describes, and a control can move the status and require every row to move with it.
+    """
     SCRIPT = (
         "f() { return %d; }\n" % the_command_returns
         + "f >/dev/null 2>&1; echo \"plain=$?\"\n"
@@ -6097,7 +6109,9 @@ def _readings_of_a_half_no_command_recomputes():
                    '    return {"as_written": json.loads(e["observed"]),'
                    ' "as_repaired": json.loads(e["expected"])}\n\n'
                    ) % (name, root, entry["probe"])
-            body = re.compile(r"^def %s\(\):.*?(?=^\w|\Z)" % re.escape(name), re.M | re.S)
+            body = re.compile(
+                r"^def %s\((?:[^()]|\([^()]*\))*\):.*?(?=^\w|\Z)" % re.escape(name),
+                re.M | re.S)
             candidate = body.sub(new, text, count=1)
             try:
                 ast.parse(candidate)
