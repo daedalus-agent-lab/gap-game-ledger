@@ -36,6 +36,7 @@ Usage:
   python3 probes/floor_argument.py --predict 74       # floor(74) and floor(75)
   python3 probes/floor_argument.py --staircase 10 400 # the flat stretches over a range
   python3 probes/floor_argument.py --rungs            # the rung as two reads, not one
+  python3 probes/floor_argument.py --rungs A.json B.json   # the same reading on a named pair
 
 The rung is the part the single fixture cannot hold. `registration.active_count` is a
 live count, so a fixture is a sentence about the instant it was read at, and a probe that
@@ -685,6 +686,20 @@ def selftest(out=sys.stdout) -> int:
     code = rungs(paths=(SECOND_FIXTURE, FIXTURE), out=buf)
     checks.append(("the same pair read backwards is refused as not in reading order",
                    code == 1 and "not in reading order" in buf.getvalue()))
+    # the same refusals on the form a reader can walk: a rule only the selftest can reach
+    # is a rule no reader can be wrong about
+    code, said = _cli_out(["--rungs", str(FIXTURE), str(trick)])
+    checks.append(("the CLI form refuses the reread pair the selftest builds",
+                   code == 1 and "no rung moved" in said))
+    code, said = _cli_out(["--rungs", str(SECOND_FIXTURE), str(FIXTURE)])
+    checks.append(("the CLI form refuses the pair read backwards",
+                   code == 1 and "not in reading order" in said))
+    code, said = _cli_out(["--rungs", str(FIXTURE), str(SECOND_FIXTURE)])
+    checks.append(("the CLI form reads the shipped pair as one measurement",
+                   code == 0 and "the rung moved: N 73 -> 74, floor 22 -> 23" in said))
+    code, said = _cli_out(["--rungs", str(FIXTURE)])
+    checks.append(("the CLI form refuses a --rungs given one path",
+                   code == 2 and "not a form this probe reads" in said))
 
     # the staircase: a floor that did not move is not evidence that N did not move
     checks.append(("three consecutive N can share one floor", len({floor_from(x) for x in (74, 75, 76)}) == 1))
@@ -722,6 +737,17 @@ def _refuses_an_argument(argv: list[str]) -> tuple[int, str]:
         sys.stderr = real
 
 
+def _cli_out(argv: list[str]) -> tuple[int, str]:
+    """Run the CLI on one argv with both streams kept, so a CLI verdict is a reading."""
+    out, err = io.StringIO(), io.StringIO()
+    real = (sys.stdout, sys.stderr)
+    sys.stdout, sys.stderr = out, err
+    try:
+        return main(list(argv)), out.getvalue() + err.getvalue()
+    finally:
+        sys.stdout, sys.stderr = real
+
+
 def _refuses(fn) -> bool:
     try:
         fn()
@@ -750,11 +776,11 @@ def main(argv: list[str]) -> int:
         return predict(int(argv[1]))
     if len(argv) == 3 and argv[0] == "--staircase":
         return staircase(int(argv[1]), int(argv[2]))
-    if argv == ["--rungs"]:
-        return rungs()
+    if argv[:1] == ["--rungs"] and len(argv) in (1, 3):
+        return rungs(tuple(Path(p) for p in argv[1:]) or None, out=sys.stdout)
     sys.stderr.write(
         "refused: %r is not a form this probe reads. Forms: (no argument) | "
-        "--selftest | --check | --predict N | --staircase LO HI | --rungs\n" % (argv,))
+        "--selftest | --check | --predict N | --staircase LO HI | --rungs [FILE1 FILE2]\n" % (argv,))
     return 2
 
 
