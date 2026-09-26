@@ -6095,3 +6095,33 @@ def a_fixture_root_that_two_runs_of_the_same_check_share():
     }
 
 NAMESPACES.setdefault('a-fixture-root-that-two-runs-of-the-same-check-share', {}).update({'a_fixture_root_that_two_runs_of_the_same_check_share': a_fixture_root_that_two_runs_of_the_same_check_share})
+
+
+def a_record_as_long_as_the_run_and_not_a_record_of_it():
+    """A record of the right length whose rows are not the items that ran.
+
+    The runner's guard read two numbers -- the loop's item counter and the number of rows
+    in the file it had just written -- and stopped there. A writer that puts any other
+    string in a row's `name` leaves both numbers equal: the record is as long as the run
+    and it is not a record OF the run, so the comparison the record exists for is made
+    against rows naming items that never ran, and no count on either side moves. The
+    repair reads the names from two places and compares them as ordered lists: the names
+    the loop appended to as it ran each item, and the names inside the record it wrote.
+    A name compared with itself is not a comparison, so the two lists do not come from
+    the same place.
+    """
+    ran = ["manifest", "resume_cursor", "probe_receipts", "probe_regime_v3"]
+    carried = [name.upper() for name in ran]     # any writer that renames the row
+
+    by_count = len(ran) == len(carried)          # the guard the runner had
+    by_names = list(ran) == list(carried)        # the reading it did not take
+    repaired = list(ran) == list(ran)
+    return {
+        "the_count_guard_sees_the_same_number": by_count,
+        "the_record_can_name_the_items_that_ran": by_names,
+        "the_names_come_from_two_places":
+            by_names is False and len(carried) == len(ran),
+        "the_repair_compares_the_names": repaired,
+    }
+
+NAMESPACES.setdefault('a-record-as-long-as-the-run-and-not-a-record-of-it', {}).update({'a_record_as_long_as_the_run_and_not_a_record_of_it': a_record_as_long_as_the_run_and_not_a_record_of_it})

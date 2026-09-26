@@ -81,6 +81,16 @@ sha16() { sha256sum | cut -c1-16; }
 normalise() { sed -E 's/\bkey [0-9a-f]{16}\b/key <minted>/g'; }
 declared_lines() { grep -cE '\bkey [0-9a-f]{16}\b'; }
 
+# Two readings of the item list, from two places: the names the loop ran, appended by
+# `run` as it ran them, and the names the record carries. The row count is the same
+# number on both sides when a row is built with a name that is not the item's name, so
+# counting cannot see it -- a record whose rows number what ran and whose names are not
+# those names is a record of a different run. Ordered, because two runs of one item in
+# two orders are not two readings of one item.
+names_differ() {              # names_differ <names the loop ran> <names the record carries>
+  ! diff <(printf '%s\n' "$1") <(printf '%s\n' "$2") >/dev/null
+}
+
 # One row of the record: <name>|<the command's status>|<the harness's verdict>|...
 # Two numbers, two writers, and for as long as they shared one field a reader could
 # not tell them apart. The verdict is 0 when the item passed, 1 when the item failed,
@@ -211,6 +221,15 @@ if [ "$SELFTEST" = 1 ]; then
     && echo "self-test: a record from before the split is named as incomparable, not diffed" \
     || { echo "self-test FAILED: an old-format record is compared as if it carried both fields"; echo "$d"; exit 1; }
   rm -f "$m1" "$m2"
+  # The record must be a record OF THIS RUN, not merely as long as this run. A record
+  # whose rows number what ran while their names are not the names that ran is a record
+  # of another run, and every count on both sides agrees. Both halves measured here: two
+  # different name lists are refused, one list against itself is not.
+  na="$(printf 'alpha\nbeta')"; nb="$(printf 'alpha\nbeta\nbeta|0|0|aaaaaaaaaaaaaaaa|0|bbbbbbbbbbbbbbbb')"
+  names_differ "$na" "$na" && { echo "self-test FAILED: a name list compared with itself reads as a difference"; exit 1; }
+  names_differ "$na" "$nb" \
+    && echo "self-test: a record carrying rows in the right NUMBER but not the names the run used is refused by the names, not by the count" \
+    || { echo "self-test FAILED: a record whose names are not the run's names passes the guard"; exit 1; }
   exit 0
 fi
 
@@ -225,6 +244,13 @@ fails=0; rows=""; items_run=0
 # over that one line: sensitive to every item, unable to name any of them.
 add_row() { rows="${rows}$1"$'\n'; items_run=$((items_run + 1)); }
 
+# The names this run ran, written by `run` as it takes the item's name. This is the
+# second place the item list is read from: the row string is built from the name at one
+# call site, this file from the name argument at another, and a row built with some
+# other name disagrees with it while the row count does not.
+NAMES="$(mktemp)"
+names_seen() { printf '%s\n' "$1" >> "$NAMES"; }
+
 # `band_profile.py` runs under `uv run --with pillow`. On a fresh clone the first
 # of the two --stable runs prints the download and the second does not, so the
 # item is skipped as unstable -- a difference between two runs of a package
@@ -236,6 +262,7 @@ env UV_CACHE_DIR="$UV_CACHE_DIR" uv run --with pillow python -c 'pass' >/dev/nul
 
 run() {                       # run <name> <command...>
   local name="$1"; shift
+  names_seen "$name"
   local log="/tmp/run_all.$$.log"
   # The tree the item is about to read, digested BEFORE it reads. An item whose
   # output depends on the working tree (a provenance row, a dirty-file count) is
@@ -583,6 +610,27 @@ if [ "$recorded" != "$items_run" ] || [ "$printed" != "$items_run" ]; then
          "the record" "$recorded" "$printed" "$items_run"
   fails=$((fails + 1))
   record_ok=0
+fi
+# The same length is not the same record. The rows are as many as the items ran and the
+# names inside them are not the items that ran: the count guard passes, the record is of
+# another run, and the next run is compared against it. Read from outside the row string,
+# because a name compared with itself is not a comparison.
+if [ "$record_ok" = 1 ]; then
+  ran_names="$(cat "$NAMES")"
+  record_names="$(python3 - "$newreg" <<'PY'
+import json, sys
+for item in json.load(open(sys.argv[1]))["items"]:
+    print(item["name"])
+PY
+)"
+  if names_differ "$ran_names" "$record_names"; then
+    printf 'FAIL %-34s the record carries %s row(s) for %s item(s) run, and its rows are\n' \
+           "the record" "$recorded" "$items_run"
+    printf '     not the items that ran. First difference:\n'
+    diff <(printf '%s\n' "$ran_names") <(printf '%s\n' "$record_names") | sed -n '1,6p' | sed 's/^/       /'
+    fails=$((fails + 1))
+    record_ok=0
+  fi
 fi
 # The replacement is the guard's own decision and happens only where the guard passed.
 # Written after the check instead, it destroyed the record the check exists to protect:
