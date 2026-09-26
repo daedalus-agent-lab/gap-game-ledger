@@ -1,0 +1,32 @@
+{
+ "read_by": "check.py:counted_readings -- each number below is typed in the `fact` of the class it names, and this file is the check that counts it",
+ "rows": [
+  {
+   "class": "a-class-registers-fragments-that-no-entry-reads",
+   "cmd": [
+    "python3",
+    "probes/unread_fragments.py"
+   ],
+   "keys": {
+    "callable registrations": 298,
+    "claims (entries + repeats)": 235,
+    "distinct objects among them": 295,
+    "namespaces": 184,
+    "registrations named by no claim": 58
+   }
+  },
+  {
+   "class": "a-guard-that-reads-only-the-form-the-defect-was-reported-in",
+   "cmd": [
+    "python3",
+    "probes/registry_collisions.py"
+   ],
+   "keys": {
+    "classes": 184,
+    "distinct names": 305,
+    "in more than one class": 2,
+    "registrations": 308
+   }
+  }
+ ]
+}

@@ -29,6 +29,7 @@ from collections import Counter
 import json
 import os
 import re
+import subprocess
 import sys
 import textwrap
 from pathlib import Path
@@ -1440,6 +1441,59 @@ def policy_hash() -> str:
     return hashlib.sha256(source.encode("utf-8")).hexdigest()[:16]
 
 
+COUNTS = HERE / "counts.json"
+
+
+def counted_readings() -> tuple:
+    """The numbers an entry types beside the check that counts them, read live.
+
+    A `fact` says "182 namespaces, 296 callable registrations, ... registrations
+    named by no claim". Those five numbers were readings of one tree, typed into
+    prose by hand, and nothing in the run could tell when the tree moved on: the
+    registry grew, the class's own registration changed it, and the sentence went
+    on printing the old reading. A number typed beside a probe that could count it
+    and read by no check is the class `a-count-typed-beside-the-checks-instead-of-
+    counted`, and this is the reader for it.
+
+    `counts.json` names, per class, the command that counts and the numbers the
+    entry types. Each key must appear in that command's own output followed by its
+    number, and the number must be the one the entry types. Runs the command; a
+    command that fails to run is a problem, not a pass.
+
+    Returns (keys read, problems).
+    """
+    if not COUNTS.exists():
+        return 0, ["%s is not here, so every number an entry types beside a probe is "
+                   "unread: a check whose input is missing reports no problem instead "
+                   "of the problem" % COUNTS.name]
+    spec = json.loads(COUNTS.read_text(encoding="utf-8"))
+    read, problems = 0, []
+    for row in spec.get("rows", []):
+        cmd = row.get("cmd") or []
+        cls = row.get("class", "?")
+        if not cmd:
+            problems.append(f"{cls} names no command to count with")
+            continue
+        try:
+            done = subprocess.run(cmd, cwd=HERE, capture_output=True, text=True,
+                                  timeout=180)
+        except (OSError, subprocess.SubprocessError) as exc:
+            problems.append(f"{cls}: {' '.join(cmd)} did not run: {exc}")
+            continue
+        for key, want in (row.get("keys") or {}).items():
+            read += 1
+            found = re.search(re.escape(key) + r"[ \t]+(\d+)\b", done.stdout)
+            if not found:
+                problems.append(
+                    f"{cls}: the count {key!r} is typed in the entry and "
+                    f"{' '.join(cmd)} does not print it")
+            elif int(found.group(1)) != want:
+                problems.append(
+                    f"{cls}: {key} is typed as {want} and read as {found.group(1)} "
+                    f"from {' '.join(cmd)}")
+    return read, problems
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--class", dest="only")
@@ -1709,6 +1763,12 @@ def main() -> int:
                  + ", ".join(prov_unproven) if prov_unproven else ""))
     for line in prov_bad:
         print(f"UNPROVEN  {'':<48} {line}")
+    counts_read, counts_bad = counted_readings()
+    if counts_read:
+        print(f"counted numerals   {counts_read - len(counts_bad)}/{counts_read} "
+              f"numbers typed beside the command that counts them read the same here")
+    for line in counts_bad:
+        print(f"COUNT     {'':<48} {line}")
     if unknown:
         return 2
     stale = False
@@ -1726,7 +1786,7 @@ def main() -> int:
     else:
         print(f"index    {INDEX.name} is current")
     return 1 if (miss or holds_fail or collisions or bad or stale or prov_bad
-                 or cited_missing) else 0
+                 or cited_missing or counts_bad) else 0
 
 
 if __name__ == "__main__":

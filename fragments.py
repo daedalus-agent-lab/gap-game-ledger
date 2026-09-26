@@ -5372,3 +5372,56 @@ def a_case_that_reads_the_verdict_off_the_exit_code():
 NAMESPACES.setdefault("a-case-that-reads-the-verdict-off-the-exit-code", {}).update(
     {"a_case_that_reads_the_verdict_off_the_exit_code":
      a_case_that_reads_the_verdict_off_the_exit_code})
+
+
+def a_position_typed_into_prose_beside_the_probe_that_prints_it():
+    """A position typed into prose is a measurement of the day it was typed.
+
+    The entry `an-out-of-scope-reason-carrying-a-clause-no-run-measures` typed the
+    positions that read a record's three fields -- `check.py:1247` for `label`,
+    `check.py:864` for `why`. The probe that prints those positions,
+    `probes/blind_columns.py`, prints `check.py:1250` and `check.py:865` on the
+    current tree: three lines were added above one of them and one line above the
+    other, and no run compares the sentence to the probe, so the sentence went on
+    reporting a tree that no longer exists. The class is not a stale number: it is
+    a POSITION kept as prose, where the probe that prints the live position is
+    named in the same sentence and never read for it.
+
+    Reproduced here on four lines of source, so the two positions are derived by a
+    reader rather than typed: the reader runs twice, once on the source as it was
+    and once after three lines are inserted above, the typed positions stay put,
+    and nothing in the record compares them.
+    """
+    def positions(lines, field):
+        """The positions that read `field`, derived -- never typed."""
+        import re
+        pattern = re.compile(r"\.get\(%r\)" % field)
+        return ["src.py:%d" % (n + 1) for n, line in enumerate(lines)
+                if pattern.search(line)]
+
+    def readers(source):
+        lines = source.splitlines()
+        return {"label": positions(lines, "label"),
+                "why": positions(lines, "why")}
+
+    # The source as it was when the sentence was written, and the positions the
+    # sentence typed: one from each reader, frozen at that moment.
+    before = readers("x = row.get('label')\ny = row.get('why')\n")
+    typed = {name: found[0] for name, found in before.items()}
+
+    # The same source with three lines above it: the file grew, the positions moved.
+    after = readers("# note\n# note\n# note\n" + "x = row.get('label')\n"
+                    "y = row.get('why')\n")
+    printed = {name: found[0] for name, found in after.items()}
+
+    moved = sorted(name for name in typed if typed[name] != printed[name])
+    # Nothing in the record reads the sentence against the probe: prose is prose.
+    compared_by_a_run = False
+    return {"positions_typed": len(typed),
+            "positions_that_moved": len(moved),
+            "positions_compared_by_a_run": compared_by_a_run}
+
+
+NAMESPACES['a-position-typed-into-prose-beside-the-probe-that-prints-it'] = {
+    'a_position_typed_into_prose_beside_the_probe_that_prints_it': a_position_typed_into_prose_beside_the_probe_that_prints_it,
+}

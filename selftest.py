@@ -99,7 +99,9 @@ class Result:
         return f"exit {self.rc}"
 
 
-COMPLAINT = re.compile(r"(?m)^(MISS|DUPE|HOLD|BADADDRESS|index|UNCITED|DECLINED)")
+COMPLAINT = re.compile(
+    r"(?m)^(MISS|DUPE|HOLD|BADADDRESS|index|UNCITED|DECLINED|COUNT)"
+)
 
 LEDGER = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))
 
@@ -138,7 +140,7 @@ def the_first_repeat_with_an_address() -> str:
 MISSING_MODULE_CODE = 2  # no case may want this: the fixture refused before it ran
 
 
-def with_tree(mutate, extra_module="", mutate_tree=None, drop=()):
+def with_tree(mutate, extra_module="", mutate_tree=None, drop=(), mutate_counts=None):
     """Copy the ledger, apply `mutate(catches)`, return check.py's exit code.
 
     `drop` leaves names out of the copy on purpose, so the case that says the copy must
@@ -171,6 +173,12 @@ def with_tree(mutate, extra_module="", mutate_tree=None, drop=()):
         )
         if mutate_tree:
             mutate_tree(tree)
+        if mutate_counts:
+            counts = json.loads((tree / "counts.json").read_text(encoding="utf-8"))
+            mutate_counts(counts)
+            (tree / "counts.json").write_text(
+                json.dumps(counts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+            )
         done = run(tree)
         return Result(done.returncode, done.stdout + done.stderr)
 
@@ -284,6 +292,20 @@ def main() -> int:
 
     cases.append(("a class probe's observed value is wrong", with_tree(flip_class_probe), 1,
                   catches_first_class()))
+
+    def a_number_the_probe_no_longer_prints(counts):
+        """The class this case exists for: a numeral typed beside a maybe-count.
+
+        The entry types five numbers; the check reads them from the probe. A number that
+        has drifted must be refused, or the sentence is a reading of nothing.
+        """
+        counts["rows"][0]["keys"]["namespaces"] = 999999
+
+    cases.append(
+        ("a counted numeral that no longer reads the same",
+         with_tree(lambda c: None, mutate_counts=a_number_the_probe_no_longer_prints),
+         1, "namespaces is typed as 999999")
+    )
 
     def second_class_same_logic(catches):
         """Two class names for one shape: the ledger counts the same lie twice."""
