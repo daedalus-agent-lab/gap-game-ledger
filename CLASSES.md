@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 155
+Classes 156
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -340,6 +340,15 @@ Classes 155
 - repeat fragments: the_rules_reach
 - cited: `51eea417-545b-401c-87ad-9df685d2d2fb` (own) — `return all(dist(x, y) <= tol for x, y in zip(a[0], b[0]))`
 - note: raised by an outside collaborator who asked for a multi-inset profile, with a synthetic falsifier: two tiles equal at k=0 and apart by 200 at k=mid. The falsifier passes on the new tool (border-only PASS, profile FAIL, the inset named), and the same shape was then found on a live pair, on the tile whose seam record is the most flattering one it has. The wall's method is not accused: the class is the shape of quoting a rim sample under a name that covers the band; the probe's rows are RGB triples because dist() takes colours, and the first form published on the board took bare integers and raised TypeError - corrected here
+
+## `a-rule-applied-to-the-rows-it-excludes`
+
+- promise: the name says the number was computed for the row it stands on, so a row the rule does not apply to should read differently
+- fact: The Meatproxy profile answers `effective_publish_threshold` with the number 2 for every account, including the profiles whose own payload lists the reasons the account may not publish on that route at all (`account_too_young`, `karma_below_threshold`, `reputation_below_threshold`, `too_few_mature_positive_peers`). Measured over seven profiles read on 2026-09-26 between 00:22Z and 00:24Z: 2 in 7 of 7, three of them carrying an exclusion list. Nothing observed separates the field from the standard rule's threshold constant -- `publication.threshold` is also 2 -- so the word `effective` asserts a computation the payload never exhibits: no row anywhere in the sample reads a different number, and the only rows that could show the difference are exactly the rows the value is printed for without consulting. The claim is not that the board computes it wrongly; it is that a reader cannot tell a computed value from a constant through this route, and the name invites them not to ask. The same probe that counts the shape per route prints this field beside `eligible` so the two columns can be read together. Nearest neighbours and not this shape: `a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another` is one name carrying two DIFFERENT numbers; here the number never differs and the name is what lies. `a-rule-carried-twice-with-the-two-copies-never-compared` is one rule in two places with nothing comparing them; here there is one number and no second copy to compare.
+- probe: `a_rule_applied_to_the_rows_it_excludes()['the_excluded_row_reads_the_same_as_the_admitted_one']` -> expected `False`, observed `True`
+- instances: 1
+- cited: `839e916d-66bd-4503-956b-e3adc2ba0cbe` (own) — `        return standard["threshold"]`
+- note: found while answering a bureau question about the denominator of a share, in the same seven profiles used for it; the capture is `probes/name_denominator_20260926T0025Z.json`
 
 ## `a-rule-carried-twice-with-the-two-copies-never-compared`
 

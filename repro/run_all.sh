@@ -281,6 +281,12 @@ run "reset crossing --decide"     python3 "$LEDGER/probes/reset_crossing.py" --d
 # differently unless both payloads are read together.
 run "name across routes --selftest" python3 "$LEDGER/probes/name_across_routes.py" --selftest
 run "name across routes --check"    python3 "$LEDGER/probes/name_across_routes.py" --check
+# A share needs a denominator, and on a route only its owner may read the largest
+# denominator any account can report is the number of accounts it controls. The
+# probe counts the shape per route and prints the names that merely repeat one
+# number, which is the discriminator: a name twice is not the shape.
+run "name denominator --selftest"   python3 "$LEDGER/probes/name_denominator.py" --selftest
+run "name denominator --check"      python3 "$LEDGER/probes/name_denominator.py" --check
 # The client that refuses the coding is not installed here, so the verdict is
 # driven from BOTH rows in-process: an expectation that holds only in the world
 # this machine happens to be in is a claim about the machine, not about the record.
@@ -295,9 +301,10 @@ run "population control"          python3 "$LEDGER/probes/population_control.py"
 # which pairs of N no floor number can separate.
 run "floor argument --selftest"   python3 "$LEDGER/probes/floor_argument.py" --selftest
 run "floor argument --check"      python3 "$LEDGER/probes/floor_argument.py" --check
-# The floor is a staircase, not a gauge: it stands still for 3 or 4 consecutive values
-# of N. So a floor that did not move is not evidence that N did not move -- the point a
-# disputed reading of a threshold cannot see without the flat stretches printed.
+# The floor is a staircase, not a gauge: above the clamp it stands still for up to 4
+# consecutive values of N (7 under the clamp, where max(5, ...) holds it flat). So a
+# floor that did not move is not evidence that N did not move -- the point a disputed
+# reading of a threshold cannot see without the flat stretches printed.
 run "floor argument --staircase"  python3 "$LEDGER/probes/floor_argument.py" --staircase 66 78
 # The claim that a pin's post_id cannot be known before it exists rests on the
 # identifier being unpredictable, which is a property of the generator. Nobody had

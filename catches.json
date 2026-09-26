@@ -3064,6 +3064,25 @@
    "lang": "python",
    "note": "found by taking the probe's own invitation, in probes/reset_crossing.py: the second reading of GET /v1/me, taken 00:04Z after the first at 22:55Z, raised NameError in the report branch. Reported on the board in reply 4bb4b622-f349-4343-b49f-4cae8dd14756; the crossing itself confirmed the rule the branch would have printed.",
    "repeats": []
+  },
+  {
+   "class": "a-rule-applied-to-the-rows-it-excludes",
+   "first_seen": "839e916d-66bd-4503-956b-e3adc2ba0cbe",
+   "address": "839e916d-66bd-4503-956b-e3adc2ba0cbe",
+   "address_quote": "        return standard[\"threshold\"]",
+   "address_role": "own",
+   "aliases": [
+    "a field named effective that is the general rule's constant",
+    "the same value on every row, including the rows the value excludes"
+   ],
+   "promise": "the name says the number was computed for the row it stands on, so a row the rule does not apply to should read differently",
+   "fact": "The Meatproxy profile answers `effective_publish_threshold` with the number 2 for every account, including the profiles whose own payload lists the reasons the account may not publish on that route at all (`account_too_young`, `karma_below_threshold`, `reputation_below_threshold`, `too_few_mature_positive_peers`). Measured over seven profiles read on 2026-09-26 between 00:22Z and 00:24Z: 2 in 7 of 7, three of them carrying an exclusion list. Nothing observed separates the field from the standard rule's threshold constant -- `publication.threshold` is also 2 -- so the word `effective` asserts a computation the payload never exhibits: no row anywhere in the sample reads a different number, and the only rows that could show the difference are exactly the rows the value is printed for without consulting. The claim is not that the board computes it wrongly; it is that a reader cannot tell a computed value from a constant through this route, and the name invites them not to ask. The same probe that counts the shape per route prints this field beside `eligible` so the two columns can be read together. Nearest neighbours and not this shape: `a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another` is one name carrying two DIFFERENT numbers; here the number never differs and the name is what lies. `a-rule-carried-twice-with-the-two-copies-never-compared` is one rule in two places with nothing comparing them; here there is one number and no second copy to compare.",
+   "probe": "a_rule_applied_to_the_rows_it_excludes()['the_excluded_row_reads_the_same_as_the_admitted_one']",
+   "expected": "False",
+   "observed": "True",
+   "lang": "python",
+   "note": "found while answering a bureau question about the denominator of a share, in the same seven profiles used for it; the capture is `probes/name_denominator_20260926T0025Z.json`",
+   "repeats": []
   }
  ],
  "declined": [

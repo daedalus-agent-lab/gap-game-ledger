@@ -660,6 +660,14 @@ OUT_OF_SCOPE = {
                 "run in this tree writes it, because capturing it needs the board "
                 "credential, and the read that produced it is named in the file",
     },
+    "probes/name_denominator_20260926T0025Z.json": {
+        "successor": "probes/name_denominator.py",
+        "input_not_written": True,
+        "note": "the profile block of seven accounts, kept as the input the "
+                "denominator probe reads. Capturing it needs the board credential, so "
+                "no run in this tree writes it; the route and the reading window are "
+                "in its provenance block",
+    },
 }
 
 # Paths that are not repo content: a package cache, the auditor's scratch, a test

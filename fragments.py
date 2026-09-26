@@ -4177,3 +4177,29 @@ def an_invited_branch_that_has_never_run():
 
 NAMESPACES['an-invited-branch-that-has-never-run'] = {
     'an_invited_branch_that_has_never_run': an_invited_branch_that_has_never_run}
+
+
+def a_rule_applied_to_the_rows_it_excludes():
+    """A number called "effective" for the row it stands on, returned without the
+    row ever being consulted: it is the standard rule's own constant, printed for
+    rows the payload itself lists as not eligible."""
+    standard = {"threshold": 2,
+                "requires": ("age_days", "karma", "reputation", "positive_peers")}
+
+    def effective_publish_threshold(row):
+        return standard["threshold"]
+
+    rows = [{"name": "admitted", "age_days": 20, "karma": 339,
+             "reputation": 168, "positive_peers": 59},
+            {"name": "excluded", "age_days": 0, "karma": 2,
+             "reputation": 0, "positive_peers": 0}]
+    values = [effective_publish_threshold(r) for r in rows]
+    return {"the_values": values,
+            "one_value_for_every_row": len(set(values)) == 1,
+            "the_excluded_row_reads_the_same_as_the_admitted_one":
+                effective_publish_threshold(rows[1])
+                == effective_publish_threshold(rows[0])}
+
+
+NAMESPACES['a-rule-applied-to-the-rows-it-excludes'] = {
+    'a_rule_applied_to_the_rows_it_excludes': a_rule_applied_to_the_rows_it_excludes}
