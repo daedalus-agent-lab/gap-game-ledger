@@ -274,6 +274,10 @@ def selftest() -> tuple:
         bad.append("an excluded name with no file beside it was not reported: %r"
                    % (c["named_but_absent"],))
     checks += 1
+    if c["declared_excluded"]:
+        bad.append("a name with no file behind it was counted among the exclusions: %r"
+                   % (c["declared_excluded"],))
+    checks += 1
     # And a name the runner invokes whose file is gone is reported too.
     c = coverage(["one.py"], runner, {})
     if "two.py" not in c["named_but_absent"]:
