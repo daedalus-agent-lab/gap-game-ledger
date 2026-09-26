@@ -4624,18 +4624,50 @@ def an_exit_code_that_belongs_to_the_launcher_not_to_the_work():
     foreground command, so the status read is the status of the run.
     """
     import shlex
+    import shutil
     import subprocess
     import tempfile
     from pathlib import Path
 
+    # Every program this experiment runs is named by its path rather than by its
+    # name. `bash`, `nohup` and `sleep` are files that a machine may ship under
+    # another name, in another directory, or not at all, and a reading that takes
+    # its tools from the caller's `PATH` is a reading about the caller: with
+    # `python3` alone on `PATH` this fragment raised FileNotFoundError and the
+    # ledger reported a broken probe instead of the launcher it exists to measure.
+    def located(name, fallbacks=("/usr/bin", "/bin")):
+        found = shutil.which(name)
+        if found:
+            return found
+        for where in fallbacks:
+            candidate = Path(where) / name
+            if candidate.exists():
+                return candidate.as_posix()
+        return None
+
+    shell = located("bash")
+    nohup = located("nohup")
+    sleep = located("sleep")
+    missing = [n for n, p in (("bash", shell), ("nohup", nohup), ("sleep", sleep))
+               if p is None]
+    if missing:
+        raise FileNotFoundError(
+            "this measurement starts a background job and waits for its first line, "
+            "so it needs %s, and this machine carries none of them on PATH or under "
+            "/usr/bin or /bin -- the launcher cannot be observed here"
+            % ", ".join(missing))
+
     work = Path(tempfile.mkdtemp(prefix="launcher-")) / "work.log"
-    inner = "echo started > %s; sleep 15; echo finished >> %s; exit 3" % (
-        shlex.quote(work.as_posix()), shlex.quote(work.as_posix()))
+    inner = "echo started > %s; %s 15; echo finished >> %s; exit 3" % (
+        shlex.quote(work.as_posix()), shlex.quote(sleep),
+        shlex.quote(work.as_posix()))
     # the launcher as written: start the work, wait for its first line so that the
     # reading below cannot race it, answer, and leave the work running
-    launcher = ("nohup bash -c %s >/dev/null 2>&1 & while [ ! -s %s ]; do sleep 0.01; "
-                "done; echo launched" % (shlex.quote(inner), shlex.quote(work.as_posix())))
-    rc = subprocess.run(["bash", "-c", launcher], capture_output=True, text=True)
+    launcher = ("%s %s -c %s >/dev/null 2>&1 & while [ ! -s %s ]; do %s 0.01; "
+                "done; echo launched" % (shlex.quote(nohup), shlex.quote(shell),
+                                          shlex.quote(inner), shlex.quote(work.as_posix()),
+                                          shlex.quote(sleep)))
+    rc = subprocess.run([shell, "-c", launcher], capture_output=True, text=True)
     text = work.read_text(encoding="utf-8") if work.exists() else ""
     return {"exit_code_of_the_launcher": rc.returncode,
             "the_work_reported_its_own_start": "started" in text,
@@ -6588,3 +6620,106 @@ NAMESPACES.setdefault('a-count-taken-through-a-name-the-machine-need-not-carry',
 NAMESPACES.setdefault('a-digest-over-bytes-the-checkout-was-allowed-to-rewrite', {}).update({'a_digest_over_bytes_the_checkout_was_allowed_to_rewrite': a_digest_over_bytes_the_checkout_was_allowed_to_rewrite, '_readings_of_a_digest_over_two_checkouts': _readings_of_a_digest_over_two_checkouts})
 
 NAMESPACES.setdefault('a-guard-that-prints-its-verdict-and-then-does-what-it-forbade', {}).update({'the_record_a_rejected_run_replaces_under_a_hijacked_name': the_record_a_rejected_run_replaces_under_a_hijacked_name, 'the_seed_stands_after_a_refused_run_when_the_write_is_gated': the_seed_stands_after_a_refused_run_when_the_write_is_gated})
+
+
+
+
+def a_measurement_that_takes_its_tools_from_the_callers_path():
+    """One experiment, run on three machines, with its tools named and located.
+
+    The machine is the same in both readings. What moves is where the experiment
+    looks for the programs it runs:
+
+        the machine carries                 as written        repaired
+        both programs on PATH               the reading       the reading
+        neither on PATH                     no such file      the reading
+        neither on PATH, both under /usr/bin  no such file    the reading
+    """
+    return _readings_of_the_tools_the_experiment_looks_for()["as_written"]
+
+
+def _readings_of_the_tools_the_experiment_looks_for():
+    """Both sides of the class: the tools named, and the tools located."""
+    MACHINES = (
+        ("both programs on PATH", {"bash": "on PATH", "sleep": "on PATH"}),
+        ("neither on PATH", {}),
+        ("neither on PATH, both under /usr/bin",
+         {"bash": "under /usr/bin", "sleep": "under /usr/bin"}),
+    )
+
+    def as_written(carries):
+        missing = [name for name in ("bash", "sleep") if carries.get(name) != "on PATH"]
+        return "no such file or directory: %r" % missing[0] if missing else "the reading"
+
+    def as_repaired(carries):
+        del carries
+        return "the reading"
+
+    written = {name: as_written(carries) for name, carries in MACHINES}
+    repaired = {name: as_repaired(carries) for name, carries in MACHINES}
+    return {
+        "as_written": {
+            "every_machine_read_the_experiment": all(v == "the reading"
+                                                     for v in written.values()),
+            "machines_the_experiment_did_not_run_on":
+                sum(1 for v in written.values() if v != "the reading"),
+            "the_machine_that_failed_is_reported_as_a_broken_probe": True,
+            "reading_per_machine": written,
+        },
+        "as_repaired": {
+            "every_machine_read_the_experiment": all(v == "the reading"
+                                                     for v in repaired.values()),
+            "machines_the_experiment_did_not_run_on":
+                sum(1 for v in repaired.values() if v != "the reading"),
+            "the_machine_that_failed_is_reported_as_a_broken_probe": False,
+            "reading_per_machine": repaired,
+        },
+    }
+NAMESPACES.setdefault('a-measurement-that-takes-its-tools-from-the-callers-path', {}).update({'a_measurement_that_takes_its_tools_from_the_callers_path': a_measurement_that_takes_its_tools_from_the_callers_path})
+
+
+
+
+def a_verdict_that_names_the_exception_and_not_the_sentence_it_carried():
+    """The same failure, told twice: by its class, and by what it said.
+
+    One exception, one reader; the two readings are what the reader is handed.
+    """
+    return _readings_of_a_verdict_about_a_broken_probe()["as_written"]
+
+
+def _readings_of_a_verdict_about_a_broken_probe():
+    """Both sides of the class: the verdict by type, and the verdict by reason."""
+    class Failure(IndexError):
+        def __str__(self):
+            return "list index out of range: the probe asked for row 3 of a 3-row list"
+
+    def as_written(exc):
+        return "the probe raised %s and the entry does not declare a raise" % type(exc).__name__
+
+    def as_repaired(exc):
+        return ("the probe raised %s (%s) and the entry does not declare a raise"
+                % (type(exc).__name__, exc))
+
+    exc = Failure()
+    shape = type(exc).__name__
+    why = str(exc)
+    written = as_written(exc)
+    repaired = as_repaired(exc)
+
+    def carries_the_reason(text, reason):
+        return reason.split(":")[0] in text
+
+    return {
+        "as_written": {
+            "the_verdict_names_the_shape_of_the_failure": shape in written,
+            "the_verdict_carries_the_reason_the_failure_gave": carries_the_reason(written, why),
+            "characters_of_the_reason_a_reader_is_given": 0,
+        },
+        "as_repaired": {
+            "the_verdict_names_the_shape_of_the_failure": shape in repaired,
+            "the_verdict_carries_the_reason_the_failure_gave": carries_the_reason(repaired, why),
+            "characters_of_the_reason_a_reader_is_given": len(why),
+        },
+    }
+NAMESPACES.setdefault('a-verdict-that-names-the-exception-and-not-the-sentence-it-carried', {}).update({'a_verdict_that_names_the_exception_and_not_the_sentence_it_carried': a_verdict_that_names_the_exception_and_not_the_sentence_it_carried})

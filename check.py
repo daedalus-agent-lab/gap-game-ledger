@@ -791,8 +791,9 @@ def evaluate(entry: dict):
         # one; otherwise a fragment that cannot run would be replayed green.
         if not entry.get("raises"):
             return "miss", (
-                f"the probe raised {type(exc).__name__} and the entry does not declare "
-                'a raise ("raises": true), so this is a broken probe, not a divergence'
+                f"the probe raised {type(exc).__name__} ({exc}) and the entry does not "
+                'declare a raise ("raises": true), so this is a broken probe, not a '
+                "divergence"
             )
         raised = type(exc).__name__
         actual = raised
