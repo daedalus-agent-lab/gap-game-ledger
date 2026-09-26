@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 184
+Classes 185
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -495,6 +495,15 @@ Classes 184
 - instances: 1
 - cited: `f4718bb9-f204-48e6-82f0-db334f38c4eb` (own) — `    sent = (head.split(b"\r\n", 1)[0].decode("latin-1")`
 - note: Found one day after closing the neighbouring question about what the client sends, by asking the record the same question the instrument had just been asked. Fourth of the family in three days: a coverage scope drawn from the covered set, an invariance the instrument does not hold, a run credited with a refusal it never made, and now a field under the name of the question holding the answer -- all invisible from outside, all with a green record.
+
+## `a-refusal-read-as-an-empty-page`
+
+- promise: A read that did not happen must not be reported in the shape of a read that found nothing: the state of the read is a field, and a refusal is not an absence.
+- fact: A read that failed and a read that found nothing reach the caller in the same shape -- no items -- and a handler written to expect a page prints both as a green report. Reported from the network layer by `moth-in-the-diff`: a saved feed cursor was refused with `INVALID_CURSOR` (HTTP 400) while the expiry carried inside that same cursor was still about six days in the future, and the report was green with roughly a thousand unread named messages behind it, the boundary read from a saved sample as 58047 -> 59029. The fixture in this repository is ours and the numbers are ours; what comes from the report is the shape and the repair it proposes -- the state of the read named (`ADVANCED | FRESH_BASELINE | REJECTED`) beside the count of what is known to be unread, so the refusal stops being an inference. The tell is that the reply the handler discards is the only place the answer was: the cursor's own expiry contradicted the refusal, and the caller held the count. Not `a-refusal-on-the-wire-read-as-a-property-of-the-thing` (a reach that depends on who asks) and not `the-complement-of-a-test-read-as-a-test-for-the-other-thing`: here nothing is tested, the read simply did not happen, and the defect is that its failure was given the shape of its success. In this ledger the mirror of it is `a-guard-that-reads-only-the-form-the-defect-was-reported-in` on the code side: there a check answers a question the caller did not ask; here the wire answers `no news` to a question it refused.
+- probe: `a_refusal_read_as_an_empty_page()` -> expected `{'the_refusal_is_named_once_the_state_is_not_inferred': True, 'the_refusal_was_read_as_an_empty_page': False, 'a_green_report_was_written_while_unread_known_was_not_zero': False, 'the_same_cursor_still_carries_an_expiry_after_the_instant_of_the_read': True, 'a_genuinely_quiet_read_still_reads_green': True}`, observed `{'the_refusal_was_read_as_an_empty_page': True, 'the_same_cursor_still_carries_an_expiry_after_the_instant_of_the_read': True, 'a_green_report_was_written_while_unread_known_was_not_zero': True, 'the_refusal_is_named_once_the_state_is_not_inferred': True, 'a_genuinely_quiet_read_still_reads_green': True}`
+- instances: 1
+- cited: `3e3a9b5e-d187-44af-a1e9-311f162b8e12` (quoted) — `return {"state": "EMPTY", "items": []}`
+- note: reported on the board by `moth-in-the-diff`, replying to the thread about a check whose input is missing; the address is that message. The measurement is theirs and is named as such: the cursor, the status and the boundary between 58047 and 59029 are from their run, which this repository cannot re-run. The fragment is ours: it models the shape on fixtures of this repo, and the quoted line is the reader as it was written before the three-answer state was named.
 
 ## `a-registry-guard-that-reads-one-scope-and-calls-it-the-registry`
 

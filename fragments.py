@@ -5515,3 +5515,59 @@ def a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_comp
     }
 
 NAMESPACES.setdefault('a-case-that-reads-the-verdict-off-the-exit-code', {}).update({'a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_complains': a_repeat_that_reads_the_verdict_off_the_exit_code_while_a_foreign_check_complains})
+
+
+def a_refusal_read_as_an_empty_page():
+    """A refusal that is answered like a successful empty page, and printed green.
+
+    The shape was reported from the network layer by `moth-in-the-diff`: a saved
+    feed cursor was refused with `INVALID_CURSOR` (HTTP 400) while the expiry
+    carried inside that same cursor was still about six days in the future, and the
+    handler, written to expect a page, treated every failed read as "nothing new" --
+    so it wrote a green report with roughly a thousand unread named messages behind
+    it. The reason this is not simply "an error was swallowed" is that the two
+    answers are indistinguishable AT THE CALLER: `{"items": []}` is exactly what a
+    genuinely quiet feed returns, and the thing that would separate them -- the
+    cursor's own expiry, and the count of what is known to be unread -- is in the
+    reply the handler threw away.
+
+    The fixture below is ours, not theirs: a refused read, a cursor whose own expiry
+    sits after the instant of the read, and a count of unread messages the caller
+    already holds. The reader as it was written, and the three-answer reader whose
+    state is named beside the count, are both run over it.
+    """
+    def read_page_as_it_was_written(status, body, unread_known):
+        """The handler of the report: a read that failed is a feed with no news."""
+        if status != 200:
+            return {"state": "EMPTY", "items": []}
+        return {"state": "ADVANCED", "items": body.get("items", [])}
+
+    def read_page_naming_its_state(status, body, unread_known):
+        """The repair the report proposes: the state is named, not inferred."""
+        if status != 200:
+            return {"state": "REJECTED", "items": [], "unread_known": unread_known}
+        items = body.get("items", [])
+        if not items:
+            return {"state": "FRESH_BASELINE" if unread_known else "ADVANCED",
+                    "items": [], "unread_known": unread_known}
+        return {"state": "ADVANCED", "items": items, "unread_known": unread_known}
+
+    asked_at = "2026-09-26T05:00:00+00:00"
+    cursor = {"exp": "2026-10-02T05:00:00+00:00"}
+    unread_known = 982
+    refused = read_page_as_it_was_written(400, {"cursor": cursor["exp"]}, unread_known)
+    named = read_page_naming_its_state(400, {"cursor": cursor["exp"]}, unread_known)
+    quiet = read_page_naming_its_state(200, {"items": []}, 0)
+    return {
+        "the_refusal_was_read_as_an_empty_page": refused["state"] == "EMPTY",
+        "the_same_cursor_still_carries_an_expiry_after_the_instant_of_the_read":
+            cursor["exp"] > asked_at,
+        "a_green_report_was_written_while_unread_known_was_not_zero":
+            refused["state"] == "EMPTY" and unread_known > 0,
+        "the_refusal_is_named_once_the_state_is_not_inferred":
+            named["state"] == "REJECTED" and named["unread_known"] == unread_known,
+        "a_genuinely_quiet_read_still_reads_green":
+            quiet["state"] in ("FRESH_BASELINE", "ADVANCED") and not quiet["items"],
+    }
+
+NAMESPACES.setdefault('a-refusal-read-as-an-empty-page', {}).update({'a_refusal_read_as_an_empty_page': a_refusal_read_as_an_empty_page})

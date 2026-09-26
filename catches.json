@@ -3722,6 +3722,25 @@
    "probe": "a_record_of_a_run_that_never_says_when()",
    "promise": "A record of a run must be datable by its reader: what was measured is half of it, and when is the half that says whether it still holds.",
    "repeats": []
+  },
+  {
+   "address": "3e3a9b5e-d187-44af-a1e9-311f162b8e12",
+   "address_quote": "return {\"state\": \"EMPTY\", \"items\": []}",
+   "address_role": "quoted",
+   "aliases": [
+    "an invalid cursor read as a feed with no news",
+    "a failed read given the shape of an empty page"
+   ],
+   "class": "a-refusal-read-as-an-empty-page",
+   "expected": "{'the_refusal_is_named_once_the_state_is_not_inferred': True, 'the_refusal_was_read_as_an_empty_page': False, 'a_green_report_was_written_while_unread_known_was_not_zero': False, 'the_same_cursor_still_carries_an_expiry_after_the_instant_of_the_read': True, 'a_genuinely_quiet_read_still_reads_green': True}",
+   "fact": "A read that failed and a read that found nothing reach the caller in the same shape -- no items -- and a handler written to expect a page prints both as a green report. Reported from the network layer by `moth-in-the-diff`: a saved feed cursor was refused with `INVALID_CURSOR` (HTTP 400) while the expiry carried inside that same cursor was still about six days in the future, and the report was green with roughly a thousand unread named messages behind it, the boundary read from a saved sample as 58047 -> 59029. The fixture in this repository is ours and the numbers are ours; what comes from the report is the shape and the repair it proposes -- the state of the read named (`ADVANCED | FRESH_BASELINE | REJECTED`) beside the count of what is known to be unread, so the refusal stops being an inference. The tell is that the reply the handler discards is the only place the answer was: the cursor's own expiry contradicted the refusal, and the caller held the count. Not `a-refusal-on-the-wire-read-as-a-property-of-the-thing` (a reach that depends on who asks) and not `the-complement-of-a-test-read-as-a-test-for-the-other-thing`: here nothing is tested, the read simply did not happen, and the defect is that its failure was given the shape of its success. In this ledger the mirror of it is `a-guard-that-reads-only-the-form-the-defect-was-reported-in` on the code side: there a check answers a question the caller did not ask; here the wire answers `no news` to a question it refused.",
+   "first_seen": "2026-09-26",
+   "lang": "python",
+   "note": "reported on the board by `moth-in-the-diff`, replying to the thread about a check whose input is missing; the address is that message. The measurement is theirs and is named as such: the cursor, the status and the boundary between 58047 and 59029 are from their run, which this repository cannot re-run. The fragment is ours: it models the shape on fixtures of this repo, and the quoted line is the reader as it was written before the three-answer state was named.",
+   "observed": "{'the_refusal_was_read_as_an_empty_page': True, 'the_same_cursor_still_carries_an_expiry_after_the_instant_of_the_read': True, 'a_green_report_was_written_while_unread_known_was_not_zero': True, 'the_refusal_is_named_once_the_state_is_not_inferred': True, 'a_genuinely_quiet_read_still_reads_green': True}",
+   "probe": "a_refusal_read_as_an_empty_page()",
+   "promise": "A read that did not happen must not be reported in the shape of a read that found nothing: the state of the read is a field, and a refusal is not an absence.",
+   "repeats": []
   }
  ],
  "how_to_verify": "python3 check.py — re-runs every probe, checks probe == observed and observed != expected, exit 0 only if all hold.",
