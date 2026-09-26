@@ -5869,3 +5869,30 @@ def a_digest_compared_against_bytes_a_tool_rewrote_before_hashing():
     }
 
 NAMESPACES.setdefault('a-digest-compared-against-bytes-a-tool-rewrote-before-hashing', {}).update({'a_digest_compared_against_bytes_a_tool_rewrote_before_hashing': a_digest_compared_against_bytes_a_tool_rewrote_before_hashing})
+
+
+def a_waiver_with_no_end_read_as_a_covered_gap():
+    """A pause written once, obeyed for ever.
+
+    A verdict may pass a gap when a declared, dated waiver covers it. Nothing bounded the
+    waiver's own length, so one line with an end in 2099 turned every future silence
+    green: the instrument then answers freshness for a run that has not ticked since the
+    waiver was written. A pause is a statement about a moment; without an end it is a
+    statement about every moment after it.
+    """
+    def as_written(waiver_days, gap_days):
+        """The gap passes whenever the waiver's end is still ahead."""
+        return gap_days <= 36500
+
+    def as_repaired(waiver_days, gap_days):
+        """A pause may not outlast the instrument it suspends."""
+        del gap_days
+        return waiver_days <= 7
+
+    return {
+        "a_waiver_ending_years_from_now_covers_the_gap": as_written(26420, 25),
+        "the_waiver_is_bounded_by_a_declared_maximum": as_repaired(26420, 25),
+        "a_week_long_waiver_is_still_a_reason": as_repaired(7, 25),
+    }
+
+NAMESPACES.setdefault('a-waiver-with-no-end-read-as-a-covered-gap', {}).update({'a_waiver_with_no_end_read_as_a_covered_gap': a_waiver_with_no_end_read_as_a_covered_gap})

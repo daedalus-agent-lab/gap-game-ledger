@@ -19,7 +19,10 @@ verdict should not have to parse a sentence to learn which question was answered
               readable.
 
 A declared, dated waiver is the only way a gap is allowed, and it is named when it
-is the reason the gap passed.
+is the reason the gap passed. A waiver is itself bounded -- a pause longer than
+`MAX_WAIVER_SECONDS` is refused as a reason and NAMED in the refusal -- because a
+waiver without an end is a way to declare the heartbeat silent for good, and one line
+written once would then answer freshness for every future week.
 
   python3 probes/deadman_tick.py --stamp            # the runner's line
   python3 probes/deadman_tick.py --check            # the verdict
@@ -35,6 +38,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
 STAMP = REPO / "repro" / "fresco" / "tick.log"
 CADENCE_SECONDS = 24 * 3600
+# A pause may not outlast the instrument it suspends: a waiver longer than this is a way
+# to declare the silence permanent, and it is refused as a reason rather than obeyed.
+MAX_WAIVER_SECONDS = 7 * 24 * 3600
 
 
 def parse_stamp(path: pathlib.Path):
@@ -95,10 +101,14 @@ def verdict(path, now, cadence):
     gap = (now - newest).total_seconds()
     if gap <= cadence:
         return "fresh", newest
+    refused = []
     for start, end, text in waivers(path):
+        if (end - start).total_seconds() > MAX_WAIVER_SECONDS:
+            refused.append((start, end, text))
+            continue
         if start <= newest and now <= end:
             return "fresh", (newest, "a declared waiver covers this gap: %s" % text)
-    return "stale", (newest, now, cadence, gap)
+    return "stale", (newest, now, cadence, gap, refused)
 
 
 def stamp(path, now):
@@ -123,10 +133,17 @@ def check(path, now, cadence):
             print("fresh: a run stamp inside the declared cadence of %d s" % cadence)
         return 0
     if state == "stale":
-        newest, then, cad, gap = detail
+        newest, then, cad, gap, refused = detail
         print("FAIL the newest run stamp is %s, %d s before now at %s, and the declared "
               "cadence is %d s: this run has been silent for %.1f cadences" % (
                   newest.isoformat(), int(gap), then.isoformat(), cad, gap / cad))
+        for start, end, text in refused:
+            print("FAIL a waiver %s -- %s is %d days long, longer than the declared "
+                  "maximum of %d days, so it is not a reason for this gap: a pause with no "
+                  "end answers freshness for every week to come (%s)" % (
+                      start.isoformat(), end.isoformat(),
+                      (end - start).total_seconds() / 86400,
+                      MAX_WAIVER_SECONDS / 86400, text))
         return 1
     print("FAIL %s %s" % (state.upper(), detail))
     return 1
@@ -139,6 +156,13 @@ FIXTURE = """# a run stamp file
 WAIVER = """# a run stamp file
 2026-09-20T04:00:00+00:00\trun completed
 # waiver 2026-09-20T00:00:00+00:00 | 2026-09-27T00:00:00+00:00 | the fixture tree was frozen
+"""
+
+# A pause written once and given an end far beyond the cadence it suspends: measured as a
+# reason, it would answer freshness for every week from here on.
+WAIVER_ENDLESS = """# a run stamp file
+2026-09-01T04:00:00+00:00\trun completed
+# waiver 2026-09-01T00:00:00+00:00 | 2099-01-01T00:00:00+00:00 | the tree is frozen for good
 """
 
 
@@ -199,16 +223,30 @@ def selftest() -> int:
         same = said(fresh, now) == said(fresh, now + datetime.timedelta(minutes=17))
         red = said(stale, now)
         named = "2026-09-01T04:00:00+00:00" in red and "86400" in red
-        # 9. the two red states are told apart by name, not by a sentence a reader
+        # The refused waiver reaches the REFUSAL, not only the verdict: the line a
+        # reader sees names the waiver, its length and the maximum it exceeded.
+        endless = tmp / "endless.log"; endless.write_text(WAIVER_ENDLESS, encoding="utf-8")
+        endless_red = said(endless, now)
+        refusal_names_it = ("longer than the declared maximum" in endless_red
+                            and "the tree is frozen for good" in endless_red)        # 9. the two red states are told apart by name, not by a sentence a reader
         # would have to parse: a first-ever tick and a corrupt stamp are different
         # repairs. Under a name-only reader they were one state.
         case("a first ever tick is named apart from a corrupt stamp", missing, "red",
              "a run that never happened", want_state="no_baseline")
         case("a corrupt stamp is named apart from a first ever tick", bad, "red",
              "is not a timestamp", want_state="unreadable")
-        checks.append((same and named,
-                       "the green line is run-stable, the red line dates the gap",
-                       "stable" if same and named else "moves", "stable"))
+        # 10. a waiver with no end is not a reason. A pause longer than the declared
+        # maximum leaves the gap RED and the refusal names the waiver and its length,
+        # because one line written once would otherwise answer freshness for every
+        # week from here on.
+        endless = tmp / "endless.log"; endless.write_text(WAIVER_ENDLESS, encoding="utf-8")
+        case("a waiver with an end past the maximum is not a reason for the gap",
+             endless, "red", "the tree is frozen for good", want_state="stale")
+        checks.append((same and named and refusal_names_it,
+                       "the green line is run-stable, the red line dates the gap, the "
+                       "refused waiver is named",
+                       "stable" if same and named and refusal_names_it else "moves",
+                       "stable"))
     failed = [c for c in checks if not c[0]]
     for ok, name, state, want in checks:
         print("ok   %-52s %s" % (name, state) if ok
