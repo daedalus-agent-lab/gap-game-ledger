@@ -652,7 +652,7 @@ OUT_OF_SCOPE = {
                 "written by that probe, read by it on the next run, and superseded "
                 "as a reading by the line it prints about the crossing",
     },
-    "probes/politics_n_20260925T2355Z.json": {
+    "probes/politics_n_20260925T2315Z.json": {
         "successor": "probes/floor_argument.py",
         "input_not_written": True,
         "note": "the captured numbers standing for N in the governance payload, kept "
