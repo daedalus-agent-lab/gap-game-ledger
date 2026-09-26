@@ -104,6 +104,11 @@ row_of() { printf '%s|%s|%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" "$5" "$6"; }
 # The record carries two numbers per item and they have two writers, so the comparison
 # between two records is a function here rather than a heredoc in the middle of the run:
 # --self-test has to be able to call the same printer the run calls.
+# The line names the fields that MOVED, and only those. Printing all five pairs leaves
+# the reader to compare ten numbers to find the one that changed, which is the question
+# the line exists to answer; an unchanged field repeated beside a changed one is a
+# sentence about the record, not a finding. --self-test below measures both halves: a
+# row differing in one field names that field and does not name the others.
 diff_records() {              # diff_records <previous record> <this record>
   python3 - "$1" "$2" <<'PY'
 import json, sys
@@ -113,6 +118,7 @@ if prev.get("items") and "cert" not in prev["items"][0]:
     print("    it carries `exit` alone, written by three different branches, so nothing")
     print("    here compares two runs of one record. The next run records both fields.")
     sys.exit(0)
+FIELDS = ("exit", "cert", "out", "set", "norm")
 a = {i["name"]: (i["exit"], i.get("cert"), i["out"], i.get("set"), i["normalised"])
      for i in prev.get("items", [])}
 b = {i["name"]: (i["exit"], i.get("cert"), i["out"], i.get("set"), i["normalised"])
@@ -123,9 +129,9 @@ fresh = [n for n in b if n not in a]
 if moved:
     print("moved since the last recorded run on this tree:")
     for n in moved:
-        print(f"    {n}: exit {a[n][0]}->{b[n][0]}  cert {a[n][1]}->{b[n][1]}  "
-              f"out {a[n][2]}->{b[n][2]}  set {a[n][3]}->{b[n][3]}  "
-              f"norm {a[n][4]}->{b[n][4]}")
+        pairs = [f"{f} {a[n][k]}->{b[n][k]}"
+                 for k, f in enumerate(FIELDS) if a[n][k] != b[n][k]]
+        print(f"    {n}: " + "  ".join(pairs))
 if gone or fresh:
     print(f"items added {fresh or 'none'}, removed {gone or 'none'}")
 if not (moved or gone or fresh):
@@ -215,6 +221,15 @@ if [ "$SELFTEST" = 1 ]; then
   echo "$d" | grep -q 'cert 1->2' \
     && echo "self-test: a verdict the harness wrote is not readable as a status the command had" \
     || { echo "self-test FAILED: the harness's own verdict is not separated from the command's status"; echo "$d"; exit 1; }
+  printf '{"items":[{"name":"refuses","exit":0,"cert":0,"out":"a","set":"a","normalised":0}]}\n' > "$m1"
+  printf '{"items":[{"name":"refuses","exit":0,"cert":0,"out":"b","set":"a","normalised":0}]}\n' > "$m2"
+  d="$(diff_records "$m1" "$m2")"
+  echo "$d" | grep -q 'out a->b' \
+    && echo "self-test: the comparison names the field that moved" \
+    || { echo "self-test FAILED: the comparison does not name the field that moved"; echo "$d"; exit 1; }
+  echo "$d" | grep -qE 'cert |exit |set ' \
+    && { echo "self-test FAILED: a field that did NOT move is named beside the one that did"; echo "$d"; exit 1; } \
+    || echo "self-test: the fields that did not move are not named"
   printf '{"items":[{"name":"refuses","exit":2,"out":"a","set":"a","normalised":0}]}\n' > "$m1"
   d="$(diff_records "$m1" "$m2")"
   echo "$d" | grep -q 'predates the separated verdict field' \
