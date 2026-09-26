@@ -6284,3 +6284,32 @@ def an_attempt_gate_that_counts_fields_instead_of_reading_the_head():
     return dict(written)
 
 NAMESPACES.setdefault('an-attempt-gate-that-counts-fields-instead-of-reading-the-head', {}).update({'an_attempt_gate_that_counts_fields_instead_of_reading_the_head': an_attempt_gate_that_counts_fields_instead_of_reading_the_head})
+
+
+def a_difference_line_that_prints_the_fields_that_did_not_move():
+    """One changed field, five pairs printed: does the line name the change?
+
+    Two records of one item differing in `out` alone. The first printer walks every field
+    and prints its pair, so the line states the movement and does not name it; the second
+    prints only the fields whose values differ. Both readings are computed here on the same
+    pair of rows, so the divergence is a value and not a description.
+    """
+    fields = ("exit", "cert", "out", "set", "norm")
+    before = ("0", "0", "a", "a", "0")
+    after = ("0", "0", "b", "a", "0")
+
+    def as_written():
+        return [f"{f} {x}->{y}" for f, x, y in zip(fields, before, after)]
+
+    def as_repaired():
+        return [f"{f} {x}->{y}" for f, x, y in zip(fields, before, after) if x != y]
+
+    written = {
+        "the_line_carries_a_pair_for_every_field":
+            len(as_written()) == len(fields),
+        "the_reader_must_compare_ten_numbers_to_find_the_one_that_moved":
+            len(as_written()) > len(as_repaired()),
+    }
+    return dict(written)
+
+NAMESPACES.setdefault('a-difference-line-that-prints-the-fields-that-did-not-move', {}).update({'a_difference_line_that_prints_the_fields_that_did_not_move': a_difference_line_that_prints_the_fields_that_did_not_move})
