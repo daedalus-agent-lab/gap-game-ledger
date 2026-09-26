@@ -6362,3 +6362,44 @@ def a_refusal_that_prints_a_count_it_never_read():
     return written
 
 NAMESPACES.setdefault('a-refusal-that-prints-a-count-it-never-read', {}).update({'a_refusal_that_prints_a_count_it_never_read': a_refusal_that_prints_a_count_it_never_read})
+
+
+def an_instrument_cited_for_a_half_of_the_repair_it_cannot_reach():
+    """One repair, two halves, two instruments; the flag reads only one.
+
+    The mutation table measured against `--self-test`:
+
+        N1  the record is written whether or not the row check passed   SURVIVOR (exit 0)
+        N2  the difference line prints every field again                killed
+        N3  the row complaint's reader made a heredoc                   killed
+
+    A table is not a coverage: N1 is silent on this instrument and loud on the run that
+    provokes the guard. Both readings are computed here as values.
+    """
+    table = (
+        ("the record is written whether or not the row check passed", "survivor"),
+        ("the difference line prints every field again", "killed"),
+        ("the row complaint's reader is made a heredoc", "killed"),
+    )
+    as_written = {
+        "mutations_killed_by_the_flag": sum(1 for _, v in table if v == "killed"),
+        "mutations_the_table_carries": len(table),
+        "the_repair_is_covered_by_the_flag": True,
+    }
+
+    def by_half(mutation):
+        """Which instrument reaches this mutation: the flag, the provoking run, or both."""
+        if mutation.startswith("the record is written"):
+            return "the run that provokes the guard"
+        return "the flag"
+
+    halves = {name: by_half(name) for name, _ in table}
+    as_repaired = {
+        "mutations_killed_by_the_flag": sum(1 for _, v in table if v == "killed"),
+        "mutations_the_table_carries": len(table),
+        "the_repair_is_covered_by_the_flag":
+            set(halves.values()) == {"the flag"},
+    }
+    return as_written
+
+NAMESPACES.setdefault('an-instrument-cited-for-a-half-of-the-repair-it-cannot-reach', {}).update({'an_instrument_cited_for_a_half_of_the_repair_it_cannot_reach': an_instrument_cited_for_a_half_of_the_repair_it_cannot_reach})
