@@ -262,6 +262,16 @@ def selftest(out=sys.stdout):
     checks.append(("a float value off its own integer sum is refused",
                    bool(lattice_violations([201.6 / (N * N)], N, [201]))
                    and not lattice_violations([201.4 / (N * N)], N, [201])))
+    # And the integer sum is the AUTHORITY, not the float: when the two disagree, the
+    # sum decides. Both halves above can pass on a helper that ignores the third
+    # argument and rounds the float instead -- at 201.6 the float lands on an even
+    # 202, so parity refuses it on the mutant's own reading, and at 201.4 it lands on
+    # 201, so the mutant accepts it too. This row is the one where the two readings
+    # part: the value is 201 and the sum given with it is 203, odd as n is odd, so a
+    # parity-only or float-rounded reader accepts a pair that cannot come from a draw.
+    checks.append(("the integer sum, not the rounded float, is the authority",
+                   bool(lattice_violations([201.0 / (N * N)], N, [203]))
+                   and not lattice_violations([201.0 / (N * N)], N, [201])))
     # And the helper is not bound to this n: a second run at another odd n is read too.
     other = simulate(99, 5, runs=500)
     checks.append(("the lattice reading holds at another odd n (n=99)",

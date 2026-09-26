@@ -19,25 +19,29 @@ import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-FILES = ("check.py", "fragments.py", "holds.py", "catches.json", "CLASSES.md")
+sys.path.insert(0, str(HERE))
+from verify_claims import ignore_for_the_record  # noqa: E402
 
 
-def record_of_this_tree() -> list:
-    """The files this tree has in the record: what git tracks, not a list of names.
+def copy_the_ledger(tree: Path) -> None:
+    """Copy this tree the way the case runner copies it: by the record, not by a list.
 
-    A hand list is a sentence about what the tree held when it was written: it named
-    five files, and the sixth -- `verify_claims.py`, imported by check.py halfway down
-    its own length -- was missing from the copy, so the case that asserts an untouched
-    copy passes was red for as long as nobody ran this file. Where git cannot answer
-    (an export, a bare copy), the list above is the fallback.
+    Two repairs live here, both measured. The first was a hand list of five files used
+    as the fallback where git cannot answer: it named five and `verify_claims.py` --
+    imported by check.py halfway down its own length -- was the sixth, so in a tree
+    exported without `.git` (`git archive HEAD | tar -x`) the case that asserts an
+    untouched copy passes was RED. That is the very tree the revision gate tells a
+    reader to build, so the red was in the recipe this ledger publishes. The second
+    was the same list used the other way round: a name in the record and gone from
+    disk raised FileNotFoundError out of `shutil.copy`, so a worktree with one deleted
+    file produced a traceback instead of the sentence about what the copy lacks.
+
+    `ignore_for_the_record` is the rule the case runner and `probes/copy_cost.py`
+    already use -- the record is what git tracks, and where git cannot answer a small
+    set of GENERATED names is excluded. A hand list here would be a third definition of
+    the same rule, which is how the two failures above happened.
     """
-    try:
-        out = subprocess.run(["git", "ls-files", "-z"], cwd=HERE,
-                             capture_output=True, text=True, check=True).stdout
-    except (OSError, subprocess.CalledProcessError):
-        return list(FILES)
-    names = [n for n in out.split("\0") if n]
-    return names or list(FILES)
+    shutil.copytree(HERE, tree, ignore=ignore_for_the_record(HERE))
 
 
 def modules_the_subject_imports() -> list:
@@ -48,8 +52,8 @@ def modules_the_subject_imports() -> list:
     every want-1 case read `ok` for a missing-import exit 1 and the single want-0 case
     read `FAIL`. The requirement is readable off the subject: every top-level import in
     `check.py` that names a `.py` file beside it must be resolvable where `check.py`
-    runs. `record_of_this_tree` supplies what the copy has; this supplies what it needs;
-    a requirement that is never tested against the thing that must satisfy it is a
+    runs. `copy_the_ledger` supplies what the copy has; this supplies what it needs; a
+    requirement that is never tested against the thing that must satisfy it is a
     sentence, so `with_tree` tests them against each other before a case runs.
     """
     import ast
@@ -71,6 +75,9 @@ def run(tree: Path) -> int:
     ).returncode
 
 
+MISSING_MODULE_CODE = 2  # no case may want this: the fixture refused before it ran
+
+
 def with_tree(mutate, extra_module="", mutate_tree=None, drop=()):
     """Copy the ledger, apply `mutate(catches)`, return check.py's exit code.
 
@@ -78,18 +85,22 @@ def with_tree(mutate, extra_module="", mutate_tree=None, drop=()):
     hold what the subject imports has a copy that does not.
     """
     with tempfile.TemporaryDirectory() as tmp:
-        tree = Path(tmp)
-        copied = [n for n in record_of_this_tree() if n not in set(drop)]
-        for name in copied:
-            target = tree / name
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy(HERE / name, target)
-        missing = [n for n in modules_the_subject_imports() if n not in set(copied)]
+        tree = Path(tmp) / "ledger"
+        copy_the_ledger(tree)
+        for name in drop:
+            (tree / name).unlink(missing_ok=True)
+        copied = {p.relative_to(tree).as_posix() for p in tree.rglob("*") if p.is_file()}
+        missing = [n for n in modules_the_subject_imports() if n not in copied]
         if missing:
-            raise AssertionError(
-                "the copy is missing modules the subject imports: %r -- with them absent "
-                "every case exits 1 for that reason, so the want-1 cases read `ok` and "
-                "the want-0 case carries the whole report" % (missing,))
+            # Refuse to run the case, but say so instead of raising: an exception here
+            # reached the caller as a traceback that named no case, and the value below
+            # can never equal a wanted 0 or 1, so the refusal is reported as its own red
+            # line. It is the same colour inversion either way -- with a module absent
+            # every want-1 case exits 1 for that reason and reads `ok` -- and one case
+            # exists to assert this refusal fires.
+            print("     fixture refused: the copy lacks %r, which the subject imports"
+                  % (missing,))
+            return MISSING_MODULE_CODE
         if extra_module:
             with (tree / "fragments.py").open("a", encoding="utf-8") as fh:
                 fh.write(extra_module)
@@ -265,11 +276,7 @@ def main() -> int:
         needed = modules_the_subject_imports()
         if not needed:
             raise AssertionError("the subject imports no module beside it: nothing to drop")
-        try:
-            with_tree(lambda c: None, drop=[needed[0]])
-        except AssertionError:
-            return 1
-        return 0
+        return 1 if with_tree(lambda c: None, drop=[needed[0]]) == MISSING_MODULE_CODE else 0
 
     cases.append(
         ("a copy missing what the subject imports", copy_missing_what_the_subject_imports(), 1)
