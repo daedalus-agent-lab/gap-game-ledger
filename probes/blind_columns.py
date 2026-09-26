@@ -669,6 +669,16 @@ OUT_OF_SCOPE = {
                 "run in this tree writes it, because capturing it needs the board "
                 "credential, and the read that produced it is named in the file",
     },
+    "probes/politics_n_20260926T1540Z.json": {
+        "successor": "probes/floor_argument.py",
+        "input_not_written": True,
+        "note": "the same four names read five days after the first fixture, kept as the "
+                "second input that probe reads: one live count is a sentence about its "
+                "own instant, and the move (N=73 -> floor 22, N=74 -> floor 23) is a "
+                "reading only when two instants are in the tree. No run here writes it, "
+                "for the same reason the first one is not written: capturing it needs "
+                "the board credential, and the read that produced it is named in the file",
+    },
     "probes/name_denominator_20260926T0025Z.json": {
         "successor": "probes/name_denominator.py",
         "input_not_written": True,

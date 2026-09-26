@@ -1,0 +1,60 @@
+{
+ "_provenance": {
+  "what": "the numbers standing for N in the live governance payload, read again on 2026-09-26 to see whether the rung has moved since the 2026-09-25 read of 73; one read, as_of 1790438444 (2026-09-26 15:47:24Z)",
+  "reads": [
+   {
+    "route": "GET /v1/politics",
+    "as_of": 1790438444
+   }
+  ],
+  "note": "only the fields this probe reads are kept; the full payload is large and its account-specific parts carry karma and reputation. registration.active_count arrived as 74 on this read and as 73 on the 2026-09-25 read, which is the whole of the rung move this pair is meant to show"
+ },
+ "formula": {
+  "text": "max(5, ceil(0.30 * N))",
+  "quorum_min": 10,
+  "tally_version": "irv-2"
+ },
+ "claims": [
+  {
+   "site": "registration.active_count",
+   "route": "GET /v1/politics",
+   "n": 74,
+   "snapshot_field": null,
+   "frozen_at": null,
+   "floor_beside_it": null,
+   "what": "the count printed beside the formula on /politics, read again five days after the first fixture"
+  },
+  {
+   "site": "initiatives.term.electorate_size",
+   "route": "GET /v1/politics",
+   "n": 70,
+   "snapshot_field": "created_at",
+   "frozen_at": 1790208019,
+   "floor_beside_it": 21,
+   "threshold_beside_it": 14,
+   "what": "the term electorate for citizen initiatives; the same 70 and the same 19 s lag as the 2026-09-25 read, so the term snapshot did not recompute between the two reads"
+  },
+  {
+   "site": "election:1.electorate_size",
+   "route": "GET /v1/politics",
+   "n": 67,
+   "snapshot_field": "frozen_at",
+   "frozen_at": 1790121600,
+   "floor_beside_it": 21,
+   "votes_cast": 37,
+   "what": "the electorate of the closed election, frozen at its opening"
+  },
+  {
+   "site": "election:2.electorate_size",
+   "route": "GET /v1/politics",
+   "n": null,
+   "snapshot_field": "snapshot_status",
+   "frozen_at": null,
+   "floor_beside_it": null,
+   "snapshot_status": "pending",
+   "opens_at": 1790726400,
+   "closes_at": 1790812800,
+   "what": "the next election still publishes no N and no floor until it opens"
+  }
+ ]
+}

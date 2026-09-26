@@ -35,6 +35,14 @@ Usage:
   python3 probes/floor_argument.py --selftest         # the formula, the separator, wrong fixtures
   python3 probes/floor_argument.py --predict 74       # floor(74) and floor(75)
   python3 probes/floor_argument.py --staircase 10 400 # the flat stretches over a range
+  python3 probes/floor_argument.py --rungs            # the rung as two reads, not one
+
+The rung is the part the single fixture cannot hold. `registration.active_count` is a
+live count, so a fixture is a sentence about the instant it was read at, and a probe that
+reads one fixture can print a floor but cannot show that the count ever moved. Two
+fixtures, read at two instants, put the move in the reading: N=73 -> floor 22 and
+N=74 -> floor 23 are two rows of one measurement, and a pair that carries the same N is
+refused rather than printed as a reread.
 """
 from __future__ import annotations
 
@@ -43,10 +51,15 @@ import json
 import math
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 FIXTURE = HERE / "politics_n_20260925T2315Z.json"
+# The same four names, read five days later. A rung needs two instants: with one fixture
+# the probe can apply the rule but cannot show that the count it applies it to moves.
+SECOND_FIXTURE = HERE / "politics_n_20260926T1540Z.json"
+RUNGS = (FIXTURE, SECOND_FIXTURE)
 
 # The rule as the platform publishes it, and the numbers standing beside it.
 # The second rule the same payload publishes BESIDE the same N: the signature count an
@@ -545,6 +558,79 @@ def _mutations(doc: dict) -> list[tuple[str, dict]]:
     return out
 
 
+def live_rows(doc: dict) -> list[dict]:
+    """The rows standing beside no floor: the only rows a rung can be read from."""
+    return [c for c in doc.get("claims") or [] if c.get("n") is not None and c.get("floor_beside_it") is None]
+
+
+def _read_at(doc: dict) -> int | None:
+    """The instant the fixture says it was read at; the fixture's own claim, kept as one."""
+    reads = ((doc.get("_provenance") or {}).get("reads")) or []
+    instants = [r.get("as_of") for r in reads if isinstance(r.get("as_of"), int)]
+    return max(instants) if instants else None
+
+
+def rungs(paths=None, out=sys.stdout) -> int:
+    """Read two fixtures as one measurement and report whether the rung moved.
+
+    A single fixture cannot hold this: `registration.active_count` is live, so one read
+    is a sentence about its own instant. Two reads give the move, and the pair is refused
+    when it carries one N -- a reread is not a move -- when the two reads are not in
+    reading order, when the prose does not carry the instant it lists, or when the two
+    fixtures read different sites and so do not compare one rung.
+    """
+    paths = tuple(paths or RUNGS)
+    bad = 0
+    seen = []
+    previous = None
+    for path in paths:
+        doc = load(path)
+        as_of = _read_at(doc)
+        lives = live_rows(doc)
+        if len(lives) != 1:
+            out.write("FAIL %s carries %d live row(s), so no single rung is read\n" % (path.name, len(lives)))
+            bad += 1
+            continue
+        row = lives[0]
+        floor_here = floor_from(row["n"], (doc.get("formula") or {}).get("text") or EXPECTED_FORMULA)
+        seen.append((row["site"], row["n"], floor_here, as_of))
+        out.write("%s  %s N=%d -> floor %d  (read at %s)\n" % (path.name, row["site"], row["n"], floor_here, as_of))
+        if previous is not None and as_of is not None and as_of <= previous:
+            out.write("FAIL the rungs are not in reading order: %s does not stand after %s\n" % (as_of, previous))
+            bad += 1
+        if as_of is None or str(as_of) not in ((doc.get("_provenance") or {}).get("what") or ""):
+            out.write("FAIL %s does not carry the as_of %s it lists in its own prose\n" % (path.name, as_of))
+            bad += 1
+        if as_of is not None:
+            previous = as_of
+    if len(seen) == len(paths):
+        sites = {s for s, _, _, _ in seen}
+        if len(sites) != 1:
+            out.write("FAIL the fixtures read different sites %r, so the pair compares no one rung\n" % (sorted(sites),))
+            bad += 1
+        counts = [n for _, n, _, _ in seen]
+        if len(set(counts)) != len(counts):
+            out.write("FAIL no rung moved: the N is %r in both reads, so the pair shows a reread\n" % (counts,))
+            bad += 1
+        else:
+            for (_, n0, f0, _), (_, n1, f1, _) in zip(seen, seen[1:]):
+                out.write("the rung moved: N %d -> %d, floor %d -> %d %s\n" % (
+                    n0, n1, f0, f1,
+                    "(the floor moved with it)" if f0 != f1 else
+                    "(the floor stood still: a floor that did not move is not evidence that N did not)"))
+    out.write("floor_argument --rungs: %d failed\n" % bad)
+    return 1 if bad else 0
+
+
+def _pair_with_one_count(doc: dict, n: int) -> Path:
+    """A fixture pair whose second read carries the first read's N, for the selftest."""
+    broken = json.loads(json.dumps(doc))
+    live_rows(broken)[0]["n"] = n
+    path = Path(tempfile.mkdtemp()) / "second.json"
+    path.write_text(json.dumps(broken, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    return path
+
+
 def selftest(out=sys.stdout) -> int:
     checks = []
     for n, want in [(10, 5), (16, 5), (17, 6), (67, 21), (70, 21), (73, 22), (74, 23)]:
@@ -581,6 +667,24 @@ def selftest(out=sys.stdout) -> int:
     )
     checks.append(("fixture: the next election publishes no N yet", any(r["n"] is None and r["site"].startswith("election:2") for r in rs)))
     checks.append(("the check accepts the fixture as shipped", check(doc, io.StringIO()) == 0))
+
+    # the rung: two reads make a move, and a pair of one N is refused rather than printed
+    buf = io.StringIO()
+    code = rungs(out=buf)
+    said = buf.getvalue()
+    checks.append(("the shipped pair reads a rung and prints the move",
+                   code == 0 and "the rung moved: N 73 -> 74, floor 22 -> 23" in said))
+    checks.append(("the shipped pair names the floor moving with the count",
+                   "(the floor moved with it)" in said))
+    buf = io.StringIO()
+    trick = _pair_with_one_count(load(SECOND_FIXTURE), 73)
+    code = rungs(paths=(FIXTURE, trick), out=buf)
+    checks.append(("a pair whose second read carries the first's N is refused as a reread",
+                   code == 1 and "no rung moved" in buf.getvalue()))
+    buf = io.StringIO()
+    code = rungs(paths=(SECOND_FIXTURE, FIXTURE), out=buf)
+    checks.append(("the same pair read backwards is refused as not in reading order",
+                   code == 1 and "not in reading order" in buf.getvalue()))
 
     # the staircase: a floor that did not move is not evidence that N did not move
     checks.append(("three consecutive N can share one floor", len({floor_from(x) for x in (74, 75, 76)}) == 1))
@@ -646,9 +750,11 @@ def main(argv: list[str]) -> int:
         return predict(int(argv[1]))
     if len(argv) == 3 and argv[0] == "--staircase":
         return staircase(int(argv[1]), int(argv[2]))
+    if argv == ["--rungs"]:
+        return rungs()
     sys.stderr.write(
         "refused: %r is not a form this probe reads. Forms: (no argument) | "
-        "--selftest | --check | --predict N | --staircase LO HI\n" % (argv,))
+        "--selftest | --check | --predict N | --staircase LO HI | --rungs\n" % (argv,))
     return 2
 
 
