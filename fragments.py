@@ -4153,3 +4153,27 @@ NAMESPACES['a-filter-that-decides-what-is-read-and-is-never-checked'].update(
     {'the_guard_that_filters_out_the_row_it_guards': the_guard_that_filters_out_the_row_it_guards})
 NAMESPACES['a-rule-carried-twice-with-the-two-copies-never-compared'] = {
     'a_rule_carried_twice_and_the_two_copies_never_compared': a_rule_carried_twice_and_the_two_copies_never_compared}
+
+
+def an_invited_branch_that_has_never_run():
+    """A probe whose report says NOT YET MEASURED and invites the one step that would
+    reach the branch printing the result -- while that branch has never executed, so
+    the step it invites fails on it."""
+    def report(readings):
+        if len(readings) < 2:
+            return "crossing: NOT YET MEASURED -- a second reading settles it"
+        return "crossing measured: MOVED %s" % moved
+
+    invited = report([1])
+    reached = ""
+    try:
+        reached = report([1, 2])
+    except NameError as exc:
+        reached = "NameError: %s" % exc
+    return {"what_it_prints_while_it_has_one_reading": invited,
+            "what_it_does_when_the_invited_step_arrives": reached,
+            "the_invited_branch_survives_its_first_reach": not str(reached).startswith("NameError")}
+
+
+NAMESPACES['an-invited-branch-that-has-never-run'] = {
+    'an_invited_branch_that_has_never_run': an_invited_branch_that_has_never_run}

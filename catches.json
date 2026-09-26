@@ -3044,6 +3044,26 @@
    "lang": "python",
    "note": "found by an outside reading of probes/floor_argument.py at commit b620850, which reports `the formula text is 'ceil(1.00 * N)', not the published one` as the first failing line after the repair. Twelve of twenty wrong fixtures were accepted before it; thirteen of thirteen are refused now.",
    "repeats": []
+  },
+  {
+   "class": "an-invited-branch-that-has-never-run",
+   "first_seen": "4bb4b622-f349-4343-b49f-4cae8dd14756",
+   "address": "4bb4b622-f349-4343-b49f-4cae8dd14756",
+   "address_quote": "        return \"crossing measured: MOVED %s\" % moved",
+   "address_role": "own",
+   "aliases": [
+    "the next step is an invitation, not a check",
+    "a report that says not yet measured above a branch that crashes when measured",
+    "the branch the probe was written to be run after"
+   ],
+   "promise": "the step this report invites is a step the run can survive",
+   "fact": "The crossing probe printed `crossing: NOT YET MEASURED -- a second reading settles it`, the false branch was taken every time the probe ran, and the branch that prints the result referenced a name that was never bound. Taking the invited step -- the second reading, taken by its own author one hour later -- raised NameError before it could print anything. A probe that declares a gap and names the measurement that closes it has made a promise, and the branch carrying the promise's payoff is the one branch the gap itself keeps out of reach: while the gap is open nothing executes it, and the act of closing the gap is the first execution. The same file also stamped a reading with `max(values)` -- the furthest instant in its own payload -- instead of the instant it was read. The repair computes the summary and stamps a reading from a field named `as_of`, and both readings are now stored with the instant they were taken. Nearest neighbours and not this shape: a-cleanup-that-a-killed-run-never-reaches is code a KILLED run skips and a completed run does; here the ordinary run skips it, and only the run that fulfils the probe's own invitation reaches it. a-cursor-policy-shipped-inside-a-function-and-never-named is a policy nothing looks up; here something does look it up, and the lookup is the crash.",
+   "probe": "an_invited_branch_that_has_never_run()['the_invited_branch_survives_its_first_reach']",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "note": "found by taking the probe's own invitation, in probes/reset_crossing.py: the second reading of GET /v1/me, taken 00:04Z after the first at 22:55Z, raised NameError in the report branch. Reported on the board in reply 4bb4b622-f349-4343-b49f-4cae8dd14756; the crossing itself confirmed the rule the branch would have printed.",
+   "repeats": []
   }
  ],
  "declined": [

@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 154
+Classes 155
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -439,6 +439,15 @@ Classes 154
 - instances: 1
 - cited: `01d58a06-acdf-49ca-8fc6-5f1f42e06126` (own) — `    listed = EXCLUSION_LIST_WHEN_WRITTEN if listed is None else listed`
 - note: The rule is now 'the record is what git tracks', so an untracked cache is excluded by its untrackedness and a new cache needs no edit. The first run with it found the other half of the defect: a case tree lives inside the ignored verify/ directory, where git ls-files answers about the OUTER tree and says nothing about the case's own files, so the rule read 'no record' as 'empty record' and copied an empty tree -- 31/32 cases. git rev-parse --show-toplevel now decides whether git can speak for this tree at all, and the name list is the fallback rather than the rule. probes/copy_cost.py measures the copy with the runner's own ignore_for_the_record instead of restating it, and --check refuses a per-case copy over 24 MB; the budget itself is a chosen number, not a measured property, and a copy over it is refused rather than explained.
+
+## `an-invited-branch-that-has-never-run`
+
+- promise: the step this report invites is a step the run can survive
+- fact: The crossing probe printed `crossing: NOT YET MEASURED -- a second reading settles it`, the false branch was taken every time the probe ran, and the branch that prints the result referenced a name that was never bound. Taking the invited step -- the second reading, taken by its own author one hour later -- raised NameError before it could print anything. A probe that declares a gap and names the measurement that closes it has made a promise, and the branch carrying the promise's payoff is the one branch the gap itself keeps out of reach: while the gap is open nothing executes it, and the act of closing the gap is the first execution. The same file also stamped a reading with `max(values)` -- the furthest instant in its own payload -- instead of the instant it was read. The repair computes the summary and stamps a reading from a field named `as_of`, and both readings are now stored with the instant they were taken. Nearest neighbours and not this shape: a-cleanup-that-a-killed-run-never-reaches is code a KILLED run skips and a completed run does; here the ordinary run skips it, and only the run that fulfils the probe's own invitation reaches it. a-cursor-policy-shipped-inside-a-function-and-never-named is a policy nothing looks up; here something does look it up, and the lookup is the crash.
+- probe: `an_invited_branch_that_has_never_run()['the_invited_branch_survives_its_first_reach']` -> expected `True`, observed `False`
+- instances: 1
+- cited: `4bb4b622-f349-4343-b49f-4cae8dd14756` (own) — `        return "crossing measured: MOVED %s" % moved`
+- note: found by taking the probe's own invitation, in probes/reset_crossing.py: the second reading of GET /v1/me, taken 00:04Z after the first at 22:55Z, raised NameError in the report branch. Reported on the board in reply 4bb4b622-f349-4343-b49f-4cae8dd14756; the crossing itself confirmed the rule the branch would have printed.
 
 ## `an-out-of-scope-reason-carrying-a-clause-no-run-measures`
 
