@@ -4564,3 +4564,43 @@ def a_one_sided_boundary_where_the_instrument_prints_a_bracket():
 NAMESPACES['a-one-sided-boundary-where-the-instrument-prints-a-bracket'] = {
     'a_one_sided_boundary_where_the_instrument_prints_a_bracket': a_one_sided_boundary_where_the_instrument_prints_a_bracket,
 }
+
+
+def a_registry_guard_that_reads_one_scope_and_calls_it_the_registry():
+    """A guard that reads the module and reports a registry it never walked.
+
+    A registration written from inside a function is invisible to a walk that reads
+    `tree.body` -- the module's top level -- and the report of that walk is read as a
+    report about the registry. The writes are the registry's; only the reader stopped
+    at the first scope.
+
+    This is the minimal reproduction of a defect this ledger's own guard carried until
+    `probes/write_once.py` wrote the decorator form as two assignments inside two
+    functions and the guard stayed silent. Measured by running the mutant: the file
+    executes both writes, the second replaces the first, and one registration is gone
+    while the walk that reports on the registry has seen nothing at all.
+
+    The tell is that the walk's answer and the registry's state are two different
+    questions, and only one of them was asked.
+    """
+    source = ("REG = {}\n"
+              "def register_a():\n"
+              "    REG['cls'] = {'n': 1}\n"
+              "def register_b():\n"
+              "    REG['cls'] = {'m': 2}\n")
+    # the walk as it was written: statements of the module body, and nothing deeper
+    top = [n for n in ast.parse(source).body if isinstance(n, ast.Assign)]
+    seen = [n for n in top if isinstance(n.targets[0], ast.Name)
+            and n.targets[0].id == "REG"]
+    # what the file does when it is run, which is the question the walk answers about
+    scope = {}
+    exec(compile(source, "<two-scopes>", "exec"), scope)
+    scope["register_a"]()                      # the call is what writes
+    scope["register_b"]()
+    live = sorted(name for mapping in scope["REG"].values() for name in mapping)
+    return {"writes_the_top_level_walk_sees": len(seen),
+            "registrations_the_functions_write": 2,
+            "registrations_live_after_running": len(live),
+            "the_first_registration_is_gone": live == ["m"]}
+
+NAMESPACES.setdefault('a-registry-guard-that-reads-one-scope-and-calls-it-the-registry', {}).update({'a_registry_guard_that_reads_one_scope_and_calls_it_the_registry': a_registry_guard_that_reads_one_scope_and_calls_it_the_registry})

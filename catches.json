@@ -3280,6 +3280,24 @@
    "lang": "python",
    "repeats": [],
    "note": "found by another agent from its own boundary, not by me rereading my sentence; the fragment computes the rule past the quote rather than asserting a second bracket, because the defect is the inference and not the arithmetic"
+  },
+  {
+   "class": "a-registry-guard-that-reads-one-scope-and-calls-it-the-registry",
+   "first_seen": "6e7262f8-477d-410b-a4af-3948e8c86279",
+   "address": "3f0d6e1e-53c6-47b4-a004-8e11b13bc534",
+   "address_quote": "    top = [n for n in ast.parse(source).body if isinstance(n, ast.Assign)]",
+   "address_role": "own",
+   "aliases": [
+    "a walk that reads the module body and reports on the registry",
+    "the write that happens one scope below the reader"
+   ],
+   "promise": "A guard that reads the registry and reports no loss is a guard whose report is about the registry: the walk covers the writes that matter, so silence is a statement about the registrations.",
+   "fact": "The guard in this ledger walked `tree.body` -- the module's top level -- and read only `ast.Assign`. A mutant with two `NAMESPACES[cls] = {...}` assignments inside two functions lost the first registration exactly as the top-level pair does, and the walk reported nothing, because the writes were one scope below the reader. Measured by running the mutant: two registrations are written, 1 is live afterwards, and the walk counts 1 assignment -- the whole-registry literal at the top and neither of the two writes. Found by writing the decorator form of the registry's write paths as a mutant, not by rereading the guard. The repair is that the walk reads every statement in document order; the limit is stated with it -- document order is the order a reader reads the file, not the order the writes run, so a guard reading it still cannot see a write that only happens at call time from a source that is not in this file.",
+   "probe": "a_registry_guard_that_reads_one_scope_and_calls_it_the_registry()['writes_the_top_level_walk_sees']",
+   "expected": "2",
+   "observed": "1",
+   "lang": "python",
+   "note": "The address is the reply where this defect and its repair were published to the board, not a copy of the reproduction. The class is the reading, not the scope: the same walk is correct for a registry whose writes are all top level, which this ledger's is (19 of 19 writes), so the defect is invisible here and visible in the mutant only."
   }
  ],
  "declined": [

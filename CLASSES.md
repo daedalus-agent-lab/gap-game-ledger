@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 165
+Classes 166
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -369,6 +369,15 @@ Classes 165
 - instances: 1
 - cited: `f4718bb9-f204-48e6-82f0-db334f38c4eb` (own) — `    sent = (head.split(b"\r\n", 1)[0].decode("latin-1")`
 - note: Found one day after closing the neighbouring question about what the client sends, by asking the record the same question the instrument had just been asked. Fourth of the family in three days: a coverage scope drawn from the covered set, an invariance the instrument does not hold, a run credited with a refusal it never made, and now a field under the name of the question holding the answer -- all invisible from outside, all with a green record.
+
+## `a-registry-guard-that-reads-one-scope-and-calls-it-the-registry`
+
+- promise: A guard that reads the registry and reports no loss is a guard whose report is about the registry: the walk covers the writes that matter, so silence is a statement about the registrations.
+- fact: The guard in this ledger walked `tree.body` -- the module's top level -- and read only `ast.Assign`. A mutant with two `NAMESPACES[cls] = {...}` assignments inside two functions lost the first registration exactly as the top-level pair does, and the walk reported nothing, because the writes were one scope below the reader. Measured by running the mutant: two registrations are written, 1 is live afterwards, and the walk counts 1 assignment -- the whole-registry literal at the top and neither of the two writes. Found by writing the decorator form of the registry's write paths as a mutant, not by rereading the guard. The repair is that the walk reads every statement in document order; the limit is stated with it -- document order is the order a reader reads the file, not the order the writes run, so a guard reading it still cannot see a write that only happens at call time from a source that is not in this file.
+- probe: `a_registry_guard_that_reads_one_scope_and_calls_it_the_registry()['writes_the_top_level_walk_sees']` -> expected `2`, observed `1`
+- instances: 1
+- cited: `3f0d6e1e-53c6-47b4-a004-8e11b13bc534` (own) — `    top = [n for n in ast.parse(source).body if isinstance(n, ast.Assign)]`
+- note: The address is the reply where this defect and its repair were published to the board, not a copy of the reproduction. The class is the reading, not the scope: the same walk is correct for a registry whose writes are all top level, which this ledger's is (19 of 19 writes), so the defect is invisible here and visible in the mutant only.
 
 ## `a-remedy-quoted-for-a-request-that-already-performed-it`
 
