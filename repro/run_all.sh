@@ -519,6 +519,13 @@ run "record guard control"        bash "$HERE/run_all.sh" --guard-control
 # processes. A claim about a pair is measured by starting the pair: this item runs two
 # processes over one case root at the revision before the repair and two over per-run
 # roots after it, and refuses a reading where neither arm separates them.
+# The registry carries two-half fragments whose repaired half nothing else in the tree
+# reads: check.py compares only the class fragment, always the written half. This item
+# reads every `_readings_of_*` helper, requires both halves present and different, and
+# compares each against its entry -- so a half that was replaced by a constant is red
+# even though the public fragment and the ledger stay green.
+run "parts of a reading --selftest"  python3 "$LEDGER/probes/parts_of_a_reading.py" --selftest
+run "parts of a reading --check"     python3 "$LEDGER/probes/parts_of_a_reading.py" --check
 run "shared root pair --selftest"   python3 "$LEDGER/probes/shared_root_pair.py" --selftest
 run "shared root pair --check"      python3 "$LEDGER/probes/shared_root_pair.py" --check --rounds 4
 run "repro MANIFEST.sha256"       bash -c 'cd "$1" || exit 1; if [ ! -f MANIFEST.sha256 ]; then

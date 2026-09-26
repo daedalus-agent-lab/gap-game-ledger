@@ -6628,12 +6628,16 @@ def a_measurement_that_takes_its_tools_from_the_callers_path():
     """One experiment, run on three machines, with its tools named and located.
 
     The machine is the same in both readings. What moves is where the experiment
-    looks for the programs it runs:
+    looks for the programs it runs -- the caller's PATH, or the machine:
 
-        the machine carries                 as written        repaired
-        both programs on PATH               the reading       the reading
-        neither on PATH                     no such file      the reading
-        neither on PATH, both under /usr/bin  no such file    the reading
+        the machine carries                   as written        repaired
+        both programs on PATH                 the reading       the reading
+        neither on PATH, both under /usr/bin  no such file      the reading
+        neither on PATH, neither under /usr/bin  no such file   no such file
+
+    The third machine is what makes the repaired half a reading and not a sentence:
+    with every machine carrying the programs, a reader that locates them and a
+    constant answering "the reading" agree on every row.
     """
     return _readings_of_the_tools_the_experiment_looks_for()["as_written"]
 
@@ -6642,21 +6646,23 @@ def _readings_of_the_tools_the_experiment_looks_for():
     """Both sides of the class: the tools named, and the tools located."""
     MACHINES = (
         ("both programs on PATH", {"bash": "on PATH", "sleep": "on PATH"}),
-        ("neither on PATH", {}),
         ("neither on PATH, both under /usr/bin",
          {"bash": "under /usr/bin", "sleep": "under /usr/bin"}),
+        ("neither on PATH, neither under /usr/bin", {}),
     )
 
-    def as_written(carries):
-        missing = [name for name in ("bash", "sleep") if carries.get(name) != "on PATH"]
+    def read(carries, locate):
+        missing = [name for name in ("bash", "sleep") if not locate(name, carries)]
         return "no such file or directory: %r" % missing[0] if missing else "the reading"
 
-    def as_repaired(carries):
-        del carries
-        return "the reading"
+    def on_the_callers_path(name, carries):
+        return carries.get(name) == "on PATH"
 
-    written = {name: as_written(carries) for name, carries in MACHINES}
-    repaired = {name: as_repaired(carries) for name, carries in MACHINES}
+    def on_the_machine(name, carries):
+        return carries.get(name) in ("on PATH", "under /usr/bin")
+
+    written = {name: read(carries, on_the_callers_path) for name, carries in MACHINES}
+    repaired = {name: read(carries, on_the_machine) for name, carries in MACHINES}
     return {
         "as_written": {
             "every_machine_read_the_experiment": all(v == "the reading"
@@ -6675,6 +6681,58 @@ def _readings_of_the_tools_the_experiment_looks_for():
             "reading_per_machine": repaired,
         },
     }
+def a_second_half_a_constant_on_a_fixture_that_never_varies():
+    """The repaired half of a two-half reading, on a fixture of one machine.
+
+    The half is the same function in both readings; what moves is the fixture it is
+    read over:
+
+        the fixture is                            as written   repaired
+        one machine, the programs on PATH         0 machines   3 machines
+        the machines the experiment ran on        0 part       1 parts
+
+    On a fixture whose every machine carries the programs, a reader that locates
+    them and a constant answering "the reading" agree on every row, so the half is
+    a sentence: nothing in the tree can tell them apart. What makes it a reading is
+    a machine where the programs are nowhere.
+    """
+    return _readings_of_a_half_measured_on_one_machine()["as_written"]
+
+
+def _readings_of_a_half_measured_on_one_machine():
+    """Both sides of the class: the fixture of one machine, and the family."""
+    MACHINES = (
+        ("both programs on PATH", {"bash": "on PATH", "sleep": "on PATH"}),
+        ("neither on PATH, both under /usr/bin",
+         {"bash": "under /usr/bin", "sleep": "under /usr/bin"}),
+        ("neither on PATH, neither under /usr/bin", {}),
+    )
+    THE_CONSTANT = "the reading"
+
+    def on_the_machine(name, carries):
+        return carries.get(name) in ("on PATH", "under /usr/bin")
+
+    def half(carries):
+        missing = [name for name in ("bash", "sleep") if not on_the_machine(name, carries)]
+        return "no such file or directory: %r" % missing[0] if missing else THE_CONSTANT
+
+    def reading_over(fixture):
+        rows = {name: half(carries) for name, carries in fixture}
+        parts = [name for name, answer in rows.items() if answer != THE_CONSTANT]
+        return {
+            "machines_the_half_is_read_on": len(rows),
+            "machines_where_the_half_parts_the_reader_from_the_constant": len(parts),
+            "the_half_is_a_reading": bool(parts),
+        }
+
+    one_machine = [row for row in MACHINES if row[0] == "both programs on PATH"]
+    return {
+        "as_written": reading_over(one_machine),
+        "as_repaired": reading_over(MACHINES),
+    }
+NAMESPACES.setdefault('a-second-half-a-constant-on-a-fixture-that-never-varies', {}).update({'a_second_half_a_constant_on_a_fixture_that_never_varies': a_second_half_a_constant_on_a_fixture_that_never_varies})
+
+
 NAMESPACES.setdefault('a-measurement-that-takes-its-tools-from-the-callers-path', {}).update({'a_measurement_that_takes_its_tools_from_the_callers_path': a_measurement_that_takes_its_tools_from_the_callers_path})
 
 
