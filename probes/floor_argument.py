@@ -49,6 +49,11 @@ HERE = Path(__file__).resolve().parent
 FIXTURE = HERE / "politics_n_20260925T2315Z.json"
 
 # The rule as the platform publishes it, and the numbers standing beside it.
+# The second rule the same payload publishes BESIDE the same N: the signature count an
+# initiative needs. Taken from the guide the board names as canonical, not restated here
+# by ear -- https://getpostingboard.dev/politics.md, table "Thresholds and limits".
+SIGNATURE_FORMULA = "max(3, ceil(0.20 * N))"
+SIGNATURE_SOURCE = "https://getpostingboard.dev/politics.md"
 EXPECTED_FORMULA = "max(5, ceil(0.30 * N))"
 QUORUM = 10
 TALLY = "irv-2"
@@ -96,11 +101,21 @@ PLAN = [
         None,
         {"snapshot_status": "pending", "opens_at": 1790726400, "closes_at": 1790812800},
     ),
+    (
+        "initiatives:term:0.electorate_size",
+        "GET /v1/politics/initiatives",
+        32,
+        None,
+        None,
+        10,
+        {"threshold_beside_it": 7, "term_id": 0, "kind": "recall"},
+    ),
 ]
 EXPECTED_ROUTES = {
     "GET /v1/politics",
     "GET /v1/politics/elections/election:1",
     "GET /v1/politics/elections/election:2",
+    "GET /v1/politics/initiatives",
 }
 
 TOKEN = re.compile(r"\s*(\d+\.?\d*|[A-Za-z_][A-Za-z_0-9]*|[(),*/+-])")
@@ -287,6 +302,17 @@ def report(doc: dict, out=sys.stdout) -> None:
         )
     for a, b in indistinguishable_pairs(rs):
         out.write("not separated by the formula: N=%d and N=%d both give %d\n" % (a, b, _computed(rs, a)))
+    for c in doc.get("claims") or []:
+        sig = c.get("threshold_beside_it")
+        if sig is None or c.get("n") is None:
+            continue
+        n = c["n"]
+        out.write(
+            "one N, two published thresholds: N=%d carries floor %d (%s) and signature count "
+            "%d (%s, %s) -- so a count that stands beside one of them is not evidence about "
+            "the other, and the row says which rules were read on this N\n"
+            % (n, floor_from(n), EXPECTED_FORMULA, sig, SIGNATURE_FORMULA, SIGNATURE_SOURCE)
+        )
 
 
 def check(doc: dict, out=sys.stdout) -> int:
@@ -361,6 +387,19 @@ def check(doc: dict, out=sys.stdout) -> int:
                 fail("%s: the published formula gives %d for N=%d, the payload publishes %s" % (label, computed, n, floor))
             else:
                 ok("%s: the published formula gives %d for N=%d" % (label, computed, n))
+        # The same row carries a SECOND threshold, and one N carrying two thresholds is
+        # what says which class the N belongs to: if the signature count beside it is the
+        # signature formula's answer, this N is the one the initiative rules are read on.
+        sig = c.get("threshold_beside_it")
+        if sig is not None and n is not None:
+            want_sig = int(eval_formula(parse_formula(SIGNATURE_FORMULA), n))
+            if want_sig != sig:
+                fail(
+                    "%s: the signature formula %r gives %d for N=%d, the payload publishes %s"
+                    % (label, SIGNATURE_FORMULA, want_sig, n, sig)
+                )
+            else:
+                ok("%s: the signature count %d beside N=%d is the signature formula's answer" % (label, sig, n))
 
     # 5. the lag between the close and the term snapshot
     term = by_key.get(("initiatives.term.electorate_size", "GET /v1/politics"))
@@ -499,6 +538,10 @@ def _mutations(doc: dict) -> list[tuple[str, dict]]:
     clone("a route invented", lambda d: d["_provenance"]["reads"][0].update(route="GET /nowhere", as_of=1))
     clone("the provenance prose drops an instant it lists", lambda d: d["_provenance"].update(what="the numbers standing for N, read once"))
     clone("the published floor changed", lambda d: row(d, "election:1.electorate_size", "GET /v1/politics").update(floor_beside_it=23))
+    clone(
+        "the signature count replaced by the floor's answer",
+        lambda d: row(d, "initiatives.term.electorate_size", "GET /v1/politics").update(threshold_beside_it=21),
+    )
     return out
 
 
@@ -508,6 +551,9 @@ def selftest(out=sys.stdout) -> int:
         checks.append(("floor(%d) == %d" % (n, want), floor_from(n) == want))
     checks.append(("the published string parses to the rule the platform prints", eval_formula(parse_formula(EXPECTED_FORMULA), 73) == 22))
     checks.append(("a string carrying a different rule evaluates differently", floor_from(70, "ceil(1.00 * N)") == 70))
+    checks.append(("the signature formula answers 14 for N=70", int(eval_formula(parse_formula(SIGNATURE_FORMULA), 70)) == 14))
+    checks.append(("the signature formula answers 7 for N=32", int(eval_formula(parse_formula(SIGNATURE_FORMULA), 32)) == 7))
+    checks.append(("the two published rules disagree on one N", floor_from(70) != int(eval_formula(parse_formula(SIGNATURE_FORMULA), 70))))
     checks.append(("a string the parser cannot read is refused", _refuses(lambda: parse_formula("max(5, ceil(0.30 * N)"))))
     checks.append(("two different N give one floor, so a floor cannot separate them", floor_from(67) == floor_from(70)))
     checks.append(("one step of N can move the floor, so a live count can be contradicted", floor_from(70) != floor_from(73)))

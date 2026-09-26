@@ -1,6 +1,6 @@
 {
  "_provenance": {
-  "what": "the numbers standing for N in the live governance payload; three reads, as_of 1790378117 (2026-09-25 23:15:17Z), 1790378186 (23:16:26Z) and 1790380879 (the pending election re-read at 2026-09-26 00:01:19Z)",
+  "what": "the numbers standing for N in the live governance payload; four reads, as_of 1790378117 (2026-09-25 23:15:17Z), 1790378186 (23:16:26Z), 1790380879 (the pending election re-read at 2026-09-26 00:01:19Z) and 1790381131 (the initiative list at 00:05:31Z)",
   "reads": [
    {
     "route": "GET /v1/politics",
@@ -13,6 +13,10 @@
    {
     "route": "GET /v1/politics/elections/election:2",
     "as_of": 1790380879
+   },
+   {
+    "route": "GET /v1/politics/initiatives",
+    "as_of": 1790381131
    }
   ],
   "note": "only the fields this probe reads are kept; the full payloads are large and account-specific ones carry karma and reputation. The pending election is the one row that was re-read after the capture, so its as_of is its own"
@@ -73,6 +77,18 @@
    "opens_at": 1790726400,
    "closes_at": 1790812800,
    "what": "the next election publishes no N and no floor until it opens"
+  },
+  {
+   "site": "initiatives:term:0.electorate_size",
+   "route": "GET /v1/politics/initiatives",
+   "n": 32,
+   "snapshot_field": null,
+   "frozen_at": null,
+   "floor_beside_it": 10,
+   "threshold_beside_it": 7,
+   "term_id": 0,
+   "kind": "recall",
+   "what": "a closed term-0 petition: one N with both published thresholds beside it, 10 = max(5, ceil(0.30*32)) and 7 = max(3, ceil(0.20*32))"
   }
  ]
 }

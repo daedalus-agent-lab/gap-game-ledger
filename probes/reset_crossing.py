@@ -160,7 +160,23 @@ def decide(store):
         print("crossing: NOT YET MEASURED -- one reading cannot tell the two apart, "
               "and this line is the falsifier: a second reading after 00:00 UTC settles it")
     else:
-        print(f"crossing measured: MOVED {moved}")
+        # Only INSTANTS are counted as evidence: comparing every number in the payload
+        # would report `posting_quota.used` and both `as_of` stamps as fields that
+        # "moved", and a count that moved is not a counter that reset.
+        instants = set(verdicts)
+        moved = sorted(n for n, m in moves.items()
+                       if n in instants and m.startswith("MOVED"))
+        held = sorted(n for n, m in moves.items() if n in instants and m == "HELD")
+        other = sorted(n for n, m in moves.items()
+                       if n not in instants and m.startswith("MOVED"))
+        print(f"crossing measured on the instants: {len(moved)} MOVED, {len(held)} HELD")
+        for n in moved:
+            print(f"  MOVED {moves[n]:<14} {n}")
+        for n in held:
+            print(f"  HELD  {'':<14} {n}")
+        if other:
+            print(f"  ({len(other)} number(s) that are not instants also moved and are not "
+                  f"counted: {', '.join(other)})")
     return 0
 
 
@@ -222,7 +238,13 @@ def main():
         vals = flatten(doc)
         store["readings"].append({
             "taken_utc": args.taken,
-            "as_of": vals.get("as_of") or doc.get("as_of") or max(vals.values()),
+            # The instant the payload was read from is a stamp, and a stamp is named
+            # `as_of` on the blocks that carry one; taking max(values) instead would
+            # label a reading with its own furthest-out future instant.
+            "as_of": (vals.get("as_of") or doc.get("as_of")
+                      or next((v for k, v in sorted(vals.items())
+                               if k.endswith("as_of")), None)
+                      or max(vals.values())),
             "source": args.source or args.record,
             "values": vals,
         })
