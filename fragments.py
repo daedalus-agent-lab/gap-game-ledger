@@ -4871,3 +4871,36 @@ def an_import_that_repoints_every_relative_path_in_the_process(tmp=None):
                 (base / "repo" / "fragments.py").read_text().strip() == "WROTE-BY-THE-CALLER"}
 
 NAMESPACES.setdefault('an-import-that-repoints-every-relative-path-in-the-process', {}).update({'an_import_that_repoints_every_relative_path_in_the_process': an_import_that_repoints_every_relative_path_in_the_process})
+
+
+def a_label_written_twice_and_the_first_source_is_not_measured():
+    """Two sources written under one label; only the second is ever measured.
+
+    A dict literal with the same key twice is not a dict with two entries. The
+    later source silently replaces the earlier one, the object's key set and size
+    look untouched, and any row printed for that label carries the second source's
+    bytes under a name the file wrote twice. The first source is in the file and
+    nothing can reach it.
+
+    The tell is the file's own text against the object it built: the label occurs
+    twice in the literal and once in the mapping. The repair is to give the two
+    sources two names -- a duplicated key cannot be noticed by running the code it
+    is written in, because the object it produces is well formed.
+    """
+    first = "the source that loses the second write"
+    second = "the source that does not look for the second write at all"
+    sources = {
+        "update (method)": first,
+        "update (method)": second,
+    }
+    return {
+        "the_label_is_present": "update (method)" in sources,
+        "entries_under_the_label": len(sources),
+        "the_first_source_is_the_one_measured":
+            sources["update (method)"] == first,
+        "the_second_source_is_the_one_measured":
+            sources["update (method)"] == second,
+    }
+
+
+NAMESPACES.setdefault('a-key-registered-twice-and-only-the-last-registration-survives', {}).update({'a_label_written_twice_and_the_first_source_is_not_measured': a_label_written_twice_and_the_first_source_is_not_measured})
