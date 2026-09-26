@@ -27,6 +27,16 @@
     "in more than one class": 2,
     "registrations": 311
    }
+  },
+  {
+   "class": "a-shape-check-quoted-as-a-reachability-check",
+   "cmd": [
+    "python3",
+    "probes/uuid_version_sample.py"
+   ],
+   "keys": {
+    "version f:": 1
+   }
   }
  ]
 }

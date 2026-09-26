@@ -1154,11 +1154,12 @@ def address_resolves(addr: str) -> bool:
     print below now says which of the two the number is.
 
     What the pattern can honestly refuse: a note that is not address-shaped at
-    all, and (since every board id measured here is a version-4 UUID -- 131 of 132
-    distinct identifiers, `probes/uuid_version_sample.py`, the exception being the
-    all-f placeholder this ledger records to show what the refusal catches) a UUID
-    whose version nibble is not 4, which is what a fabricated placeholder looks
-    like.
+    all, and (since every board id measured here is a version-4 UUID down to one
+    exception -- the all-f placeholder this ledger records to show what the
+    refusal catches; the count is printed by `probes/uuid_version_sample.py` and
+    read by `counted_readings` through `counts.json`, so it is not typed here) a
+    UUID whose version nibble is not 4, which is what a fabricated placeholder
+    looks like.
     """
     a = str(addr).strip()
     if ADDRESS_UUID.match(a):
@@ -1457,8 +1458,12 @@ def counted_readings() -> tuple:
 
     `counts.json` names, per class, the command that counts and the numbers the
     entry types. Each key must appear in that command's own output followed by its
-    number, and the number must be the one the entry types. Runs the command; a
-    command that fails to run is a problem, not a pass.
+    number, the number must be the one the entry types, and -- since a second file
+    is still a place a number can be typed by hand -- that number must also stand
+    in the entry's own text. Without the last clause `counts.json` is a third copy
+    of the same reading and the sentence it belongs to can say anything at all;
+    with it, a drift in the prose is red even while the file agrees with the probe.
+    Runs the command; a command that fails to run is a problem, not a pass.
 
     Returns (keys read, problems).
     """
@@ -1467,6 +1472,11 @@ def counted_readings() -> tuple:
                    "unread: a check whose input is missing reports no problem instead "
                    "of the problem" % COUNTS.name]
     spec = json.loads(COUNTS.read_text(encoding="utf-8"))
+    try:
+        entries = {e.get("class"): e for e in
+                   json.loads(LEDGER.read_text(encoding="utf-8")).get("entries", [])}
+    except (OSError, ValueError):
+        entries = {}
     read, problems = 0, []
     for row in spec.get("rows", []):
         cmd = row.get("cmd") or []
@@ -1491,6 +1501,17 @@ def counted_readings() -> tuple:
                 problems.append(
                     f"{cls}: {key} is typed as {want} and read as {found.group(1)} "
                     f"from {' '.join(cmd)}")
+            else:
+                entry = entries.get(cls) or {}
+                prose = " ".join(str(entry.get(field, ""))
+                                 for field in ("promise", "fact", "note"))
+                forms = {str(want), format(want, ",")}
+                if not any(re.search(r"(?<![\d,.])%s(?![\d,.])" % re.escape(form), prose)
+                           for form in forms):
+                    problems.append(
+                        f"{cls}: {key} is read as {want} from {' '.join(cmd)} and the "
+                        f"entry's own text does not type {want} -- the number is read "
+                        f"from the probe and not from the sentence it belongs to")
     return read, problems
 
 

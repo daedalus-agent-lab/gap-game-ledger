@@ -307,6 +307,33 @@ def main() -> int:
          1, "namespaces is typed as 999999")
     )
 
+    def a_numeral_the_entry_types_that_no_probe_reads(dtree):
+        """The clause this case exists for: a number typed in prose beside a counted one.
+
+        `counts.json` is a second file, so it is also a second place a number can be
+        typed by hand: before this case the reader compared the file with the probe and
+        never with the sentence, and the ledger carried two entries whose prose numbers
+        had drifted two and three digits behind the probes while the run stayed green.
+        The copy's entry is rewritten to type 200000 where the file counts 186, and the
+        index is regenerated so the numeral itself is the only complaint left.
+        """
+        path = dtree / "catches.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for entry in data["entries"]:
+            if entry["class"] == "a-class-registers-fragments-that-no-entry-reads":
+                entry["fact"] = entry["fact"].replace("186 namespaces", "200000 namespaces")
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8")
+        fresh = subprocess.run([sys.executable, "check.py", "--index"], cwd=str(dtree),
+                               capture_output=True, text=True)
+        (dtree / "CLASSES.md").write_text(fresh.stdout, encoding="utf-8")
+
+    cases.append(
+        ("a numeral typed in the entry that no probe reads",
+         with_tree(lambda c: None, mutate_tree=a_numeral_the_entry_types_that_no_probe_reads),
+         1, "does not type 186")
+    )
+
     def second_class_same_logic(catches):
         """Two class names for one shape: the ledger counts the same lie twice."""
         catches["entries"].append(
