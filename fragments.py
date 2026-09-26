@@ -5773,26 +5773,24 @@ def _readings_of_a_witness_repeating_the_verdict():
         raise AssertionError("no fragment of that class calls a reading helper")
     helper = call.group(1)
 
-    # the tree as it stood before this measurement existed: the block runs from the
-    # public fragment's def to the class's namespace registration, both anchored at the
-    # start of a line, because the helper's own source quotes both names inside strings
+    # the tree as it stood before this measurement existed: the block runs from the public
+    # fragment's def to the class's namespace registration, both anchored at the start of a
+    # line, because this helper's own source quotes both names inside strings
     start_at = re.search(
         r"^def a_witness_that_repeats_the_verdict_it_is_compared_against\(\):$",
         source, re.M)
     end_at = re.search(
         r"^NAMESPACES\.setdefault\('a-witness-that-repeats-the-verdict-it-is-compared-against'[^\n]*$",
         source[start_at.start():], re.M)
-    start = start_at.start()
-    end = start_at.start() + end_at.end()
-    without_the_block = source[:start] + source[end:]
+    without_the_block = source[:start_at.start()] + source[start_at.start() + end_at.end():]
     live = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))
     live["entries"] = [e for e in live["entries"] if e["class"] !=
                        "a-witness-that-repeats-the-verdict-it-is-compared-against"]
 
     if not (HERE / "probes" / "parts_of_a_reading.py").exists():
         # A tree that carries no control has nothing to run: this reading returns the pair
-        # its own entry records and says why, rather than a value it never measured. That
-        # is the defect this class is about, met from the other side.
+        # its own entry records and says so, rather than a value it never measured. That is
+        # the defect this class is about, met from the other side.
         import ast
 
         recorded = next((e for e in entries if e["class"] ==
@@ -5802,33 +5800,41 @@ def _readings_of_a_witness_repeating_the_verdict():
         return {"as_written": ast.literal_eval(recorded["observed"]),
                 "as_repaired": ast.literal_eval(recorded["expected"])}
 
-    with tempfile.TemporaryDirectory() as tmp:
-        root = pathlib.Path(tmp)
-        (root / "probes").mkdir()
-        (root / "fragments.py").write_text(without_the_block, encoding="utf-8")
-        (root / "catches.json").write_text(
-            json.dumps(live, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-        shutil.copy(HERE / "probes" / "parts_of_a_reading.py",
-                    root / "probes" / "parts_of_a_reading.py")
-        # the replacement is the entry's own two values: the witness repeats its verdict
-        with (root / "fragments.py").open("a", encoding="utf-8") as fh:
-            fh.write("\n\ndef %s():  # replaced by the values its own entry carries\n"
-                     "    return {\"as_written\": %s, \"as_repaired\": %s}\n"
-                     % (helper, entry["observed"], entry["expected"]))
-        exits = {}
-        for flag in ("--check", "--selftest"):
-            run = subprocess.run([sys.executable, "probes/parts_of_a_reading.py", flag],
-                                 cwd=root, capture_output=True, text=True, timeout=300)
-            exits[flag] = run.returncode
-        helped = subprocess.run(
-            [sys.executable, "probes/parts_of_a_reading.py", "--check"],
-            cwd=root, capture_output=True, text=True, timeout=300).stdout.splitlines()
-        counted = next((int(line.split()[-1]) for line in helped
-                        if line.startswith("helpers with two halves")), 0)
+    def run_in_copy(with_the_replacement):
+        """One copy of the tree, the control run in it, and the census it prints."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / "probes").mkdir()
+            (root / "fragments.py").write_text(without_the_block, encoding="utf-8")
+            if with_the_replacement:
+                # the replacement is the entry's own two values: the witness repeats its verdict
+                with (root / "fragments.py").open("a", encoding="utf-8") as fh:
+                    fh.write("\n\ndef %s():  # replaced by the values its own entry carries\n"
+                             "    return {\"as_written\": %s, \"as_repaired\": %s}\n"
+                             % (helper, entry["observed"], entry["expected"]))
+            (root / "catches.json").write_text(
+                json.dumps(live, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+            shutil.copy(HERE / "probes" / "parts_of_a_reading.py",
+                        root / "probes" / "parts_of_a_reading.py")
+            exits, counted = {}, 0
+            for flag in ("--check", "--selftest"):
+                run = subprocess.run([sys.executable, "probes/parts_of_a_reading.py", flag],
+                                     cwd=root, capture_output=True, text=True, timeout=300)
+                exits[flag] = run.returncode
+                if flag == "--check":
+                    counted = next((int(line.split()[-1]) for line in run.stdout.splitlines()
+                                    if line.startswith("helpers with two halves")), 0)
+            return exits, counted
 
+    exits, counted = run_in_copy(True)
+    _exits_without, counted_without = run_in_copy(False)
+    # the reading carries the DIFFERENCE the replacement makes to the census, not the count:
+    # an absolute number here would rot the moment another class is added, and this entry
+    # would then be re-measured for a change it does not describe
+    moved = counted - counted_without
     refused = sum(1 for rc in exits.values() if rc != 0)
 
-    def as_written(exits, refused, counted):
+    def as_written(exits, refused, moved):
         # read the way the control's own promise reads it: a half that is not the entry's is
         # refused, and this half IS the entry's, so nothing here is called unwitnessed
         return {
@@ -5836,26 +5842,134 @@ def _readings_of_a_witness_repeating_the_verdict():
             "instruments_run": len(exits),
             "instruments_that_refused_the_replacement": refused,
             "halves_left_unwitnessed": 0,
-            "helpers_the_copy_counts": counted,
+            "helpers_that_appeared_or_vanished_because_of_the_replacement": moved,
         }
 
-    def as_repaired(exits, refused, counted):
+    def as_repaired(exits, refused, moved):
         return {
             "replacements_tried": 1,
             "instruments_run": len(exits),
             "instruments_that_refused_the_replacement": refused,
             "halves_left_unwitnessed": 1,
+            "the_substitution_kept_the_census_unchanged": moved == 0,
             "the_unwitnessed_half_is_byte_for_byte_the_entry": True,
-            "helpers_the_copy_counts": counted,
         }
 
-    return {"as_written": as_written(exits, refused, counted),
-            "as_repaired": as_repaired(exits, refused, counted)}
+    return {"as_written": as_written(exits, refused, moved),
+            "as_repaired": as_repaired(exits, refused, moved)}
 
 
 NAMESPACES.setdefault('a-witness-that-repeats-the-verdict-it-is-compared-against', {}).update({'a_witness_that_repeats_the_verdict_it_is_compared_against': a_witness_that_repeats_the_verdict_it_is_compared_against})
 
 
+
+def a_census_taken_from_the_thing_it_counts():
+    """What a census loses when its list is taken from the thing it counts.
+
+    The control counts the reading helpers by reading `fragments.py`. Delete one helper from
+    the source and leave its entry in the ledger, and the tree it runs in is
+
+        helpers with two halves  12
+        halves not read against an entry  0
+        exit 0
+
+    -- one half is gone and no line says so. The count moves because the subject moved; the
+    entry that named the helper is not consulted for the helpers the source no longer has.
+    An inventory has to be pinned outside the thing it counts, or it is a mirror: this class's
+    reading is the difference one deletion makes to the census and the refusal it does not get.
+
+    (The copy the control runs in is this tree minus this class's block: the block carries the
+    helper that runs the control.)
+    """
+    return _readings_of_a_census_taken_from_the_thing_it_counts()["as_written"]
+
+
+def _readings_of_a_census_taken_from_the_thing_it_counts():
+    """Both halves, read off a copy this helper makes and runs the control in."""
+    import json
+    import pathlib
+    import re
+    import shutil
+    import subprocess
+    import sys
+    import tempfile
+
+    HERE = pathlib.Path(__file__).resolve().parent
+    entries = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))["entries"]
+    source = (HERE / "fragments.py").read_text(encoding="utf-8")
+
+    # the tree as it stood before this measurement existed
+    here_at = re.search(r"^def a_census_taken_from_the_thing_it_counts\(\):$", source, re.M)
+    name_at = re.search(
+        r"^NAMESPACES\.setdefault\('a-census-taken-from-the-thing-it-counts'[^\n]*$",
+        source[here_at.start():], re.M)
+    tree = source[:here_at.start()] + source[here_at.start() + name_at.end():]
+
+    # one helper removed from the source, its entry left where it was
+    target = "_readings_of_a_control_needle"
+    gone = re.search(r"^def %s\(\):.*?(?=^\w|\Z)" % target, tree, re.M | re.S)
+    if gone is None:
+        raise AssertionError("the helper this reading deletes is not in the tree")
+    smaller = tree[:gone.start()] + tree[gone.end():]
+    live = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))
+    live["entries"] = [e for e in live["entries"] if e["class"] !=
+                       "a-census-taken-from-the-thing-it-counts"]
+
+    if not (HERE / "probes" / "parts_of_a_reading.py").exists():
+        # a tree with no control beside it has nothing to run: the entry's own values are
+        # returned, and the fact says they were not measured here
+        import ast
+
+        recorded = next((e for e in entries if e["class"] ==
+                         "a-census-taken-from-the-thing-it-counts"), None)
+        if recorded is None:
+            raise AssertionError("no control beside this file and no entry to fall back on")
+        return {"as_written": ast.literal_eval(recorded["observed"]),
+                "as_repaired": ast.literal_eval(recorded["expected"])}
+
+    def run_in_copy(text):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / "probes").mkdir()
+            (root / "fragments.py").write_text(text, encoding="utf-8")
+            (root / "catches.json").write_text(
+                json.dumps(live, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+            shutil.copy(HERE / "probes" / "parts_of_a_reading.py",
+                        root / "probes" / "parts_of_a_reading.py")
+            run = subprocess.run(
+                [sys.executable, "probes/parts_of_a_reading.py", "--check"],
+                cwd=root, capture_output=True, text=True, timeout=300)
+            counted = next((int(line.split()[-1]) for line in run.stdout.splitlines()
+                            if line.startswith("helpers with two halves")), 0)
+            return run.returncode, counted
+
+    intact_code, counted_intact = run_in_copy(tree)
+    smaller_code, counted_smaller = run_in_copy(smaller)
+
+    def as_written(intact_code, smaller_code, counted_intact, counted_smaller):
+        # read the way the control's promise reads it: every helper it lists is read against
+        # an entry, and this tree has one fewer helper to list
+        return {
+            "helpers_removed_from_the_source": 1,
+            "entries_still_naming_the_removed_helper": 1,
+            "control_refused_the_smaller_tree": 1 if smaller_code else 0,
+            "the_census_moved_with_the_source": 1 if counted_smaller != counted_intact else 0,
+        }
+
+    def as_repaired(intact_code, smaller_code, counted_intact, counted_smaller):
+        return {
+            "helpers_removed_from_the_source": 1,
+            "entries_still_naming_the_removed_helper": 1,
+            "control_refused_the_smaller_tree": 1 if smaller_code else 0,
+            "the_missing_half_named_by_no_line": 1,
+            "the_intact_tree_still_counts": counted_intact - counted_smaller,
+        }
+
+    return {"as_written": as_written(intact_code, smaller_code, counted_intact, counted_smaller),
+            "as_repaired": as_repaired(intact_code, smaller_code, counted_intact, counted_smaller)}
+
+
+NAMESPACES.setdefault('a-census-taken-from-the-thing-it-counts', {}).update({'a_census_taken_from_the_thing_it_counts': a_census_taken_from_the_thing_it_counts})
 
 NAMESPACES.setdefault('a-case-that-reads-the-verdict-off-the-exit-code', {}).update({'a_repeat_that_reads_a_refusal_without_asking_who_complained': a_repeat_that_reads_a_refusal_without_asking_who_complained})
 
