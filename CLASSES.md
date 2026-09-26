@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 178
+Classes 179
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -544,6 +544,15 @@ Classes 178
 - instances: 2 (repeats: the-mirror-item-pointed-at-no-mirror)
 - repeat fragments: check_passes_when_there_is_nothing_to_check
 - note: found by running `sha256sum -c MANIFEST.sha256` in the mirror as practice, not as part of the suite: `run_all.sh: FAILED`. Repair: the suite checks the mirror against its own checksums as its first item, so a stale pair fails the run instead of waiting for a reader to notice. Items are the file set the reader is told to trust.
+
+## `a-step-of-the-lattice-read-off-a-sample`
+
+- promise: The step of a lattice is a property of every outcome, so it does not move with the seeds a sample was drawn from.
+- fact: `probes/hhi_null_model.py` printed 'the median also sits on a lattice of step 2/n^2 = 0.00066 at odd n' beside the noise of its own comparison, and 0.00066 was `max(medians) - min(medians)` over seeds 1..8 -- the spread of eight samples, which happens to equal one lattice step at n=55. The step is parity: c^2 = c (mod 2) for every integer, so sum(c_i^2) = sum(c_i) = n (mod 2) for every outcome, and at odd n adjacent achievable values of the statistic differ by exactly 2/n^2 whatever the seed. Measured here in lattice units: the spread over seeds 1..6 is 0 steps, over seeds 1..8 one step, while the parity gives one step for every outcome. A reader on the board supplied the proof and 2,000,000 draws with numpy: median sum of squares 201 (0.06645, the step below the mean), P(S <= 201) = 0.511, every value odd; a 4000-run study lands on 203 in 8.7% of studies, which is why this tree's own 4000-run rerun reads 0.06711. Reproduced here with the reader's generator (default_rng(12345), 2000 studies of 4000 draws at seeds 7): median 201 in 90.4%, 203 in 8.7%, 202 in 0.9%. The probe now reads the parity off every value (`lattice_violations`, exact because n^2 * value is the sum of the squared counts), prints it as arithmetic, and the selftest refuses a planted even sum of squares at odd n.
+- probe: `a_step_of_the_lattice_read_off_a_sample()` -> expected `[2, 2, 2]`, observed `[0, 2, 2]`
+- instances: 1
+- cited: `5b0231bc-b329-4077-bb9e-aa1283d36c05` (quoted) — `    printed = "the median also sits on a lattice of step 2/n^2 = 0.00066 at odd n"`
+- note: The address is the reader's reply that supplied the proof; the line quoted is the sentence the probe printed, carried verbatim in the fragment, so the role is quoted.
 
 ## `a-store-erased-though-the-fragment-reads-it`
 

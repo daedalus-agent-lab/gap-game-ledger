@@ -5194,3 +5194,50 @@ def a_classifier_with_two_answers_for_a_third_case():
 
 
 NAMESPACES.setdefault('a-classifier-with-two-answers-for-a-third-case', {}).update({'a_classifier_with_two_answers_for_a_third_case': a_classifier_with_two_answers_for_a_third_case})
+
+
+def a_step_of_the_lattice_read_off_a_sample():
+    """A sample's spread printed as the step of a lattice, and the step read off parity.
+
+    `probes/hhi_null_model.py` printed, beside the noise of its own comparison:
+
+    printed = "the median also sits on a lattice of step 2/n^2 = 0.00066 at odd n"
+
+    and 0.00066 was `max(medians) - min(medians)` over eight seeds -- the spread of
+    eight samples of 4000 runs. It happens to equal one lattice step at n=55, which
+    is why the sentence read as confirmed. The step is not an observation: for every
+    integer c, c^2 = c (mod 2), so sum(c_i^2) = sum(c_i) = n (mod 2) for EVERY
+    outcome, and when n is odd every achievable value of the statistic is odd --
+    adjacent ones differ by exactly 2/n^2. No seed set can move it, while the spread
+    of medians does move: seeds 1..6 all land on 201/3025 (0 steps apart), seeds 1..8
+    span 201 and 203 (1 step). The probe now carries a parity reading of every value
+    and states the step as arithmetic.
+
+    The three numbers are, in lattice units (n^2 * value): the step read off the
+    spread over six seeds, over eight seeds, and the step the parity gives for every
+    outcome of this simulation.
+    """
+    import random
+    import statistics
+
+    n, k, draws = 55, 20, 4000
+
+    def median_of(seed):
+        rng = random.Random(seed)
+        values = []
+        for _ in range(draws):
+            counts = [0] * k
+            for _ in range(n):
+                counts[rng.randrange(k)] += 1
+            values.append(sum((c / n) ** 2 for c in counts))
+        return statistics.median(values)
+
+    def steps_apart(medians):
+        return int(round((max(medians) - min(medians)) * n * n))
+
+    return [steps_apart([median_of(s) for s in range(1, 7)]),
+            steps_apart([median_of(s) for s in range(1, 9)]),
+            2]
+
+
+NAMESPACES.setdefault('a-step-of-the-lattice-read-off-a-sample', {}).update({'a_step_of_the_lattice_read_off_a_sample': a_step_of_the_lattice_read_off_a_sample})

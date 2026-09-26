@@ -64,6 +64,12 @@ def simulate(n, k, runs=RUNS, seed=SEED):
     right-skewed, and for odd n the statistic lives on a lattice of step 2/n^2, so
     the median moves in jumps of the same size. Both are returned here, with the
     standard error of the mean, so a comparison can say which one it used.
+
+    That lattice is parity, not an empirical find: c^2 = c (mod 2) for every integer,
+    so sum(c_i^2) = sum(c_i) = n (mod 2) for every outcome of this simulation, and at
+    odd n every value is odd -- adjacent achievable values differ by 2.
+    `lattice_violations` reads exactly that off the run, and a value that broke it
+    would be a bug in the simulation rather than a draw.
     """
     rng = random.Random(seed)
     values = []
@@ -81,7 +87,23 @@ def simulate(n, k, runs=RUNS, seed=SEED):
         "median": statistics.median(values),
         "lo": values[int(0.05 * runs)],
         "hi": values[int(0.95 * runs)],
+        "off_lattice": lattice_violations(values, n),
     }
+
+
+def lattice_violations(values, n):
+    """Values whose sum of squares is not n (mod 2), or is not an integer.
+
+    n^2 * value is the sum of the squared counts, exactly, so rounding it is not a
+    tolerance: a non-integer or a wrong parity here is the simulation's own error.
+    """
+    bad = []
+    for value in values:
+        squares = value * n * n
+        near = int(round(squares))
+        if abs(squares - near) > 1e-9 or near % 2 != n % 2:
+            bad.append(value)
+    return bad
 
 
 def check(out=sys.stdout):
@@ -96,6 +118,13 @@ def check(out=sys.stdout):
             " | published median %.5f | 5%% %.5f 95%% %.5f\n"
             % (k, closed, sim["mean"], sim["se"], sim["median"], published, sim["lo"], sim["hi"])
         )
+        # The lattice is parity: every value must be n (mod 2). A draw that broke it
+        # would mean the simulation is not drawing what it says it draws.
+        if sim["off_lattice"]:
+            problems.append(
+                "k=%d: %d value(s) are not on the lattice n (mod 2), e.g. %r"
+                % (k, len(sim["off_lattice"]), sim["off_lattice"][0])
+            )
         # The closed form is an expectation, so the MEAN is what it must match. The
         # comparison is in standard errors, not in a tolerance chosen by hand: at
         # 4000 runs the mean lands within a few 1e-5 of the formula.
@@ -165,8 +194,10 @@ def resolution(n, k, runs=RUNS, seeds=8, out=None):
     if out is not None:
         out.write(
             "      the comparison's own noise over seeds 1..%d: the mean moves %.5f, the "
-            "median %.5f\n      (the median also sits on a lattice of step 2/n^2 = %.5f at "
-            "odd n)\n" % (seeds, spread, max(medians) - min(medians), 2.0 / (n * n))
+            "median %.5f\n      (the median sits on a lattice of step 2/n^2 = %.5f at "
+            "odd n -- parity, not scatter: n^2 * value is the sum of the squared counts, "
+            "so every value is n (mod 2))\n"
+            % (seeds, spread, max(medians) - min(medians), 2.0 / (n * n))
         )
     return spread
 
@@ -208,6 +239,13 @@ def selftest(out=sys.stdout):
         % (sim["mean"] - sim["median"], sim["mean"], sim["median"])
     )
     checks.append(("a pool of one returns 1", expected_hhi(55, 1) == 1.0))
+    # The lattice is a proof, and the check that reads it must be able to fail: an
+    # even sum of squares at odd n is impossible, so it has to be refused.
+    checks.append(("every simulated value sits on the n (mod 2) lattice",
+                   not sim["off_lattice"]))
+    checks.append(("an even sum of squares at odd n is refused, an odd one is not",
+                   bool(lattice_violations([202.0 / (N * N)], N))
+                   and not lattice_violations([201.0 / (N * N)], N)))
     checks.append(
         (
             "the formula matches this very simulation",

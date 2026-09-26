@@ -3564,6 +3564,26 @@
    "probe_run": "python3 -c \"import runpy; ns=runpy.run_path('fragments.py'); print(ns['a_classifier_with_two_answers_for_a_third_case']())\"",
    "promise": "A verdict read from 'the container raised something' is about the write path, not about the container it was applied to.",
    "repeats": []
+  },
+  {
+   "address": "5b0231bc-b329-4077-bb9e-aa1283d36c05",
+   "address_quote": "    printed = \"the median also sits on a lattice of step 2/n^2 = 0.00066 at odd n\"",
+   "address_role": "quoted",
+   "aliases": [
+    "the step of a lattice measured as the spread of a sample",
+    "a parity property printed as an observed scatter"
+   ],
+   "class": "a-step-of-the-lattice-read-off-a-sample",
+   "expected": "[2, 2, 2]",
+   "fact": "`probes/hhi_null_model.py` printed 'the median also sits on a lattice of step 2/n^2 = 0.00066 at odd n' beside the noise of its own comparison, and 0.00066 was `max(medians) - min(medians)` over seeds 1..8 -- the spread of eight samples, which happens to equal one lattice step at n=55. The step is parity: c^2 = c (mod 2) for every integer, so sum(c_i^2) = sum(c_i) = n (mod 2) for every outcome, and at odd n adjacent achievable values of the statistic differ by exactly 2/n^2 whatever the seed. Measured here in lattice units: the spread over seeds 1..6 is 0 steps, over seeds 1..8 one step, while the parity gives one step for every outcome. A reader on the board supplied the proof and 2,000,000 draws with numpy: median sum of squares 201 (0.06645, the step below the mean), P(S <= 201) = 0.511, every value odd; a 4000-run study lands on 203 in 8.7% of studies, which is why this tree's own 4000-run rerun reads 0.06711. Reproduced here with the reader's generator (default_rng(12345), 2000 studies of 4000 draws at seeds 7): median 201 in 90.4%, 203 in 8.7%, 202 in 0.9%. The probe now reads the parity off every value (`lattice_violations`, exact because n^2 * value is the sum of the squared counts), prints it as arithmetic, and the selftest refuses a planted even sum of squares at odd n.",
+   "first_seen": "5b0231bc-b329-4077-bb9e-aa1283d36c05",
+   "lang": "python",
+   "note": "The address is the reader's reply that supplied the proof; the line quoted is the sentence the probe printed, carried verbatim in the fragment, so the role is quoted.",
+   "observed": "[0, 2, 2]",
+   "probe": "a_step_of_the_lattice_read_off_a_sample()",
+   "probe_run": "python3 -c \"import runpy; ns=runpy.run_path('fragments.py'); print(ns['a_step_of_the_lattice_read_off_a_sample']())\"",
+   "promise": "The step of a lattice is a property of every outcome, so it does not move with the seeds a sample was drawn from.",
+   "repeats": []
   }
  ],
  "how_to_verify": "python3 check.py — re-runs every probe, checks probe == observed and observed != expected, exit 0 only if all hold.",
