@@ -5592,6 +5592,63 @@ def _readings_of_a_refusal_no_line_attributed():
         }
 
     return {"as_written": as_written(TREES), "as_repaired": as_repaired(TREES)}
+def a_survivor_table_read_as_a_property_of_the_mutation():
+    """Four rows of one control's mutation table, two mutants against two revisions.
+
+        mutation                                          older   current
+        dropped the entry comparison                      lives   killed
+        compared the repaired half to the observed        lives   killed
+
+    Both mutants remove the one comparison that makes a repaired half a reading rather
+    than a constant, and both were reported as survivors of the revision the report
+    names. The arm that kills them -- an entry recording the written half as its
+    expected must be refused -- was added to the control after that revision, so the
+    same mutant on the current tree exits 1 with the arm named. A table that keeps only
+    the mutation name reads the second run as the same answer as the first.
+    """
+    return _readings_of_a_survivor_table_two_revisions_apart()["as_written"]
+
+
+def _readings_of_a_survivor_table_two_revisions_apart():
+    """Both halves: the table keyed by mutation alone, and keyed by mutation and revision."""
+    ROWS = (
+        {"mutation": "dropped the entry comparison", "revision": "older", "survives": True},
+        {"mutation": "dropped the entry comparison", "revision": "current", "survives": False},
+        {"mutation": "the repaired half compared to the observed", "revision": "older",
+         "survives": True},
+        {"mutation": "the repaired half compared to the observed", "revision": "current",
+         "survives": False},
+    )
+
+    def as_written(rows):
+        # one row per mutation name, the first seen -- the revision column is dropped
+        first = {}
+        for row in rows:
+            first.setdefault(row["mutation"], row)
+        return {
+            "rows_in_the_table": len(first),
+            "mutations_the_table_calls_survivors":
+                sum(1 for r in first.values() if r["survives"]),
+            "mutations_a_later_revision_kills": 0,
+        }
+
+    def as_repaired(rows):
+        # the pair (mutation, revision) is the key, so a second run is a second reading
+        return {
+            "rows_in_the_table": len(rows),
+            "mutations_the_table_calls_survivors":
+                sum(1 for r in rows if r["survives"]),
+            "mutations_a_later_revision_kills":
+                sum(1 for r in rows
+                    if not r["survives"]
+                    and any(o["mutation"] == r["mutation"] and o["survives"] for o in rows)),
+        }
+
+    return {"as_written": as_written(ROWS), "as_repaired": as_repaired(ROWS)}
+
+
+NAMESPACES.setdefault('a-survivor-table-read-as-a-property-of-the-mutation', {}).update({'a_survivor_table_read_as_a_property_of_the_mutation': a_survivor_table_read_as_a_property_of_the_mutation})
+
 NAMESPACES.setdefault('a-case-that-reads-the-verdict-off-the-exit-code', {}).update({'a_repeat_that_reads_a_refusal_without_asking_who_complained': a_repeat_that_reads_a_refusal_without_asking_who_complained})
 
 
