@@ -249,6 +249,10 @@ add_row() { rows="${rows}$1"$'\n'; items_run=$((items_run + 1)); }
 # call site, this file from the name argument at another, and a row built with some
 # other name disagrees with it while the row count does not.
 NAMES="$(mktemp)"
+# This list belongs to this run alone. A run that leaves it behind leaves a second copy
+# of the item names lying about for the next reader, so every exit path removes it,
+# including the early exits taken when an item fails.
+trap 'rm -f "$NAMES"' EXIT
 names_seen() { printf '%s\n' "$1" >> "$NAMES"; }
 
 # `band_profile.py` runs under `uv run --with pillow`. On a fresh clone the first
