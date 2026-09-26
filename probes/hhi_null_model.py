@@ -57,7 +57,14 @@ def pool_that_explains(hhi, n):
 
 
 def simulate(n, k, runs=RUNS, seed=SEED):
-    """The null model by simulation: median, 5th and 95th percentile."""
+    """The null model by simulation, returning both moments the board's numbers mix.
+
+    The closed form is an EXPECTATION. A published grid of medians is not, and the
+    two differ by more than the gap to some wrong models: the distribution is
+    right-skewed, and for odd n the statistic lives on a lattice of step 2/n^2, so
+    the median moves in jumps of the same size. Both are returned here, with the
+    standard error of the mean, so a comparison can say which one it used.
+    """
     rng = random.Random(seed)
     values = []
     for _ in range(runs):
@@ -66,7 +73,15 @@ def simulate(n, k, runs=RUNS, seed=SEED):
             counts[rng.randrange(k)] += 1
         values.append(sum((c / n) ** 2 for c in counts))
     values.sort()
-    return (statistics.median(values), values[int(0.05 * runs)], values[int(0.95 * runs)])
+    mean = statistics.fmean(values)
+    se = statistics.pstdev(values) / math.sqrt(runs)
+    return {
+        "mean": mean,
+        "se": se,
+        "median": statistics.median(values),
+        "lo": values[int(0.05 * runs)],
+        "hi": values[int(0.95 * runs)],
+    }
 
 
 def check(out=sys.stdout):
@@ -74,21 +89,29 @@ def check(out=sys.stdout):
     problems = []
     out.write("null model, n=%d, %d runs, seed %d\n" % (N, RUNS, SEED))
     for k, published in PUBLISHED:
-        median, lo, hi = simulate(N, k)
+        sim = simulate(N, k)
         closed = expected_hhi(N, k)
         out.write(
-            "  k=%-5d closed %.4f | simulated median %.4f | published median %.4f"
-            " | 5%% %.4f 95%% %.4f\n" % (k, closed, median, published, lo, hi)
+            "  k=%-5d closed %.5f | simulated mean %.5f (se %.5f) | simulated median %.5f"
+            " | published median %.5f | 5%% %.5f 95%% %.5f\n"
+            % (k, closed, sim["mean"], sim["se"], sim["median"], published, sim["lo"], sim["hi"])
         )
-        if abs(closed - median) > TOLERANCE * 2:
-            problems.append("k=%d: the closed form disagrees with my own simulation" % k)
-        if abs(median - published) > TOLERANCE:
+        # The closed form is an expectation, so the MEAN is what it must match. The
+        # comparison is in standard errors, not in a tolerance chosen by hand: at
+        # 4000 runs the mean lands within a few 1e-5 of the formula.
+        if abs(closed - sim["mean"]) > 5 * sim["se"] + 1e-9:
+            problems.append(
+                "k=%d: the closed form disagrees with my own simulated mean (%.5f)"
+                % (k, sim["mean"])
+            )
+        # The published numbers ARE medians, so the median is what must reproduce
+        # them -- and the gap between the two moments is printed rather than
+        # mistaken for disagreement.
+        if abs(sim["median"] - published) > TOLERANCE:
             problems.append("k=%d: my simulation does not reproduce the published median" % k)
-        if abs(closed - published) > TOLERANCE * 2:
-            problems.append("k=%d: the closed form does not reproduce the published median" % k)
         # The floor alone is the naive baseline the study's own numbers refute: if
         # 1/n were the expectation, every one of these medians would equal 0.0182.
-        if abs(1.0 / N - median) <= TOLERANCE:
+        if abs(1.0 / N - sim["median"]) <= TOLERANCE:
             problems.append("k=%d: the floor 1/n cannot be told from the expectation" % k)
 
     if expected_hhi(N, 1) != 1.0:
@@ -135,49 +158,61 @@ def resolution(n, k, runs=RUNS, seeds=8, out=None):
     differed by 0.0007 slipped under a tolerance of 0.0010 and was reported as a
     pass.
     """
-    medians = [simulate(n, k, runs=runs, seed=s)[0] for s in range(1, seeds + 1)]
+    sims = [simulate(n, k, runs=runs, seed=s) for s in range(1, seeds + 1)]
+    medians = [x["median"] for x in sims]
+    means = [x["mean"] for x in sims]
+    spread = max(means) - min(means)
     if out is not None:
         out.write(
-            "      resolution of this comparison: %.4f (median over seeds 1..%d)\n"
-            % (max(medians) - min(medians), seeds)
+            "      the comparison's own noise over seeds 1..%d: the mean moves %.5f, the "
+            "median %.5f\n      (the median also sits on a lattice of step 2/n^2 = %.5f at "
+            "odd n)\n" % (seeds, spread, max(medians) - min(medians), 2.0 / (n * n))
         )
-    return max(medians) - min(medians)
+    return spread
 
 
 def selftest(out=sys.stdout):
     """The check must be able to fail: plant each wrong model and see it caught."""
     checks = []
-    median = simulate(N, 20)[0]
+    sim = simulate(N, 20)
     res = resolution(N, 20, out=out)
 
+    # The mutants are compared against the MEAN, because the published form is an
+    # expectation. Against the median the closest of them was indistinguishable --
+    # not because 4000 runs are too few, but because the median of a right-skewed
+    # statistic on a lattice sits a lattice step below its own mean.
     mutants = {
         "the floor alone": lambda n, k: 1.0 / n,
         "the pool term alone": lambda n, k: 1.0 / k,
         "the sample term outside the mixture": lambda n, k: 1.0 / k + 1.0 / n,
         "the mixture without the pool weight": lambda n, k: 1.0 / k + (1.0 - 1.0 / k) / k,
+        "the pool term divided by n": lambda n, k: 1.0 / k + (1.0 - 1.0 / n) / n,
     }
     for name, wrong in mutants.items():
-        gap = abs(wrong(N, 20) - median)
-        checks.append(("the check refuses %s (gap %.4f > resolution %.4f)" % (name, gap, res), gap > res))
+        gap = abs(wrong(N, 20) - sim["mean"])
+        checks.append(
+            ("the check refuses %s (gap %.5f > noise %.5f)" % (name, gap, res), gap > res)
+        )
     checks.append(
         (
             "the published form survives the same comparison",
-            abs(expected_hhi(N, 20) - median) <= res,
+            abs(expected_hhi(N, 20) - sim["mean"]) <= res,
         )
     )
-    # A fifth mutant is deliberately NOT a check: it sits inside the resolution, so
-    # this comparison cannot tell it from the published model. Saying so out loud is
-    # more useful than a tolerance picked to make it pass.
-    faint = abs((1.0 / 20 + (1.0 - 1.0 / N) / N) - median)
+    # And the median is not the same channel: the gap between the two moments of
+    # THIS simulation is printed, so nobody has to guess which one a number came from.
     out.write(
-        "     a sixth mutant, 1/k + (1-1/n)/n, differs by %.4f -- inside the resolution, "
-        "so\n     this comparison cannot refuse it; 4000 runs do not buy that separation.\n" % faint
+        "     the two moments of one simulation differ by %.5f (mean %.5f, median %.5f),\n"
+        "     more than the distance to the nearest refused mutant: a comparison that does\n"
+        "     not say which moment it used is comparing two different things.\n"
+        % (sim["mean"] - sim["median"], sim["mean"], sim["median"])
     )
     checks.append(("a pool of one returns 1", expected_hhi(55, 1) == 1.0))
     checks.append(
         (
             "the formula matches this very simulation",
-            all(abs(expected_hhi(N, k) - simulate(N, k, runs=1200)[0]) < 0.006 for k, _ in PUBLISHED),
+            all(abs(expected_hhi(N, k) - simulate(N, k, runs=1200)["mean"]) < 0.006
+                for k, _ in PUBLISHED),
         )
     )
 

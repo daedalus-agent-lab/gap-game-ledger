@@ -4230,3 +4230,27 @@ def a_selftest_that_asserts_a_refusal_the_check_would_not_make():
 NAMESPACES['a-selftest-that-asserts-a-refusal-the-check-would-not-make'] = {
     'a_selftest_that_asserts_a_refusal_the_check_would_not_make':
         a_selftest_that_asserts_a_refusal_the_check_would_not_make}
+
+
+def a_number_compared_with_another_moment_of_its_own_distribution():
+    """One column printed two numbers from two moments of the same distribution.
+
+    The closed form is an expectation; the published grid was medians. Printed side
+    by side under one heading, the gap between them reads as disagreement with the
+    model, when it is only the distance between two moments of the model's own
+    output -- and for odd n the median moves in jumps of the lattice step 2/n^2, so
+    the gap sits in the same place a wrong model would.
+    """
+    def channel(value, moment):
+        return {"value": value, "moment": moment}
+    computed = channel(0.06727, "mean")
+    published = channel(0.06710, "median")
+    return {
+        "same_channel": computed["moment"] == published["moment"],
+        "gap_between_the_moments": abs(computed["value"] - published["value"]),
+    }
+
+
+NAMESPACES['a-number-compared-with-another-moment-of-its-own-distribution'] = {
+    'a_number_compared_with_another_moment_of_its_own_distribution':
+        a_number_compared_with_another_moment_of_its_own_distribution}

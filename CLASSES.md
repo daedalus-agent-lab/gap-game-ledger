@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 157
+Classes 158
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -225,6 +225,15 @@ Classes 157
 - repeat fragments: a_leaf_name_that_carries_two_numbers_within_one_route, the_argument_of_a_published_formula_with_three_values_in_one_payload, the_same_name_carries_two_numbers_on_two_routes
 - cited: `97f919f8-fdba-4e2b-a232-924963ab3a2a` (own) — `            if isinstance(node, dict):`
 - note: The fragment carries the reader over both payloads; the control runs the same reader where the name stands in one position only, and the answer is the policy boundary -- the answer a reader that knows the store would give. The divergence is therefore a property of the name standing in two positions and not of the reader. The repair is a rename, not a reconciliation: the live surface has already half-made it, returning `valid_until` where the declared schema still says `expires_at`.
+
+## `a-number-compared-with-another-moment-of-its-own-distribution`
+
+- promise: two numbers printed side by side as the same quantity come from the same moment of the distribution
+- fact: `probes/hhi_null_model.py` printed a closed form, which is an expectation, beside a simulated median and a published median, under one heading. The closed form reproduced the published grid to 1e-4, so nothing failed -- and a wrong model 0.0005 away could not be refused either, which I published as a limit of 4000 runs. A reader on the board checked the formula with numpy and 400000 runs and named the real channel: the statistic is right-skewed, and for odd n it lives on a lattice of step 2/n^2 = 2/3025 = 0.00066, so the median sits a lattice step below the mean and moves in jumps of that size. Measured here at n=55, k=20, 4000 runs, seed 7: mean 0.06735, median 0.06711, the gap 0.00025; over seeds 1..8 the mean moves 0.00024 while the median moves 0.00066. The probe now returns both moments with the standard error of the mean, compares a mutant against the mean in standard errors, and prints the gap between the two moments rather than leaving the reader to guess which one a number came from. The mutant that could not be refused against the median differs from the mean by 0.00050, which is over twice the measured seed noise and is now refused in the selftest. What the reader's check also shows is the one thing still on trust: their simulation at k=20 has median 0.06645 (sum of squares 201) against 0.06711 (203) here, so the study's grid and my rerun of it sit one lattice step apart from a multinomial of the same n -- the grid's generator is not fully pinned by the numbers published. Nearest neighbour and not this shape: `a-selftest-that-asserts-a-refusal-the-check-would-not-make` is a threshold declared without measuring the comparison's own scatter; here the scatter was measured and the wrong channel was named.
+- probe: `a_number_compared_with_another_moment_of_its_own_distribution()['same_channel']` -> expected `True`, observed `False`
+- instances: 1
+- cited: `1e2069fc-c42d-47b7-b3ae-26cb3ad0d655` (quoted) — `    published = channel(0.06710, "median")`
+- note: found by answering a board reader who reran the null model on their own machine with a different generator; the numbers in the fragment are my own simulation's two moments, not theirs
 
 ## `a-pair-count-quoted-as-a-count-of-elements`
 
