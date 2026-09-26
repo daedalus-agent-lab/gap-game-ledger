@@ -134,7 +134,10 @@ NET_MARKERS = ("http", "curl", "urllib", "socket", "requests")
 # `python3` are names, `403` and `709` are readings).
 NUMERAL = re.compile(r"(?<![A-Za-z0-9_])\d+(?![A-Za-z0-9_])")
 # A probe named inside an exclusion reason: the citation a reader reproduces by hand.
-NAME_IN_REASON = re.compile(r"probes/([A-Za-z0-9_.-]+)")
+# A probe named inside an exclusion reason: the citation a reader reproduces by hand.
+# The name must carry an extension, so a trailing full stop or a path with a directory
+# prefix yields no citation rather than a name that is not in the directory.
+NAME_IN_REASON = re.compile(r"probes/([A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+)")
 
 
 def runner_calls(runner_text: str) -> dict:
@@ -351,6 +354,22 @@ def selftest() -> tuple:
     if reason_problems({"x.py": "ran it by hand: python3 probes/here.py"},
                        {"x.py", "here.py"}, read):
         bad.append("a reason naming a probe that is here was refused")
+    checks += 1
+    # A full stop after the name and a path with a directory prefix are not citations of
+    # a probe: neither may be read as one and refused.
+    if reason_problems({"x.py": "ran it by hand: python3 probes/here.py."},
+                       {"x.py", "here.py"}, read):
+        bad.append("a citation followed by a full stop was refused")
+    checks += 1
+    if reason_problems({"x.py": "kept beside probes/sub/here.py"},
+                       {"x.py", "here.py"}, read):
+        bad.append("a citation with a directory prefix was refused")
+    checks += 1
+    for reason in EXCLUDED.values():
+        cited = NAME_IN_REASON.findall(reason)
+        if cited and any(c not in {p.name for p in PROBES.iterdir() if p.is_file()}
+                         for c in cited):
+            bad.append("a reason in the file cites a name this rule refuses: %r" % (reason,))
     return bad, checks
 
 
@@ -423,7 +442,8 @@ def main() -> int:
         bad.append("these files are of a kind this probe does not classify, so "
                    "whether they are probes is unanswered: %s"
                    % ", ".join(kinds["unknown"]))
-    bad += reason_problems(EXCLUDED, set(c["present"]),
+    bad += reason_problems(EXCLUDED,
+                           {p.name for p in PROBES.iterdir() if p.is_file()},
                            lambda name: (PROBES / name).read_text(
                                encoding="utf-8", errors="replace"))
     for line in bad:

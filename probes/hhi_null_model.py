@@ -68,17 +68,25 @@ def simulate(n, k, runs=RUNS, seed=SEED):
     That lattice is parity, not an empirical find: c^2 = c (mod 2) for every integer,
     so sum(c_i^2) = sum(c_i) = n (mod 2) for every outcome of this simulation, and at
     odd n every value is odd -- adjacent achievable values differ by 2.
-    `lattice_violations` reads exactly that off the run, and a value that broke it
-    would be a bug in the simulation rather than a draw.
+    `lattice_violations` reads that off the run from the integer sum of the squared
+    counts, cross-checked against the float value the medians are taken from, so a
+    value that broke it would be a bug in the simulation rather than a draw.
     """
     rng = random.Random(seed)
     values = []
+    squares = []
     for _ in range(runs):
         counts = [0] * k
         for _ in range(n):
             counts[rng.randrange(k)] += 1
         values.append(sum((c / n) ** 2 for c in counts))
-    values.sort()
+        # The same sum in integer arithmetic: what n^2 * value is, exactly.
+        squares.append(sum(c * c for c in counts))
+    # Sorted together: the float value and its integer sum must stay paired, or the
+    # lattice reading compares one draw's value with another draw's sum.
+    pairs = sorted(zip(values, squares))
+    values = [v for v, _ in pairs]
+    squares = [s for _, s in pairs]
     mean = statistics.fmean(values)
     se = statistics.pstdev(values) / math.sqrt(runs)
     return {
@@ -87,21 +95,23 @@ def simulate(n, k, runs=RUNS, seed=SEED):
         "median": statistics.median(values),
         "lo": values[int(0.05 * runs)],
         "hi": values[int(0.95 * runs)],
-        "off_lattice": lattice_violations(values, n),
+        "off_lattice": lattice_violations(values, n, squares),
     }
 
 
-def lattice_violations(values, n):
-    """Values whose sum of squares is not n (mod 2), or is not an integer.
+def lattice_violations(values, n, squares=None):
+    """Values off the lattice n (mod 2), or whose float value is not their own sum.
 
-    n^2 * value is the sum of the squared counts, exactly, so rounding it is not a
-    tolerance: a non-integer or a wrong parity here is the simulation's own error.
+    The sum of the squared counts is integer arithmetic and `squares` is it; n^2 * value
+    is the same sum computed in floating point. Both halves of the test are therefore
+    exactness of a rounding (within half a unit of the integer) rather than a tolerance
+    chosen by hand -- an absolute bound here would refuse honest draws at large n, where
+    the sum is large and so is the float error in it.
     """
     bad = []
-    for value in values:
-        squares = value * n * n
-        near = int(round(squares))
-        if abs(squares - near) > 1e-9 or near % 2 != n % 2:
+    for index, value in enumerate(values):
+        exact = squares[index] if squares is not None else int(round(value * n * n))
+        if exact % 2 != n % 2 or abs(value * n * n - exact) > 0.5:
             bad.append(value)
     return bad
 
@@ -244,8 +254,18 @@ def selftest(out=sys.stdout):
     checks.append(("every simulated value sits on the n (mod 2) lattice",
                    not sim["off_lattice"]))
     checks.append(("an even sum of squares at odd n is refused, an odd one is not",
-                   bool(lattice_violations([202.0 / (N * N)], N))
-                   and not lattice_violations([201.0 / (N * N)], N)))
+                   bool(lattice_violations([202.0 / (N * N)], N, [202]))
+                   and not lattice_violations([201.0 / (N * N)], N, [201])))
+    # The integrality half must be able to fail too: the integer sum is the authority,
+    # and a float value that is not it is refused. Without this the parity clause alone
+    # would pass on a helper that had dropped the comparison.
+    checks.append(("a float value off its own integer sum is refused",
+                   bool(lattice_violations([201.6 / (N * N)], N, [201]))
+                   and not lattice_violations([201.4 / (N * N)], N, [201])))
+    # And the helper is not bound to this n: a second run at another odd n is read too.
+    other = simulate(99, 5, runs=500)
+    checks.append(("the lattice reading holds at another odd n (n=99)",
+                   not other["off_lattice"]))
     checks.append(
         (
             "the formula matches this very simulation",
