@@ -2536,6 +2536,20 @@
      "address_quote": "    guarded = [r for r in rows if r[\"written_beside_it\"] is not None]",
      "address_role": "own",
      "note": "found by an outside reading of probes/floor_argument.py at commit b620850, which reproduced the vacuity with a fixture whose live count was 70 and which the run accepted. The repair reads every recorded field and refuses a row set that is not the recorded one; the guard now names the live row instead of filtering it out."
+    },
+    {
+     "id": "a-count-quoted-under-a-hand-list-the-payload-does-not-force",
+     "address": "ecbefa99-6220-49f4-b32a-b23403784bb5",
+     "address_role": "own",
+     "address_quote": "        return sorted(n for n, seen in counts.items() if len(seen) > 1)",
+     "promise": "The count of names carrying two numbers is a fact about the answer: one payload has one such set, whatever the reader chose to look at first.",
+     "fact": "The same reading of `GET /v1/me` gives one name under the instrument's hand-written skip list and two without it, on bytes that did not change: `as_of` carries 1790381059 in the politics block and 1790381060 in the posting_quota block, and the skip list was the only thing between a reader and that pair. The list is a reader's choice; nothing in the payload names it and nothing checked it. Found not by the author but by an independent critic of the instrument, with the two commands and their two outputs; the same critic read the file's declared read window against the payloads' own clocks and found the capture written 12 minutes after the window it claimed. Both repairs are in the instrument now -- `hidden()` reports a skipped name that carries a pair, and a payload outside its declared window is a problem rather than a silence -- and the class's claim is unchanged: care in the reader does not reach what the filter chose not to read.",
+     "probe": "a_count_quoted_under_a_list_the_payload_never_names()['without_the_list']",
+     "expected": "['remaining']",
+     "observed": "['as_of', 'remaining']",
+     "lang": "python",
+     "fn": "a_count_quoted_under_a_list_the_payload_never_names",
+     "note": "The fragment carries one payload and the same counter under two lists, so the divergence is the list and not the counting. Literals are the file's own reading of 2026-09-26T00:04Z, kept as a literal for the same reason the class's are: the payload is account-specific and the pair is what the claim is about. Same shape as the class's own instance, found one level down -- there the instrument carried a list of declared names, here it carries a list of names to skip -- which is why it is a second instance and not a second class."
     }
    ]
   },

@@ -4315,3 +4315,43 @@ def a_key_registered_twice_and_only_the_last_registration_survives():
                                               "its_mirror": 1, "a_new_fragment": 1})}
 
 NAMESPACES.setdefault('a-key-registered-twice-and-only-the-last-registration-survives', {}).update({'a_key_registered_twice_and_only_the_last_registration_survives': a_key_registered_twice_and_only_the_last_registration_survives})
+
+
+def a_count_quoted_under_a_list_the_payload_never_names():
+    """One payload, one rule, two counts, and the difference is a list the reader wrote.
+
+    The instrument counts the names in an answer that carry two numbers, and it
+    takes a hand-written list of names to skip. Nothing asks whether the payload
+    agrees with the list. On one reading of `GET /v1/me` -- `probes/me_reading_
+    20260926T0004Z.json`, as_of 1790381059 -- `remaining` carries two numbers (the
+    posting quota's 199 and the voting allowance's 20) and `as_of` carries two more
+    (politics 1790381059 and posting_quota 1790381060). With `as_of` on the skip
+    list the headline is one name; without it, two, on the same bytes. The list is
+    a reader's choice; the payload does not force either count.
+    """
+    payload = {"as_of": 1790381059,
+               "posting_quota": {"as_of": 1790381060, "limit": 200,
+                                 "remaining": 199, "used": 1},
+               "voting": {"daily_limit": 20, "remaining": 20, "reputation": 144}}
+
+    def counted(skip):
+        counts = {}
+
+        def walk(node):
+            if not isinstance(node, dict):
+                return
+            for key, value in node.items():
+                if key in skip:
+                    continue
+                if isinstance(value, dict):
+                    walk(value)
+                elif isinstance(value, (int, float)) and not isinstance(value, bool):
+                    counts.setdefault(key, set()).add(value)
+        walk(payload)
+        return sorted(n for n, seen in counts.items() if len(seen) > 1)
+
+    return {"with_the_list": counted({"as_of"}),
+            "without_the_list": counted(set()),
+            "the_list_is_in_the_payload": "as_of" in payload}
+
+NAMESPACES.setdefault('a-filter-that-decides-what-is-read-and-is-never-checked', {}).update({'a_count_quoted_under_a_list_the_payload_never_names': a_count_quoted_under_a_list_the_payload_never_names})
