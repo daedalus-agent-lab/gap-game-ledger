@@ -5668,9 +5668,12 @@ def a_status_read_from_a_word_that_spawned_its_own_last_command():
 
 def _readings_of_a_status_the_word_beside_it_replaced():
     """Both halves: the four numbers the words printed, and which of them belong to the command."""
+    # The declared return is written into the script, not asserted beside it: a constant
+    # typed in two places is one edit away from disagreeing with the fixture it describes.
+    the_command_returns = 7
     SCRIPT = (
-        "f() { return 7; }\n"
-        "f >/dev/null 2>&1; echo \"plain=$?\"\n"
+        "f() { return %d; }\n" % the_command_returns
+        + "f >/dev/null 2>&1; echo \"plain=$?\"\n"
         "f >/dev/null 2>&1; echo \"$(basename x.y) in_word=$?\"\n"
         "out=$(f 2>&1 | head -1); echo \"pipeline=$?\"\n"
         "f >/dev/null 2>&1; saved=$?; echo \"saved=$saved\"\n"
@@ -5682,7 +5685,10 @@ def _readings_of_a_status_the_word_beside_it_replaced():
         line.split("=", 1) for line in run.stdout.splitlines() if "=" in line
     )
     statuses = {name: int(value) for name, value in printed.items()}
-    the_command_returns = 7
+    if statuses.get("plain") != the_command_returns:
+        raise AssertionError(
+            "bash read the fixture's plain status as %r, not the %d the script declares"
+            % (statuses.get("plain"), the_command_returns))
 
     def as_written(statuses):
         # each printed number read as THE command's status: four identical commands, and the
@@ -5710,6 +5716,146 @@ def _readings_of_a_status_the_word_beside_it_replaced():
 
 
 NAMESPACES.setdefault('a-status-read-from-a-word-that-spawned-its-own-last-command', {}).update({'a_status_read_from_a_word_that_spawned_its_own_last_command': a_status_read_from_a_word_that_spawned_its_own_last_command})
+
+
+
+
+
+
+
+
+
+
+
+
+def a_witness_that_repeats_the_verdict_it_is_compared_against():
+    """What a control loses when its only witness is compared against the verdict it fed.
+
+    The control builds a tree in which the helper of one registered class is replaced by two
+    literals -- exactly the two values its own entry carries -- and runs itself in that tree:
+
+        helpers with two halves  <all of them>
+        halves not read against an entry  0
+        exit 0
+
+    Nothing is broken and nothing is refused, because the comparison is
+    `helper() == entry`, and the replacement IS the entry. A witness that repeats the verdict
+    it is compared against cannot disagree with it, and no instrument that only compares the
+    two can separate computing from copying. The reading this class carries counts the halves
+    the promise calls unwitnessed -- one -- against the halves the instruments refuse -- zero.
+
+    (The tree the control runs in is the tree minus this class's own block: the block carries
+    the helper that runs the control, so a verbatim copy would call it again and recurse.)
+    """
+    return _readings_of_a_witness_repeating_the_verdict()["as_written"]
+
+
+def _readings_of_a_witness_repeating_the_verdict():
+    """Both halves, read off a tree this helper builds and runs the control in."""
+    import json
+    import pathlib
+    import re
+    import shutil
+    import subprocess
+    import sys
+    import tempfile
+
+    HERE = pathlib.Path(__file__).resolve().parent
+    entries = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))["entries"]
+    entry = next(e for e in entries
+                 if e["class"] == "a-survivor-table-read-as-a-property-of-the-mutation")
+    source = (HERE / "fragments.py").read_text(encoding="utf-8")
+
+    call = re.search(
+        r"def a_survivor_table_read_as_a_property_of_the_mutation\(\):.*?"
+        r"return (_readings_of_[a-z_]+)\(\)\[", source, re.S)
+    if call is None:
+        raise AssertionError("no fragment of that class calls a reading helper")
+    helper = call.group(1)
+
+    # the tree as it stood before this measurement existed: the block runs from the
+    # public fragment's def to the class's namespace registration, both anchored at the
+    # start of a line, because the helper's own source quotes both names inside strings
+    start_at = re.search(
+        r"^def a_witness_that_repeats_the_verdict_it_is_compared_against\(\):$",
+        source, re.M)
+    end_at = re.search(
+        r"^NAMESPACES\.setdefault\('a-witness-that-repeats-the-verdict-it-is-compared-against'[^\n]*$",
+        source[start_at.start():], re.M)
+    start = start_at.start()
+    end = start_at.start() + end_at.end()
+    without_the_block = source[:start] + source[end:]
+    live = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))
+    live["entries"] = [e for e in live["entries"] if e["class"] !=
+                       "a-witness-that-repeats-the-verdict-it-is-compared-against"]
+
+    if not (HERE / "probes" / "parts_of_a_reading.py").exists():
+        # A tree that carries no control has nothing to run: this reading returns the pair
+        # its own entry records and says why, rather than a value it never measured. That
+        # is the defect this class is about, met from the other side.
+        import ast
+
+        recorded = next((e for e in entries if e["class"] ==
+                         "a-witness-that-repeats-the-verdict-it-is-compared-against"), None)
+        if recorded is None:
+            raise AssertionError("no control beside this file and no entry to fall back on")
+        return {"as_written": ast.literal_eval(recorded["observed"]),
+                "as_repaired": ast.literal_eval(recorded["expected"])}
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = pathlib.Path(tmp)
+        (root / "probes").mkdir()
+        (root / "fragments.py").write_text(without_the_block, encoding="utf-8")
+        (root / "catches.json").write_text(
+            json.dumps(live, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        shutil.copy(HERE / "probes" / "parts_of_a_reading.py",
+                    root / "probes" / "parts_of_a_reading.py")
+        # the replacement is the entry's own two values: the witness repeats its verdict
+        with (root / "fragments.py").open("a", encoding="utf-8") as fh:
+            fh.write("\n\ndef %s():  # replaced by the values its own entry carries\n"
+                     "    return {\"as_written\": %s, \"as_repaired\": %s}\n"
+                     % (helper, entry["observed"], entry["expected"]))
+        exits = {}
+        for flag in ("--check", "--selftest"):
+            run = subprocess.run([sys.executable, "probes/parts_of_a_reading.py", flag],
+                                 cwd=root, capture_output=True, text=True, timeout=300)
+            exits[flag] = run.returncode
+        helped = subprocess.run(
+            [sys.executable, "probes/parts_of_a_reading.py", "--check"],
+            cwd=root, capture_output=True, text=True, timeout=300).stdout.splitlines()
+        counted = next((int(line.split()[-1]) for line in helped
+                        if line.startswith("helpers with two halves")), 0)
+
+    refused = sum(1 for rc in exits.values() if rc != 0)
+
+    def as_written(exits, refused, counted):
+        # read the way the control's own promise reads it: a half that is not the entry's is
+        # refused, and this half IS the entry's, so nothing here is called unwitnessed
+        return {
+            "replacements_tried": 1,
+            "instruments_run": len(exits),
+            "instruments_that_refused_the_replacement": refused,
+            "halves_left_unwitnessed": 0,
+            "helpers_the_copy_counts": counted,
+        }
+
+    def as_repaired(exits, refused, counted):
+        return {
+            "replacements_tried": 1,
+            "instruments_run": len(exits),
+            "instruments_that_refused_the_replacement": refused,
+            "halves_left_unwitnessed": 1,
+            "the_unwitnessed_half_is_byte_for_byte_the_entry": True,
+            "helpers_the_copy_counts": counted,
+        }
+
+    return {"as_written": as_written(exits, refused, counted),
+            "as_repaired": as_repaired(exits, refused, counted)}
+
+
+NAMESPACES.setdefault('a-witness-that-repeats-the-verdict-it-is-compared-against', {}).update({'a_witness_that_repeats_the_verdict_it_is_compared_against': a_witness_that_repeats_the_verdict_it_is_compared_against})
+
+
 
 NAMESPACES.setdefault('a-case-that-reads-the-verdict-off-the-exit-code', {}).update({'a_repeat_that_reads_a_refusal_without_asking_who_complained': a_repeat_that_reads_a_refusal_without_asking_who_complained})
 
