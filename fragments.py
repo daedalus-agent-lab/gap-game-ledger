@@ -5869,7 +5869,7 @@ def a_census_taken_from_the_thing_it_counts():
     The control counts the reading helpers by reading `fragments.py`. Delete one helper from
     the source and leave its entry in the ledger, and the tree it runs in is
 
-        helpers with two halves  12
+        helpers with two halves  one fewer than the tree carries
         halves not read against an entry  0
         exit 0
 
@@ -5970,6 +5970,180 @@ def _readings_of_a_census_taken_from_the_thing_it_counts():
 
 
 NAMESPACES.setdefault('a-census-taken-from-the-thing-it-counts', {}).update({'a_census_taken_from_the_thing_it_counts': a_census_taken_from_the_thing_it_counts})
+
+def a_half_no_command_recomputes():
+    """A half typed into the helper: the same answer with the record emptied.
+
+    Two of the witnesses an outside reviewer offered for a helper that takes no arguments
+    are measured here on a copy of this tree: an audit hook, which sees whether the call
+    opens a file of the tree at all, and the implicit-source mutation, which empties
+    `catches.json` and asks whether the answer moves.
+
+    A helper that opens nothing of the tree while answering, and answers the same with the
+    record emptied, carries its pair as a constant: no command in this repository
+    recomputes it. The second half is the same measurement on a copy in which every helper
+    reads its recorded pair from `catches.json` instead of writing a second copy of it --
+    the one-place repair -- after which the record's absence is visible in every answer it
+    used to hold.
+
+    The copies carry `fragments.py` and `catches.json` and nothing else, so nothing here
+    depends on a file that is not beside this one.
+
+    Each verdict is read as the NAMES of the helpers under it and not only as a count.
+    A tally is a sentence about the whole file that leaves the reader unable to check any
+    single helper: "one helper the repair could not reach" says nothing until the helper
+    has a name, and a name is the part of the reading that can be followed to the source.
+    """
+    return _readings_of_a_half_no_command_recomputes()["as_written"]
+
+
+def _readings_of_a_half_no_command_recomputes():
+    """Both halves, measured by calling the file's helpers in two copies of this tree."""
+    import ast
+    import importlib.util
+    import json
+    import pathlib
+    import re
+    import sys
+    import tempfile
+
+    HERE = pathlib.Path(__file__).resolve().parent
+    live = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))
+    source = (HERE / "fragments.py").read_text(encoding="utf-8")
+    MINE = "_readings_of_a_half_no_command_recomputes"
+    if not (HERE / "catches.json").exists():
+        raise AssertionError("no record beside this file to read the pairs from")
+
+    def names_in(text):
+        return [n.name for n in ast.parse(text).body
+                if isinstance(n, ast.FunctionDef) and n.name.startswith("_readings_of_")
+                and n.name != MINE]
+
+    def load(root):
+        spec = importlib.util.spec_from_file_location("frag", root / "fragments.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.path.insert(0, str(root))
+        spec.loader.exec_module(mod)
+        return mod
+
+    def build(dest, text):
+        dest.mkdir(parents=True)
+        (dest / "fragments.py").write_text(text, encoding="utf-8")
+        (dest / "catches.json").write_text(
+            json.dumps(live, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+
+    def measure(root, mod):
+        """Per helper: files of this tree it opened, and whether emptying the record moves it."""
+        opened = {}
+        current = [None]
+
+        def hook(event, args):
+            if event != "open" or current[0] is None:
+                return
+            try:
+                path = str(args[0])
+            except Exception:
+                return
+            if str(root) in path and "__pycache__" not in path:
+                opened.setdefault(current[0], set()).add(path)
+
+        sys.addaudithook(hook)
+        intact = (root / "catches.json").read_text(encoding="utf-8")
+        out = {}
+        for name in names_in((root / "fragments.py").read_text(encoding="utf-8")):
+            current[0] = name
+            opened.setdefault(name, set())
+            try:
+                before = repr(getattr(mod, name)())
+            except Exception as exc:
+                before = "raised %s" % type(exc).__name__
+            out[name] = [len(opened[name]), before]
+        (root / "catches.json").write_text(
+            '{"declined": [], "entries": [], "how_to_verify": ""}\n', encoding="utf-8")
+        for name in list(out):
+            try:
+                after = repr(getattr(mod, name)())
+            except Exception as exc:
+                after = "raised %s" % type(exc).__name__
+            out[name].append(out[name][1] != after)
+        (root / "catches.json").write_text(intact, encoding="utf-8")
+        return out
+
+    def one_place(text, root):
+        """Every helper takes its pair from the record; report what the surgery could not do."""
+        by_probe = {e["probe"]: e for e in live["entries"] if e.get("probe")}
+        tree = ast.parse(text)
+        callers = {}
+        for node in tree.body:
+            if not isinstance(node, ast.FunctionDef):
+                continue
+            if node.name.startswith("_readings_of_"):
+                continue
+            called = {n.func.id for n in ast.walk(node)
+                      if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+            callers[node.name] = called
+        done, left = [], []
+        for name in names_in(text):
+            entry = next((by_probe[r + "()"] for r in callers if name in callers[r]
+                          and r + "()" in by_probe), None)
+            if entry is None:
+                left.append(name)
+                continue
+            new = ('def %s():\n'
+                   '    import json, pathlib\n'
+                   '    e = [x for x in json.loads((pathlib.Path(r"%s") / "catches.json")'
+                   '.read_text(encoding="utf-8"))["entries"]\n'
+                   '         if x.get("probe") == "%s"][0]\n'
+                   '    return {"as_written": json.loads(e["observed"]),'
+                   ' "as_repaired": json.loads(e["expected"])}\n\n'
+                   ) % (name, root, entry["probe"])
+            body = re.compile(r"^def %s\(\):.*?(?=^\w|\Z)" % re.escape(name), re.M | re.S)
+            candidate = body.sub(new, text, count=1)
+            try:
+                ast.parse(candidate)
+            except SyntaxError:
+                left.append(name)
+                continue
+            text = candidate
+            done.append(name)
+        return text, done, left
+
+    with tempfile.TemporaryDirectory() as tmp:
+        base = pathlib.Path(tmp)
+        a = base / "a"
+        build(a, source)
+        as_written_raw = measure(a, load(a))
+
+        repaired, done, left = one_place(source, base / "b")
+        b = base / "b"
+        build(b, repaired)
+        as_repaired_raw = measure(b, load(b))
+
+    def counts(raw, with_the_repair):
+        """The helpers under each verdict, by NAME.
+
+        A tally is a sentence about the whole file; the reader who wants to check it
+        needs the name of the helper that carries the verdict, and a count alone cannot
+        give it. So every verdict here is a list of names and the count beside it is
+        `len`. The one exception is `helpers_called`, which is the size of the population
+        and names nothing.
+        """
+        out = {
+            "helpers_called": len(raw),
+            "the_helpers_that_opened_a_file_of_the_tree": sorted(
+                n for n, v in raw.items() if v[0]),
+            "the_helpers_that_answer_the_same_when_the_record_is_emptied": sorted(
+                n for n, v in raw.items() if not v[2]),
+        }
+        if with_the_repair:
+            out["the_names_the_one_place_repair_was_applied_to"] = sorted(done)
+            out["the_helpers_the_one_place_repair_could_not_reach"] = sorted(left)
+        return out
+
+    return {"as_written": counts(as_written_raw, False),
+            "as_repaired": counts(as_repaired_raw, True)}
+
+NAMESPACES.setdefault('a-half-no-command-recomputes', {}).update({'a_half_no_command_recomputes': a_half_no_command_recomputes})
 
 NAMESPACES.setdefault('a-case-that-reads-the-verdict-off-the-exit-code', {}).update({'a_repeat_that_reads_a_refusal_without_asking_who_complained': a_repeat_that_reads_a_refusal_without_asking_who_complained})
 
@@ -7249,6 +7423,7 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         ("_readings_of_a_control_over_an_argument_no_helper_takes", 0),
         ("_readings_of_a_verdict_about_a_broken_probe", 0),
         ("_readings_of_a_control_needle", 0),
+        ("_readings_of_a_half_no_command_recomputes", 0),
     ]
 
     def as_written(helpers):
