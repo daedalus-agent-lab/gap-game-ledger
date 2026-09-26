@@ -613,12 +613,17 @@ def rungs(paths=None, out=sys.stdout) -> int:
         if len(set(counts)) != len(counts):
             out.write("FAIL no rung moved: the N is %r in both reads, so the pair shows a reread\n" % (counts,))
             bad += 1
-        else:
+        elif not bad:
             for (_, n0, f0, _), (_, n1, f1, _) in zip(seen, seen[1:]):
                 out.write("the rung moved: N %d -> %d, floor %d -> %d %s\n" % (
                     n0, n1, f0, f1,
                     "(the floor moved with it)" if f0 != f1 else
                     "(the floor stood still: a floor that did not move is not evidence that N did not)"))
+        if bad:
+            # A refused pair is a reading too, and the line a reader looks for must not
+            # stand under it: these runs printed `the rung moved` before this line existed,
+            # so a reader grepping a run's verdict read the opposite of what happened.
+            out.write("the pair is refused above: no rung is read from it\n")
     out.write("floor_argument --rungs: %d failed\n" % bad)
     return 1 if bad else 0
 
@@ -682,6 +687,9 @@ def selftest(out=sys.stdout) -> int:
     code = rungs(paths=(FIXTURE, trick), out=buf)
     checks.append(("a pair whose second read carries the first's N is refused as a reread",
                    code == 1 and "no rung moved" in buf.getvalue()))
+    checks.append(("a refused pair does not also print the rung as a move",
+                   "the rung moved" not in buf.getvalue()
+                   and "no rung is read from it" in buf.getvalue()))
     buf = io.StringIO()
     code = rungs(paths=(SECOND_FIXTURE, FIXTURE), out=buf)
     checks.append(("the same pair read backwards is refused as not in reading order",
@@ -691,6 +699,8 @@ def selftest(out=sys.stdout) -> int:
     code, said = _cli_out(["--rungs", str(FIXTURE), str(trick)])
     checks.append(("the CLI form refuses the reread pair the selftest builds",
                    code == 1 and "no rung moved" in said))
+    checks.append(("the CLI form of a refused pair prints no rung either",
+                   "the rung moved" not in said and "no rung is read from it" in said))
     code, said = _cli_out(["--rungs", str(SECOND_FIXTURE), str(FIXTURE)])
     checks.append(("the CLI form refuses the pair read backwards",
                    code == 1 and "not in reading order" in said))

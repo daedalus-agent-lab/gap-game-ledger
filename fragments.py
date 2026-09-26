@@ -5744,17 +5744,17 @@ def a_witness_that_repeats_the_verdict_it_is_compared_against():
     """What a control loses when its only witness is compared against the verdict it fed.
 
     The control builds a tree in which the helper of one registered class is replaced by two
-    literals -- exactly the two values its own entry carries -- and runs itself in that tree:
+    literals -- exactly the two values its own entry carries -- and runs the instruments in
+    that tree. On the revision this class was registered on (`0198ef0`) every one of them
+    answered green: the comparison is `helper() == entry`, and the replacement IS the entry.
+    A witness that repeats the verdict it is compared against cannot disagree with it, and
+    no instrument that only compares the two separates computing from copying.
 
-        helpers with two halves  <all of them>
-        halves not read against an entry  0
-        exit 0
-
-    Nothing is broken and nothing is refused, because the comparison is
-    `helper() == entry`, and the replacement IS the entry. A witness that repeats the verdict
-    it is compared against cannot disagree with it, and no instrument that only compares the
-    two can separate computing from copying. The reading this class carries counts the halves
-    the promise calls unwitnessed -- one -- against the halves the instruments refuse -- zero.
+    How many instruments ran and how many refused the replacement are FIELDS of this class's
+    helper, not numbers typed here, because they move. On this tree the refusal count is no
+    longer the zero the class was registered with, and that is the class working as
+    intended: the probe of the halves gained an arm that moves a helper's declared input and
+    requires the answer to follow, which is the one thing a constant cannot do.
 
     (The tree the control runs in is the tree minus this class's own block: the block carries
     the helper that runs the control, so a verbatim copy would call it again and recurse.)
@@ -5879,16 +5879,15 @@ def a_census_taken_from_the_thing_it_counts():
     """What a census loses when its list is taken from the thing it counts.
 
     The control counts the reading helpers by reading `fragments.py`. Delete one helper from
-    the source and leave its entry in the ledger, and the tree it runs in is
+    the source and leave its entry in the ledger, and the census the control takes moves with
+    the source: the count goes down because the subject moved, and the entry that named the
+    helper is not consulted for the helpers the source no longer has. An inventory has to be
+    pinned outside the thing it counts, or it is a mirror.
 
-        helpers with two halves  one fewer than the tree carries
-        halves not read against an entry  0
-        exit 0
-
-    -- one half is gone and no line says so. The count moves because the subject moved; the
-    entry that named the helper is not consulted for the helpers the source no longer has.
-    An inventory has to be pinned outside the thing it counts, or it is a mirror: this class's
-    reading is the difference one deletion makes to the census and the refusal it does not get.
+    On the revision this class was registered on (`db83fe1`) nothing refused the smaller
+    tree. On this tree something does, and that is a field of this class's helper rather than
+    a number typed here: the probe of the halves reads a list typed into the source against
+    the file the source defines, and the smaller tree's typed list no longer covers it.
 
     (The copy the control runs in is this tree minus this class's block: the block carries the
     helper that runs the control.)
@@ -6156,6 +6155,99 @@ def _readings_of_a_half_no_command_recomputes():
 
     return {"as_written": counts(as_written_raw, False),
             "as_repaired": counts(as_repaired_raw, True)}
+
+def _readings_of_a_comparison_a_constant_can_satisfy():
+    """Both halves: the comparison over a subject that repeats the record, and over one that reads it.
+
+    The subject of both halves is the same shape a two-half helper has -- it answers with
+    the pair -- and it differs in one way: the written half's subject IGNORES every
+    argument and returns the record it is compared against, the repaired half's subject
+    reads the input it is given. The two controls differ the same way.
+
+        subject                  comparison over the pair     control that moves the input
+        a pair written down once  agrees, nothing refused     refuses it
+        a pair read from its input  agrees, nothing refused   passes it
+
+    The first row is the defect: no comparison of an answer with the record that answer
+    came from can refuse a constant that returns the record. The second control is not a
+    stronger comparison, it is a different one -- it moves an input and requires the answer
+    to move with it, which is the only thing a constant cannot do. An independent review
+    built the mutant this models and the whole suite stayed green on it, so the row is a
+    measurement and not a worry.
+    """
+    RECORD = {
+        "as_written": {"rows_in_the_table": 2, "mutations_the_table_calls_survivors": 2},
+        "as_repaired": {"rows_in_the_table": 4, "mutations_the_table_calls_survivors": 2},
+    }
+    DEFAULT = (
+        {"mutation": "dropped the entry comparison", "revision": "older", "survives": True},
+        {"mutation": "dropped the entry comparison", "revision": "current", "survives": False},
+        {"mutation": "the repaired half compared to the observed", "revision": "older",
+         "survives": True},
+        {"mutation": "the repaired half compared to the observed", "revision": "current",
+         "survives": False},
+    )
+    MOVED = (
+        {"mutation": "the same mutation", "revision": "older", "survives": True},
+        {"mutation": "the same mutation", "revision": "current", "survives": False},
+    )
+    MORE = {"mutation": "a second one", "revision": "current", "survives": False}
+
+    def a_subject_that_repeats_the_record(rows=DEFAULT):
+        return {half: dict(value) for half, value in RECORD.items()}
+
+    def a_subject_that_reads_its_input(rows=DEFAULT):
+        return {
+            "as_written": {"rows_in_the_table": len({r["mutation"] for r in rows}),
+                           "mutations_the_table_calls_survivors":
+                               len({r["mutation"] for r in rows if r["survives"]})},
+            "as_repaired": {"rows_in_the_table": len(rows),
+                            "mutations_the_table_calls_survivors":
+                                sum(1 for r in rows if r["survives"])},
+        }
+
+    def compared_with_the_record(subject):
+        """The comparison the suite makes: the answer against the record it came from."""
+        answer = subject()
+        return int(all(answer[half] == RECORD[half] for half in RECORD))
+
+    def moved_by_its_input(subject):
+        """The control that separates them: move the input, require the answer to follow."""
+        return int(subject(rows=MOVED) != subject(rows=MOVED + (MORE,)))
+
+    def as_written(subjects):
+        # the comparison alone, run over both subjects: it cannot refuse either of them
+        return {
+            "subjects": len(subjects),
+            "the_comparison_run": 1,
+            "subjects_the_comparison_refuses":
+                sum(1 for s in subjects.values() if not compared_with_the_record(s)),
+        }
+
+    def as_repaired(subjects):
+        # the comparison and the moved input, over the same two subjects
+        return {
+            "subjects": len(subjects),
+            "the_comparison_run": 1,
+            "subjects_the_comparison_refuses":
+                sum(1 for s in subjects.values() if not compared_with_the_record(s)),
+            "the_moved_input_run": 1,
+            "subjects_a_moved_input_refuses":
+                sum(1 for s in subjects.values() if not moved_by_its_input(s)),
+            "the_subject_only_the_moved_input_refuses":
+                sorted(name for name, s in subjects.items()
+                       if compared_with_the_record(s) and not moved_by_its_input(s)),
+        }
+
+    SUBJECTS = {
+        "a pair written down once": a_subject_that_repeats_the_record,
+        "a pair read from its input": a_subject_that_reads_its_input,
+    }
+    return {"as_written": as_written(SUBJECTS), "as_repaired": as_repaired(SUBJECTS)}
+
+
+
+
 
 NAMESPACES.setdefault('a-half-no-command-recomputes', {}).update({'a_half_no_command_recomputes': a_half_no_command_recomputes})
 
@@ -7399,17 +7491,22 @@ NAMESPACES.setdefault('a-summary-that-counts-the-rows-it-never-digested', {}).up
 def a_control_that_varies_an_argument_its_subject_takes_none_of():
     """The control that was written to catch a repaired half that ignores its input.
 
-    Eight helpers, one signature each; the control reads them.
+    Sixteen helpers, one signature each -- three of them with a defaulted input a caller may
+    move -- and the control reads them:
 
         the control                          as written   repaired
-        arguments it can vary                     0           0
-        helpers it calls green                    8           0
-        helpers it calls unmeasured               0           8
+        arguments it can vary                     3           3
+        helpers it calls green                   16           0
+        helpers it calls unmeasured               0          13
 
     A control that changes an argument and requires an answer to move needs an
-    argument. `_readings_of_*` takes none: the helper is called with `()` and reads
-    module constants, so a repaired half that is a constant is not something this
-    control can refuse. Its green rows are a sentence about its own reach.
+    argument. On the day this class was registered no `_readings_of_*` took one: the
+    helper was called with `()` and read module constants, so a repaired half that is a
+    constant was not something this control could refuse, and its green rows were a
+    sentence about its own reach. Three helpers now declare an input a caller may move
+    -- the survivor table, the shell-status fixture, and the pair this class's sibling
+    compares -- and the control that moves them lives in `probes/parts_of_a_reading.py`,
+    not here: this list is the population it reads, with the argument count of each.
     """
     return _readings_of_a_control_over_an_argument_no_helper_takes()["as_written"]
 
@@ -7424,10 +7521,11 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         # run by `probes/parts_of_a_reading.py --check`, which names every helper the list
         # fails to cover.
         ("_readings_of_a_refusal_no_line_attributed", 0),
-        ("_readings_of_a_survivor_table_two_revisions_apart", 0),
-        ("_readings_of_a_status_the_word_beside_it_replaced", 0),
+        ("_readings_of_a_survivor_table_two_revisions_apart", 1),
+        ("_readings_of_a_status_the_word_beside_it_replaced", 1),
         ("_readings_of_a_witness_repeating_the_verdict", 0),
         ("_readings_of_a_census_taken_from_the_thing_it_counts", 0),
+        ("_readings_of_a_comparison_a_constant_can_satisfy", 1),
         ("_readings_of_one_verdict_on_four_machines", 0),
         ("_readings_of_counts_taken_through_a_name", 0),
         ("_readings_of_a_digest_over_two_checkouts", 0),
@@ -7658,3 +7756,14 @@ def a_copy_rule_that_takes_the_index_for_the_tree():
     return written
 
 NAMESPACES.setdefault('a-copy-rule-that-takes-the-index-for-the-tree', {}).update({'a_copy_rule_that_takes_the_index_for_the_tree': a_copy_rule_that_takes_the_index_for_the_tree})
+
+
+def a_comparison_the_subject_can_satisfy_by_returning_the_record():
+    """The comparison the suite makes, run over a subject that repeats the record.
+
+    The answer below is the written half of this class's own pair: a comparison of an
+    answer with the record it came from refuses nothing, whichever subject answers it.
+    """
+    return _readings_of_a_comparison_a_constant_can_satisfy()["as_written"]
+
+NAMESPACES.setdefault('a-comparison-the-subject-can-satisfy-by-returning-the-record', {}).update({'a_comparison_the_subject_can_satisfy_by_returning_the_record': a_comparison_the_subject_can_satisfy_by_returning_the_record})
