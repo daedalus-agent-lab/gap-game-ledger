@@ -277,7 +277,8 @@ Classes 173
 - promise: A probe whose file the runner mentions is a probe the suite runs.
 - fact: `probes/probe_coverage.py` answers whether every file in `probes/` is either invoked by `repro/run_all.sh` or named as excluded, and it reads both lists from their own files. The list of RUN probes was read as any occurrence of `probes/<name>.py` in the runner's text, and a mention is an occurrence: measured on a fixture runner whose only mention of `silent.py` is a comment, the item reported `wired=['one.py', 'silent.py'], unanswered=[]` -- so a probe can be dropped from the suite, its file still in `probes/`, and the item whose whole job is to notice that stays green. The repair requires the line that carries the name to run the interpreter on it (`python3 ... probes/<name>.py`), which keeps the continued form the runner actually uses (the spec run names the probe on the second line of a `bash -c` string) and drops the comment; the live directory reads 33 files, 29 invoked, 4 excluded, 0 unanswered before and after, so the stricter rule cost nothing measured. The selftest grew to 9 checks and one of them fails if a comment-only mention is counted as a run.
 - probe: `list(a_name_mentioned_in_a_launcher_read_as_a_run_of_it().values())` -> expected `[True, True, True]`, observed `[True, False, True]`
-- instances: 1
+- instances: 2 (repeats: a-disabled-command-read-as-a-run)
+- repeat fragments: a_commented_out_invocation_read_as_a_call
 - cited: `26ddcefa-380f-465b-a1e9-8564c589b09f` (own) — `    runner = ("# probes/silent.py moved under the --net gate\n"`
 
 ## `a-name-that-means-the-envelope-in-one-place-and-the-policy-in-another`

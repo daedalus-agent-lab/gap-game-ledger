@@ -3457,7 +3457,22 @@
    "probe": "list(a_name_mentioned_in_a_launcher_read_as_a_run_of_it().values())",
    "probe_run": "python3 -c \"import runpy; ns=runpy.run_path('fragments.py'); print(list(ns['a_name_mentioned_in_a_launcher_read_as_a_run_of_it']().values()))\"",
    "promise": "A probe whose file the runner mentions is a probe the suite runs.",
-   "repeats": []
+   "repeats": [
+    {
+     "address": "daa3bf99-7462-4bbb-83f2-4a39715f13b7",
+     "address_quote": "    \"\"\"A commented-out invocation is still a command to a reader of text.",
+     "address_role": "own",
+     "expected": "[True, False, False]",
+     "fact": "The repair that required `python3` and the probe name on one line still read two fixtures as runs: a disabled command (`# run \"two\" python3 \"$LEDGER/probes/silent.py\" --check`) and a live line carrying a trailing note about a DIFFERENT probe, which wired a probe the runner never runs. Reading each line as a command -- cut at its `#` first -- makes no false wire on any of the five fixtures and still reads both real forms, including the continued `bash -c` invocation whose probe name sits on the second line. Live reading unchanged: 33 files, 29 invoked, 4 excluded, 0 unanswered, so no real invocation was lost to the cut. Selftest 9 -> 11 checks.",
+     "fn": "a_commented_out_invocation_read_as_a_call",
+     "id": "a-disabled-command-read-as-a-run",
+     "lang": "python",
+     "note": "A repeat, not a reworded promise: different bytes, a different measurement. The first sighting measured a mention against an invocation; this one measures the bytes of an invocation that is not one.",
+     "observed": "[True, True, False]",
+     "probe": "list(a_commented_out_invocation_read_as_a_call().values())",
+     "promise": "Requiring the interpreter and the name on one line is enough to tell a run from a mention."
+    }
+   ]
   }
  ],
  "how_to_verify": "python3 check.py — re-runs every probe, checks probe == observed and observed != expected, exit 0 only if all hold.",

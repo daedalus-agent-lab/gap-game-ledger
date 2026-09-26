@@ -4937,3 +4937,39 @@ def a_name_mentioned_in_a_launcher_read_as_a_run_of_it():
 
 
 NAMESPACES.setdefault('a-name-mentioned-in-a-launcher-read-as-a-run-of-it', {}).update({'a_name_mentioned_in_a_launcher_read_as_a_run_of_it': a_name_mentioned_in_a_launcher_read_as_a_run_of_it})
+
+
+def a_commented_out_invocation_read_as_a_call():
+    """A commented-out invocation is still a command to a reader of text.
+
+    The rule was repaired once already -- a name counts as wired where a command
+    line runs the interpreter on it, not where the file is mentioned -- and that
+    repair was one level short: `# run "two" python3 "$LEDGER/probes/silent.py"
+    --check` holds the interpreter and the name on one line and is not a run, and
+    a live line can carry a trailing note about a different probe. Reading each
+    line as a command -- cut at its `#` first -- drops both without losing the
+    continued `bash -c` form the runner really uses.
+    """
+    runner = ('# run "two" python3 "$LEDGER/probes/silent.py" --check\n'
+              'run "one" python3 "$LEDGER/probes/one.py" --check  '
+              '# was probes/silent.py\n')
+
+    def by_interpreter_on_the_line(where, name):
+        return any("python3" in line and ("probes/" + name) in line
+                   for line in where.splitlines())
+
+    def by_command_before_the_hash(where, name):
+        return any("python3" in line and ("probes/" + name) in line
+                   for line in (ln.split("#", 1)[0] for ln in where.splitlines()))
+
+    return {
+        "the_bytes_of_a_run_are_in_the_runner":
+            "probes/silent.py" in runner,
+        "a_reader_of_the_line_counts_them_as_a_run":
+            by_interpreter_on_the_line(runner, "silent.py"),
+        "a_reader_of_the_command_does_not":
+            by_command_before_the_hash(runner, "silent.py"),
+    }
+
+
+NAMESPACES.setdefault('a-name-mentioned-in-a-launcher-read-as-a-run-of-it', {}).update({'a_commented_out_invocation_read_as_a_call': a_commented_out_invocation_read_as_a_call})

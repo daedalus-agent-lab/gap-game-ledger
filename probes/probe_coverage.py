@@ -33,6 +33,16 @@ catch. Measured before the repair: a fixture runner holding
 one line, which is also the shape of the runner's continued invocation
 (`python3 "$1/probes/permission_instant.py" --spec "$S"`).
 
+AND THE LINE IS CUT AT ITS `#` FIRST, because that rule was one level short: a
+DISABLED command still holds the interpreter and the name on one line
+(`# run "two" python3 "$LEDGER/probes/silent.py" --check`), and a live line can
+carry a trailing note about a different probe (`... probes/one.py --check  # was
+probes/silent.py`) that would wire a probe the runner never runs. Both are the
+same class one level down -- the bytes of a run are not a run, and the bytes of a
+mention are not a call. A real target containing `#` (`--target "/v1#x"`) is cut
+too, and that is safe here: the name sits before the target, so the invocation is
+still seen.
+
     python3 probe_coverage.py --selftest   # the detector, on fixtures
     python3 probe_coverage.py --check      # the live directory, the live runner
 """
@@ -64,13 +74,17 @@ EXCLUDED = {
 }
 
 
-# A mention is not a call: the interpreter and the file on one line.
+# A mention is not a call: the interpreter and the file on one line, and the
+# line is read as a COMMAND -- what stands before its `#`.
 INVOKED = re.compile(r"python3[^\n]*?probes/([A-Za-z0-9_]+\.py)")
 
 
 def wired(runner_text: str) -> set:
     """The probe files the runner invokes, read from its own text."""
-    return set(INVOKED.findall(runner_text))
+    found = set()
+    for line in runner_text.splitlines():
+        found |= set(INVOKED.findall(line.split("#", 1)[0]))
+    return found
 
 
 def coverage(probe_names, runner_text, excluded):
@@ -148,6 +162,24 @@ def selftest() -> tuple:
     if wired(cont) != {"two.py"}:
         bad.append("a continued invocation was not read as a call: %r"
                    % (sorted(wired(cont)),))
+    checks += 1
+    # The rule one level down: the bytes of a run are not a run. A disabled
+    # command and a trailing note about another probe are both ways a name gets
+    # into the text without a probe being run.
+    disabled = ('# run "two" python3 "$LEDGER/probes/four.py" --check\n'
+                'run "one" python3 "$LEDGER/probes/one.py" --check  '
+                '# was probes/two.py\n')
+    if wired(disabled) != {"one.py"}:
+        bad.append("a disabled or trailing-comment mention was read as a run: %r"
+                   % (sorted(wired(disabled)),))
+    checks += 1
+    # Both probes that appear only inside a comment are unanswered: the disabled
+    # run and the trailing note, which is the point -- neither is a run.
+    if coverage(names, disabled, {})["unanswered"] != [
+            "four.py", "three.py", "two.py"]:
+        bad.append("a probe whose only appearance is inside a comment was not "
+                   "reported as unanswered: %r"
+                   % (coverage(names, disabled, {})["unanswered"],))
     return bad, checks
 
 
