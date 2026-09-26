@@ -3336,6 +3336,60 @@
    "lang": "python",
    "repeats": [],
    "note": "The sibling of the same hour was the launcher's exit code: a number filed under the work, produced by the reporter. Here the bytes filed under 'the configuration was applied' were produced by the default. Both are answered by the same rule -- what a run is evidence about is decided by the instrument that produced the run, and a fall-through produces the default."
+  },
+  {
+   "class": "a-check-whose-two-sides-are-written-in-the-file-that-holds-it",
+   "first_seen": "b0ba6019-b263-4e61-baf6-39eb312d947f",
+   "address": "b0ba6019-b263-4e61-baf6-39eb312d947f",
+   "address_quote": "    if sum(len(m) for m in shared_ns.values()) != 2:",
+   "address_role": "own",
+   "aliases": [
+    "a comparison between two literals read as a question about the census",
+    "the selftest that stays green when the thing it names is blinded"
+   ],
+   "promise": "The check printed under a sentence about the census is a question about the census: a census that stopped counting fails it.",
+   "fact": "`probes/registry_collisions.py` closed its selftest with `if sum(len(m) for m in shared_ns.values()) != 2: bad.append(...)`, where `shared_ns` is the fixture built three lines above (two classes, one name each). Both sides were literals in the file that holds the comparison, so the line could not fail: a mutated `scan()` returning nothing left the selftest green. Repaired to read the census's own number against the fixture by an independent walk and then against the same fixture with one registration removed. Reproduction: the fragment hands both forms a census that found nothing -- the literal form accepts it, the repaired form does not.",
+   "probe": "[a_check_whose_two_sides_are_written_in_the_file_that_holds_it()[\"a_census_that_found_nothing_is_accepted_by_the_literal_form\"], a_check_whose_two_sides_are_written_in_the_file_that_holds_it()[\"the_same_census_is_accepted_by_the_repaired_form\"]]",
+   "expected": "[False, False]",
+   "observed": "[True, False]",
+   "lang": "python",
+   "note": "Nearest neighbour: `a-selftest-that-asserts-a-refusal-the-check-would-not-make` -- there the assertion is about a refusal the check never makes, so the check and the assertion read different objects; here the check reads nothing at all. The class is the reading, not the arithmetic: a comparison between a number taken from the run and one taken from the file is a check."
+  },
+  {
+   "class": "a-count-typed-beside-the-checks-instead-of-counted",
+   "first_seen": "b0ba6019-b263-4e61-baf6-39eb312d947f",
+   "address": "b0ba6019-b263-4e61-baf6-39eb312d947f",
+   "address_quote": "    typed = 8",
+   "address_role": "own",
+   "aliases": [
+    "a total in the output that no counter in the file reaches",
+    "the size of a selftest written down beside it"
+   ],
+   "promise": "The number of checks printed beside a selftest is the number of checks the selftest performed.",
+   "fact": "Two probes printed the size of their own selftest as a constant: `registry_collisions.py` printed a hand-typed 8 (seven assertion sites at the time), `write_once.py` printed `3 + len(PATHS)` = 8 while it had four sites, one of them a loop over five paths. Neither number was a count, and a reader cannot tell a counted 8 from a typed one. Repaired by counting: `checks += 1` at every assertion, the printed number taken from the variable -- `SELFTEST=0 (8 checks)` and `SELFTEST=0 (15 checks)` today, both moved by adding or removing a check. Reproduction: the fragment adds a site and shows the typed number standing still.",
+   "probe": "[a_count_typed_beside_the_checks_instead_of_counted()[\"checks_printed_by_the_typed_form\"], a_count_typed_beside_the_checks_instead_of_counted()[\"checks_the_sites_actually_perform\"]]",
+   "expected": "[9, 9]",
+   "observed": "[8, 9]",
+   "lang": "python",
+   "note": "The weakest of the three and registered anyway: nothing it counts is wrong, and a reader deciding whether a run is complete reads that number. Nearest neighbour: `a-count-published-in-the-unit-of-another-census` -- there the number is right and its unit is wrong; here there is no measurement under it at all."
+  },
+  {
+   "class": "a-column-named-after-a-syntax-its-source-does-not-contain",
+   "first_seen": "b0ba6019-b263-4e61-baf6-39eb312d947f",
+   "address": "b0ba6019-b263-4e61-baf6-39eb312d947f",
+   "address_quote": "    the_labeled_source = (\"NAMESPACES = {}\\n\"",
+   "address_role": "own",
+   "aliases": [
+    "a row named after a syntax, over a source that has none",
+    "two facts about a write path merged into one label"
+   ],
+   "promise": "A row a probe labels after a syntax contains that syntax, so a reading taken from the row is a reading about it.",
+   "fact": "`probes/write_once.py` asked the static guard about a source labelled `decorator`; the text holds two plain function bodies each assigning to the registry and no decorator application at all. The guard was silent on it and that silence was printed and read as a fact about the decorator write path. A source with a real `@register(...)` helper has one assignment site inside the helper, so the guard is silent on it as well, but the reason differs: the loss comes from two call sites, and a declaration walk cannot see a call site. Repaired to two rows named for what they hold, and the run-time column now measures that a decorator's verdict follows the helper's body (a helper writing through `update` is refused by the UserDict guard, not by the dict one). Reproduction: the fragment parses both texts and counts decorator applications -- 0 in the labelled one, 1 in the real one.",
+   "probe": "a_column_named_after_a_syntax_its_source_does_not_contain()[\"decorator_applications_in_the_source_labeled_decorator\"]",
+   "expected": "1",
+   "observed": "0",
+   "lang": "python",
+   "note": "The label was written by its author, not by a critic: the source was meant as 'what a decorator would have to do', and the row printed the name of the syntax instead of the name of the write. Nearest neighbour: `a-record-of-what-was-asked-that-holds-what-answered` -- there a field is filled from the wrong message; here a label is taken from the intended syntax and the reading from the bytes."
   }
  ],
  "declined": [

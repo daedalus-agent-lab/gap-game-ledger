@@ -55,21 +55,22 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 
-PATHS = ("[]=", "update", "|=", "setdefault", "decorator")
-
+PATHS = ("[]=", "update", "|=", "setdefault", "decorator",
+         "decorator-update")
 # Measured by this file, declared here so that a change to the paths or to the two
 # guards fails `--check` instead of quietly printing a different table.
 DECLARED = {
     "OnceDict": {"refused": ["[]=", "decorator"],
                  "silent": {"update": "second-wins",
                             "|=": "second-wins",
-                            "setdefault": "first-wins"}},
-    "OnceUserDict": {"refused": ["[]=", "update", "decorator"],
+                            "setdefault": "first-wins",
+                            "decorator-update": "second-wins"}},
+    "OnceUserDict": {"refused": ["[]=", "update", "decorator", "decorator-update"],
                      "silent": {"|=": "second-wins",
                                 "setdefault": "first-wins"}},
     "checking helper": {"refused_on": ["dict", "OnceDict", "OnceUserDict"]},
-    "ledger guard": {"fires": ["[]=", "|=", "subscript-union", "decorator"],
-                     "silent": ["setdefault", "update"]},
+    "ledger guard": {"fires": ["[]=", "|=", "subscript-union", "two assignment sites"],
+                     "silent": ["real decorator", "setdefault", "update"]},
 }
 
 # The write paths as source, twice each, for the static guard. Six, because the two
@@ -90,11 +91,28 @@ SOURCES = {
     "setdefault": ("NAMESPACES = {}\n"
                    "NAMESPACES['c'] = {'n': lambda: 1}\n"
                    "NAMESPACES.setdefault('c', {}).update({'m': lambda: 2})\n"),
-    "decorator": ("NAMESPACES = {}\n"
+    "two assignment sites": ("NAMESPACES = {}\n"
                   "def register_n():\n"
                   "    NAMESPACES['c'] = {'n': lambda: 1}\n"
                   "def register_m():\n"
                   "    NAMESPACES['c'] = {'m': lambda: 2}\n"),
+    # A REAL decorator: one write site, two call sites. The loss is real (the second
+    # call replaces the first mapping) and the guard sees one assignment, so it is
+    # silent -- which the row above, made of two visible assignments, is not. Printed
+    # separately, because "the guard covers the decorator form" was measured on the
+    # row above, which contains no decorator.
+    "real decorator": ("NAMESPACES = {}\n"
+                       "def register(cls, name):\n"
+                       "    def deco(fn):\n"
+                       "        NAMESPACES[cls] = {name: fn}\n"
+                       "        return fn\n"
+                       "    return deco\n"
+                       "@register('c', 'n')\n"
+                       "def a():\n"
+                       "    pass\n"
+                       "@register('c', 'm')\n"
+                       "def b():\n"
+                       "    pass\n"),
 }
 
 
@@ -134,12 +152,27 @@ def register_checking(registry, value):
     return deco
 
 
+def register_via_update(registry, value):
+    """A decorator whose helper writes through `update`, not through `[]=`.
+
+    The decorator is syntax, not a write path: which container refuses it is decided by
+    the helper's body. This one is here so the probe measures that instead of asserting
+    it -- on `OnceUserDict` `update` routes through `__setitem__`, so this variant IS
+    refused there while the `[]=`-bodied one is refused on both.
+    """
+    def deco(fn):
+        registry.update({"k": value})
+        return fn
+    return deco
+
+
 OPERATIONS = {
     "[]=": lambda R, v: R.__setitem__("k", v),
     "update": lambda R, v: R.update({"k": v}),
     "|=": lambda R, v: R.__ior__({"k": v}),
     "setdefault": lambda R, v: R.setdefault("k", v),
     "decorator": lambda R, v: register(R, v)(lambda: None),
+    "decorator-update": lambda R, v: register_via_update(R, v)(lambda: None),
 }
 
 
@@ -190,6 +223,11 @@ def measure() -> dict:
             else:
                 silent[label] = who
         out[cls.__name__] = {"refused": refused, "silent": silent}
+    # Is the decorator column an independent path, or the same write under a second
+    # name? Measured per container rather than assumed from the helper's text.
+    out["decorator is another name"] = {
+        cls.__name__: run_path(cls, OPERATIONS["decorator"]) == run_path(cls, OPERATIONS["[]="])
+        for cls in (OnceDict, OnceUserDict)}
     fires, silent = [], []
     for label in SOURCES:
         (fires if guard_over(SOURCES[label]) else silent).append(label)
@@ -212,9 +250,13 @@ def table() -> list:
 
 def _render(m: dict) -> list:
     lines = []
-    for guard in ("OnceDict", "OnceUserDict", "checking helper", "ledger guard"):
+    for guard in ("OnceDict", "OnceUserDict", "checking helper", "ledger guard",
+                  "decorator is another name"):
         row = m[guard]
-        if "refused_on" in row:
+        if guard == "decorator is another name":
+            lines.append("%-15s %s" % (
+                guard, ", ".join("%s: %s" % (k, v) for k, v in sorted(row.items()))))
+        elif "refused_on" in row:
             lines.append("%-15s refuses on every container it was given: %s" % (
                 guard, ", ".join(row["refused_on"]) or "none"))
         elif "refused" in row:
@@ -231,27 +273,40 @@ def _render(m: dict) -> list:
     return lines
 
 
-def selftest() -> list:
+def selftest() -> tuple:
     bad = []
+    checks = 0
     # The instrument must be able to say "refused" at all, and must not say it when a
-    # plain dict is handed the same five paths: otherwise the column is a constant.
+    # plain dict is handed the same paths: otherwise the column is a constant.
     for label in PATHS:
+        checks += 1
         verdict, _ = run_path(dict, OPERATIONS[label])
         if verdict != "silent":
             bad.append("a plain dict refused %s: the harness reports refusals it did "
                        "not observe" % label)
+    checks += 1
     if run_path(OnceDict, OPERATIONS["[]="])[0] != "refused":
         bad.append("the write-once dict did not refuse a second `[]=`: the harness "
                    "cannot see a refusal")
     # The static column must move with the source: a source with one write only is not
     # a loss, so the guard must stay silent on it.
+    checks += 1
     if guard_over("NAMESPACES = {}\nNAMESPACES['c'] = {'n': lambda: 1}\n"):
         bad.append("the guard reports a single write as a loss")
-    # And the two union forms must fire, or the declared cover of this probe is stale.
-    for label in ("|=", "subscript-union"):
-        if not guard_over(SOURCES[label]):
-            bad.append("the guard stayed silent on the %s form" % label)
-    return bad
+    # Every form this file DECLARES the guard covers must fire. The list is read from
+    # DECLARED rather than retyped here: a form dropped from the constant or lost by the
+    # guard has to fail the selftest, and a hand-written pair of labels did not.
+    for label in SOURCES:
+        declared_fires = label in DECLARED["ledger guard"]["fires"]
+        checks += 1
+        fired = bool(guard_over(SOURCES[label]))
+        if declared_fires and not fired:
+            bad.append("the guard stayed silent on the %s form, which this file "
+                       "declares it covers" % label)
+        if fired and not declared_fires:
+            bad.append("the guard fired on the %s form, which this file declares it "
+                       "does not cover -- the declaration is stale" % label)
+    return bad, checks
 
 
 def check(measured: dict) -> list:
@@ -279,20 +334,22 @@ def main() -> int:
     args = ap.parse_args()
 
     if args.selftest:
-        bad = selftest()
+        bad, checks = selftest()
         for line in bad:
             print("FAIL", line)
-        print("SELFTEST=%d (%d checks)" % (1 if bad else 0, 3 + len(PATHS)))
+        print("SELFTEST=%d (%d checks)" % (1 if bad else 0, checks))
         return 1 if bad else 0
 
     measured = measure()
     for line in _render(measured):
         print(line)
     if args.check:
-        bad = check(measured) + selftest()
+        self_bad, self_checks = selftest()
+        bad, checks = check(measured) + self_bad, self_checks
         for line in bad:
             print("FAIL", line)
-        print("CHECK=%d (%d problem(s))" % (1 if bad else 0, len(bad)))
+        print("CHECK=%d (%d problem(s), %d selftest check(s))"
+              % (1 if bad else 0, len(bad), checks))
         return 1 if bad else 0
     return 0
 

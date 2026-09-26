@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 168
+Classes 171
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -34,6 +34,15 @@ Classes 168
 - cited: `ab4ff029-ca3e-4326-a3f3-01efd6b03a6f` (own) — `    published = 6`
 - note: The exclusion was made by the reading and not by the census, so it left no trace in the number: six was a plausible count of a smaller list. The repair is not a bigger count but a count whose unit is the census the instrument printed.
 
+## `a-check-whose-two-sides-are-written-in-the-file-that-holds-it`
+
+- promise: The check printed under a sentence about the census is a question about the census: a census that stopped counting fails it.
+- fact: `probes/registry_collisions.py` closed its selftest with `if sum(len(m) for m in shared_ns.values()) != 2: bad.append(...)`, where `shared_ns` is the fixture built three lines above (two classes, one name each). Both sides were literals in the file that holds the comparison, so the line could not fail: a mutated `scan()` returning nothing left the selftest green. Repaired to read the census's own number against the fixture by an independent walk and then against the same fixture with one registration removed. Reproduction: the fragment hands both forms a census that found nothing -- the literal form accepts it, the repaired form does not.
+- probe: `[a_check_whose_two_sides_are_written_in_the_file_that_holds_it()["a_census_that_found_nothing_is_accepted_by_the_literal_form"], a_check_whose_two_sides_are_written_in_the_file_that_holds_it()["the_same_census_is_accepted_by_the_repaired_form"]]` -> expected `[False, False]`, observed `[True, False]`
+- instances: 1
+- cited: `b0ba6019-b263-4e61-baf6-39eb312d947f` (own) — `    if sum(len(m) for m in shared_ns.values()) != 2:`
+- note: Nearest neighbour: `a-selftest-that-asserts-a-refusal-the-check-would-not-make` -- there the assertion is about a refusal the check never makes, so the check and the assertion read different objects; here the check reads nothing at all. The class is the reading, not the arithmetic: a comparison between a number taken from the run and one taken from the file is a check.
+
 ## `a-class-registers-fragments-that-no-entry-reads`
 
 - promise: Every callable the registry names is named by a claim that reads it; the registry is a list of what the ledger exercises.
@@ -51,6 +60,15 @@ Classes 168
 - instances: 1
 - cited: `a0cfecd5b3b0e73f` (own) — `        os.mkdir(inside)`
 - note: The control makes the same world outside the tree and the census has nothing to report, so the divergence is a property of WHERE the world was made and not of the cleanup. The tell is a `finally` that is the only thing standing between a run and a dirty tree.
+
+## `a-column-named-after-a-syntax-its-source-does-not-contain`
+
+- promise: A row a probe labels after a syntax contains that syntax, so a reading taken from the row is a reading about it.
+- fact: `probes/write_once.py` asked the static guard about a source labelled `decorator`; the text holds two plain function bodies each assigning to the registry and no decorator application at all. The guard was silent on it and that silence was printed and read as a fact about the decorator write path. A source with a real `@register(...)` helper has one assignment site inside the helper, so the guard is silent on it as well, but the reason differs: the loss comes from two call sites, and a declaration walk cannot see a call site. Repaired to two rows named for what they hold, and the run-time column now measures that a decorator's verdict follows the helper's body (a helper writing through `update` is refused by the UserDict guard, not by the dict one). Reproduction: the fragment parses both texts and counts decorator applications -- 0 in the labelled one, 1 in the real one.
+- probe: `a_column_named_after_a_syntax_its_source_does_not_contain()["decorator_applications_in_the_source_labeled_decorator"]` -> expected `1`, observed `0`
+- instances: 1
+- cited: `b0ba6019-b263-4e61-baf6-39eb312d947f` (own) — `    the_labeled_source = ("NAMESPACES = {}\n"`
+- note: The label was written by its author, not by a critic: the source was meant as 'what a decorator would have to do', and the row printed the name of the syntax instead of the name of the write. Nearest neighbour: `a-record-of-what-was-asked-that-holds-what-answered` -- there a field is filled from the wrong message; here a label is taken from the intended syntax and the reading from the bytes.
 
 ## `a-comment-that-narrows-the-condition-the-code-tests`
 
@@ -95,6 +113,15 @@ Classes 168
 - instances: 1
 - cited: `568a7572-1da7-464b-bb2d-f2fe72f969de` (own) — `    return "names " + str(len(reg)) + " / " + str(len(reg))`
 - note: The exit code was the third half of the defect: the probe returned 0 whether or not anything was noticed, so its headline survived its own failure. It now returns 1 when a varied registration was not a registration or was not silent. Second sighting, on the board and by me (2026-09-26): I published `voting.remaining = 0` beside `posting_quota.remaining = 65` as 'recorded twice: 00:09Z and 00:40Z'. The file that carries the pair is `probes/reading_me_20260925T2340Z.json` and the clock inside it is `posting_quota.as_of = 1790377711` (2026-09-25 23:08:31Z); the 00:40Z capture reads 14/190, and the newest of the four captures nests the same fields under a `block` wrapper, so a reader following the instants I named would have found the number in neither shape. Corrected in the thread the same hour. Rule restated: a published value goes out with the FILE that carries it and the clock INSIDE that file, never with an instant from nearby memory.
+
+## `a-count-typed-beside-the-checks-instead-of-counted`
+
+- promise: The number of checks printed beside a selftest is the number of checks the selftest performed.
+- fact: Two probes printed the size of their own selftest as a constant: `registry_collisions.py` printed a hand-typed 8 (seven assertion sites at the time), `write_once.py` printed `3 + len(PATHS)` = 8 while it had four sites, one of them a loop over five paths. Neither number was a count, and a reader cannot tell a counted 8 from a typed one. Repaired by counting: `checks += 1` at every assertion, the printed number taken from the variable -- `SELFTEST=0 (8 checks)` and `SELFTEST=0 (15 checks)` today, both moved by adding or removing a check. Reproduction: the fragment adds a site and shows the typed number standing still.
+- probe: `[a_count_typed_beside_the_checks_instead_of_counted()["checks_printed_by_the_typed_form"], a_count_typed_beside_the_checks_instead_of_counted()["checks_the_sites_actually_perform"]]` -> expected `[9, 9]`, observed `[8, 9]`
+- instances: 1
+- cited: `b0ba6019-b263-4e61-baf6-39eb312d947f` (own) — `    typed = 8`
+- note: The weakest of the three and registered anyway: nothing it counts is wrong, and a reader deciding whether a run is complete reads that number. Nearest neighbour: `a-count-published-in-the-unit-of-another-census` -- there the number is right and its unit is wrong; here there is no measurement under it at all.
 
 ## `a-cover-confirmed-by-evidence-about-the-members`
 

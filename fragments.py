@@ -4682,3 +4682,146 @@ def an_argument_a_parser_does_not_read_read_as_a_run_that_used_it():
 
 
 NAMESPACES.setdefault('an-argument-a-parser-does-not-read-read-as-a-run-that-used-it', {}).update({'an_argument_a_parser_does_not_read_read_as_a_run_that_used_it': an_argument_a_parser_does_not_read_read_as_a_run_that_used_it})
+
+
+def a_check_whose_two_sides_are_written_in_the_file_that_holds_it():
+    """A selftest line that compares two numbers the author wrote, one line apart.
+
+    `probes/registry_collisions.py` ended its selftest with
+
+        if sum(len(m) for m in shared_ns.values()) != 2:
+            bad.append("the census does not count the registrations it walked")
+
+    `shared_ns` is the fixture built three lines above, two classes with one name each,
+    so the left side is 2 and the right side is 2 whatever `scan()` returned: a reader
+    who mutated the census to return nothing still got a green selftest. The name of
+    the check says it is a question about the census, and the code is a question about
+    the author's arithmetic.
+
+    The tell is that BOTH sides of the comparison are literals in the file that holds
+    the comparison, so no run can change either of them. The repair reads the census's
+    own number against the fixture by an independent walk, and then against the same
+    fixture with one registration taken out -- two readings that a census which stopped
+    counting cannot satisfy at once.
+
+    Measured here by handing both forms a census that found nothing: the literal form
+    accepts it, the repaired form does not.
+    """
+    fixture = {"class-one": {"shared_name": 1}, "class-two": {"shared_name": 1}}
+
+    def as_written(_census):
+        return sum(len(m) for m in fixture.values()) == 2
+
+    def as_repaired(census):
+        walked = sum(len(m) for m in fixture.values())
+        dropped = dict(fixture)
+        dropped["class-two"] = {}
+        after = sum(len(m) for m in dropped.values())
+        return census == walked and after == walked - 1
+
+    return {"a_census_that_found_nothing_is_accepted_by_the_literal_form":
+                as_written(None),
+            "the_same_census_is_accepted_by_the_repaired_form":
+                as_repaired(None),
+            "the_fixture_walked_by_the_repaired_form":
+                sum(len(m) for m in fixture.values())}
+
+
+NAMESPACES.setdefault('a-check-whose-two-sides-are-written-in-the-file-that-holds-it', {}).update({'a_check_whose_two_sides_are_written_in_the_file_that_holds_it': a_check_whose_two_sides_are_written_in_the_file_that_holds_it})
+
+
+def a_count_typed_beside_the_checks_instead_of_counted():
+    """A selftest that prints the size of itself, with the number written by hand.
+
+    Both of this repo's registry probes printed their own selftest size as a constant:
+    `print("SELFTEST=%d (%d checks)" % (1 if bad else 0, 8))` in one, and
+    `3 + len(PATHS)` in the other. Neither number was a count: the first file has seven
+    assertion sites, the second four sites of which one loops over every write path, so
+    the honest totals were 8 and 9 while the printed ones were 8 and 8. A reader who
+    sees `SELFTEST=0 (8 checks)` has no way to tell a counted 8 from a typed one, and
+    the tell is exactly that: a number in the output that no counter in the file
+    reaches.
+
+    The repair is one line per assertion site -- `checks += 1` -- and the printed number
+    taken from the variable, so a check that is added or removed moves the line it is
+    printed on.
+
+    Measured here over the two shapes: the typed number stayed where it was put while
+    the sites under it moved.
+    """
+    sites_after_a_check_was_added = list(range(9))
+    typed = 8
+
+    def counted(sites):
+        checks = 0
+        for _ in sites:
+            checks += 1
+        return checks
+
+    return {"checks_printed_by_the_typed_form": typed,
+            "checks_the_sites_actually_perform": counted(sites_after_a_check_was_added),
+            "the_typed_number_moved_when_a_site_was_added":
+                typed == counted(sites_after_a_check_was_added)}
+
+
+NAMESPACES.setdefault('a-count-typed-beside-the-checks-instead-of-counted', {}).update({'a_count_typed_beside_the_checks_instead_of_counted': a_count_typed_beside_the_checks_instead_of_counted})
+
+
+def a_column_named_after_a_syntax_its_source_does_not_contain():
+    """A table row called `decorator` over a source with no decorator in it.
+
+    `probes/write_once.py` asked the static guard about a source filed under the label
+    `decorator`:
+
+        "decorator": "NAMESPACES = {}\ndef register_n():\n    NAMESPACES['c'] = ..."
+
+    There is no decorator application in that text -- two plain function bodies, each
+    assigning to the registry -- and the guard was silent on it, which was then
+    printed and read as "the guard misses the decorator write path". A source with a
+    real `@register(...)` helper has ONE assignment site, inside the helper, so the
+    guard is silent on it too, but for the other reason: the loss comes from two CALL
+    sites, and no reading of declarations can see a call site. The label made two
+    different facts into one row, and the repair is two rows named for what they hold.
+
+    The tell is a column whose name is a syntax, and the check is a parse: count the
+    decorator nodes in the source the column names. Measured here over both texts.
+    """
+    import ast
+
+    def decorator_applications(source):
+        return sum(len(node.decorator_list) for node in ast.walk(ast.parse(source))
+                   if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef,
+                                        ast.ClassDef)))
+
+    def assignments_to_registry(source):
+        return sum(1 for node in ast.walk(ast.parse(source))
+                   if isinstance(node, ast.Assign)
+                   for t in node.targets
+                   if isinstance(t, ast.Subscript)
+                   and getattr(t.value, "id", None) == "NAMESPACES")
+
+    the_labeled_source = ("NAMESPACES = {}\n"
+                          "def register_n():\n"
+                          "    NAMESPACES['c'] = {'n': 1}\n"
+                          "def register_m():\n"
+                          "    NAMESPACES['c'] = {'m': 2}\n")
+    a_real_one = ("NAMESPACES = {}\n"
+                  "def register(cls, name):\n"
+                  "    def deco(fn):\n"
+                  "        NAMESPACES[cls] = {name: fn}\n"
+                  "        return fn\n"
+                  "    return deco\n"
+                  "@register('c', 'n')\n"
+                  "def a():\n"
+                  "    pass\n")
+    return {"decorator_applications_in_the_source_labeled_decorator":
+                decorator_applications(the_labeled_source),
+            "registry_write_sites_it_actually_holds":
+                assignments_to_registry(the_labeled_source),
+            "decorator_applications_in_the_source_that_has_one":
+                decorator_applications(a_real_one),
+            "registry_write_sites_that_one_holds":
+                assignments_to_registry(a_real_one)}
+
+
+NAMESPACES.setdefault('a-column-named-after-a-syntax-its-source-does-not-contain', {}).update({'a_column_named_after_a_syntax_its_source_does_not_contain': a_column_named_after_a_syntax_its_source_does_not_contain})

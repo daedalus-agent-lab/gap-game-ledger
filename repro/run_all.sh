@@ -74,6 +74,48 @@ sha16() { sha256sum | cut -c1-16; }
 normalise() { sed -E 's/\bkey [0-9a-f]{16}\b/key <minted>/g'; }
 declared_lines() { grep -cE '\bkey [0-9a-f]{16}\b'; }
 
+# One row of the record: <name>|<the command's status>|<the harness's verdict>|...
+# Two numbers, two writers, and for as long as they shared one field a reader could
+# not tell them apart. The verdict is 0 when the item passed, 1 when the item failed,
+# 2 when the harness could not certify the item at all (the tree moved under it, or its
+# two runs disagreed); the command's own status is written beside it, not folded into
+# it, so a command that exits 2 -- the code every probe in this repo uses for "that is
+# not an argument I read, so I did not measure" -- stays visible as a refusal instead
+# of reading as a disagreement.
+row_of() { printf '%s|%s|%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" "$5" "$6"; }
+
+# The record carries two numbers per item and they have two writers, so the comparison
+# between two records is a function here rather than a heredoc in the middle of the run:
+# --self-test has to be able to call the same printer the run calls.
+diff_records() {              # diff_records <previous record> <this record>
+  python3 - "$1" "$2" <<'PY'
+import json, sys
+prev, new = (json.load(open(p)) for p in sys.argv[1:3])
+if prev.get("items") and "cert" not in prev["items"][0]:
+    print("the recorded run beside this tree predates the separated verdict field:")
+    print("    it carries `exit` alone, written by three different branches, so nothing")
+    print("    here compares two runs of one record. The next run records both fields.")
+    sys.exit(0)
+a = {i["name"]: (i["exit"], i.get("cert"), i["out"], i.get("set"), i["normalised"])
+     for i in prev.get("items", [])}
+b = {i["name"]: (i["exit"], i.get("cert"), i["out"], i.get("set"), i["normalised"])
+     for i in new["items"]}
+moved = [n for n in b if n in a and a[n] != b[n]]
+gone = [n for n in a if n not in b]
+fresh = [n for n in b if n not in a]
+if moved:
+    print("moved since the last recorded run on this tree:")
+    for n in moved:
+        print(f"    {n}: exit {a[n][0]}->{b[n][0]}  cert {a[n][1]}->{b[n][1]}  "
+              f"out {a[n][2]}->{b[n][2]}  set {a[n][3]}->{b[n][3]}  "
+              f"norm {a[n][4]}->{b[n][4]}")
+if gone or fresh:
+    print(f"items added {fresh or 'none'}, removed {gone or 'none'}")
+if not (moved or gone or fresh):
+    print("no item moved since the last recorded run on this tree")
+PY
+}
+
 SUITE_RECORD="$WS/fresco/regression.json"   # this run's own output, declared once
 record_rel="$SUITE_RECORD"
 case "$record_rel" in "$LEDGER"/*) record_rel="${record_rel#"$LEDGER"/}";; *) record_rel="";; esac
@@ -133,6 +175,35 @@ if [ "$SELFTEST" = 1 ]; then
   else
     echo "self-test: SKIPPED the record half, this run writes its record outside $LEDGER"
   fi
+  # Two numbers with two writers, and the reader must be able to tell them apart. A
+  # command that refused to measure (2) and a command that measured and disagreed (1)
+  # are one fact to a folded status and two facts to a reader; a verdict the harness
+  # wrote (2, "not certified") must not be able to land where the command's status is.
+  row="$(row_of refuses 2 1 aaaa bbbb 0)"
+  echo "one row of the record: $row"
+  case "$row" in
+    "refuses|2|1|"*) echo "self-test: the row carries the command's status (2) and the verdict (1) apart" ;;
+    *) echo "self-test FAILED: the row does not carry the command's status and the verdict apart"; exit 1 ;;
+  esac
+  m1="$(mktemp)"; m2="$(mktemp)"
+  printf '{"items":[{"name":"refuses","exit":2,"cert":1,"out":"a","set":"a","normalised":0}]}\n' > "$m1"
+  printf '{"items":[{"name":"refuses","exit":1,"cert":1,"out":"a","set":"a","normalised":0}]}\n' > "$m2"
+  d="$(diff_records "$m1" "$m2")"
+  echo "$d" | grep -q 'exit 2->1' \
+    && echo "self-test: the comparison reads the command's status, and reads it separately" \
+    || { echo "self-test FAILED: two records that differ in the command's status read as one"; echo "$d"; exit 1; }
+  printf '{"items":[{"name":"refuses","exit":2,"cert":1,"out":"a","set":"a","normalised":0}]}\n' > "$m1"
+  printf '{"items":[{"name":"refuses","exit":0,"cert":2,"out":"a","set":"a","normalised":0}]}\n' > "$m2"
+  d="$(diff_records "$m1" "$m2")"
+  echo "$d" | grep -q 'cert 1->2' \
+    && echo "self-test: a verdict the harness wrote is not readable as a status the command had" \
+    || { echo "self-test FAILED: the harness's own verdict is not separated from the command's status"; echo "$d"; exit 1; }
+  printf '{"items":[{"name":"refuses","exit":2,"out":"a","set":"a","normalised":0}]}\n' > "$m1"
+  d="$(diff_records "$m1" "$m2")"
+  echo "$d" | grep -q 'predates the separated verdict field' \
+    && echo "self-test: a record from before the split is named as incomparable, not diffed" \
+    || { echo "self-test FAILED: an old-format record is compared as if it carried both fields"; echo "$d"; exit 1; }
+  rm -f "$m1" "$m2"
   exit 0
 fi
 
@@ -157,7 +228,13 @@ run() {                       # run <name> <command...>
   # not two readings of one object, and the harness says so instead of calling it
   # an unstable item -- the same third state the network items get.
   local tb; tb="$(tree_state)"
-  if "$@" > "$log" 2>&1; then st=0; else st=1; fi
+  # The command's own status, kept as it is. It used to be folded into 0/1 here, which
+  # made a refusal (2) and a disagreement (1) one fact, and left the field the record
+  # calls `exit` free for the harness to write its own 2 into on the branches below.
+  # Three writers under one name: the diff line read `exit 2->0` for an item whose
+  # command exited 0 in both runs.
+  local rc=0
+  "$@" > "$log" 2>&1 || rc=$?
   local n; n="$(declared_lines < "$log")"
   norm="$(normalise < "$log")"
   local d; d="$(printf '%s' "$norm" | sha16)"
@@ -172,8 +249,7 @@ run() {                       # run <name> <command...>
       printf 'FAIL %-34s the tree moved under the item (tree %s -> %s)\n' "$name" "$tb" "$ta"
       printf '     two runs under two trees are not two readings of one tree; the item is not certified\n'
       fails=$((fails + 1)); rm -f "$log" "$log2"
-      rows="${rows}${name}|2|${d}|${n}|${sd}
-"
+      rows="${rows}$(row_of "$name" "$rc" 2 "$d" "$n" "$sd")$'\n'"
       return
     fi
     if [ "$(normalise < "$log2")" != "$norm" ]; then
@@ -192,8 +268,7 @@ run() {                       # run <name> <command...>
       fi
       diff <(normalise < "$log") <(normalise < "$log2") | sed -n '1,8p' | sed 's/^/       /'
       fails=$((fails + 1)); rm -f "$log" "$log2"
-      rows="${rows}${name}|2|${d}|${n}|${sd}
-"
+      rows="${rows}$(row_of "$name" "$rc" 2 "$d" "$n" "$sd")$'\n'"
       return
     fi
     if ! diff "$log" "$log2" | grep -E '^[<>]' | grep -qvE '\bkey [0-9a-f]{16}\b'; then
@@ -202,8 +277,10 @@ run() {                       # run <name> <command...>
       printf 'FAIL %-34s differs outside the declared field\n' "$name"
       diff "$log" "$log2" | grep -E '^[<>]' | grep -vE '\bkey [0-9a-f]{16}\b' | sed -n '1,8p' | sed 's/^/       /'
       fails=$((fails + 1)); rm -f "$log" "$log2"
-      rows="${rows}${name}|2|${d}|${n}
-"
+      # This row used to be written with the set digest missing, one field fewer than
+      # the record writer unpacks, so the branch that fired first would have taken the
+      # whole record down with a ValueError instead of recording the item.
+      rows="${rows}$(row_of "$name" "$rc" 2 "$d" "$n" "$sd")$'\n'"
       return
     fi
     rm -f "$log2"
@@ -220,14 +297,14 @@ run() {                       # run <name> <command...>
     printf '     moved over the declared field (key): %s\n' "$moved"
   fi
 
-  if [ $st = 0 ]; then
+  local cert; if [ "$rc" = 0 ]; then cert=0; else cert=1; fi
+  if [ "$rc" = 0 ]; then
     printf 'ok   %-34s out=%s set=%s norm=%d tree=%s  %s\n' "$name" "$d" "$sd" "$n" "$tb" "$last"
   else
-    printf 'FAIL %-34s out=%s set=%s norm=%d tree=%s\n' "$name" "$d" "$sd" "$n" "$tb"; sed -n '1,12p' "$log" | sed 's/^/       /'
+    printf 'FAIL %-34s out=%s set=%s norm=%d tree=%s  the command exited %s\n' "$name" "$d" "$sd" "$n" "$tb" "$rc"; sed -n '1,12p' "$log" | sed 's/^/       /'
     fails=$((fails + 1))
   fi
-  rows="${rows}${name}|${st}|${d}|${n}|${sd}
-"
+  rows="${rows}$(row_of "$name" "$rc" "$cert" "$d" "$n" "$sd")$'\n'"
   rm -f "$log"
 }
 
@@ -401,7 +478,7 @@ printf '%-39s %s\n' "aggregate (ordered item digests)" "$aggregate"
 # An item the suite skipped is still a row: a digest computed over a set that
 # quietly lost a member names an object the reader cannot reconstruct from the
 # digest, and two aggregates then differ for a reason the line does not state.
-skipped="$(printf '%s' "$rows" | awk -F'|' '$2 != 0 {print $1}' | tr '\n' ' ')"
+skipped="$(printf '%s' "$rows" | awk -F'|' '$3 != 0 {print $1}' | tr '\n' ' ')"
 [ -n "$skipped" ] && printf '%-39s %s\n' "not measured (still in the digest)" "$skipped"
 
 # The aggregate says that something answers differently; it does not say what.
@@ -411,35 +488,18 @@ skipped="$(printf '%s' "$rows" | awk -F'|' '$2 != 0 {print $1}' | tr '\n' ' ')"
 reg="$WS/fresco/regression.json"
 newreg="$(mktemp)"
 cat > "$newreg" <<EOF
-{"aggregate": "$aggregate", "net": $NET, "normalised_field": "minted stream keys of the form 'key <16 hex>'", "digests": "out = the item's normalised output in order; set = the same lines sorted", "items": $(printf '%s' "$rows" | python3 -c '
+{"aggregate": "$aggregate", "net": $NET, "normalised_field": "minted stream keys of the form 'key <16 hex>'", "digests": "out = the item's normalised output in order; set = the same lines sorted", "exit_field": "the status the item's own command exited with, exactly as the shell reported it", "cert_field": "the harness's verdict: 0 the item passed, 1 the item failed, 2 the harness could not certify it", "items": $(printf '%s' "$rows" | python3 -c '
 import sys, json
 out = []
 for line in sys.stdin.read().splitlines():
     if not line: continue
-    name, st, d, n, sd = line.rsplit("|", 4)
-    out.append({"name": name, "exit": int(st), "out": d, "set": sd,
-                "normalised": int(n)})
+    name, rc, cert, d, n, sd = line.rsplit("|", 5)
+    out.append({"name": name, "exit": int(rc), "cert": int(cert), "out": d,
+                "set": sd, "normalised": int(n)})
 print(json.dumps(out))')}
 EOF
 if [ -f "$reg" ]; then
-  python3 - "$reg" "$newreg" <<'PY'
-import json, sys
-prev, new = (json.load(open(p)) for p in sys.argv[1:3])
-a = {i["name"]: (i["exit"], i["out"], i.get("set"), i["normalised"]) for i in prev.get("items", [])}
-b = {i["name"]: (i["exit"], i["out"], i.get("set"), i["normalised"]) for i in new["items"]}
-moved = [n for n in b if n in a and a[n] != b[n]]
-gone = [n for n in a if n not in b]
-fresh = [n for n in b if n not in a]
-if moved:
-    print("moved since the last recorded run on this tree:")
-    for n in moved:
-        print(f"    {n}: exit {a[n][0]}->{b[n][0]}  out {a[n][1]}->{b[n][1]}  "
-              f"set {a[n][2]}->{b[n][2]}  norm {a[n][3]}->{b[n][3]}")
-if gone or fresh:
-    print(f"items added {fresh or 'none'}, removed {gone or 'none'}")
-if not (moved or gone or fresh):
-    print("no item moved since the last recorded run on this tree")
-PY
+  diff_records "$reg" "$newreg"
 else
   echo "no recorded run beside this tree: the record is this run's own output and is"
   echo "not tracked, so a fresh clone has nothing to compare against. Nothing moved"

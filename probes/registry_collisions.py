@@ -2,7 +2,7 @@
 """Which of the ways a registration can be lost does the registry's guard cover?
 
 A registration is a (class, fragment name) pair. The registry `NAMESPACES` can lose
-one in three forms, and they are not the same code:
+one in five forms, and they are not the same code:
 
   F1  the whole-dict literal `NAMESPACES = {...}` declares one class twice -- a dict
       literal accepts a repeated key and keeps the last, so the earlier mapping is
@@ -22,16 +22,19 @@ because the second assignment had silently dropped a name the first one carried.
 F4 and F5 were silent until this probe asked the guard about them, and they are here
 because the guard's `ast.Assign` walk could not see an augmented assignment at all.
 
-`check.py:duplicate_declarations` is the guard. This probe asks it the question three
-times, on three mutated copies of the real source, one per form -- the rule is called
-as `check.py` calls it, in a directory where `fragments.py` is the mutant, so the probe
-is not restating the rule -- and prints which forms it refuses. The declared cover is a
+`check.py:duplicate_declarations` is the guard. This probe asks it the question once per
+form, on one mutated copy of the real source per form -- the rule is called as `check.py`
+calls it, in a directory where `fragments.py` is the mutant, so the probe is not
+restating the rule -- and prints which forms it refuses. The declared cover is a
 constant in this file: a form this guard covers because the code was widened to cover
-it is declared, not discovered.
+it is declared, not discovered. The cover is measured in ONE statement order per form;
+a reader who needs "the guard covers F4/F5 whatever the order of the statements" has to
+search the orders, and this file does not.
 
     python3 registry_collisions.py            # the guard's cover and the live census
-    python3 registry_collisions.py --selftest # the guard fires on the mutants, and
-                                              # the body scan sees a replaced body
+    python3 registry_collisions.py --selftest # the guard fires on the mutants, the body
+                                              # scan sees a replaced body, and the census
+                                              # moves when a registration leaves
 
 WHAT THIS DOES NOT DO, named rather than hidden:
   * It reads the source text and the loaded module; it does not run `check.py` to the
@@ -97,27 +100,43 @@ def cover(check, source: str) -> dict:
 
 
 def scan(namespaces) -> dict:
-    """The live registry: how many names, and which of them are shared or replaced."""
+    """The live registry: how many names, and which of them are shared or replaced.
+
+    Two class names carrying one body is the other half of the same loss, and it is the
+    shape `check.class_collisions` fails the ledger on: the registry keys by the shape of
+    the lie, so a pair of class names that hold exactly the same fragments is one class
+    under two names. It is counted here rather than left to the reader, because a census
+    that reports `names_with_replaced_bodies: []` on it reads as a clean registry.
+    """
     registrations = 0
     by_name = defaultdict(set)
     body = defaultdict(set)
+    by_class = {}
     for cls, mapping in namespaces.items():
+        sites = set()
         for name, fn in mapping.items():
             registrations += 1
             by_name[name].add(cls)
             code = getattr(fn, "__code__", None)
             if code is not None:
-                body[name].add((code.co_filename, code.co_firstlineno))
+                site = (code.co_filename, code.co_firstlineno)
+                body[name].add(site)
+                sites.add(site)
+        if sites:
+            by_class.setdefault(frozenset(sites), []).append(cls)
     shared = {n: sorted(c) for n, c in by_name.items()
               if len(c) > 1 and len(body.get(n, ())) == 1}
     replaced = sorted(n for n, sites in body.items() if len(sites) > 1)
+    one_body_twice = sorted(sorted(names) for names in by_class.values()
+                            if len(names) > 1)
     return {"classes": len(namespaces),
             "registrations": registrations,
             "distinct_names": len(by_name),
             "names_in_more_than_one_class": len([n for n, c in by_name.items()
                                                  if len(c) > 1]),
             "shared_one_body": shared,
-            "names_with_replaced_bodies": replaced}
+            "names_with_replaced_bodies": replaced,
+            "class_names_carrying_one_body": one_body_twice}
 
 
 def selftest(source: str) -> list[str]:
@@ -144,28 +163,60 @@ def selftest(source: str) -> list[str]:
     def fn_b():
         pass
 
+    checks = 0
+
     # A name shared by two classes with ONE body: the registry keys by the shape of the
     # lie, so this is the intended case and must not read as a loss.
     shared_ns = {"class-one": {"shared_name": fn_a}, "class-two": {"shared_name": fn_a}}
     s = scan(shared_ns)
+    checks += 1
     if s["names_with_replaced_bodies"]:
         bad.append("a name shared by two classes with one body read as replaced: %r"
                    % (s["names_with_replaced_bodies"],))
+    checks += 1
     if s["names_in_more_than_one_class"] != 1:
         bad.append("the shared case did not reach the census")
+
+    # Two CLASS names holding one body is what `check.class_collisions` fails on, and a
+    # census that only counted replaced fragment bodies reported it clean.
+    checks += 1
+    if s["class_names_carrying_one_body"] != [["class-one", "class-two"]]:
+        bad.append("two class names carrying one body were not reported: %r"
+                   % (s["class_names_carrying_one_body"],))
 
     # The same name carrying two bodies IS the loss F2/F3 produce.
     replaced_ns = {"class-one": {"lost_name": fn_a}, "class-two": {"lost_name": fn_b}}
     r = scan(replaced_ns)
+    checks += 1
     if r["names_with_replaced_bodies"] != ["lost_name"]:
         bad.append("a replaced body was not reported: %r"
                    % (r["names_with_replaced_bodies"],))
+    checks += 1
+    if r["class_names_carrying_one_body"]:
+        bad.append("two classes with different bodies read as one class: %r"
+                   % (r["class_names_carrying_one_body"],))
 
-    # A namespace that dropped a registry entry entirely cannot be seen by scan(); it is
-    # the census that would move, so the probe's own numbers must be internally sound.
-    if sum(len(m) for m in shared_ns.values()) != 2:
-        bad.append("the census does not count the registrations it walked")
-    return bad
+    # A namespace that dropped a registry entry entirely cannot be seen by scan() -- the
+    # census is what moves. So the count is read against the fixture by an independent
+    # walk, and then against the same fixture with one registration taken out: two
+    # numbers both written in this file would agree whatever the census did.
+    walked = sum(len(m) for m in shared_ns.values())
+    checks += 1
+    if s["registrations"] != walked:
+        bad.append("the census counted %d registrations; the fixture holds %d"
+                   % (s["registrations"], walked))
+    dropped_ns = {k: dict(v) for k, v in shared_ns.items()}
+    dropped_ns["class-two"] = {}
+    dropped = scan(dropped_ns)
+    checks += 1
+    if dropped["registrations"] != walked - 1:
+        bad.append("taking one registration out moved the census to %d, not %d"
+                   % (dropped["registrations"], walked - 1))
+    checks += 1
+    if dropped["class_names_carrying_one_body"]:
+        bad.append("the emptied class still shares a body: %r"
+                   % (dropped["class_names_carrying_one_body"],))
+    return bad, checks
 
 
 def main() -> int:
@@ -178,10 +229,10 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
 
     if args.selftest:
-        bad = selftest(source)
+        bad, checks = selftest(source)
         for line in bad:
             print("FAIL", line)
-        print("SELFTEST=%d (%d checks)" % (1 if bad else 0, 8))
+        print("SELFTEST=%d (%d checks)" % (1 if bad else 0, checks))
         return 1 if bad else 0
 
     check = load_check()
@@ -203,6 +254,7 @@ def main() -> int:
           "%(distinct_names)d  in more than one class %(names_in_more_than_one_class)d"
           % s)
     print("names with a replaced body: %r" % (s["names_with_replaced_bodies"],))
+    print("class names carrying one body: %r" % (s["class_names_carrying_one_body"],))
     for name, classes in sorted(s["shared_one_body"].items()):
         print("  shared one body: %s <- %s" % (name, ", ".join(classes)))
 
@@ -214,6 +266,9 @@ def main() -> int:
     if s["names_with_replaced_bodies"]:
         bad.append("a fragment body is replaced in the live registry: %r"
                    % (s["names_with_replaced_bodies"],))
+    if s["class_names_carrying_one_body"]:
+        bad.append("two class names carry one body in the live registry: %r"
+                   % (s["class_names_carrying_one_body"],))
     for line in bad:
         print("FAIL", line)
     print("CHECK=%d" % (1 if bad else 0))
