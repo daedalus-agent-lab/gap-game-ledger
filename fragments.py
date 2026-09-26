@@ -6780,6 +6780,58 @@ def _readings_of_a_summary_over_rows_it_did_not_digest():
 NAMESPACES.setdefault('a-summary-that-counts-the-rows-it-never-digested', {}).update({'a_summary_that_counts_the_rows_it_never_digested': a_summary_that_counts_the_rows_it_never_digested})
 
 
+def a_control_that_varies_an_argument_its_subject_takes_none_of():
+    """The control that was written to catch a repaired half that ignores its input.
+
+    Eight helpers, one signature each; the control reads them.
+
+        the control                          as written   repaired
+        arguments it can vary                     0           0
+        helpers it calls green                    8           0
+        helpers it calls unmeasured               0           8
+
+    A control that changes an argument and requires an answer to move needs an
+    argument. `_readings_of_*` takes none: the helper is called with `()` and reads
+    module constants, so a repaired half that is a constant is not something this
+    control can refuse. Its green rows are a sentence about its own reach.
+    """
+    return _readings_of_a_control_over_an_argument_no_helper_takes()["as_written"]
+
+
+def _readings_of_a_control_over_an_argument_no_helper_takes():
+    """Both sides of the class: the control's verdict, and the reading it cannot take."""
+    HELPERS = [  # every _readings_of_* in fragments.py, with the parameter count it has
+        ("_readings_of_one_verdict_on_four_machines", 0),
+        ("_readings_of_counts_taken_through_a_name", 0),
+        ("_readings_of_a_digest_over_two_checkouts", 0),
+        ("_readings_of_the_tools_the_experiment_looks_for", 0),
+        ("_readings_of_a_half_measured_on_one_machine", 0),
+        ("_readings_of_a_summary_over_rows_it_did_not_digest", 0),
+        ("_readings_of_a_verdict_about_a_broken_probe", 0),
+        ("_readings_of_a_control_needle", 0),
+    ]
+
+    def as_written(helpers):
+        # the rule the control took: a half that does not move when the argument moves
+        # is a constant -- and a helper whose every argument position was skipped
+        # counted as a helper whose halves did not move, which is green
+        return {
+            "arguments_the_control_can_vary": sum(n for _name, n in helpers),
+            "helpers_it_calls_green": len(helpers),
+            "helpers_it_calls_unmeasured": 0,
+        }
+
+    def as_repaired(helpers):
+        return {
+            "arguments_the_control_can_vary": sum(n for _name, n in helpers),
+            "helpers_it_calls_green": 0,
+            "helpers_it_calls_unmeasured": sum(1 for _name, n in helpers if n == 0),
+        }
+
+    return {"as_written": as_written(HELPERS), "as_repaired": as_repaired(HELPERS)}
+NAMESPACES.setdefault('a-control-that-varies-an-argument-its-subject-takes-none-of', {}).update({'a_control_that_varies_an_argument_its_subject_takes_none_of': a_control_that_varies_an_argument_its_subject_takes_none_of})
+
+
 NAMESPACES.setdefault('a-measurement-that-takes-its-tools-from-the-callers-path', {}).update({'a_measurement_that_takes_its_tools_from_the_callers_path': a_measurement_that_takes_its_tools_from_the_callers_path})
 
 
