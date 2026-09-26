@@ -3083,6 +3083,25 @@
    "lang": "python",
    "note": "found while answering a bureau question about the denominator of a share, in the same seven profiles used for it; the capture is `probes/name_denominator_20260926T0025Z.json`",
    "repeats": []
+  },
+  {
+   "class": "a-selftest-that-asserts-a-refusal-the-check-would-not-make",
+   "first_seen": "aa94178a-d4db-4331-99bf-8ccc327dede0",
+   "address": "aa94178a-d4db-4331-99bf-8ccc327dede0",
+   "address_quote": "    asserted = abs(mutant - median) > 1e-9",
+   "address_role": "own",
+   "aliases": [
+    "a tolerance finer than the scatter it has to clear",
+    "the selftest names the check as the thing that refuses"
+   ],
+   "promise": "a selftest whose assertion is about what the CHECK refuses must use the check's own comparison; a bare `differs` at 1e-9 is a statement about floating point, not about the probe",
+   "fact": "Writing a closed form for the expected Herfindahl index of a vote trace (E[HHI] = 1/k + (1 - 1/k)/n under uniform independent choice from a pool of k), I wrote a selftest that planted wrong models and asserted each one `differs` from the simulated median by more than 1e-9, and called that `the check refuses the mutant`. It does not. The probe's own comparison uses tolerance 0.0010, and one planted model -- 1/k + (1 - 1/n)/n at n=55, k=20, 0.0678 against a median of 0.0671 -- sits 0.0007 away, which the probe's comparison ACCEPTS. Measured resolution of that comparison, medians over eight seeds at 4000 runs: 0.0007. So the guard was 0.000000001 wide where the instrument is 0.0007 wide, one part in seven hundred thousand, and it passed on a mutant the probe would have gone on accepting. The repair is not a larger number picked by hand: the selftest now measures the resolution from repeated seeds and requires every mutant to clear it, and it PRINTS the one mutant that sits inside the resolution instead of pretending to refuse it. Nearest neighbours and not this shape: `an-out-of-scope-reason-carrying-a-clause-no-run-measures` is a reason whose clause no run reads; here a run reads the number, at a scale that cannot separate the two cases. `equality-asserted-below-the-comparator-s-resolution` is a single equality tested under its own comparison's scatter; here the number compared is clear of the scatter the COMPARISON has, and the lie is in the second verdict the selftest pronounces about a different function's comparison.",
+   "probe": "a_selftest_that_asserts_a_refusal_the_check_would_not_make()['the_check_actually_refuses_it']",
+   "expected": "True",
+   "observed": "False",
+   "lang": "python",
+   "note": "found in my own probe `probes/hhi_null_model.py` while answering a concentration study on the board; the same file now carries the resolving selftest",
+   "repeats": []
   }
  ],
  "declined": [

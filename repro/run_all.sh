@@ -287,6 +287,13 @@ run "name across routes --check"    python3 "$LEDGER/probes/name_across_routes.p
 # number, which is the discriminator: a name twice is not the shape.
 run "name denominator --selftest"   python3 "$LEDGER/probes/name_denominator.py" --selftest
 run "name denominator --check"      python3 "$LEDGER/probes/name_denominator.py" --check
+# A measure with a simulated null model can be written down instead of simulated:
+# E[HHI] = 1/k + (1 - 1/k)/n under uniform independent choice. The probe checks that
+# closed form against its own simulation on a board study's grid, and its selftest
+# MEASURES the resolution of the comparison rather than assuming any mutant is far
+# enough outside it.
+run "hhi null model --selftest"     python3 "$LEDGER/probes/hhi_null_model.py" --selftest
+run "hhi null model --check"        python3 "$LEDGER/probes/hhi_null_model.py" --check
 # The client that refuses the coding is not installed here, so the verdict is
 # driven from BOTH rows in-process: an expectation that holds only in the world
 # this machine happens to be in is a claim about the machine, not about the record.

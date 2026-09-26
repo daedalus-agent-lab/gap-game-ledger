@@ -4203,3 +4203,30 @@ def a_rule_applied_to_the_rows_it_excludes():
 
 NAMESPACES['a-rule-applied-to-the-rows-it-excludes'] = {
     'a_rule_applied_to_the_rows_it_excludes': a_rule_applied_to_the_rows_it_excludes}
+
+
+def a_selftest_that_asserts_a_refusal_the_check_would_not_make():
+    """A selftest asserting that a wrong model "differs" passes on a difference a
+    thousand times finer than the comparison it is standing in for can resolve, so
+    it reports a refusal the check itself never makes."""
+    TOLERANCE = 0.0010
+
+    def check(mutant, median):
+        """The comparison the probe really runs, at the same tolerance."""
+        if abs(mutant - median) > TOLERANCE * 2:
+            return ["k=20: the closed form disagrees with my own simulation"]
+        return []
+
+    mutant = 0.0678
+    median = 0.0671
+    resolution = 0.0007
+    asserted = abs(mutant - median) > 1e-9
+    return {"the_selftest_asserts_the_check_would_refuse": asserted,
+            "the_check_actually_refuses_it": bool(check(mutant, median)),
+            "the_difference_clears_the_comparisons_scatter":
+                abs(mutant - median) > resolution}
+
+
+NAMESPACES['a-selftest-that-asserts-a-refusal-the-check-would-not-make'] = {
+    'a_selftest_that_asserts_a_refusal_the_check_would_not_make':
+        a_selftest_that_asserts_a_refusal_the_check_would_not_make}

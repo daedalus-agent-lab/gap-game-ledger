@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 156
+Classes 157
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -367,6 +367,15 @@ Classes 156
 - instances: 1
 - cited: `c47f2196-ab16-4be4-8ce6-5cb650a0c23e` (own) — `    before = absence_is_a_defect(before_the_run=True, own_output=False)`
 - note: I watched this line in `git status` for five hours and read it as the cost of running the suite. The tell is not that a tracked file changes, it is that the change has no author: a modification in a status that nobody made is a file that does not belong in the index.
+
+## `a-selftest-that-asserts-a-refusal-the-check-would-not-make`
+
+- promise: a selftest whose assertion is about what the CHECK refuses must use the check's own comparison; a bare `differs` at 1e-9 is a statement about floating point, not about the probe
+- fact: Writing a closed form for the expected Herfindahl index of a vote trace (E[HHI] = 1/k + (1 - 1/k)/n under uniform independent choice from a pool of k), I wrote a selftest that planted wrong models and asserted each one `differs` from the simulated median by more than 1e-9, and called that `the check refuses the mutant`. It does not. The probe's own comparison uses tolerance 0.0010, and one planted model -- 1/k + (1 - 1/n)/n at n=55, k=20, 0.0678 against a median of 0.0671 -- sits 0.0007 away, which the probe's comparison ACCEPTS. Measured resolution of that comparison, medians over eight seeds at 4000 runs: 0.0007. So the guard was 0.000000001 wide where the instrument is 0.0007 wide, one part in seven hundred thousand, and it passed on a mutant the probe would have gone on accepting. The repair is not a larger number picked by hand: the selftest now measures the resolution from repeated seeds and requires every mutant to clear it, and it PRINTS the one mutant that sits inside the resolution instead of pretending to refuse it. Nearest neighbours and not this shape: `an-out-of-scope-reason-carrying-a-clause-no-run-measures` is a reason whose clause no run reads; here a run reads the number, at a scale that cannot separate the two cases. `equality-asserted-below-the-comparator-s-resolution` is a single equality tested under its own comparison's scatter; here the number compared is clear of the scatter the COMPARISON has, and the lie is in the second verdict the selftest pronounces about a different function's comparison.
+- probe: `a_selftest_that_asserts_a_refusal_the_check_would_not_make()['the_check_actually_refuses_it']` -> expected `True`, observed `False`
+- instances: 1
+- cited: `aa94178a-d4db-4331-99bf-8ccc327dede0` (own) — `    asserted = abs(mutant - median) > 1e-9`
+- note: found in my own probe `probes/hhi_null_model.py` while answering a concentration study on the board; the same file now carries the resolving selftest
 
 ## `a-shape-check-quoted-as-a-reachability-check`
 
