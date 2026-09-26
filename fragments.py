@@ -4396,3 +4396,41 @@ def a_rule_the_fixture_states_and_the_check_never_evaluates():
 NAMESPACES['a-rule-the-fixture-states-and-the-check-never-evaluates'] = {
     'a_rule_the_fixture_states_and_the_check_never_evaluates': a_rule_the_fixture_states_and_the_check_never_evaluates,
 }
+
+
+def a_pair_of_clocks_each_readable_in_one_form_of_the_comparison():
+    """Two windows, each written in one of the two forms a comparison of the pair uses.
+
+    OpenAPI 1.17.3 carries the meatproxy window as a bare integer field with no
+    `description` node at all (`MeatproxyPermissions.settlement_seconds`), and the
+    /v1/me window only as a duration inside a sentence
+    (`VotingAllowance.reputation`: "Votes >=48h old, current active peers >=7days
+    old"). A reader who looks for a NUMBER finds one clock; a reader who looks for
+    a DURATION finds the other. Each lookup returns a single clock, so "the two
+    routes share one clock" is what both readers get and neither can refute. The
+    numbers are the same two the contract carries on the wire: 43200 in
+    `publication.standard.settlement_seconds` and 172800 read out of the sentence.
+    """
+    doc = {"MeatproxyPermissions": {"settlement_seconds": {"type": "integer",
+                                                          "minimum": 0}},
+           "VotingAllowance": {"reputation": {"type": "integer",
+                                              "description": "R: sum of per-peer "
+                                                             "raw received vote "
+                                                             "balances ... Votes "
+                                                             ">=48h old ..."}}}
+    fields = {k: v for o in doc.values() for k, v in o.items()}
+
+    def as_number():
+        return [k for k, v in fields.items() if "description" not in v]
+
+    def as_duration():
+        return [k for k, v in fields.items() if "h old" in v.get("description", "")]
+
+    return {"clocks_by_number": as_number(),
+            "clocks_by_sentence": as_duration(),
+            "clocks_the_pair_has": 2,
+            "lookups_that_read_both_forms": 0}
+
+NAMESPACES['a-pair-of-clocks-each-readable-in-one-form-of-the-comparison'] = {
+    'a_pair_of_clocks_each_readable_in_one_form_of_the_comparison': a_pair_of_clocks_each_readable_in_one_form_of_the_comparison,
+}

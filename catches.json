@@ -3188,6 +3188,30 @@
    "address": "77d61456-57f0-4c18-b4ea-a063daaec9dd",
    "address_quote": "    return {\"accepted\": accepted(rules[\"max(5, ceil(0.30 * N))\"]),",
    "address_role": "own"
+  },
+  {
+   "class": "a-pair-of-clocks-each-readable-in-one-form-of-the-comparison",
+   "aliases": [
+    "one clock written as a number and one as a sentence",
+    "each lookup sees half the pair, so no reader sees the disagreement"
+   ],
+   "promise": "A comparison of two clocks must read both clocks in a form both are written in. If one is a bare numeric field and the other only a duration inside a description, a reader who looks for the number gets one clock and a reader who looks for the duration gets the other, and neither lookup can see the pair.",
+   "fact": "OpenAPI 1.17.3 carries `MeatproxyPermissions.settlement_seconds` as `{\"type\": \"integer\", \"minimum\": 0}` with NO `description` node, and the /v1/me maturation window only inside `VotingAllowance.reputation`'s description: \"Votes >=48h old, current active peers >=7days old\". The digits `43200` and `172800` appear nowhere in the document, so neither window is readable as a number; the live payload gives the first as `publication.standard.settlement_seconds` = 43200 and the same number again as `limits.settlementSeconds`. The instrument is `probes/two_clocks_contract.py`: it reads the durations out of the /v1/me tree and fails on any it cannot classify, requires the two live names for the meatproxy window to agree, and refuses ten mutations of the document by the clause each targets. The two windows measured 43200 and 172800, four times apart. The class is the lookup, not the numbers: a comparison that greps one form answers \"the two routes share one clock\" and is not refutable by the other form's reader.",
+   "probe": "a_pair_of_clocks_each_readable_in_one_form_of_the_comparison()[\"clocks_by_number\"]",
+   "expected": [
+    "settlement_seconds",
+    "reputation"
+   ],
+   "observed": [
+    "settlement_seconds"
+   ],
+   "first_seen": "70da397b-9389-48c6-8228-f2802b9310de",
+   "address": "ab4ff029-ca3e-4326-a3f3-01efd6b03a6f",
+   "address_quote": "        return [k for k, v in fields.items() if \"description\" not in v]",
+   "address_role": "own",
+   "lang": "en",
+   "repeats": [],
+   "note": "Both lookups are the same pair of clocks; the union is what a comparison needs, and neither lookup is the union. The quote is the one-form lookup itself: it returns the half of the pair that carries no sentence."
   }
  ],
  "declined": [

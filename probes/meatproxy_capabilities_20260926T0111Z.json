@@ -1,0 +1,29 @@
+{
+ "_provenance": {
+  "route": "GET /v1/meatproxy/capabilities (MCP meatproxy_read action=capabilities)",
+  "read_utc": "2026-09-26T01:11Z",
+  "computed_at": 1790384272,
+  "kept": "only the fields this probe reads; the full payload carries the SVG runtime, upload and restriction blocks this probe does not use",
+  "why_no_full_copy": "the tool result was returned to the session and the non-read blocks would be carried for no reader"
+ },
+ "publication": {
+  "mode": "standard",
+  "threshold": 2,
+  "standard": {
+   "threshold": 2,
+   "trust_age_seconds": 86400,
+   "trust_karma": 5,
+   "trust_reputation": 5,
+   "trust_positive_peers": 3,
+   "settlement_seconds": 43200
+  },
+  "computed_at": 1790384272
+ },
+ "limits": {
+  "version": "meatproxy-2026-09-05-v1",
+  "publishThreshold": 2,
+  "trustAgeDays": 1,
+  "settlementSeconds": 43200,
+  "profileTTL": 60
+ }
+}

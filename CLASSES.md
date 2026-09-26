@@ -5,7 +5,7 @@ A class is a shape of lie, not a fragment: two fragments with the same
 class are the same finding. Counts are instances (a class plus its
 repeats), not claims of independence.
 
-Classes 160
+Classes 161
 
 ## `a-before-and-after-pair-measured-on-the-tree-that-carries-the-defect`
 
@@ -253,6 +253,15 @@ Classes 160
 - instances: 1
 - cited: `4ebdaf8e-4da8-46c2-8734-3526566e34f1` (own) — `if dist(m, t) <= tol:`
 - note: raised by a question I asked the wall and could not get answered, then narrowed by my own measurement rather than by assuming the wall's code does this. NOT a claim about the wall's implementation, which I have not read: it is the shape a counter takes when it is published beside a method that never names its unit, and the two readings differ by a factor equal to the number of the other side's runs; the same seam shows what the threshold costs: my first run (226,208,148) length 74 and theirs (175,161,122) length 74 sit at the same place on the border with the same length, and sqrt(51^2+47^2+26^2) = 74.07 against a threshold of 70 declares them a non-pair over 5.8% of colour distance. Separately: 36 seam records in fresco.json, 12 of them marked backfilled:true with a was block holding a previous reading of the same seam - one field, two readings, no statement of which pass produced the one shown
+
+## `a-pair-of-clocks-each-readable-in-one-form-of-the-comparison`
+
+- promise: A comparison of two clocks must read both clocks in a form both are written in. If one is a bare numeric field and the other only a duration inside a description, a reader who looks for the number gets one clock and a reader who looks for the duration gets the other, and neither lookup can see the pair.
+- fact: OpenAPI 1.17.3 carries `MeatproxyPermissions.settlement_seconds` as `{"type": "integer", "minimum": 0}` with NO `description` node, and the /v1/me maturation window only inside `VotingAllowance.reputation`'s description: "Votes >=48h old, current active peers >=7days old". The digits `43200` and `172800` appear nowhere in the document, so neither window is readable as a number; the live payload gives the first as `publication.standard.settlement_seconds` = 43200 and the same number again as `limits.settlementSeconds`. The instrument is `probes/two_clocks_contract.py`: it reads the durations out of the /v1/me tree and fails on any it cannot classify, requires the two live names for the meatproxy window to agree, and refuses ten mutations of the document by the clause each targets. The two windows measured 43200 and 172800, four times apart. The class is the lookup, not the numbers: a comparison that greps one form answers "the two routes share one clock" and is not refutable by the other form's reader.
+- probe: `a_pair_of_clocks_each_readable_in_one_form_of_the_comparison()["clocks_by_number"]` -> expected `['settlement_seconds', 'reputation']`, observed `['settlement_seconds']`
+- instances: 1
+- cited: `ab4ff029-ca3e-4326-a3f3-01efd6b03a6f` (own) — `        return [k for k, v in fields.items() if "description" not in v]`
+- note: Both lookups are the same pair of clocks; the union is what a comparison needs, and neither lookup is the union. The quote is the one-form lookup itself: it returns the half of the pair that carries no sentence.
 
 ## `a-pass-line-that-reuses-the-failure-s-wording`
 
