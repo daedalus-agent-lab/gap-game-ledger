@@ -5310,3 +5310,65 @@ def a_repeat_that_judges_a_cited_name_against_an_enumeration_the_directory_outgr
 
 NAMESPACES.setdefault("a-fixture-that-copies-what-it-was-told-and-the-subject-imports-more", {}).update(
     {"a_repeat_that_judges_a_cited_name_against_an_enumeration_the_directory_outgrew": a_repeat_that_judges_a_cited_name_against_an_enumeration_the_directory_outgrew})
+
+
+def a_case_that_reads_the_verdict_off_the_exit_code():
+    """A harness case that asserts a refusal by the EXIT CODE cannot tell the
+    refusal it asserts from any other red.
+
+    The ledger's own mutation harness carried twelve want-1 cases and judged each
+    by its code alone. A fixture whose copy lacks a module the subject imports
+    reddens EVERY case for a reason that is not the case's; under the old judge all
+    twelve read `ok` and one want-0 case carried the whole report, so the harness
+    printed one failure while twelve of its assertions were never made. The repair
+    is not a bigger wanting: each case now also carries the NAME the run has to
+    print -- the thing the case broke -- and a red that does not name it is a
+    failure of that case.
+
+    Measured here on a subject that exits 1 when the case's own fault is planted
+    and also when one foreign fault is planted, so the two judges are compared on
+    the same bytes.
+    """
+    import os
+    import pathlib
+    import subprocess
+    import sys
+    import tempfile
+
+    subject = ("import os, sys\n"
+               "print('MISS the thing the case broke' if os.environ.get('OWN')\n"
+               "      else 'MISS something else entirely')\n"
+               "sys.exit(1 if os.environ.get('OWN') or os.environ.get('FOREIGN') else 0)\n")
+    with tempfile.TemporaryDirectory() as tmp:
+        script = pathlib.Path(tmp) / "subject.py"
+        script.write_text(subject, encoding="utf-8")
+
+        def ran(env):
+            e = dict(os.environ)
+            e.update(env)
+            done = subprocess.run([sys.executable, str(script)], env=e,
+                                  capture_output=True, text=True)
+            return done.returncode, done.stdout
+
+        cases = [("broke a", {"OWN": "1"}, 1), ("broke b", {"OWN": "1"}, 1),
+                 ("broke c", {"OWN": "1"}, 1), ("untouched", {}, 0)]
+        # The old judge: the code is the whole verdict.
+        by_code = [n for n, env, want in cases if ran(env)[0] == want]
+        # The same judge on one fault that is not the case's.
+        foreign_by_code = [n for n, env, want in cases
+                           if ran({"FOREIGN": "1"})[0] == want]
+        # The judge this fragment argues for: the red must name the broken thing.
+        foreign_by_name = [n for n, env, want in cases
+                           if ran({"FOREIGN": "1"})[0] == want
+                           and "the thing the case broke" in ran({"FOREIGN": "1"})[1]]
+    return {"cases": len(cases),
+            "cases_the_code_only_judge_calls_ok_under_their_own_fault": len(by_code),
+            "want_1_cases_the_code_only_judge_calls_ok_under_one_foreign_fault":
+                len([n for n in foreign_by_code if n.startswith("broke")]),
+            "want_1_cases_a_name_reading_judge_calls_ok_under_one_foreign_fault":
+                len([n for n in foreign_by_name if n.startswith("broke")])}
+
+
+NAMESPACES.setdefault("a-case-that-reads-the-verdict-off-the-exit-code", {}).update(
+    {"a_case_that_reads_the_verdict_off_the_exit_code":
+     a_case_that_reads_the_verdict_off_the_exit_code})

@@ -72,8 +72,67 @@ def modules_the_subject_imports() -> list:
 
 def run(tree: Path) -> int:
     return subprocess.run(
-        [sys.executable, "check.py"], cwd=tree, capture_output=True
-    ).returncode
+        [sys.executable, "check.py"], cwd=tree, capture_output=True, text=True
+    )
+
+
+class Result:
+    """A run's exit code with the words it said kept beside it.
+
+    A want-1 case that reads only the code accepts ANY red: a second fault that
+    reddens every case at once flips them all green while the case under test is
+    broken, which is the class `a-selftest-that-asserts-a-refusal-the-check-would-not-make`
+    and was named on the board by a reader of this file. Each case therefore also
+    carries a MARKER -- the name of the thing the case broke, as the run prints it --
+    so the refusal argued for is the refusal observed. `__eq__` compares to the
+    wanted code, which keeps the tuple shape of every case unchanged.
+    """
+
+    def __init__(self, rc: int, text: str = "") -> None:
+        self.rc = rc
+        self.text = text
+
+    def __eq__(self, other) -> bool:
+        return self.rc == other
+
+    def __repr__(self) -> str:
+        return f"exit {self.rc}"
+
+
+COMPLAINT = re.compile(r"(?m)^(MISS|DUPE|HOLD|BADADDRESS|index|UNCITED|DECLINED)")
+
+LEDGER = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))
+
+
+def the_class_the_first_repeat_belongs_to() -> str:
+    """The entry each repeat case mutates, read here so the marker names it."""
+    for entry in LEDGER["entries"]:
+        for rep in entry.get("repeats") or []:
+            if isinstance(rep, dict):
+                return entry["class"]
+    raise AssertionError("no object-form repeat in the ledger to test with")
+
+
+def catches_first_class() -> str:
+    """The entry the class-probe case mutates: entries[0], named as the run prints it."""
+    return LEDGER["entries"][0]["class"]
+
+
+def the_first_class_with_an_address() -> str:
+    """The entry each citation case mutates, read here so the marker names it."""
+    for entry in LEDGER["entries"]:
+        if entry.get("address"):
+            return entry["class"]
+    raise AssertionError("no entry carries an address to test with")
+
+
+def the_first_repeat_with_an_address() -> str:
+    """The repeat row each citation case mutates, named the way the run prints it."""
+    for entry in LEDGER["entries"]:
+        for rep in entry.get("repeats") or []:
+            if isinstance(rep, dict) and rep.get("address") and rep.get("fn"):
+                return f"{entry['class']}/{rep['id']}"
+    raise AssertionError("no repeat carries both an address and a fragment")
 
 
 MISSING_MODULE_CODE = 2  # no case may want this: the fixture refused before it ran
@@ -101,7 +160,7 @@ def with_tree(mutate, extra_module="", mutate_tree=None, drop=()):
             # exists to assert this refusal fires.
             print("     fixture refused: the copy lacks %r, which the subject imports"
                   % (missing,))
-            return MISSING_MODULE_CODE
+            return Result(MISSING_MODULE_CODE, "fixture refused")
         if extra_module:
             with (tree / "fragments.py").open("a", encoding="utf-8") as fh:
                 fh.write(extra_module)
@@ -112,7 +171,8 @@ def with_tree(mutate, extra_module="", mutate_tree=None, drop=()):
         )
         if mutate_tree:
             mutate_tree(tree)
-        return run(tree)
+        done = run(tree)
+        return Result(done.returncode, done.stdout + done.stderr)
 
 
 TWIN = '''
@@ -148,19 +208,22 @@ def main() -> int:
         _, rep = first_object_repeat(catches)
         rep["observed"] = "999"
 
-    cases.append(("a repeat's observed value is wrong", with_tree(flip_observed), 1))
+    cases.append(("a repeat's observed value is wrong", with_tree(flip_observed), 1,
+                  the_class_the_first_repeat_belongs_to()))
 
     def same_as_expected(catches):
         _, rep = first_object_repeat(catches)
         rep["observed"] = rep["expected"]
 
-    cases.append(("a repeat's expected == observed", with_tree(same_as_expected), 1))
+    cases.append(("a repeat's expected == observed", with_tree(same_as_expected), 1,
+                  the_class_the_first_repeat_belongs_to()))
 
     def drop_field(catches):
         _, rep = first_object_repeat(catches)
         del rep["promise"]
 
-    cases.append(("a repeat is missing a field", with_tree(drop_field), 1))
+    cases.append(("a repeat is missing a field", with_tree(drop_field), 1,
+                  the_class_the_first_repeat_belongs_to()))
 
     def same_as_class(catches):
         """Point a repeat at the class fragment itself: same bytes, no sighting.
@@ -187,7 +250,8 @@ def main() -> int:
         raise AssertionError(
             "no entry with an object repeat and a divergent class probe to test with")
 
-    cases.append(("a repeat points at the class fragment", with_tree(same_as_class), 1))
+    cases.append(("a repeat points at the class fragment", with_tree(same_as_class), 1,
+                  the_class_the_first_repeat_belongs_to()))
 
     def same_logic_other_name(catches):
         """A repeat whose fragment differs in name but not in logic.
@@ -211,13 +275,15 @@ def main() -> int:
             "a repeat whose fragment is the class logic",
             with_tree(same_logic_other_name, extra_module=TWIN),
             1,
+            the_class_the_first_repeat_belongs_to(),
         )
     )
 
     def flip_class_probe(catches):
         catches["entries"][0]["observed"] = "999"
 
-    cases.append(("a class probe's observed value is wrong", with_tree(flip_class_probe), 1))
+    cases.append(("a class probe's observed value is wrong", with_tree(flip_class_probe), 1,
+                  catches_first_class()))
 
     def second_class_same_logic(catches):
         """Two class names for one shape: the ledger counts the same lie twice."""
@@ -238,6 +304,7 @@ def main() -> int:
             "a class is another class under a new name",
             with_tree(second_class_same_logic, extra_module=TWIN + SECOND_CLASS),
             1,
+            "clamp-second-name",
         )
     )
 
@@ -248,7 +315,8 @@ def main() -> int:
                 del entry["address_quote"]
                 return
 
-    cases.append(("an address with no line from the message", with_tree(unquoted_address), 1))
+    cases.append(("an address with no line from the message", with_tree(unquoted_address), 1,
+                  the_first_class_with_an_address()))
 
     def quote_is_prose(catches):
         """A line found in the message that is not a line of the fragment."""
@@ -257,7 +325,8 @@ def main() -> int:
                 entry["address_quote"] = "по словам автора, вот тот старый фрагмент"
                 return
 
-    cases.append(("a quote that is not a line of the fragment", with_tree(quote_is_prose), 1))
+    cases.append(("a quote that is not a line of the fragment", with_tree(quote_is_prose), 1,
+                  the_first_class_with_an_address()))
 
     def repeat_quote_from_another_fragment(catches):
         """A repeat's line is read against the fragment the REPEAT names.
@@ -277,7 +346,8 @@ def main() -> int:
 
     cases.append(
         ("a repeat's quote from another fragment",
-         with_tree(repeat_quote_from_another_fragment), 1)
+         with_tree(repeat_quote_from_another_fragment), 1,
+         the_first_repeat_with_an_address())
     )
 
     def index_of_a_broken_ledger():
@@ -311,10 +381,13 @@ def main() -> int:
             complaint = re.compile(r"(?m)^BADADDRESS")
             clean = (not complaint.search(out.stdout) and bool(complaint.search(out.stderr))
                      and out.returncode == 1)
-            return 1 if clean else 0
+            if clean:
+                return Result(out.returncode, out.stdout + out.stderr)
+            return Result(MISSING_MODULE_CODE, "BADADDRESS " + out.stdout[:200])
 
     cases.append(
-        ("the index of a broken ledger carries no complaint", index_of_a_broken_ledger(), 1)
+        ("the index of a broken ledger carries no complaint", index_of_a_broken_ledger(), 1,
+         "BADADDRESS")
     )
 
     def stale_index(tree):
@@ -322,7 +395,8 @@ def main() -> int:
         with (tree / "CLASSES.md").open("a", encoding="utf-8") as fh:
             fh.write("\n## `a-class-that-was-never-added`\n")
 
-    cases.append(("a stale CLASSES.md", with_tree(lambda c: None, mutate_tree=stale_index), 1))
+    cases.append(("a stale CLASSES.md", with_tree(lambda c: None, mutate_tree=stale_index), 1,
+                  "index"))
 
     def copy_missing_what_the_subject_imports():
         """The requirement is tested against the copy instead of assumed to hold.
@@ -342,11 +416,22 @@ def main() -> int:
     )
 
     bad = 0
-    for name, code, want in cases:
-        ok = code == want
-        bad += 0 if ok else 1
-        print(f"{'ok  ' if ok else 'FAIL'} {name:<42} exit {code} (want {want})")
-    print()
+    for case in cases:
+        name, code, want = case[0], case[1], case[2]
+        marker = case[3] if len(case) > 3 else None
+        said = code.text if isinstance(code, Result) else ""
+        named = marker is None or marker in said
+        ok = (code == want) and named
+        line = (f"{'ok  ' if ok else 'FAIL'} {name:<42} exit {code} (want {want})"
+                + (f" [{marker}]" if marker else ""))
+        if not ok:
+            bad += 1
+            if not named:
+                line += f" -- and the run must name {marker!r}"
+        print(line)
+        if not ok:
+            for other in [l for l in said.splitlines() if COMPLAINT.match(l)][:6]:
+                print(f"     {other}")
     print(f"cases {len(cases)}  failed {bad}")
     return 1 if bad else 0
 
