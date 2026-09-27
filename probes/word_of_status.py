@@ -27,6 +27,15 @@ so the shape of the word is not the verdict:
                 even in the branch that is not taken, so the read is never honest
                 whatever the condition says.  Sits with the unconditional case.
 
+What is NOT a command line is dropped before any of that, because prose and literal
+text are not reads: an unquoted `#` opens a comment (a comment describing this defect
+was itself refused as one), a heredoc body with a QUOTED delimiter is literal text, and
+a `'` inside a double-quoted string is an apostrophe rather than the start of a
+single-quoted run -- the first version of this scanner opened one there and carried it
+to the end of the line, hiding the `$?` in `printf "it's rc=%s\n" "$?"`.  An UNQUOTED
+heredoc delimiter is NOT skipped: its body is expanded, and whether a `$?` in it is a
+read is a question this probe has not measured.
+
 Measured on GNU bash 5.2.21(1)-release with `f() { return 7; }`, `g() { printf x.y; return 3; }`,
 `h() { printf 5; return 3; }`:
   f; printf 'plain=%s\n' "$?"                       -> plain=7
@@ -257,24 +266,122 @@ def _left_kind(statement: str, start: int, end: int) -> str:
     return "unconditional"
 
 
-def _single_quoted_spans(text: str):
-    i = 0
-    while i < len(text):
+def _single_quoted_spans(text: str, base: int = 0):
+    """Every single-quoted run, honouring double quotes and nesting.
+
+    A `'` inside a double-quoted string is a literal apostrophe, not an opener. The
+    first version of this scanner ran `text.find("'")` over the raw line, so
+    `printf "it's rc=%s\n" "$?"` opened a "single-quoted run" at the apostrophe and
+    carried it to the end of the line, and the `$?` inside it was read as literal text
+    and dropped: this tree writes that shape at `repro/run_all.sh:663` and the probe
+    counted five statuses in a file that writes six. Quoting inside a `$(...)` is
+    quoting, whatever context the substitution stands in, so the walk descends into
+    substitutions and backticks rather than skipping them.
+    """
+    i, n = 0, len(text)
+    while i < n:
         if text[i] == "\\":
             i += 2
             continue
+        if text[i] == '"':
+            j = i + 1
+            while j < n:
+                if text[j] == "\\":
+                    j += 2
+                    continue
+                if text[j] == '"':
+                    j += 1
+                    break
+                if text.startswith("$(", j):
+                    _s, e = _match_sub(text, j)
+                    yield from _single_quoted_spans(text[j + 2:e - 1], base + j + 2)
+                    j = e
+                    continue
+                if text[j] == "`":
+                    e = text.find("`", j + 1)
+                    e = n if e == -1 else e + 1
+                    yield from _single_quoted_spans(text[j + 1:e - 1], base + j + 1)
+                    j = e
+                    continue
+                j += 1
+            i = j
+            continue
         if text[i] == "'":
             end = text.find("'", i + 1)
-            end = len(text) if end == -1 else end + 1
-            yield i, end
+            end = n if end == -1 else end + 1
+            yield base + i, base + end
             i = end
+            continue
+        if text.startswith("$(", i):
+            _s, e = _match_sub(text, i)
+            yield from _single_quoted_spans(text[i + 2:e - 1], base + i + 2)
+            i = e
+            continue
+        if text[i] == "`":
+            e = text.find("`", i + 1)
+            e = n if e == -1 else e + 1
+            yield from _single_quoted_spans(text[i + 1:e - 1], base + i + 1)
+            i = e
             continue
         i += 1
 
 
+def comment_start(raw: str, masked: str) -> int:
+    """Where an unquoted `#` opens a comment on this line, or `len(raw)`.
+
+    `#` opens a comment only at the START of a word: `a#b` is one word, `a #b` ends
+    the command. `masked` has quoted runs and substitutions blanked, so a `#` inside
+    either is not found here. Without this, a line like `# f; printf %s "$(g) rc=$?"`
+    -- prose ABOUT the defect -- was read as an instance of it and refused.
+    """
+    for m in re.finditer("#", masked):
+        i = m.start()
+        if i == 0 or masked[i - 1].isspace() or masked[i - 1] in ";|&(":
+            return i
+    return len(raw)
+
+
+HEREDOC = re.compile(r"<<-?\s*(?:'([A-Za-z_][A-Za-z0-9_]*)'|\"([A-Za-z_][A-Za-z0-9_]*)\"|\\([A-Za-z_][A-Za-z0-9_]*))")
+
+
+def literal_heredoc_lines(text: str) -> set:
+    """Line numbers whose text is a heredoc body with a QUOTED delimiter.
+
+    A quoted delimiter makes the body literal: the shell expands nothing in it, so a
+    `$?` there is text a command reads, not a read. An UNQUOTED delimiter is not
+    covered -- its body is expanded, and whether a `$?` in it is a read is a question
+    this probe has not measured -- so only what was measured is skipped.
+    """
+    skip = set()
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        m = HEREDOC.search(lines[i])
+        if m:
+            delim = next(g for g in m.groups() if g)
+            j = i + 1
+            while j < len(lines) and lines[j].strip("\t") != delim:
+                skip.add(j + 1)
+                j += 1
+            i = j
+        i += 1
+    return skip
+
+
 def statements(text: str):
-    """Yield (line, offset, statement) honouring quotes and `$(...)` nesting."""
+    """Yield (line, offset, statement) honouring quotes and `$(...)` nesting.
+
+    What is not a statement at all is dropped before the split: a heredoc body with a
+    quoted delimiter is literal text, and a comment is prose -- the same reader that
+    judged the prose refused the sentence describing the defect.
+    """
+    literal = literal_heredoc_lines(text)
     for lineno, raw in enumerate(text.splitlines(), 1):
+        if lineno in literal:
+            continue
+        raw = raw[:comment_start(raw, _masked(raw))]
+        if not raw.strip():
+            continue
         masked = _masked(raw)
         start = 0
         for m in re.finditer(r"[;&|]{1,2}", masked):
@@ -416,6 +523,18 @@ FIXTURES = [
     ("behind_arithmetic",
      'f() { return 7; }\nh() { printf 5; return 3; }\nf\n'
      'printf \'a=%s\\n\' "$(( 1 ? 0 : $(h) ))$?"', "a=03", BEHIND_ARITHMETIC),
+    # Three arms for text that is NOT a shell word. Each carries, beside the correct
+    # read, one that would be refused if the text were read as a command line: the
+    # first two were refused by the version before these arms, the third was invisible
+    # to it (a `'` inside a double-quoted string swallowed the read).
+    ("comment_is_not_a_command",
+     'f() { return 7; }\n# f; printf \'x=%s\\n\' "$(basename x.y) rc=$?"\nf\n'
+     'printf \'plain=%s\\n\' "$?"', "plain=7", None, set(), 1),
+    ("quoted_heredoc_is_literal",
+     'f() { return 7; }\ncat <<\'EOF\'\n$(basename x.y) rc=$?\nEOF\n'
+     'printf \'after=%s\\n\' "$?"', "$(basename x.y) rc=$?\nafter=0", None, set(), 1),
+    ("apostrophe_opens_nothing",
+     'f() { return 7; }\nf\nprintf "it\'s rc=%s\\n" "$?"', "it's rc=7", None, set(), 1),
 ]
 
 
@@ -424,13 +543,19 @@ def selftest() -> int:
     for entry in FIXTURES:
         name, script, expect_out, expect_id = entry[:4]
         allowed = entry[4] if len(entry) > 4 else ({expect_id} if expect_id else set())
+        expect_written = entry[5] if len(entry) > 5 else None
         proc = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
         said = proc.stdout.strip()
         read = readings(script)
         ids = [id_of(r) for r in read["as_repaired"]] + [id_of(r) for r in read["unread"]]
-        print(f"{name}: bash said {said!r}; scanner said {ids}")
+        print(f"{name}: bash said {said!r}; scanner said {ids}; reads counted "
+              f"{len(read['as_written'])}")
         if said != expect_out:
             print(f"FAIL arm {name}: bash printed {said!r}, the fixture claims {expect_out!r}")
+            bad = 1
+        if expect_written is not None and len(read["as_written"]) != expect_written:
+            print(f"FAIL arm {name}: the script writes {expect_written} status read(s), "
+                  f"the scanner counted {len(read['as_written'])}")
             bad = 1
         if expect_id is None:
             if ids:

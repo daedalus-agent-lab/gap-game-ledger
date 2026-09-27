@@ -495,11 +495,25 @@ run() {                       # run <name> <command...>
     printf '     moved over the declared field (key): %s\n' "$moved"
   fi
 
-  # An item whose command printed nothing is certified by its exit status alone: a
-  # command that never started, or died before its first line, would be `ok` with the
-  # digest of an empty log. Measured, not asserted -- `--empty-control` below drives
-  # this branch on a fixture whose command prints nothing and exits 0.
-  local printed; printed="$(grep -c . "$log" || true)"
+  # An item whose command wrote no BYTE is certified by its exit status alone: the
+  # digest of a log with nothing in it is the digest of the empty string, so the row
+  # reports `ok` about a tree nothing read. Measured, not asserted -- `--empty-control`
+  # below drives this branch on a fixture whose command prints nothing and exits 0.
+  #
+  # The reading is a byte count, and the first version was a line count (`grep -c .`),
+  # which calls a command that printed one newline empty: `printf '\n'` writes one byte
+  # and `grep -c .` answers 0, so three such items were refused as having printed
+  # nothing. An item whose command never started exits 127 and is refused by `rc`
+  # further down -- this branch is about the command that ran, succeeded, and wrote
+  # nothing to be read.
+  #
+  # The count is taken from the FILE, not from the row's `out` digest: that digest is
+  # taken over the command-substituted text, whose trailing newlines are already gone,
+  # so a log holding one newline and a log holding nothing are the same string there
+  # (`e3b0c44298fc1c14`, the digest of the empty text, is both). The field cannot see
+  # the difference this branch is about; a byte count can.
+  local printed; printed="$(wc -c < "$log" 2>/dev/null | tr -d '[:space:]' || true)"
+  printed="${printed:-0}"
   if [ "$printed" = 0 ]; then
     printf 'FAIL %-34s the command printed nothing: exit %s is not a reading of the tree\n' "$name" "$rc"
     fails=$((fails + 1))
@@ -550,6 +564,19 @@ if [ "$EMPTY_CONTROL" = 1 ]; then
   esac
   [ "$fails" = 1 ] || { ok=0; printf 'the control: the refusal did not reach the failure count (%s)\n' "$fails"; }
   fails=0
+  # A command that printed ONE BYTE printed something, and the guard must not call it
+  # empty: `printf '\n'` is one newline, `grep -c .` answers 0 for it, and the first
+  # version of the guard refused it. The other half of the same reading.
+  run "fixture that printed one newline" printf '\n' > "$ctl_out" 2>&1
+  out="$(cat "$ctl_out")"
+  printf '%s\n' "$out"
+  case "$out" in
+    *'printed nothing'*) ok=0; printf 'the control: an item that printed one newline was refused as empty\n' ;;
+    *ok*) ;;
+    *) ok=0; printf 'the control: an item that printed one newline was neither ok nor refused\n' ;;
+  esac
+  [ "$fails" = 0 ] || { ok=0; printf 'the control: a byte-printing item was counted as a failure (%s)\n' "$fails"; }
+  fails=0
   run "fixture that printed one line" echo 'one line' > "$ctl_out" 2>&1
   out="$(cat "$ctl_out")"
   printf '%s\n' "$out"
@@ -559,7 +586,7 @@ if [ "$EMPTY_CONTROL" = 1 ]; then
   esac
   [ "$fails" = 0 ] || { ok=0; printf 'the control: a readable item was counted as a failure (%s)\n' "$fails"; }
   if [ "$ok" = 1 ]; then
-    echo "an item whose command printed nothing is refused, and an item that printed a line is not (two readings)"
+    echo "an item whose command wrote no byte is refused; one that printed a newline and one that printed a line are not (three readings)"
     exit 0
   fi
   echo "the empty-output guard did not answer as required: a guard that cannot be shown to fire is not a guard"

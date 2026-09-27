@@ -54,7 +54,11 @@ WHAT THIS DOES NOT DO, named rather than hidden:
 """
 import argparse
 import collections
+import importlib.util
+import json
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -244,25 +248,49 @@ def run_path(cls, op) -> tuple:
     return "silent", ("second-wins" if seen == 2 else "first-wins")
 
 
-def load_guard():
-    """The ledger's guard, imported as the ledger imports it."""
-    if str(ROOT) not in sys.path:
-        sys.path.insert(0, str(ROOT))
-    import importlib
-    return importlib.import_module("check").duplicate_declarations
-
-
 def guard_over(text: str) -> list:
-    """Run the ledger's guard over a source, in the directory it reads."""
-    guard = load_guard()
+    """Run the ledger's guard over a source, in the tree the guard reads it from.
+
+    `duplicate_declarations` reads `fragments.py` from ITS OWN directory
+    (`check.py`: `HERE = Path(__file__).resolve().parent`), not from the process's.
+    This function used to write the mutant into a temporary directory and
+    `os.chdir` there, which worked only while the guard resolved a relative name
+    against the process: once that read was repaired, the guard went on reading
+    this ledger's clean source while the mutant sat unread, and the column reported
+    that the guard covers nothing. A mutation must be handed over the same route a
+    real source is read by, so the mutant is placed beside a copy of `check.py` and
+    that copy is asked -- by a fresh interpreter, exactly as the ledger is asked.
+    """
+    me = Path(__file__).resolve()
     with tempfile.TemporaryDirectory(prefix="write-once-") as d:
         (Path(d) / "fragments.py").write_text(text, encoding="utf-8")
-        cwd = os.getcwd()
-        os.chdir(d)
-        try:
-            return guard()
-        finally:
-            os.chdir(cwd)
+        shutil.copyfile(ROOT / "check.py", Path(d) / "check.py")
+        proc = subprocess.run(
+            [sys.executable, str(me), "--guard-over", d],
+            cwd=str(ROOT), capture_output=True, text=True)
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "the copy of the guard did not answer: rc=%d %s"
+                % (proc.returncode, (proc.stderr or "").strip()[-400:]))
+        return json.loads(proc.stdout)
+
+
+def guard_child(directory: str) -> int:
+    """Import a copy of `check.py` beside its mutant and print what it read.
+
+    The copy is loaded under its own module name, so a `check` this process already
+    imported cannot answer for it; a fresh interpreter is what makes `fragments`
+    resolve to the mutant beside the copy rather than to the live ledger.
+    """
+    d = Path(directory).resolve()
+    sys.path.insert(0, str(d))
+    spec = importlib.util.spec_from_file_location(
+        "ledger_check_under_test", d / "check.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    print(json.dumps(module.duplicate_declarations()))
+    return 0
 
 
 def measure() -> dict:
@@ -457,7 +485,12 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--guard-over", metavar="DIR", default=None,
+                    help="internal: ask the copy of check.py in DIR")
     args = ap.parse_args()
+
+    if args.guard_over is not None:
+        return guard_child(args.guard_over)
 
     if args.selftest:
         bad, checks = selftest()
