@@ -5762,6 +5762,17 @@ def a_witness_that_repeats_the_verdict_it_is_compared_against():
     return _readings_of_a_witness_repeating_the_verdict()["as_written"]
 
 
+class NoControlBesideThisTree(Exception):
+    """What a tree raises when the control it is read with is not beside it.
+
+    A helper that cannot run its control has no reading to give: the pair in its entry is
+    what a reading is compared against, so returning it would answer a fixture with the
+    record it is checked against. Raising instead lets the reader say UNREAD -- a missing
+    reading, not a green one -- and the probe refuses a tree that carries the control and
+    raises this anyway.
+    """
+
+
 def _readings_of_a_witness_repeating_the_verdict():
     """Both halves, read off a tree this helper builds and runs the control in."""
     import json
@@ -5800,17 +5811,14 @@ def _readings_of_a_witness_repeating_the_verdict():
                        "a-witness-that-repeats-the-verdict-it-is-compared-against"]
 
     if not (HERE / "probes" / "parts_of_a_reading.py").exists():
-        # A tree that carries no control has nothing to run: this reading returns the pair
-        # its own entry records and says so, rather than a value it never measured. That is
-        # the defect this class is about, met from the other side.
-        import ast
-
-        recorded = next((e for e in entries if e["class"] ==
-                         "a-witness-that-repeats-the-verdict-it-is-compared-against"), None)
-        if recorded is None:
-            raise AssertionError("no control beside this file and no entry to fall back on")
-        return {"as_written": ast.literal_eval(recorded["observed"]),
-                "as_repaired": ast.literal_eval(recorded["expected"])}
+        # A tree that carries no control has nothing to run, and the pair its own entry
+        # records is not a reading of it: returning that pair made this instrument answer
+        # with the record it is checked against, so a fixture could not tell its measurement
+        # from its entry. The refusal is a named exception rather than a value, and the
+        # reader reports this helper as UNREAD.
+        raise NoControlBesideThisTree(
+            "no control beside this tree: the pair in the entry is what a reading is "
+            "compared against, and nothing here measured it")
 
     def run_in_copy(with_the_replacement):
         """One copy of the tree, the control run in it, and the census it prints."""
@@ -5828,6 +5836,14 @@ def _readings_of_a_witness_repeating_the_verdict():
                 json.dumps(live, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
             shutil.copy(HERE / "probes" / "parts_of_a_reading.py",
                         root / "probes" / "parts_of_a_reading.py")
+            # A copy that a reading runs must carry every module the tree's readings import:
+            # the newest of them takes its rule from `check.literal`, and a copy without
+            # `check.py` dies in `import check` -- measured, `ModuleNotFoundError` inside the
+            # copy, which turned a refusal into a crash and stopped four classes from being
+            # read at all.
+            if (HERE / "check.py").exists():
+                (root / "check.py").write_text((HERE / "check.py").read_text(encoding="utf-8"),
+                                               encoding="utf-8")
             exits, counted = {}, 0
             for flag in ("--check", "--selftest"):
                 run = subprocess.run([sys.executable, "probes/parts_of_a_reading.py", flag],
@@ -5927,16 +5943,13 @@ def _readings_of_a_census_taken_from_the_thing_it_counts():
                        "a-census-taken-from-the-thing-it-counts"]
 
     if not (HERE / "probes" / "parts_of_a_reading.py").exists():
-        # a tree with no control beside it has nothing to run: the entry's own values are
-        # returned, and the fact says they were not measured here
-        import ast
-
-        recorded = next((e for e in entries if e["class"] ==
-                         "a-census-taken-from-the-thing-it-counts"), None)
-        if recorded is None:
-            raise AssertionError("no control beside this file and no entry to fall back on")
-        return {"as_written": ast.literal_eval(recorded["observed"]),
-                "as_repaired": ast.literal_eval(recorded["expected"])}
+        # A tree that carries no control has nothing to run, and the pair its own entry
+        # records is not a reading of it: returning that pair made this instrument answer
+        # with the record it is checked against. The refusal is a named exception rather
+        # than a value, and the reader reports this helper as UNREAD.
+        raise NoControlBesideThisTree(
+            "no control beside this tree: the pair in the entry is what a reading is "
+            "compared against, and nothing here measured it")
 
     def run_in_copy(text):
         with tempfile.TemporaryDirectory() as tmp:
@@ -5947,6 +5960,11 @@ def _readings_of_a_census_taken_from_the_thing_it_counts():
                 json.dumps(live, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
             shutil.copy(HERE / "probes" / "parts_of_a_reading.py",
                         root / "probes" / "parts_of_a_reading.py")
+            # the module every reading of this tree takes its rule from, copied beside it:
+            # a copy without `check.py` dies in `import check` instead of being read.
+            if (HERE / "check.py").exists():
+                (root / "check.py").write_text((HERE / "check.py").read_text(encoding="utf-8"),
+                                               encoding="utf-8")
             run = subprocess.run(
                 [sys.executable, "probes/parts_of_a_reading.py", "--check"],
                 cwd=root, capture_output=True, text=True, timeout=300)
@@ -6042,6 +6060,11 @@ def _readings_of_a_half_no_command_recomputes():
         (dest / "fragments.py").write_text(text, encoding="utf-8")
         (dest / "catches.json").write_text(
             json.dumps(live, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        # `check.py` is a module the readings of this tree import: a copy handed to them
+        # without it reports the import failure instead of the reading.
+        if (HERE / "check.py").exists():
+            (dest / "check.py").write_text((HERE / "check.py").read_text(encoding="utf-8"),
+                                           encoding="utf-8")
 
     def measure(root, mod):
         """Per helper: files of this tree it opened, and whether emptying the record moves it."""
@@ -7537,6 +7560,8 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         ("_readings_of_a_control_needle", 0),
         ("_readings_of_a_half_no_command_recomputes", 0),
         ("_readings_of_a_half_written_as_a_literal", 0),
+        ("_readings_of_a_half_spelled_from_the_record_it_is_checked_against", 0),
+        ("_readings_of_a_record_written_in_a_shape_its_reader_cannot_parse", 0),
     ]
 
     def as_written(helpers):
@@ -7842,20 +7867,14 @@ def _readings_of_a_half_written_as_a_literal():
     copy_ledger["entries"] = [e for e in ledger["entries"] if e["class"] != "a-half-written-as-a-literal-is-not-a-reading"]
 
     if not (HERE / "probes" / "parts_of_a_reading.py").exists():
-        # A tree that carries no control has nothing to run. What this returns then is the
-        # pair its own entry records, and it says so rather than presenting a value it never
-        # measured -- the shape the ledger names under
-        # `a-witness-that-repeats-the-verdict-it-is-compared-against`. The control's own
-        # fixture holds two files, so the fallback is what a fixture of the control reads;
-        # the tree itself carries the control and takes the measurement below.
-        import ast
-
-        recorded = next((e for e in ledger["entries"]
-                         if e["class"] == "a-half-written-as-a-literal-is-not-a-reading"), None)
-        if recorded is None:
-            raise AssertionError("no control beside this file and no entry to fall back on")
-        return {"as_written": ast.literal_eval(recorded["observed"]),
-                "as_repaired": ast.literal_eval(recorded["expected"])}
+        # A tree that carries no control has nothing to run, and the pair its own entry
+        # records is not a reading of it: returning that pair made this instrument answer
+        # with the record it is checked against, so a fixture of the control could not tell
+        # its measurement from its own entry. The control's own fixture holds the control,
+        # and the tree itself takes the measurement below.
+        raise NoControlBesideThisTree(
+            "no control beside this tree: the pair in the entry is what a reading is "
+            "compared against, and nothing here measured it")
 
     def run_in_copy(text):
         with tempfile.TemporaryDirectory() as tmp:
@@ -7867,6 +7886,10 @@ def _readings_of_a_half_written_as_a_literal():
                 encoding="utf-8")
             shutil.copy(HERE / "probes" / "parts_of_a_reading.py",
                         root / "probes" / "parts_of_a_reading.py")
+            # the module every reading of this tree takes its rule from, copied beside it
+            if (HERE / "check.py").exists():
+                (root / "check.py").write_text((HERE / "check.py").read_text(encoding="utf-8"),
+                                               encoding="utf-8")
             run = subprocess.run(
                 [sys.executable, "probes/parts_of_a_reading.py", "--check"],
                 cwd=root, capture_output=True, text=True, timeout=1800)
@@ -7918,3 +7941,197 @@ def _readings_of_a_half_written_as_a_literal():
 
 
 NAMESPACES.setdefault('a-half-written-as-a-literal-is-not-a-reading', {}).update({'a_half_written_as_a_literal_is_not_a_reading': a_half_written_as_a_literal_is_not_a_reading})
+
+
+
+def a_half_spelled_from_the_record_it_is_checked_against():
+    """What a comparison taken on the spelling of a mapping cannot see: the record's order.
+
+    A record is re-spelled -- the keys of its two halves rotated, the mapping unchanged --
+    and the same edit refuses one record and not the other. The record whose half is
+    measured by the helper is refused; the record whose half composes itself in the order
+    that record spells is still called read, because `repr(answer)` inherits that order and
+    so the comparison holds whatever order the record is written in.
+    """
+    return _readings_of_a_half_spelled_from_the_record_it_is_checked_against()["as_written"]
+
+
+def _readings_of_a_half_spelled_from_the_record_it_is_checked_against():
+    """Both halves, read off two copies this helper builds: unedited, and re-spelled.
+
+    Each copy is this tree minus this class's block, because the block carries the helper
+    that runs the probe. The second copy carries the same two entries with the keys of
+    their halves rotated -- equal as mappings, different as spellings -- so the copies
+    differ only in the order the record is written in.
+    """
+    import ast
+    import json
+    import pathlib
+    import re
+    import subprocess
+    import sys
+    import tempfile
+
+    HERE = pathlib.Path(__file__).resolve().parent
+    PROBE = HERE / "probes" / "parts_of_a_reading.py"
+    ledger = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))
+    respelled_classes = ("a-half-written-as-a-literal-is-not-a-reading",
+                         "a-comparison-the-subject-can-satisfy-by-returning-the-record")
+    also_moved_by_this_class = "a-control-that-varies-an-argument-its-subject-takes-none-of"
+
+    source = (HERE / "fragments.py").read_text(encoding="utf-8")
+    probe_at = re.search(r"^def a_half_spelled_from_the_record_it_is_checked_against\(\):$", source, re.M)
+    if probe_at is None:
+        raise AssertionError("this class's block is not in the file it reads")
+    ns_at = re.search(r"^NAMESPACES\.setdefault\('a-half-spelled-from-the-record-it-is-checked-against'[^\n]*$",
+                      source[probe_at.start():], re.M)
+    if ns_at is None:
+        raise AssertionError("this class's namespace line is not beside its block")
+    tree = source[:probe_at.start()] + source[probe_at.start() + ns_at.end():]
+    row = '        ("_readings_of_a_half_spelled_from_the_record_it_is_checked_against", 0),\n'
+    if tree.count(row) != 1:
+        raise AssertionError("this class's row in the typed helper list is not beside its block")
+    tree = tree.replace(row, "", 1)
+
+    def a_copy(respell):
+        holder = tempfile.TemporaryDirectory()
+        root = pathlib.Path(holder.name)
+        (root / "fragments.py").write_text(tree, encoding="utf-8")
+        copy = json.loads(json.dumps(ledger))
+        # A copy without this class's helper moves the control that lists it, so that
+        # record is left out of the copy: its halves are a reading of a larger file.
+        copy["entries"] = [e for e in copy["entries"]
+                           if e.get("class") not in ("a-half-spelled-from-the-record-it-is-checked-against", also_moved_by_this_class)]
+        respelled, equal = 0, 0
+        if respell:
+            for entry in copy["entries"]:
+                if entry.get("class") not in respelled_classes:
+                    continue
+                for key in ("observed", "expected"):
+                    value = entry.get(key)
+                    if not isinstance(value, str):
+                        continue
+                    try:
+                        parsed = ast.literal_eval(value)
+                    except (ValueError, SyntaxError):
+                        continue
+                    if not isinstance(parsed, dict) or len(parsed) < 2:
+                        continue
+                    items = list(parsed.items())
+                    other = dict(items[1:] + items[:1])
+                    if parsed == other and repr(parsed) != repr(other):
+                        equal += 1
+                    entry[key] = repr(other)
+                    respelled += 1
+        (root / "catches.json").write_text(
+            json.dumps(copy, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        if (HERE / "check.py").exists():
+            (root / "check.py").write_text((HERE / "check.py").read_text(encoding="utf-8"),
+                                           encoding="utf-8")
+        return holder, root, respelled, equal
+
+    def run(root):
+        done = subprocess.run([sys.executable, str(PROBE), "--check", "--root", str(root)],
+                              capture_output=True, text=True, timeout=3600)
+        lines = done.stdout.splitlines()
+        refused = [line.split(":", 1)[0].replace("FAIL[ENTRY-DISAGREES] ", "")
+                   for line in lines if line.startswith("FAIL[ENTRY-DISAGREES]")]
+        not_read = next((int(line.split()[-1]) for line in lines
+                         if line.startswith("halves not read against an entry")), 0)
+        return done.returncode, not_read, refused
+
+    def half(respell):
+        holder, root, respelled, equal = a_copy(respell)
+        try:
+            code, not_read, refused = run(root)
+        finally:
+            holder.cleanup()
+        # The copy is one helper short, so an entry counting helpers disagrees in the copy
+        # before anything is re-spelled; that disagreement is the copy's and is reported,
+        # not hidden. What this class reads is the difference the re-spelling costs.
+        left_agreeing = [name for name in respelled_classes
+                         if name not in refused] if respell else []
+        return {
+            "entries_respelled": respelled,
+            "mappings_that_stayed_equal_while_their_spelling_moved": equal,
+            "entries_the_copy_disagrees_with": sorted(refused),
+            "the_record_the_re_spelling_left_agreeing_though_its_keys_moved": left_agreeing,
+            "halves_not_read_against_an_entry": not_read,
+            "exit_code_of_the_probe": code,
+        }
+
+    before = half(False)
+    after = half(True)
+    cost = sorted(set(after["entries_the_copy_disagrees_with"])
+                  - set(before["entries_the_copy_disagrees_with"]))
+    return {"as_written": before,
+            "as_repaired": dict(after, entries_the_re_spelling_cost=cost)}
+
+
+NAMESPACES.setdefault('a-half-spelled-from-the-record-it-is-checked-against', {}).update({'a_half_spelled_from_the_record_it_is_checked_against': a_half_spelled_from_the_record_it_is_checked_against})
+
+
+def a_record_written_in_a_shape_its_reader_cannot_parse():
+    """A record stored as the object it describes where its reader takes the spelling.
+
+    The run reads every `observed` and `expected` through `literal(text)`, which runs
+    `eval` on the stored text, and answers `bad ledger literal:` for anything else --
+    a complaint about the shape of a record in the place a verdict goes. Measured on
+    two copies of this tree differing in that one field: one MISS line against none.
+    """
+    return _readings_of_a_record_written_in_a_shape_its_reader_cannot_parse()["as_written"]
+
+
+def _readings_of_a_record_written_in_a_shape_its_reader_cannot_parse():
+    """Two judgements of one record, differing only in the shape it is stored in.
+
+    The rule applied is the run's own `literal(text)`, imported from `check` and
+    called, not restated: a second copy of a reading rule is the defect this ledger
+    keeps registering. The record judged is a live one -- the entry of
+    `a-half-no-command-recomputes` -- and the two halves hand that same record to the
+    rule twice: once as the object it describes, once as the spelling it is stored in.
+
+    `check.evaluate` is deliberately not called here. It replays the class's probe, and
+    a probe of this file runs every `_readings_of_*` helper by name, so a helper that
+    starts a replay is started again by the replay it started: measured, this helper in
+    that shape had not stopped after 100 s and was still opening `parts-reading-*`
+    trees. A reading that takes the judge's rule must not start the judge's run.
+    """
+    import ast
+    import json
+    import pathlib
+    import sys
+
+    HERE = pathlib.Path(__file__).resolve().parent
+    if str(HERE) not in sys.path:
+        sys.path.insert(0, str(HERE))
+    import check
+
+    ledger = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))
+    target = next((e for e in ledger["entries"] if e["class"] == "a-half-no-command-recomputes"), None)
+    if target is None:
+        raise AssertionError("the entry this class judges is not in the ledger")
+    FIELDS = ("observed", "expected")
+
+    def verdict(shape):
+        refused = 0
+        said = ""
+        for key in FIELDS:
+            try:
+                check.literal(shape[key])
+            except Exception as exc:
+                refused += 1
+                said = said or ("%s: %s" % (type(exc).__name__, exc))[:160]
+        return {
+            "fields_the_reader_refuses": refused,
+            "fields_the_reader_reads": len(FIELDS) - refused,
+            "what_the_reader_says_about_the_first_refused_field": said,
+        }
+
+    as_object = dict(target)
+    for key in FIELDS:
+        as_object[key] = ast.literal_eval(target[key])
+    return {"as_written": verdict(as_object), "as_repaired": verdict(dict(target))}
+
+
+NAMESPACES.setdefault('a-record-written-in-a-shape-its-reader-cannot-parse', {}).update({'a_record_written_in_a_shape_its_reader_cannot_parse': a_record_written_in_a_shape_its_reader_cannot_parse})

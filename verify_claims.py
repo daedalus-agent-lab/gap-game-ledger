@@ -85,19 +85,33 @@ def paths_a_copy_carries(root: Path) -> set[str] | None:
     leaves a `.gitignore` containing `*` inside itself, which is the tool's rule and
     not this repository's.
 
-    None comes back when `root` is not the top of a checkout. That case is real and
-    was found by the case that mutates the policy: a case tree lives inside this
+    None comes back when git cannot describe THIS tree. That case is real and was
+    found by the case that mutates the policy: a case tree lives inside this
     repository's ignored `verify/` directory, so `git ls-files` run there answers
-    about the OUTER tree -- and answers nothing at all about the files inside the
-    case, because none of them are tracked. Read as "the record is empty", the rule
-    copies an empty tree and the mutation harness cannot find check.py in it. A
-    question git cannot answer about this tree is not an empty record; it is no
-    record, and the caller must fall back.
+    nothing at all about the files inside the case, because none of them are tracked
+    and the ignore rule hides the rest. Read as "the record is empty", the rule copies
+    an empty tree and the mutation harness cannot find check.py in it. A question git
+    cannot answer about this tree is not an empty record; it is no record, and the
+    caller must fall back.
+
+    The gate used to be `rev-parse --show-toplevel` EQUAL to the root, and equality is
+    not the question: six layouts read through it showed a copy inside an untracked
+    (not ignored) directory and the `src/` subdirectory of a clone thrown back to the
+    name-list fallback although git's answer was right about both -- `ls-files` run in
+    a directory lists that directory, whatever the top of the checkout is. Read over
+    six layouts, this rule now asks git the narrower question: no answer at all when
+    `rev-parse` fails, no answer when the root itself is hidden by the ignore rules
+    (`git check-ignore -q .` -- the case the equality gate was built for, and the only
+    layout of the six whose listing came back empty), and otherwise the listing.
     """
     try:
         top = subprocess.run(["git", "rev-parse", "--show-toplevel"],
                              cwd=root, capture_output=True, text=True)
-        if top.returncode != 0 or Path(top.stdout.strip()).resolve() != root.resolve():
+        if top.returncode != 0:
+            return None
+        hidden = subprocess.run(["git", "check-ignore", "-q", "."],
+                                cwd=root, capture_output=True, text=True)
+        if hidden.returncode == 0:
             return None
         out = subprocess.run(["git", "ls-files", "-z", "-c", "-o", "--exclude-standard"],
                              cwd=root, capture_output=True, text=True)

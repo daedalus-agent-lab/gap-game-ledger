@@ -8,7 +8,10 @@ one way at a time, and asserts check.py notices each time.
 
     python3 selftest.py
 
-Exit 0 means every mutation was caught and the untouched copy still passed.
+Exit 0 means the untouched copy passed and every mutation was caught in it.
+Exit 2 means the copy was refused before any case ran: the mutation cases were not
+scored at all, and a run that reports them as a single failure is reporting the
+wrong thing. The control gates the run; it is not one case among the others.
 """
 
 import json
@@ -662,8 +665,26 @@ def main() -> int:
         ("a copy missing what the subject imports", copy_missing_what_the_subject_imports(), 1)
     )
 
+    # The want-0 control gates the run rather than being scored beside the others. A copy
+    # that check.py already refuses -- a module the subject imports left out of it, a file
+    # the record names and the disk has not got -- means every case below is scored inside
+    # a tree the run has rejected, and a mutant caught there was not caught by the change
+    # the case planted. Before this gate the control was cases[0] like any other and that
+    # tree read `cases 23 failed 1`: one red among the green, which is a run whose every
+    # green line is unsupported and whose summary calls it a single failure.
+    control = cases[0]
+    if not (control[1] == control[2]):
+        said = control[1].text if isinstance(control[1], Result) else ""
+        print(f"INVALID {control[0]}: the copy is refused (exit {control[1]}) before any case "
+              f"runs, so no case below could be scored")
+        for other in [l for l in said.splitlines() if COMPLAINT.match(l)][:6]:
+            print(f"     {other}")
+        print(f"cases 0  failed 0  ({len(cases) - 1} not scored: the fixture is refused)")
+        return 2
+    print(f"ok   {control[0]:<42} exit {control[1]} (precondition, not a case)")
+
     bad = 0
-    for case in cases:
+    for case in cases[1:]:
         name, code, want = case[0], case[1], case[2]
         marker = case[3] if len(case) > 3 else None
         said = code.text if isinstance(code, Result) else ""
@@ -679,7 +700,7 @@ def main() -> int:
         if not ok:
             for other in [l for l in said.splitlines() if COMPLAINT.match(l)][:6]:
                 print(f"     {other}")
-    print(f"cases {len(cases)}  failed {bad}")
+    print(f"cases {len(cases) - 1}  failed {bad}")
     return 1 if bad else 0
 
 

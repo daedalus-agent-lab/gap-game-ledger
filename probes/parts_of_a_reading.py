@@ -144,7 +144,19 @@ def readings(root: pathlib.Path):
     for name, _body in defs.items():
         if not HELPER.match(f"def {name}("):
             continue
-        halves = normalise(getattr(mod, name)())
+        try:
+            answer = getattr(mod, name)()
+        except Exception as exc:
+            # A helper that refuses because no control stands beside the tree is not a
+            # broken helper: this probe names it UNREAD, so a fixture that carries the
+            # entry's own pair as its answer is not green. Anything else is a broken tree
+            # and stays an error.
+            if type(exc).__name__ != "NoControlBesideThisTree":
+                raise
+            rows.append((name, {"unread": exc.args[0] if exc.args else "no control"},
+                         probes_that_read(name, defs), [], None))
+            continue
+        halves = normalise(answer)
         readers = probes_that_read(name, defs)
         measured = []
         for reader in readers:
@@ -242,13 +254,21 @@ MEASURED_NODES = (ast.Call, ast.Attribute, ast.Subscript, ast.BinOp, ast.Compare
 
 BUILTIN_NAMES = frozenset(dir(builtins))
 
-# Modules whose functions only transform their arguments: a call through one of them over
-# constants is a literal with a step in the middle, not a reading. Everything else --
-# `subprocess`, `os`, `pathlib`, `socket` -- is a way of reading the world, and a half
-# written through one of those is a measurement. The list is a bound, not a proof: a decoy
-# written as a call through an unlisted pure module (`shlex`, `statistics`) survives.
-PURE_MODULES = frozenset({"ast", "base64", "binascii", "codecs", "copy", "gzip",
-                          "hashlib", "json", "re", "struct", "textwrap", "zlib"})
+# Ways the tree under test can be READ: a call through one of these can answer differently
+# on a different tree, so a half that contains one is a measurement. The list is written as
+# what reads, not as what is pure, and that is the whole point: a list of pure modules has
+# to name every module that only transforms its arguments, so it has no bottom, and a decoy
+# spelled through the first one nobody named is the entry written a second time. Measured on
+# this tree: the entry's own values as `statistics.mode([2, 2])`, `math.floor(2.5)` and
+# `shlex.split('"a b"')` passed `--check` with `halves written as literals rather than
+# measured 0` on five spellings, while the same values written as a plain literal were
+# refused. A module this list does not name is read as a function of its arguments only, so
+# its answer over constants is a constant -- and a module that can read the tree is named
+# here once, when a helper that uses it says so.
+READERS = frozenset({"subprocess", "os", "sys", "pathlib", "shutil", "tempfile", "glob",
+                     "socket", "ssl", "sqlite3", "mmap", "fcntl", "select", "pty",
+                     "resource", "io"})
+READING_BUILTINS = frozenset({"open"})
 
 
 def _own_nodes(fn) -> list:
@@ -287,6 +307,11 @@ def _module_locals(tree) -> tuple:
         elif isinstance(node, (ast.Import, ast.ImportFrom)):
             for alias in node.names:
                 imported[alias.asname or alias.name.split(".")[0]] = alias.name.split(".")[0]
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            # A function this file defines is a way of writing a value down: `def _half():
+            # return 2` called from a half is the constant 2 in two steps. Recorded so a
+            # call to it can be read through its body with its parameters bound.
+            values[node.name] = node
     return values, imported
 
 
@@ -313,12 +338,21 @@ def _local_names(fn) -> dict:
             # A module imported inside the helper is a module: `json.loads(...)` over a
             # constant does not vary with the tree whether the import sits at the top of
             # the file or three lines above the return. Recorded as the import node, which
-            # `varies` reads as names that can not vary -- and only for the modules whose
-            # functions transform their arguments (`PURE_MODULES`); `subprocess` there
-            # counts as measurement, because a helper reading the world through it is not
-            # writing its entry into the source.
+            # `varies` reads as a name that can not vary -- and only for the modules that
+            # open, run or ask something (`READERS`); `subprocess` there counts as
+            # measurement, because a helper reading the world through it is not writing its
+            # entry into the source.
             for alias in node.names:
                 out[alias.asname or alias.name.split(".")[0]] = node
+    # A function defined INSIDE the helper is a name in it. `_own_nodes` leaves nested
+    # definitions out so their body is not walked as the helper's own -- which also meant
+    # the name was not recorded, so `def _half(): return {…}` followed by `_half()` was an
+    # unresolved call, read as measurement: the entry typed into the source, exit 0, and an
+    # independent review found it. The name is recorded here so the call is read through
+    # that body instead.
+    for node in ast.walk(fn):
+        if node is not fn and isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            out[node.name] = node
     return out
 
 
@@ -328,17 +362,20 @@ def varies(expr, local: dict, module: dict, imported: set, depth: int = 0) -> bo
     The question the literal rule asks is not "are there literal nodes in here" but
     "could this value change if the tree changed". `dict(a=1)` is a call over literals
     and a rule that reads call nodes as measurement accepts it; so is `json.loads('{}')`
-    and so is a module-level name whose value is a dict. Anything this walk cannot
-    resolve counts as varying, which keeps the rule narrow. The one exception is a name
-    that resolves to an import: a module on `PURE_MODULES` only transforms its arguments,
-    so a call through it over constants is a literal with a step in the middle; any other
-    module is a way of reading the world and counts as varying.
+    and so is a module-level name whose value is a dict. Three things can make a half
+    vary: a name this file does not bind (a parameter of the helper, or a global someone
+    else sets), a builtin that reads (`open`), or a call through a module on `READERS`.
+    A module that is not on that list is read as a function of its arguments, so a call
+    through it over constants is a literal with a step in the middle; and a call to a
+    function this file defines is read through that function's body with the call's
+    arguments bound to its parameters, because one line of indirection is where a
+    constant hides from a rule that only reads the line the return stands on.
     """
     if depth > 20:
         return True
     if isinstance(expr, (ast.Import, ast.ImportFrom)):
         roots = {alias.name.split(".")[0] for alias in expr.names}
-        return not roots <= PURE_MODULES
+        return bool(roots & READERS)
     if isinstance(expr, ast.Constant):
         return False
     if isinstance(expr, ast.Name):
@@ -347,8 +384,10 @@ def varies(expr, local: dict, module: dict, imported: set, depth: int = 0) -> bo
         if expr.id in module:
             return varies(module[expr.id], local, module, imported, depth + 1)
         if expr.id in imported:
-            return imported[expr.id] not in PURE_MODULES
-        return not (expr.id in BUILTIN_NAMES)
+            return imported[expr.id] in READERS
+        if expr.id in BUILTIN_NAMES:
+            return expr.id in READING_BUILTINS
+        return True  # a parameter of the helper, or a global this file does not bind
     if isinstance(expr, (ast.List, ast.Tuple, ast.Set)):
         return any(varies(e, local, module, imported, depth + 1) for e in expr.elts)
     if isinstance(expr, ast.Dict):
@@ -356,9 +395,51 @@ def varies(expr, local: dict, module: dict, imported: set, depth: int = 0) -> bo
                     if k is not None)
                 or any(varies(v, local, module, imported, depth + 1) for v in expr.values))
     if isinstance(expr, ast.Call):
+        defined = _called_function(expr, local, module)
+        if defined is not None:
+            inner = dict(local)
+            params = [*defined.args.posonlyargs, *defined.args.args,
+                      *defined.args.kwonlyargs]
+            values = [*expr.args, *[k.value for k in expr.keywords]]
+            for parameter, value in zip(params, values):
+                inner[parameter.arg] = value
+            # A function that READS an argument it was handed is a way of computing, not a
+            # way of writing a value down, and the value it computes is a function of what
+            # was passed: stopping at "its body is made of constants" refused five helpers
+            # of this tree whose halves are models over a fixture typed in the source --
+            # `as_written(TREES)`, `shape(written)` -- which are readings of a scenario and
+            # not the entry copied out. A function that declares an argument and never
+            # reads it is the other case, and it is refused below like the literal it is.
+            used = {node.id for node in ast.walk(defined) if isinstance(node, ast.Name)}
+            if any(parameter.arg in used for parameter in params):
+                return True
+            if isinstance(defined, ast.Lambda):
+                returns = [defined.body]
+            else:
+                returns = [node.value for node in _own_nodes(defined)
+                           if isinstance(node, ast.Return) and node.value is not None]
+            if not returns:
+                return True
+            return any(varies(value, inner, module, imported, depth + 1)
+                       for value in returns)
         return (_kwargs_varies(expr, local, module, imported, depth)
                 or varies(expr.func, local, module, imported, depth + 1)
                 or any(varies(a, local, module, imported, depth + 1) for a in expr.args))
+    if isinstance(expr, ast.Lambda):
+        inner = dict(local)
+        for parameter in [*expr.args.posonlyargs, *expr.args.args,
+                          *expr.args.kwonlyargs]:
+            inner.pop(parameter.arg, None)  # a free parameter can be anything
+        return varies(expr.body, inner, module, imported, depth + 1)
+    if isinstance(expr, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        inner = dict(local)
+        for parameter in [*expr.args.posonlyargs, *expr.args.args,
+                          *expr.args.kwonlyargs]:
+            inner.pop(parameter.arg, None)  # a free parameter can be anything
+        returns = [node.value for node in _own_nodes(expr)
+                   if isinstance(node, ast.Return) and node.value is not None]
+        return any(varies(value, inner, module, imported, depth + 1)
+                   for value in returns) if returns else False
     if isinstance(expr, ast.UnaryOp):
         return varies(expr.operand, local, module, imported, depth + 1)
     if isinstance(expr, ast.BoolOp):
@@ -400,6 +481,15 @@ def varies(expr, local: dict, module: dict, imported: set, depth: int = 0) -> bo
         parts.extend([expr.key, expr.value] if isinstance(expr, ast.DictComp) else [expr.elt])
         return any(varies(part, bound, module, imported, depth + 1) for part in parts)
     return True
+
+
+def _called_function(call, local, module):
+    """The function this call names, when the file defines it -- else None."""
+    if not isinstance(call.func, ast.Name):
+        return None
+    node = local.get(call.func.id) or module.get(call.func.id)
+    return node if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)) \
+        else None
 
 
 def _kwargs_varies(call, local, module, imported, depth) -> bool:
@@ -475,6 +565,12 @@ def verdicts(rows) -> list:
     """One line per helper, and whether this tree may be green."""
     lines, bad = [], 0
     for name, halves, readers, measured, moved in rows:
+        if isinstance(halves, dict) and "unread" in halves:
+            # Not green and not refused here: no reading could be taken. `main` decides
+            # whether that is allowed, so a tree that carries a control cannot use this to
+            # look green.
+            lines.append(f"unread   {name} -- {halves['unread']}")
+            continue
         if not isinstance(halves, dict) or set(halves) != {"as_written", "as_repaired"}:
             lines.append(f"FAIL[NOT-TWO-HALVES] {name} does not answer with two halves: "
                          f"{type(halves).__name__} {halves!r}"[:160])
@@ -497,9 +593,14 @@ def verdicts(rows) -> list:
                 lines.append(f"ok   {name} -- both halves read against "
                              f"{record_name(entry)}")
             else:
-                lines.append(f"FAIL[ENTRY-DISAGREES] {record_name(entry)}: the helper's "
-                             f"{'written' if not written_ok else 'repaired'} half is not "
-                             f"the one the entry records")
+                # The helper's name goes in the line. A refusal that names only the entry
+                # leaves the reader to guess which helper it is about, and a control that
+                # reports entries but not every helper is a census of records, not of the
+                # file: three helpers in this tree were refused by name of their entry
+                # alone, so an arm asking that every helper be reported saw them missing.
+                lines.append(f"FAIL[ENTRY-DISAGREES] {record_name(entry)}: the helper "
+                             f"{name}'s {'written' if not written_ok else 'repaired'} half "
+                             f"is not the one the entry records")
                 bad += 1
     return lines, bad
 
@@ -660,6 +761,31 @@ def selftest() -> int:
         print(f"{'ok  ' if caught else 'FAIL'} a list typed beside the file that does not "
               f"name every helper it defines is refused (exit {code.returncode})")
 
+        # A tree that carries the control and still answers from the entry has to be named,
+        # not silently green: without this arm the only shape the refusal is read on is a
+        # two-file fixture, so a full tree could refuse to read and pass.
+        tree = pathlib.Path(td) / "no-control"
+        (tree / "probes").mkdir(parents=True)
+        for name in ("fragments.py", "catches.json"):
+            shutil.copy(src / name, tree / name)
+        shutil.copy(pathlib.Path(__file__).resolve(), tree / "probes" / "parts_of_a_reading.py")
+        frag = tree / "fragments.py"
+        frag.write_text(
+            frag.read_text(encoding="utf-8") + "\n\n"
+            "class NoControlBesideThisTree(Exception):\n"
+            "    \"\"\"A tree without the control beside it has no reading, and says so.\"\"\"\n"
+            "\n"
+            "def _readings_of_a_tree_that_refuses_to_read():\n"
+            "    raise NoControlBesideThisTree('no control beside this tree')\n",
+            encoding="utf-8")
+        code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
+                               "--check", "--root", str(tree)],
+                              capture_output=True, text=True)
+        caught = code.returncode == 1 and "FAIL[NO-CONTROL]" in code.stdout
+        bad += 0 if caught else 1
+        print(f"{'ok  ' if caught else 'FAIL'} a tree that carries the control and refuses to "
+              f"read it is refused by name (exit {code.returncode})")
+
         # The strongest mutant an independent review could build: the helper replaced by a
         # constant that REPEATS its own entry, byte for byte. Every comparison of the
         # helper's output with the entry -- this probe's whole instrument, and check.py's --
@@ -782,7 +908,9 @@ def selftest() -> int:
         # rather than measured 0` on ten of eleven helpers -- a tree carrying the entry
         # typed into the source, with the class that was registered against exactly that
         # left green. The arm plants each shape and requires the literal refusal by its id.
-        for shape in ("comprehension over literals", "decoder over literals"):
+        for shape in ("comprehension over literals", "decoder over literals",
+                      "pickle round trip", "local function over literals",
+                      "local lambda over literals"):
             tree = pathlib.Path(td) / ("decoy-" + shape.split()[0])
             tree.mkdir()
             for f in ("fragments.py", "catches.json"):
@@ -795,17 +923,34 @@ def selftest() -> int:
             ledger = json.loads((tree / "catches.json").read_text(encoding="utf-8"))
             record = (ledger["entries"][i] if j is None
                       else ledger["entries"][i]["repeats"][j])
-            halves = []
+            halves, preludes = [], []
             for key in ("observed", "expected"):
                 value = ast.literal_eval(record[key])
                 if shape == "comprehension over literals":
                     halves.append("{k: v for k, v in %r.items()}" % (value,))
+                    preludes.append("")
+                elif shape == "pickle round trip":
+                    # A module nobody put on the pure list, round-tripping the literal: the
+                    # spelling that made the list-of-pure-modules rule bottomless.
+                    halves.append("pickle.loads(pickle.dumps(%r))" % (value,))
+                    preludes.append("    import pickle\n")
+                elif shape == "local function over literals":
+                    halves.append("_half_%s()" % len(halves))
+                    preludes.append("    def _half_%s():\n"
+                                    "        return %r\n" % (len(preludes), value))
+                elif shape == "local lambda over literals":
+                    # The same two steps down, with the function written as a name bound to
+                    # a lambda: a rule that recognises only `def` reads this call as
+                    # measurement and the entry goes into the source unwitnessed.
+                    halves.append("_half_%s()" % len(halves))
+                    preludes.append("    _half_%s = lambda: %r\n"
+                                    % (len(preludes), value))
                 else:
                     blob = json.dumps(value, sort_keys=True).encode("utf-8")
                     halves.append("json.loads(base64.b64decode('%s'))"
                                   % base64.b64encode(blob).decode("ascii"))
-            imports = ("" if shape == "comprehension over literals"
-                       else "    import base64\n    import json\n")
+                    preludes.append("    import base64\n    import json\n")
+            imports = "".join(preludes)
             frag = tree / "fragments.py"
             frag.write_text(
                 frag.read_text(encoding="utf-8")
@@ -822,6 +967,41 @@ def selftest() -> int:
             print(f"{'ok  ' if caught else 'FAIL'} a half written as the literals of "
                   f"its own entry behind a {shape} is refused by the literal arm "
                   f"(exit {code.returncode})" + (f": {named[0][:90]}" if caught else ""))
+        # The other direction, and it cost five helpers of this tree to learn: a half that
+        # is COMPUTED from an argument is not the entry written down. Following a call into
+        # the body of the function it names is how the literal arm closed the local-function
+        # hole; the same walk, taken one step further, reads `as_written(TREES)` and
+        # `shape(written)` as constants -- models over a fixture typed in the source -- and
+        # refused them. The rule now stops at a function that reads an argument it was
+        # handed. This arm plants such a model and requires the arm to stay SILENT on it:
+        # a rule no tree can satisfy is not a stricter rule, it is a broken one.
+        tree = pathlib.Path(td) / "model-over-an-argument"
+        tree.mkdir()
+        for name in ("fragments.py", "catches.json"):
+            shutil.copy(src / name, tree / name)
+        frag = tree / "fragments.py"
+        frag.write_text(
+            frag.read_text(encoding="utf-8")
+            + "\n\ndef %s(**kw):\n"
+              "    def _model(rows):\n"
+              "        return {'kept': sum(1 for row in rows if row['ok']),\n"
+              "                'dropped': sum(1 for row in rows if not row['ok'])}\n"
+              "    kept = {'ok': True}\n"
+              "    dropped = {'ok': False}\n"
+              "    return {'as_written': _model([kept]),\n"
+              "            'as_repaired': _model([kept, dropped])}\n"
+              % quiet[0],
+            encoding="utf-8")
+        code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
+                               "--check", "--root", str(tree)],
+                              capture_output=True, text=True)
+        named = [ln for ln in code.stdout.splitlines()
+                 if ln.startswith(LITERAL_HALF_REFUSAL) and quiet[0] in ln]
+        bad += 1 if named else 0
+        print(f"{'ok  ' if not named else 'FAIL'} a half computed by a function that reads "
+              f"its argument is not read as a literal"
+              + (f": {named[0][:110]}" if named else ""))
+
         # The phrase is not a name. This line is another class's refusal -- a half that
         # disagrees with its entry -- reusing the words the literal arm used to match on,
         # and it is exactly the line the substring rule would have accepted.
@@ -865,12 +1045,19 @@ def main() -> int:
               f"fragments.py:{line}: {expr} -- a half that calls nothing is a sentence "
               f"about the entry, not a reading of the tree")
     unvaryable = sorted(name for name, *_rest, moved in rows if moved is None)
+    unread = sorted(name for name, halves, *_rest in rows
+                    if isinstance(halves, dict) and "unread" in halves)
+    carrying = (root / "probes" / "parts_of_a_reading.py").exists()
+    for name in unread if carrying else []:
+        print(f"FAIL[NO-CONTROL] {name}: this tree carries the control and the helper "
+              f"refuses to read it, so the half stands on the entry rather than on the tree")
     print(f"helpers with two halves  {len(rows)}")
     print(f"helpers whose input no caller varies  {len(unvaryable)}")
     print(f"halves not read against an entry  {bad}")
     print(f"halves written as literals rather than measured  {len(typed)}")
     print(f"typed lists that do not cover the file  {len(stale)}")
-    if args.check and (bad or stale or orphaned or typed):
+    print(f"helpers with no control beside this tree  {len(unread)}")
+    if args.check and (bad or stale or orphaned or typed or (unread and carrying)):
         print("REFUSED: a helper's half is not the one the entry records, or nothing in this "
               "repository reads it, or its answer does not move with the input it declares "
               "-- either way the half that says what the repair does is unwitnessed, so it "
@@ -879,7 +1066,10 @@ def main() -> int:
               "from it is a sentence about an older file; or this probe declares an input "
               "for a helper this tree does not carry, so that control tests nothing; or a "
               "half is written as a literal instead of computed, so it is the entry written "
-              "a second time and every comparison against that entry is satisfied by it")
+              "a second time and every comparison against that entry is satisfied by it; or "
+              "this tree carries the control beside it and a helper still answers that no "
+              "control stands there, so that helper is read from its entry and not from the "
+              "tree")
         return 1
     return 0
 
