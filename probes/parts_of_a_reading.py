@@ -88,6 +88,39 @@ def carry(src: pathlib.Path, into: pathlib.Path, names) -> None:
         shutil.copy(src / name, destination)
 
 
+def paths_the_tree_opens(src: pathlib.Path, source: str) -> list:
+    """The tree's own files that `fragments.py` opens BY PATH, resolved against its own
+    directory.
+
+    A module imported as a fixture must not depend on the process's directory, so a helper
+    that reads a file of the tree builds the path from `__file__` and its own folder. A
+    fixture carrying only `fragments.py` and `catches.json` then holds a helper that cannot
+    read what it is checked with, and every mutant of this probe's selftest reads as a
+    broken tree rather than as a reading. The list comes from the source: a helper that
+    opens another file of the tree is carried because the tree opens it, not because its
+    name was written down here.
+    """
+    out = []
+    for node in ast.walk(ast.parse(source)):
+        if not (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div)):
+            continue
+        parts = []
+        cur = node
+        while isinstance(cur, ast.BinOp) and isinstance(cur.op, ast.Div):
+            if isinstance(cur.right, ast.Constant) and isinstance(cur.right.value, str):
+                parts.append(cur.right.value)
+            cur = cur.left
+        if not parts:
+            continue
+        if not any(isinstance(sub, ast.Name) and sub.id == "__file__"
+                   for sub in ast.walk(cur)):
+            continue
+        rel = "/".join(reversed(parts))
+        if (src / rel).is_file() and rel not in out:
+            out.append(rel)
+    return out
+
+
 def files_the_tree_reads(src: pathlib.Path) -> tuple:
     """The files a fixture must carry: the tree's own two, plus every module beside them
     that `fragments.py` imports. A hand-written list here is the same sentence the copy
@@ -100,6 +133,9 @@ def files_the_tree_reads(src: pathlib.Path) -> tuple:
     a helper beside the tree reads it BY PATH, and a fixture without it is a
     tree whose first such helper raises -- which is how this probe's selftest
     died on its own fixture, with every reading unread and one traceback.
+    A file the tree opens BY PATH (`__file__`'s folder and then some) is carried too, and
+    that list comes from the source as well: a helper that reads the harness it is checked
+    against is a helper a fixture must hand that harness to.
     """
     names = ["fragments.py", "catches.json"]
     source = (src / "fragments.py").read_text(encoding="utf-8")
@@ -113,6 +149,9 @@ def files_the_tree_reads(src: pathlib.Path) -> tuple:
         candidate = src / (module.split(".")[0] + ".py")
         if candidate.exists() and candidate.name not in names:
             names.append(candidate.name)
+    for rel in paths_the_tree_opens(src, source):
+        if rel not in names:
+            names.append(rel)
     control = pathlib.Path(__file__).resolve()
     try:
         besidethe_tree = control.relative_to(src).as_posix()
@@ -250,6 +289,13 @@ PERTURBATIONS = {
         ),
     },
     "_readings_of_a_status_the_word_beside_it_replaced": {"the_command_returns": 3},
+    # The rule in force is read out of the harness beside the tree, so a caller can hand
+    # the helper another rule and the half that answers for the repair must move with it.
+    # A helper that copies one measurement into both units -- the shape that passes every
+    # arm of this class and its own gate -- cannot follow this input.
+    "_readings_of_a_count_of_lines_read_as_a_count_of_what_was_printed": {
+        "the_rule": "wc -l",
+    },
 }
 
 

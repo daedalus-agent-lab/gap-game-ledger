@@ -33,6 +33,7 @@ import subprocess
 import sys
 import textwrap
 from pathlib import Path
+import pathlib
 
 # The ledger's texts are UTF-8, and a verdict is read by programs and by people rather
 # than by the locale of the machine that happened to run the check. Read through the
@@ -1422,12 +1423,18 @@ def quick_audit(data: dict) -> int:
     broken ledger got a green exit and a page that read as a description of a
     healthy ledger. The gate belongs to the ledger, not to the mode.
 
-    THE COMPLAINTS GO TO STDERR, because the documented remedy is a REDIRECT:
-    `python3 check.py --index > CLASSES.md`. With them on stdout, a ledger with
+    THE COMPLAINTS GO TO STDERR, because these modes are meant to be REDIRECTED:
+    `python3 check.py --index-write CLASSES.md`. With them on stdout, a ledger with
     one miss wrote `MISS  <class>  (see python3 check.py)` into the generated
     document -- the tool's own complaint became part of the file it tells the
     reader to publish, and the next run called that file stale. The exit code
     still carries the verdict; the page stays a page.
+
+    AND THE REMEDY IS NO LONGER A REDIRECT, because a redirect truncates its
+    target before the tool it feeds has decided anything: `--index > CLASSES.md`
+    that was killed mid-render left a 0-byte CLASSES.md where a 324534-byte page
+    had stood. `--index-write PATH` renders first and replaces once, so a failure
+    of any kind leaves the page that was there.
 
     The three BADADDRESS complaints were the exception: they were written with a
     plain `print` while this paragraph stood above them saying otherwise, and a
@@ -1627,6 +1634,8 @@ def main() -> int:
     ap.add_argument("--lookup")
     ap.add_argument("--addresses", action="store_true")
     ap.add_argument("--index", action="store_true", help="print CLASSES.md and exit")
+    ap.add_argument("--index-write", metavar="PATH",
+                    help="write CLASSES.md to PATH in one replace, and exit")
     ap.add_argument("--policy", action="store_true",
                     help="print the hash of the equivalence policy and exit")
     args = ap.parse_args()
@@ -1642,6 +1651,25 @@ def main() -> int:
     if args.index:
         bad = quick_audit(data)
         print(render_index(data), end="")
+        return bad
+    if args.index_write:
+        # THE PAGE IS RENDERED BEFORE ANYTHING IS WRITTEN, AND WRITTEN IN ONE REPLACE.
+        #
+        # The documented remedy for the index was a REDIRECT --
+        # `python3 check.py --index > CLASSES.md` -- and a redirect truncates its target
+        # before the tool it feeds has decided anything. A run of that remedy that was
+        # killed mid-render, or that never reached the interpreter at all, left a
+        # CLASSES.md of 0 bytes where a 324534-byte page had stood: the previous good
+        # document is destroyed by the very command that exists to produce the next one,
+        # and the only report is the shell's exit code, which says the tool failed --
+        # true, and silent about the file. Rendering first and replacing once means a
+        # failure of any kind leaves the page that was there.
+        bad = quick_audit(data)
+        target = pathlib.Path(args.index_write)
+        tmp = target.with_name(target.name + ".tmp")
+        tmp.write_text(render_index(data), encoding="utf-8")
+        os.replace(tmp, target)
+        print("%s: %d byte(s) written by one replace" % (target, target.stat().st_size))
         return bad
     if args.addresses:
         bad = quick_audit(data)
@@ -1916,7 +1944,7 @@ def main() -> int:
     if stale:
         print(
             f"STALE  {INDEX.name} does not match the ledger: run "
-            "`python3 check.py --index > CLASSES.md`"
+            "`python3 check.py --index-write CLASSES.md`"
         )
     else:
         print(f"index    {INDEX.name} is current")

@@ -273,8 +273,8 @@ def _single_quoted_spans(text: str, base: int = 0):
     first version of this scanner ran `text.find("'")` over the raw line, so
     `printf "it's rc=%s\n" "$?"` opened a "single-quoted run" at the apostrophe and
     carried it to the end of the line, and the `$?` inside it was read as literal text
-    and dropped: this tree writes that shape at `repro/run_all.sh:663` and the probe
-    counted five statuses in a file that writes six. Quoting inside a `$(...)` is
+    and dropped: the harness beside this tree writes that shape at one of its own
+    print sites, and the probe dropped that status from its answer. Quoting inside a `$(...)` is
     quoting, whatever context the substitution stands in, so the walk descends into
     substitutions and backticks rather than skipping them.
     """

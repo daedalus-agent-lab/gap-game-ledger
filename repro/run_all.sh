@@ -415,6 +415,17 @@ names_seen() { printf '%s\n' "$1" >> "$NAMES"; }
 # is not part of any digest.
 env UV_CACHE_DIR="$UV_CACHE_DIR" uv run --with pillow python -c 'pass' >/dev/null 2>&1 || true
 
+# The rule that decides whether an item's command printed anything: a command run over the
+# item's log that answers a count, where 0 means "this item is refused, nothing was
+# printed". It is a function, and it is the only place the rule is written, so a reading of
+# this class can take the rule OUT OF THIS FILE instead of carrying a copy of it: the
+# registry's helper for `a-count-of-lines-read-as-a-count-of-what-was-printed` reads this
+# body, so a tree whose guard counts something else cannot be answered by a constant the
+# helper typed, and a mutation of this line moves that helper's answer. It is also why the
+# count is taken by RUNNING this command: the number comes from the file, not from the
+# string beside it.
+printed_nothing_rule() { wc -c; }
+
 run() {                       # run <name> <command...>
   local name="$1"; shift
   names_seen "$name"
@@ -502,8 +513,9 @@ run() {                       # run <name> <command...>
   #
   # The reading is a byte count, and the first version was a line count (`grep -c .`),
   # which calls a command that printed one newline empty: `printf '\n'` writes one byte
-  # and `grep -c .` answers 0, so three such items were refused as having printed
-  # nothing. An item whose command never started exits 127 and is refused by `rc`
+  # and `grep -c .` answers 0, so an item whose command printed a single newline was
+  # refused as having printed nothing -- the shape, not the number, is what this branch
+  # is about. An item whose command never started exits 127 and is refused by `rc`
   # further down -- this branch is about the command that ran, succeeded, and wrote
   # nothing to be read.
   #
@@ -512,8 +524,21 @@ run() {                       # run <name> <command...>
   # so a log holding one newline and a log holding nothing are the same string there
   # (`e3b0c44298fc1c14`, the digest of the empty text, is both). The field cannot see
   # the difference this branch is about; a byte count can.
-  local printed; printed="$(wc -c < "$log" 2>/dev/null | tr -d '[:space:]' || true)"
-  printed="${printed:-0}"
+  # A log this shell cannot read is not a log with nothing in it. The count used to be
+  # read with `|| true` and defaulted with `${printed:-0}`, so every failure to read the
+  # log -- a removed file, an unreadable one -- arrived here as the empty string and was
+  # written down as "the command printed nothing": a reason that is false, in a refusal
+  # that is right. The two are separated by the empty substitution, which is a fact about
+  # the read, from the digit `0`, which is a fact about the file. `--empty-control` drives
+  # this shape too, with a fixture that removes the log the harness redirected into.
+  local printed; printed="$(printed_nothing_rule < "$log" 2>/dev/null | tr -d '[:space:]')"
+  if [ -z "$printed" ]; then
+    printf 'FAIL %-34s the log could not be read: this run cannot say what the command wrote\n' "$name"
+    fails=$((fails + 1))
+    add_row "$(row_of "$name" "$rc" 2 "$d" "$n" "$sd")"
+    rm -f "$log"
+    return
+  fi
   if [ "$printed" = 0 ]; then
     printf 'FAIL %-34s the command printed nothing: exit %s is not a reading of the tree\n' "$name" "$rc"
     fails=$((fails + 1))
@@ -585,8 +610,26 @@ if [ "$EMPTY_CONTROL" = 1 ]; then
     *'printed nothing'*) ok=0; printf 'the control: an item that printed a line was refused as empty\n' ;;
   esac
   [ "$fails" = 0 ] || { ok=0; printf 'the control: a readable item was counted as a failure (%s)\n' "$fails"; }
+  fails=0
+  # A log that cannot be read is not a log with nothing in it, and the branch that reads
+  # the count said the opposite until this shape existed: `wc -c` against a file that is
+  # gone leaves the empty string, and `${printed:-0}` turned that into "the command
+  # printed nothing". The fixture removes the very file the harness redirected into --
+  # `/tmp/run_all.<harness pid>.log`, whose name the child can read off its own parent --
+  # so the read fails while the command itself succeeded and wrote nothing.
+  run "fixture whose log was removed" bash -c 'rm -f "/tmp/run_all.$PPID.log"' > "$ctl_out" 2>&1
+  out="$(cat "$ctl_out")"
+  printf '%s\n' "$out"
+  case "$out" in
+    *'could not be read'*) ;;
+    *) ok=0; printf 'the control: an item whose log was removed was not refused as unreadable\n' ;;
+  esac
+  case "$out" in
+    *'printed nothing'*) ok=0; printf 'the control: a log that could not be read was refused as having printed nothing\n' ;;
+  esac
+  [ "$fails" = 1 ] || { ok=0; printf 'the control: the unreadable-log refusal did not reach the failure count (%s)\n' "$fails"; }
   if [ "$ok" = 1 ]; then
-    echo "an item whose command wrote no byte is refused; one that printed a newline and one that printed a line are not (three readings)"
+    echo "an item whose command wrote no byte is refused; one that printed a newline and one that printed a line are not, and a log that cannot be read is refused for that reason and not as empty (four readings)"
     exit 0
   fi
   echo "the empty-output guard did not answer as required: a guard that cannot be shown to fire is not a guard"

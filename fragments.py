@@ -7565,9 +7565,14 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         ("_readings_of_a_fixture_that_names_the_files_the_tree_needed_when_it_was_written", 0),
         ("_readings_of_a_refusal_that_names_no_rule", 0),
         ("_readings_of_an_item_certified_by_its_status_when_it_printed_nothing", 0),
+        ('_readings_of_a_verdict_read_under_bash_when_the_text_names_a_shell_that_answers_differently', 0),
+        ('_readings_of_a_count_of_lines_read_as_a_count_of_what_was_printed', 0),
         ('_readings_of_a_rule_read_from_the_text_when_only_the_path_the_shell_took_decides', 0),
         ('_readings_of_a_rule_stated_over_the_whole_word_when_only_the_order_in_it_decides', 0),
         ('_readings_of_a_path_resolved_against_a_directory_a_fixture_moved_the_process_into', 0),
+        ("_readings_of_an_empty_substitution_read_as_a_number_the_rule_measured", 0),
+        ('_readings_of_a_census_of_the_file_kept_in_the_record_of_one_class', 0),
+        ('_readings_of_a_first_line_read_as_a_name_where_the_kernel_reads_a_program_and_one_argument', 0),
     ]
 
     def as_written(helpers):
@@ -8747,4 +8752,681 @@ def _readings_of_a_rule_read_from_the_text_when_only_the_path_the_shell_took_dec
     return {"as_written": tally(refuses_by_the_text),
             "as_repaired": tally(refuses_by_what_the_run_printed)}
 NAMESPACES.setdefault('a-rule-read-from-the-text-when-only-the-path-the-shell-took-decides', {}).update({'a_rule_read_from_the_text_when_only_the_path_the_shell_took_decides': a_rule_read_from_the_text_when_only_the_path_the_shell_took_decides})
+
+
+
+def a_count_of_lines_read_as_a_count_of_what_was_printed():
+    """A count of lines read as a count of what was printed."""
+    return _readings_of_a_count_of_lines_read_as_a_count_of_what_was_printed()["as_written"]
+
+
+
+def _readings_of_a_count_of_lines_read_as_a_count_of_what_was_printed(the_rule=None):
+    """Two readings of "the command printed nothing", on the same three logs.
+
+    The guard decides on a command run over the item's log: the command answers a count
+    and an answer of 0 refuses the item as having written nothing. The two readings here
+    are two such commands -- the rule the guard carries NOW, read out of the harness
+    beside this tree, and the rule it carried before the repair, a count of
+    newline-terminated lines -- and both are RUN over three logs the shell writes. So the
+    halves differ by what two commands did to three files, not by what two strings say.
+
+    The rule in force is not typed here. Handed one (`the_rule`), a caller gets a reading
+    of that rule instead -- the probe beside this tree moves this input and requires the
+    answer to move with it. Left out, the rule is taken from `repro/run_all.sh`, out of
+    the body of the function this class's repair introduced, and a tree where that read
+    finds nothing raises NoControlBesideThisTree rather than answering with a constant
+    this file carries. The rule it replaced cannot be read anywhere in the tree -- it is a
+    fact about the harness before the repair -- so that half says where its rule came
+    from, and `grep -c .` is the only command in this helper that is written down here.
+    """
+    import pathlib
+    import re
+    import subprocess
+    import tempfile
+
+    HARNESS = pathlib.Path(__file__).resolve().parent / "repro" / "run_all.sh"
+    BEFORE = "grep -c ."
+
+    if the_rule is None:
+        if not HARNESS.exists():
+            raise NoControlBesideThisTree(
+                "no harness beside this tree: `repro/run_all.sh` is not here, so the rule "
+                "the guard applies to the log cannot be read out of it")
+        found = re.search(r"^printed_nothing_rule\(\)[ \t]*\{[ \t]*(?P<rule>[^}]*?)[ \t]*;?[ \t]*\}",
+                          HARNESS.read_text(encoding="utf-8"), re.M)
+        if found is None:
+            raise NoControlBesideThisTree(
+                "the harness beside this tree declares no `printed_nothing_rule`: the "
+                "command that decides whether an item printed anything cannot be read out "
+                "of `repro/run_all.sh`, so this helper has no reading of it to give")
+        the_rule = found.group("rule")
+        where = "the harness beside this tree (repro/run_all.sh)"
+    else:
+        where = "handed in by the caller"
+
+    LOGS = [
+        ("a command that wrote nothing", ":"),
+        ("a command that wrote one newline", "printf '\\n'"),
+        ("a command that wrote one line", "printf 'one line\\n'"),
+    ]
+
+    def tally(rule, where):
+        rows = []
+        commands_run = 0
+        for name, script in LOGS:
+            with tempfile.TemporaryDirectory() as d:
+                log = pathlib.Path(d) / "log"
+                subprocess.run(["bash", "-c", script + ' > "$1"', "bash", str(log)],
+                               capture_output=True)
+                said = subprocess.run(["bash", "-c", rule + ' < "$1"', "bash", str(log)],
+                                      capture_output=True, text=True)
+                commands_run += 2
+            rows.append({"log": name, "the_rule_reads": int((said.stdout or "0").strip() or 0)})
+        return {
+            "the_rule": rule,
+            "where_the_rule_was_read": where,
+            "logs": len(rows),
+            "commands_run": commands_run,
+            "the_logs_and_what_the_rule_read": rows,
+            "refused_as_having_printed_nothing":
+                [r["log"] for r in rows if r["the_rule_reads"] == 0],
+            "accepted_as_having_printed_something":
+                [r["log"] for r in rows if r["the_rule_reads"] != 0],
+        }
+
+    return {"as_written": tally(BEFORE, "typed here: the rule the guard carried before the repair"),
+            "as_repaired": tally(the_rule, where)}
+
+NAMESPACES.setdefault('a-count-of-lines-read-as-a-count-of-what-was-printed', {}).update({'a_count_of_lines_read_as_a_count_of_what_was_printed': a_count_of_lines_read_as_a_count_of_what_was_printed})
+
+
+
+def a_verdict_read_under_bash_when_the_text_names_a_shell_that_answers_differently():
+    """A verdict read under bash when the text names a shell that answers differently."""
+    return _readings_of_a_verdict_read_under_bash_when_the_text_names_a_shell_that_answers_differently()["as_written"]
+
+
+
+def _readings_of_a_verdict_read_under_bash_when_the_text_names_a_shell_that_answers_differently():
+    """Two verdicts on the same status reads: one assumes bash, one asks the interpreter.
+
+    The rule judges a text by what the text prints, and what it prints is a property of the
+    shell that runs it. Both halves read the same six texts and the same command set; they
+    differ only in which interpreter's answer decides a verdict, and both are RUN here, so
+    the difference between the halves is what the shells did and not what they are said to
+    do. A text whose first line names a shell this tree does not have is left UNKNOWN by
+    the half that reads the first line, and answered anyway by the half that assumes.
+    """
+    import shutil
+    import subprocess
+
+    SUBJECTS = {
+        "f_7_g_x_y_3": "f(){ return 7; }; g(){ printf x.y; return 3; }",
+        "t_0_h_p_q_5": "t(){ return 0; }; h(){ printf p.q; return 5; }",
+    }
+    # name, the shell the text's first line names, its subject, its body, the status meant
+    FIXTURES = [
+        ("the_read_stands_left_of_the_substitution", "sh", "f_7_g_x_y_3",
+         r"""f; printf 'STATUS=%s\n' "$?$(g)" """.strip(), "7"),
+        ("the_read_stands_right_of_the_substitution", "sh", "f_7_g_x_y_3",
+         r"""f; printf 'STATUS=%s\n' "$(g)$?" """.strip(), "7"),
+        ("the_read_stands_right_of_a_substitution_that_failed", "sh", "t_0_h_p_q_5",
+         r"""t; printf 'STATUS=%s\n' "$(h)$?" """.strip(), "5"),
+        ("two_reads_straddle_the_substitution", "bash", "f_7_g_x_y_3",
+         r"""f; printf 'STATUS=%s\n' "$?$(g)$?" """.strip(), "7"),
+        ("the_status_is_saved_before_the_word", "sh", "f_7_g_x_y_3",
+         r"""f; rc=$?; printf 'STATUS=%s\n' "$(g)$rc" """.strip(), "7"),
+        ("a_first_line_naming_a_shell_this_tree_does_not_have", "zsh", "f_7_g_x_y_3",
+         r"""f; printf 'STATUS=%s\n' "$(g)$?" """.strip(), "7"),
+    ]
+    EVERY_TEXT_IS_READ_BY = "every text is read by bash"
+
+    def where(shell):
+        return shutil.which(shell)
+
+    def run(shell, text, subject):
+        said = subprocess.run([shell, "-c", SUBJECTS[subject] + "; " + text],
+                              capture_output=True, text=True)
+        return (said.stdout or "").strip()
+
+    def verdict(printed, meant):
+        if printed is None:
+            return "UNKNOWN"
+        return ("prints_the_status_the_author_meant" if ("STATUS=" + meant) in printed
+                or printed.endswith(meant)
+                else "prints_a_status_that_is_not_it")
+
+    def tally(rule, decide_by):
+        rows = []
+        commands_run = 0
+        for name, names_a_shell, subject, text, meant in FIXTURES:
+            row = {"text": name, "the_shell_its_first_line_names": names_a_shell,
+                   "the_text": text, "the_status_the_author_meant": meant}
+            if decide_by == EVERY_TEXT_IS_READ_BY:
+                ran = where("bash")
+                row["the_interpreter_that_decided"] = "bash"
+                row["what_it_printed"] = run(ran, text, subject)
+                commands_run += 1
+            else:
+                ran = where(names_a_shell)
+                if ran is None:
+                    row["the_interpreter_that_decided"] = names_a_shell
+                    row["what_it_printed"] = "UNKNOWN: this tree cannot run the shell the text names"
+                else:
+                    row["the_interpreter_that_decided"] = names_a_shell
+                    row["what_it_printed"] = run(ran, text, subject)
+                    commands_run += 1
+            row["the_verdict"] = (verdict(row["what_it_printed"], meant)
+                                  if row["what_it_printed"].startswith("STATUS=")
+                                  else "UNKNOWN")
+            rows.append(row)
+
+        def under(decide_by_other):
+            out = {}
+            for name, names_a_shell, subject, text, meant in FIXTURES:
+                ran = where(names_a_shell)
+                out[name] = ("UNKNOWN" if ran is None
+                             else verdict(run(ran, text, subject), meant))
+            return out
+
+        elsewhere = under(decide_by)
+        return {
+            "the_rule": rule,
+            "what_decides_a_verdict": decide_by,
+            "texts": len(rows),
+            "commands_run": commands_run,
+            "the_texts_and_what_each_interpreter_printed": rows,
+            "texts_called_corrupt": [r["text"] for r in rows
+                                     if r["the_verdict"] == "prints_a_status_that_is_not_it"],
+            "texts_left_unknown": [r["text"] for r in rows if r["the_verdict"] == "UNKNOWN"],
+            "texts_where_this_rule_and_the_named_interpreter_disagree":
+                [r["text"] for r in rows if r["the_verdict"] != elsewhere[r["text"]]],
+            "the_status_the_texts_are_read_for": sorted({m for *_x, m in FIXTURES}),
+        }
+
+    return {"as_written": tally(EVERY_TEXT_IS_READ_BY, EVERY_TEXT_IS_READ_BY),
+            "as_repaired": tally("the text is read by the shell its first line names",
+                                 "the shell its first line names")}
+
+NAMESPACES.setdefault('a-verdict-read-under-bash-when-the-text-names-a-shell-that-answers-differently', {}).update({'a_verdict_read_under_bash_when_the_text_names_a_shell_that_answers_differently': a_verdict_read_under_bash_when_the_text_names_a_shell_that_answers_differently})
+
+
+
+def an_empty_substitution_read_as_a_number_the_rule_measured():
+    """An empty substitution read as the number the rule measured."""
+    return _readings_of_an_empty_substitution_read_as_a_number_the_rule_measured()["as_written"]
+
+
+
+def _readings_of_an_empty_substitution_read_as_a_number_the_rule_measured():
+    """Two readings of a count that could not be read, on the same four files.
+
+    The guard reads a count out of the item's log and refuses the item when the count is
+    0. The two readings are the two ways that count has been taken: with `|| true` and
+    `${printed:-0}`, where a failed read and a measured zero arrive as the same number,
+    and with the empty substitution kept apart from the digit, where a read that failed is
+    refused for what it is. Both are RUN here over four files -- nothing, one newline, one
+    line, and a file that is not there -- so the halves differ by what the shell did to
+    four files and not by what two sentences say about them.
+
+    The repaired half also runs the harness's own control (`repro/run_all.sh
+    --empty-control`), from this file's own directory, and records its verdicts and exit
+    status: the reading this half claims is the one that control drives, so the half is
+    read against the tree rather than asserted beside it, and a harness whose control
+    stopped driving this shape moves this half. A tree with no harness beside it has no
+    reading to give and says so.
+    """
+    import pathlib
+    import subprocess
+    import tempfile
+
+    HARNESS = pathlib.Path(__file__).resolve().parent / "repro" / "run_all.sh"
+    if not HARNESS.exists():
+        raise NoControlBesideThisTree(
+            "no harness beside this tree: `repro/run_all.sh` is not here, so the control "
+            "this reading is about cannot be run")
+    READING_THAT_DEFAULTS = (
+        'printed="$(wc -c < "$1" 2>/dev/null | tr -d "[:space:]" || true)"\n'
+        'printed="${printed:-0}"\n'
+        'if [ "$printed" = 0 ]; then echo "refused: the command printed nothing"\n'
+        'else echo "ok: it printed $printed byte(s)"; fi\n')
+    READING_THAT_KEEPS_THEM_APART = (
+        'printed="$(wc -c < "$1" 2>/dev/null | tr -d "[:space:]")"\n'
+        'if [ -z "$printed" ]; then echo "refused: the log could not be read"\n'
+        'elif [ "$printed" = 0 ]; then echo "refused: the command printed nothing"\n'
+        'else echo "ok: it printed $printed byte(s)"; fi\n')
+    FILES = [
+        ("a command that wrote nothing", ":"),
+        ("a command that wrote one newline", "printf '\\n'"),
+        ("a command that wrote one line", "printf 'one line\\n'"),
+        ("a log that is not there", None),
+    ]
+
+    def read(reading, script):
+        """What the reading itself says about one file: the script writes it, the reading judges."""
+        with tempfile.TemporaryDirectory() as d:
+            log = pathlib.Path(d) / "log"
+            if script is not None:
+                subprocess.run(["bash", "-c", script + ' > "$1"', "bash", str(log)],
+                               capture_output=True)
+            done = subprocess.run(["bash", "-c", reading, "bash", str(log)],
+                                  capture_output=True, text=True)
+        return done.stdout.strip()
+
+    def tally(reading, where):
+        rows = []
+        commands_run = 0
+        for name, script in FILES:
+            rows.append({"log": name, "the_reading_says": read(reading, script)})
+            commands_run += 2
+        return {
+            "the_reading": where,
+            "logs": len(rows),
+            "commands_run": commands_run,
+            "the_logs_and_what_the_reading_said": rows,
+            "refused": [r["log"] for r in rows if r["the_reading_says"].startswith("refused")],
+            "reasons": sorted({r["the_reading_says"] for r in rows}),
+        }
+
+    def control():
+        done = subprocess.run(["bash", str(HARNESS), "--empty-control"],
+                              cwd=str(HARNESS.parent.parent), capture_output=True, text=True)
+        return {"exit": done.returncode,
+                "verdicts": [l.strip() for l in done.stdout.splitlines()
+                             if l.startswith(("FAIL ", "ok   "))]}
+
+    repaired = tally(READING_THAT_KEEPS_THEM_APART,
+                     "the reading that keeps the empty substitution apart from the digit 0")
+    repaired["the_control_beside_this_tree"] = control()
+    return {"as_written": tally(READING_THAT_DEFAULTS,
+                                "the reading that defaults a failed read to the number 0"),
+            "as_repaired": repaired}
+
+NAMESPACES.setdefault('an-empty-substitution-read-as-a-number-the-rule-measured', {}).update({'an_empty_substitution_read_as_a_number_the_rule_measured': an_empty_substitution_read_as_a_number_the_rule_measured})
+
+
+def a_first_line_read_as_a_name_where_the_kernel_reads_a_program_and_one_argument():
+    """A first line read as a name where the kernel reads a program and one argument."""
+    return _readings_of_a_first_line_read_as_a_name_where_the_kernel_reads_a_program_and_one_argument()["as_written"]
+
+
+
+def _readings_of_a_first_line_read_as_a_name_where_the_kernel_reads_a_program_and_one_argument():
+    """Two readings of a text's first line: one looks the whole line up as a program's name and,
+    finding nothing under that name, calls the text one this tree cannot run; one writes the line
+    into a file, hands the file to the kernel, and reads what the program itself reports having
+    been given.
+
+    A program name without a slash is resolved against the working directory, not PATH, so `sh`
+    -- which is on PATH here -- is a line the kernel cannot run at all, and a file named `bash`
+    written beside the text is the program a `#!bash --posix` line runs. The argument is handed to
+    the program as ONE word, so `/usr/bin/env bash --posix` reaches env as the single name
+    `bash --posix` and env refuses it. The one case this half leaves unrun is a program the
+    kernel could not find; it is named as such rather than answered for.
+    """
+    import json
+    import os
+    import shutil
+    import subprocess
+    import tempfile
+
+    SUBJECTS = {"f_7_g_x_y_3": "f(){ return 7; }; g(){ printf x.y; return 3; }"}
+    THE_TEXT = "f; printf 'STATUS=%s\\n' \"$(g)$?\""
+    # what the program itself reports about what it was handed: its own account of the line, not
+    # this reading's account of it
+    REPORT = "printf 'ZERO=<%s> ARGS=<%s>' \"$0\" \"$*\"; echo"
+    A_PROGRAM_WRITTEN_BY_THIS_READING = (
+        "printf 'I-AM-THE-FILE-CALLED-%s ARGS=<%s> ZERO=<%s>' \"$(basename \"$0\")\" \"$*\" "
+        "\"$0\"; echo")
+
+    # name, the text's first line, the subject, and a program this reading writes beside the text
+    FIRST_LINES = [
+        ("a_bare_shell_name_on_the_path", "sh", "f_7_g_x_y_3", None),
+        ("a_bare_shell_name_this_tree_does_not_have", "zsh", "f_7_g_x_y_3", None),
+        ("a_program_and_a_flag_the_kernel_cannot_find", "bash --posix", "f_7_g_x_y_3", None),
+        ("a_program_the_kernel_finds_beside_the_text", "bash --posix", "f_7_g_x_y_3", "bash"),
+        ("an_absolute_path_and_a_flag", "/bin/bash --posix", "f_7_g_x_y_3", None),
+        ("a_flag_that_stops_the_text_before_it_prints", "/bin/bash -e", "f_7_g_x_y_3", None),
+        ("an_env_line_whose_argument_the_kernel_does_not_split",
+         "/usr/bin/env bash --posix", "f_7_g_x_y_3", None),
+        ("a_flag_the_kernel_hands_to_a_program_beside_the_text", "bash -e", "f_7_g_x_y_3", "bash"),
+    ]
+    THE_WHOLE_LINE_IS_A_NAME = "the first line is looked up as one name on the PATH"
+    THE_KERNEL_READS_IT = ("the line is written into a file and handed to the kernel, which reads "
+                           "a program and one argument")
+    THE_NAME_IS_NOT_A_PROGRAM = ("no program carries this line's name, so the text is not run at all")
+    THE_KERNEL_COULD_NOT_FIND_IT = ("the kernel could not find the program this line names, so the "
+                                    "text was not run at all")
+    THE_PROGRAM_REFUSED_THE_TEXT = "the program ran and refused the text"
+    THE_TEXT_PRINTED_NOTHING = "the program ran the text and the text printed nothing"
+
+    def whole_line_as_a_name(line):
+        return shutil.which(line), []
+
+    def run_a_program(program, arguments, subject):
+        said = subprocess.run([program] + arguments + ["-c", SUBJECTS[subject] + "; " + THE_TEXT],
+                              capture_output=True, text=True, stdin=subprocess.DEVNULL)
+        return ((said.stdout or "").strip(), (said.stderr or "").strip().splitlines()[:1],
+                said.returncode)
+
+    def what_the_program_did(out, err, rc):
+        if out:
+            return out
+        if rc:
+            return THE_PROGRAM_REFUSED_THE_TEXT
+        return THE_TEXT_PRINTED_NOTHING
+
+    def hand_the_file_to_the_kernel(line, subject, a_program_beside_the_text):
+        """Write the line into a file, let the kernel read it, and bring back what happened."""
+        with tempfile.TemporaryDirectory(prefix="first-line-") as where:
+            script = os.path.join(where, "the_text.sh")
+            with open(script, "w", encoding="utf-8") as handle:
+                handle.write("#!" + line + "\n")
+                handle.write(REPORT + "\n")
+                handle.write(SUBJECTS[subject] + "; " + THE_TEXT + "\n")
+            os.chmod(script, 0o755)
+            if a_program_beside_the_text is not None:
+                beside = os.path.join(where, a_program_beside_the_text)
+                with open(beside, "w", encoding="utf-8") as handle:
+                    handle.write("#!/bin/sh\n")
+                    handle.write("printf 'I-AM-THE-FILE-CALLED-%s ARGS=<%s> ZERO=<%s>' "
+                                 "\"$(basename \"$0\")\" \"$*\" \"$0\"; echo\n")
+                os.chmod(beside, 0o755)
+            failure = None
+            try:
+                said = subprocess.run([script], cwd=where, capture_output=True, text=True,
+                                      stdin=subprocess.DEVNULL)
+                out = (said.stdout or "").strip()
+                err = (said.stderr or "").strip().splitlines()[:1]
+                rc = said.returncode
+            except OSError as exc:
+                out, err, rc = "", [], None
+                failure = {"the_error": type(exc).__name__,
+                           "the_number": getattr(exc, "errno", None),
+                           "the_path_it_named": os.path.basename(getattr(exc, "filename", "") or "")}
+            # the directory this reading made is not part of what was measured: a record that
+            # carried it could never be re-taken
+            out = out.replace(where, "<the directory it made>")
+            err = [line.replace(where, "<the directory it made>") for line in err]
+            return out, err, rc, failure
+
+    def tally(rule, how_a_first_line_becomes_a_program, reading):
+        rows = []
+        texts_run = 0
+        for name, line, subject, beside in FIRST_LINES:
+            row = {"the_text": name, "its_first_line": line,
+                   "a_program_written_beside_the_text": beside,
+                   "what_was_run": None, "what_it_printed": "", "what_it_said_on_stderr": "",
+                   "the_exit_status": None, "what_the_program_says_it_was_given": "",
+                   "what_a_failure_named": "", "the_verdict": None}
+            if reading == THE_WHOLE_LINE_IS_A_NAME:
+                program, arguments = whole_line_as_a_name(line)
+                row["the_program_that_was_looked_up"] = program
+                if program is None:
+                    row["the_verdict"] = THE_NAME_IS_NOT_A_PROGRAM
+                    rows.append(row)
+                    continue
+                texts_run += 1
+                out, err, rc = run_a_program(program, arguments, subject)
+                row.update({"what_was_run": [program] + arguments + ["-c"], "what_it_printed": out,
+                            "what_it_said_on_stderr": err[0] if err else "",
+                            "the_exit_status": rc, "the_verdict": what_the_program_did(out, err, rc)})
+            else:
+                out, err, rc, failure = hand_the_file_to_the_kernel(line, subject, beside)
+                argv = [os.path.join("<the directory it made>", "the_text.sh")]
+                if failure is not None:
+                    row.update({"what_was_run": argv, "what_a_failure_named": json.dumps(
+                        failure, sort_keys=True), "the_verdict": THE_KERNEL_COULD_NOT_FIND_IT})
+                else:
+                    texts_run += 1
+                    says = next((l for l in out.splitlines() if "ARGS=<" in l), "")
+                    printed = out.replace(says + "\n", "").replace(says, "").strip()
+                    row.update({"what_was_run": argv, "what_it_printed": printed,
+                                "what_it_said_on_stderr": err[0] if err else "",
+                                "the_exit_status": rc, "what_the_program_says_it_was_given": says,
+                                "the_verdict": (what_the_program_did(printed, err, rc)
+                                                if printed or rc else THE_TEXT_PRINTED_NOTHING)})
+            rows.append(row)
+
+        def cell(field, name):
+            return next(r[field] for r in rows if r["the_text"] == name)
+
+        return {
+            "the_rule": rule,
+            "how_a_first_line_becomes_a_program": how_a_first_line_becomes_a_program,
+            "texts": len(rows),
+            "texts_run": texts_run,
+            "the_words_this_half_uses": {
+                "the_name_is_not_a_program": THE_NAME_IS_NOT_A_PROGRAM,
+                "the_kernel_could_not_find_it": THE_KERNEL_COULD_NOT_FIND_IT,
+                "the_program_refused_the_text": THE_PROGRAM_REFUSED_THE_TEXT,
+                "the_text_printed_nothing": THE_TEXT_PRINTED_NOTHING},
+            "texts_left_unrun": [r["the_text"] for r in rows if r["the_exit_status"] is None],
+            "the_first_lines_and_what_happened": rows,
+            "what_the_program_says_it_was_given":
+                {r["the_text"]: r["what_the_program_says_it_was_given"] for r in rows
+                 if r["what_the_program_says_it_was_given"]},
+            "what_a_failure_named": {r["the_text"]: r["what_a_failure_named"] for r in rows
+                                     if r["what_a_failure_named"]},
+            "first_lines_left_unrun": [r["the_text"] for r in rows if r["the_verdict"] in (
+                THE_NAME_IS_NOT_A_PROGRAM, THE_KERNEL_COULD_NOT_FIND_IT)],
+            "the_first_lines_the_program_refused": [r["the_text"] for r in rows
+                                                    if r["the_verdict"] == THE_PROGRAM_REFUSED_THE_TEXT],
+            "first_lines_that_printed_nothing": [r["the_text"] for r in rows
+                                                 if r["the_verdict"] == THE_TEXT_PRINTED_NOTHING],
+            "what_the_flag_changed": {
+                "without_the_flag": cell("what_it_printed", "an_absolute_path_and_a_flag"),
+                "with_the_flag":
+                    cell("what_it_printed", "a_flag_that_stops_the_text_before_it_prints"),
+                "the_flag_handed_to_a_program_beside_the_text":
+                    cell("what_it_printed", "a_flag_the_kernel_hands_to_a_program_beside_the_text"),
+            },
+            "the_first_lines_this_half_was_given": [r["its_first_line"] for r in rows],
+        }
+
+    return {"as_written": tally(THE_WHOLE_LINE_IS_A_NAME, THE_WHOLE_LINE_IS_A_NAME,
+                                THE_WHOLE_LINE_IS_A_NAME),
+            "as_repaired": tally(THE_KERNEL_READS_IT, THE_KERNEL_READS_IT, THE_KERNEL_READS_IT)}
+
+NAMESPACES.setdefault('a-first-line-read-as-a-name-where-the-kernel-reads-a-program-and-one-argument', {}).update({'a_first_line_read_as_a_name_where_the_kernel_reads_a_program_and_one_argument': a_first_line_read_as_a_name_where_the_kernel_reads_a_program_and_one_argument})
+
+
+def a_census_of_the_file_kept_in_the_record_of_one_class():
+    """A census of the file, kept in the record of one class."""
+    return _readings_of_a_census_of_the_file_kept_in_the_record_of_one_class()["as_written"]
+
+
+
+def _readings_of_a_census_of_the_file_kept_in_the_record_of_one_class():
+    """Two readings of a registration that moves another class's numbers: one writes the entry it
+    was asked for and leaves the rest of the ledger where it stood; one re-takes every entry whose
+    numbers its own change moved, old value beside new.
+
+    The fixture is a miniature of this ledger: a file with a typed list of `_readings_of_*` names,
+    an entry whose probe counts them, an entry whose probe runs the whole ledger before naming its
+    own refusal, and a registration that appends one name to the list.  Both halves run the same
+    registration; they differ in whether the move it made is recorded by the step that made it.
+    """
+    import json
+    import pathlib
+    import subprocess
+    import sys
+    import tempfile
+
+    MINI = r"""
+# A miniature of this ledger: two entries, one of them a count of the file it lives in.
+#
+# The situation this reproduces, measured on the live tree: registering one class appends a
+# `_readings_of_*` name to a typed list inside another class's helper, so that class's recorded
+# numbers -- a count of the file -- move, although nothing about that class changed.  The entry
+# that moved is left as it was, the class just registered checks green, and a third probe, which
+# runs the whole ledger before naming its own refusal, records the other entry's staleness under
+# its own name.
+#
+# Run as `mini.py as_written` or `mini.py as_repaired`; the last line is one JSON object.
+import json
+import pathlib
+import sys
+import tempfile
+
+MODE = sys.argv[1]
+WRITTEN_RULE = "a registration writes the entry it was asked for and leaves the rest of the ledger where it stood"
+REPAIRED_RULE = "a registration re-takes every entry whose numbers its own change moved"
+
+ROOT = pathlib.Path(tempfile.mkdtemp(prefix="census-of-the-file-"))
+READINGS = ROOT / "readings.py"
+LEDGER = ROOT / "ledger.json"
+
+CENSUS = "a-census-of-the-file-kept-in-the-record-of-one-class"
+VERDICT = "a-verdict-something"
+THIRD = "a-third-something"
+NEW = "a-new-class"
+
+READINGS.write_text(
+    'LIST = [\n'
+    '    ("_readings_of_a_verdict", 0),\n'
+    '    ("_readings_of_a_census_of_the_file", 0),\n'
+    ']\n'
+    '\n'
+    'ENTRY_TO_READING = {\n'
+    '    "a-verdict-something": "_readings_of_a_verdict",\n'
+    '    "a-third-something": "_readings_of_a_third_thing",\n'
+    '    "a-census-of-the-file-kept-in-the-record-of-one-class":'
+    ' "_readings_of_a_census_of_the_file",\n'
+    '}\n'
+    '\n'
+    'def _readings_of_a_verdict():\n'
+    '    return {"the_refusal_it_names": "LITERAL-HALF"}\n'
+    '\n'
+    'def _readings_of_a_third_thing():\n'
+    '    return {"the_refusal_it_names": "LITERAL-HALF"}\n'
+    '\n'
+    'def _readings_of_a_census_of_the_file():\n'
+    '    return {"helpers_in_the_typed_list": len(LIST),\n'
+    '            "helpers_that_take_no_argument": sum(1 for _name, n in LIST if n == 0)}\n',
+    encoding="utf-8")
+
+
+def load():
+    namespace = {}
+    exec(READINGS.read_text(encoding="utf-8"), namespace)   # noqa: S102 -- the fixture's own file
+    return namespace
+
+
+def answer(name):
+    namespace = load()
+    return namespace[namespace["ENTRY_TO_READING"][name]]()
+
+
+entries = [{"class": VERDICT, "recorded": answer(VERDICT)},
+           {"class": CENSUS, "recorded": answer(CENSUS)}]
+
+
+def save():
+    LEDGER.write_text(json.dumps({"entries": entries}, indent=1), encoding="utf-8")
+
+
+save()
+
+
+def register():
+    # Append one helper's name to the typed list and one entry to the ledger.
+    text = READINGS.read_text(encoding="utf-8")
+    text = text.replace(
+        '    ("_readings_of_a_census_of_the_file", 0),\n',
+        '    ("_readings_of_a_census_of_the_file", 0),\n    ("_readings_of_a_new_class", 0),\n', 1)
+    text = text.replace(
+        '    "a-census-of-the-file-kept-in-the-record-of-one-class":'
+        ' "_readings_of_a_census_of_the_file",\n}',
+        '    "a-census-of-the-file-kept-in-the-record-of-one-class":'
+        ' "_readings_of_a_census_of_the_file",\n'
+        '    "a-new-class": "_readings_of_a_new_class",\n}', 1)
+    text += '\ndef _readings_of_a_new_class():\n    return {"a_new_reading": 1}\n'
+    READINGS.write_text(text, encoding="utf-8")
+    entries.append({"class": NEW, "recorded": answer(NEW)})
+    save()
+
+
+def stale():
+    return [e["class"] for e in entries if e["recorded"] != answer(e["class"])]
+
+
+def moved():
+    # Every entry whose answer no longer equals what the entry records, old beside new.
+    out = {}
+    for e in entries:
+        got = answer(e["class"])
+        if got != e["recorded"]:
+            out[e["class"]] = {k: [e["recorded"].get(k), got.get(k)] for k in got}
+    return out
+
+
+def retake():
+    for e in entries:
+        got = answer(e["class"])
+        if got != e["recorded"]:
+            e["recorded"] = got
+    save()
+
+
+def class_scoped(name):
+    e = next(x for x in entries if x["class"] == name)
+    return "ok" if e["recorded"] == answer(name) else "MISS"
+
+
+def whole_ledger():
+    return "ok" if not stale() else "MISS"
+
+
+def the_third_probe():
+    # Runs the ledger before naming its own refusal, as the fixture's copy of the tree does.
+    st = stale()
+    return {"the_refusal_it_names": "ENTRY-DISAGREES" if st else "LITERAL-HALF",
+            "the_entries_it_stumbled_on": st}
+
+
+register()
+the_move = moved()
+if MODE == "as_repaired":
+    retake()
+
+out = {
+    "the_rule": WRITTEN_RULE if MODE == "as_written" else REPAIRED_RULE,
+    "helpers_in_the_typed_list": len(load()["LIST"]),
+    "the_numbers_the_registration_moved": the_move,
+    "the_numbers_the_registration_recorded": {} if MODE == "as_written" else the_move,
+    "entries_left_stale_after_the_registration": stale(),
+    "the_class_that_was_just_registered_checks_green": class_scoped(NEW) == "ok",
+    "the_whole_ledger_check": whole_ledger(),
+    "the_refusal_the_third_probe_records": the_third_probe()["the_refusal_it_names"],
+    "the_entries_the_third_probe_stumbled_on": the_third_probe()["the_entries_it_stumbled_on"],
+    "the_checks_that_saw_the_move_before_any_whole_ledger_run":
+        "none" if MODE == "as_written" else "the registration that made it",
+}
+print(json.dumps(out, ensure_ascii=False))"""
+
+    WRITTEN_RULE = ("a registration writes the entry it was asked for and leaves the rest of the "
+                    "ledger where it stood")
+    REPAIRED_RULE = ("a registration re-takes every entry whose numbers its own change moved")
+
+    def tally(rule, mode):
+        where = pathlib.Path(tempfile.mkdtemp(prefix="census-of-the-file-"))
+        program = where / "mini.py"
+        program.write_text(MINI, encoding="utf-8")
+        said = subprocess.run([sys.executable, str(program), mode],
+                              capture_output=True, text=True)
+        rows = [line for line in said.stdout.splitlines() if line.startswith("{")]
+        if not rows or said.returncode != 0:
+            raise RuntimeError("the fixture did not answer: rc=%s %s"
+                               % (said.returncode, said.stderr.strip()[:200]))
+        out = json.loads(rows[-1])
+        out["the_rule"] = rule
+        out["the_exit_status_of_the_fixture"] = said.returncode
+        return out
+
+    return {"as_written": tally(WRITTEN_RULE, "as_written"),
+            "as_repaired": tally(REPAIRED_RULE, "as_repaired")}
+
+NAMESPACES.setdefault('a-census-of-the-file-kept-in-the-record-of-one-class', {}).update({'a_census_of_the_file_kept_in_the_record_of_one_class': a_census_of_the_file_kept_in_the_record_of_one_class})
 
