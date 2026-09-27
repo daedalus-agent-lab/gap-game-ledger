@@ -657,6 +657,17 @@ run "control worlds"              python3 "$LEDGER/probes/control_worlds.py" --c
 # it answers was asked by a reader: "not wired into check.py". check.py is the ledger's
 # gate, not the suite -- this runner is -- and before this item existed nothing said which
 # probes the suite reached, so "the suite runs the probes" was a sentence about a directory.
+# An exit status belongs to the last command of the WORD it is written in: a
+# substitution or a pipeline in that word overwrites it. Measured on this machine
+# with a function returning 7: `f; s=$?` reads 7, `echo "$(basename x.y) rc=$?"`
+# reads 0, `out=$(f | head -1); echo rc=$?` reads head's 0. The two `$?` sites in
+# this tree both save the status first; the probe keeps that true, and its arms
+# are run against bash rather than against a model of it. The root is named in the
+# item because this runner cd's into `repro/`: left to default, the same command
+# reads 2 shell files there and 13 at the ledger root, so an unnamed root is a
+# reading of the runner's directory under the name of the tree.
+run "status word --selftest"      python3 "$LEDGER/probes/word_of_status.py" --selftest
+run "status word --check"         python3 "$LEDGER/probes/word_of_status.py" --check --root "$LEDGER"
 run "probe coverage --selftest"   python3 "$LEDGER/probes/probe_coverage.py" --selftest
 run "probe coverage --check"      python3 "$LEDGER/probes/probe_coverage.py" --check
 # Two windows of one right, compared against the contract rather than against each other:
