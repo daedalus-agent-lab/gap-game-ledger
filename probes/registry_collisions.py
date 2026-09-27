@@ -95,14 +95,26 @@ def load_check():
 
 
 def fires(check, text: str) -> list[str]:
-    """Run the guard over a mutant in the directory it reads `fragments.py` from."""
+    """Run the guard over a mutant in the directory it reads `fragments.py` from.
+
+    That directory is `check.HERE`, not the working directory: the guard resolves the
+    source against the file it lives in (`check.py` reads `HERE / "fragments.py"`), so a
+    mutant written into a directory this process merely moved into is never read. Every
+    form below measured as uncovered -- the census the arm exists to take was empty --
+    until the mutant was put where the guard looks: the fixture and the guard were
+    resolving one path against two different directories (registry class
+    `a-path-resolved-against-a-directory-a-fixture-moved-the-process-into`). The working
+    directory is still moved for whatever else the guard reads; both are restored.
+    """
     with tempfile.TemporaryDirectory(prefix="collisions-") as d:
         (Path(d) / "fragments.py").write_text(text, encoding="utf-8")
-        cwd = os.getcwd()
+        cwd, here = os.getcwd(), check.HERE
         os.chdir(d)
+        check.HERE = Path(d)
         try:
             return check.duplicate_declarations()
         finally:
+            check.HERE = here
             os.chdir(cwd)
 
 

@@ -51,6 +51,16 @@ calls something in the tree which itself returns literals, because that call is 
 this walk counts as varying. And a helper whose input no caller can vary is separable from a constant
 only in the shape that constant is written in: the count of such helpers is printed, not
 claimed away.
+
+A fixture this probe builds carries the files the copy READS, derived from the imports of
+`fragments.py` rather than named in a tuple: a hand-written list is a sentence about what
+the tree needed when it was written, and this probe's own selftest proved the cost -- a
+helper beside the tree had begun to read `check.py`, and all ten fixtures were unreadable
+trees that the arms reported as a broken probe.
+
+Every line this probe can open with the refusal word carries an id in brackets, and the
+rule is read off this file's own source (`unlabelled_refusal_sites`), not remembered:
+bare, the word says a check spoke without saying which one.
 """
 import argparse
 import base64
@@ -68,6 +78,49 @@ import tempfile
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
 HELPER = re.compile(r"^def (_readings_of_\w+)\s*\(", re.M)
+
+
+def carry(src: pathlib.Path, into: pathlib.Path, names) -> None:
+    """Copy the named files of `src` into a fixture, making the path they sit at."""
+    for name in names:
+        destination = into / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src / name, destination)
+
+
+def files_the_tree_reads(src: pathlib.Path) -> tuple:
+    """The files a fixture must carry: the tree's own two, plus every module beside them
+    that `fragments.py` imports. A hand-written list here is the same sentence the copy
+    rule was: `("fragments.py", "catches.json")` named what the tree needed when it was
+    written, and a helper added later reads `check.py`, so all ten fixtures of this
+    probe's selftest were unreadable trees -- `0/19 helpers reported`, a traceback, and
+    a selftest that read its own fixture as a broken probe. The derivation cannot rot:
+    a new sibling module is carried because the tree imports it.
+    The control itself is carried too, at this file's own path under the tree:
+    a helper beside the tree reads it BY PATH, and a fixture without it is a
+    tree whose first such helper raises -- which is how this probe's selftest
+    died on its own fixture, with every reading unread and one traceback.
+    """
+    names = ["fragments.py", "catches.json"]
+    source = (src / "fragments.py").read_text(encoding="utf-8")
+    modules = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Import):
+            modules += [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            modules.append(node.module)
+    for module in modules:
+        candidate = src / (module.split(".")[0] + ".py")
+        if candidate.exists() and candidate.name not in names:
+            names.append(candidate.name)
+    control = pathlib.Path(__file__).resolve()
+    try:
+        besidethe_tree = control.relative_to(src).as_posix()
+    except ValueError:
+        besidethe_tree = None
+    if besidethe_tree and besidethe_tree not in names:
+        names.append(besidethe_tree)
+    return tuple(names)
 PUBLIC = re.compile(r"^def (\w+)\s*\(", re.M)
 
 
@@ -134,8 +187,16 @@ def normalise(answer):
     return answer
 
 
-def readings(root: pathlib.Path):
-    """Every helper in `fragments.py`, its two halves, and the entries that read it."""
+def readings(root: pathlib.Path, only: str | None = None):
+    """Every helper in `fragments.py`, its two halves, and the entries that read it.
+
+    `only` narrows the reading to one helper by name. It exists because a control whose
+    cost outgrows the run that must exercise it is not a control: this probe's own
+    selftest runs this check on ten mutant trees, and a check that reads every helper
+    each time cannot finish inside the run's own timeout. The arms that expect a refusal
+    name the helper they planted; the arm that expects a green copy still reads all of
+    them, because "every helper agrees" is not a claim about one name.
+    """
     source = (root / "fragments.py").read_text(encoding="utf-8")
     defs = defs_of(source)
     mod, ledger = load(root)
@@ -143,6 +204,8 @@ def readings(root: pathlib.Path):
     rows = []
     for name, _body in defs.items():
         if not HELPER.match(f"def {name}("):
+            continue
+        if only is not None and name != only:
             continue
         try:
             answer = getattr(mod, name)()
@@ -353,6 +416,27 @@ def _local_names(fn) -> dict:
     for node in ast.walk(fn):
         if node is not fn and isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             out[node.name] = node
+    # A name the helper fills at run time through `exec` is not the expression the file
+    # shows it holding. `planted = {}` followed by `exec(...)` holding a rule leaves a name
+    # whose initializer is a lie about its value: read from the initializer it is an empty
+    # dict, so a half that calls `planted["scan"](source)` was refused as "written as a
+    # literal" although it computes -- measured on this tree, one helper flagged, `halves
+    # written as literals rather than measured 1`, the probe's own exit 1. A name handed to
+    # `exec` is dropped from the map, which makes every read of it unresolved -- the same
+    # answer this file gives a parameter of the helper. Only `exec` does it: a container the
+    # helper fills with `d[k] = ...` stays its initializer, because the values it is later
+    # given are not what the half's expression computes from. The cost is measured in
+    # `--selftest`: a helper that returns a name filled by `exec` is accepted, so a constant
+    # can still hide inside code the tree writes at run time.
+    written_to = set()
+    for node in _own_nodes(fn):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) \
+                and node.func.id in ("exec", "eval", "execfile"):
+            for argument in [*node.args, *[k.value for k in node.keywords]]:
+                if isinstance(argument, ast.Name):
+                    written_to.add(argument.id)
+    for name in written_to:
+        out.pop(name, None)
     return out
 
 
@@ -685,6 +769,159 @@ LITERAL_HALF_REFUSAL = "FAIL[LITERAL-HALF]"
 ENTRY_REFUSAL = "FAIL[ENTRY-DISAGREES]"
 
 
+# Every line this probe can open with the refusal word carries an id, and this table says
+# what each id means. A word is what a reader greps for and what a gate reads: bare, it
+# says a check spoke without saying which. The table is not the rule; the rule is
+# computed from the expression each print site prints (`_print_openings`), and `main`
+# refuses on a site the table does not cover. A site whose opening cannot be computed is
+# counted separately: an answer of zero from a scan that read nothing is not an answer.
+ARM_IDS = {
+    "UNTOUCHED-COPY": "the copy this probe lives in is not a tree this probe refuses",
+    "UNREPORTED-HELPER": "a helper defined beside this file was never reported",
+    "NO-HELPER": "the copy under test defines no helper this probe can read",
+    "NO-ENTRY": "the copy under test carries no entry reading the helper named",
+    "NOT-REFUSED": "a tree carrying a defect this arm plants was not refused",
+    "NOT-CAUGHT": "the refusal this arm asked for did not carry the id it asked for",
+    "SILENT-ON-MODEL": "a half computed from an argument was read as a literal",
+    "PHRASE-FOR-ID": "a line carrying the phrase under another id was taken for the id",
+    "UNLABELLED-SITE": "a print site here can open a line with the refusal word and no id",
+    "FIXTURE-FILES": "a file a copy of the tree reads was not carried into the fixture beside it",
+}
+
+
+REFUSAL_WORD = "FAIL"
+
+
+def _opening_strings(node, assigns, depth=0):
+    """Every string an expression can open a printed line with, or None if unreadable.
+
+    `None` is not `[]`: it says this file cannot compute the opening, which is a
+    different answer from "the opening is something else". What matters here is the first
+    characters of the line, so a resolvable expression yields its strings whole.
+    """
+    if depth > 12:
+        return None
+    if isinstance(node, ast.Constant):
+        return [node.value] if isinstance(node.value, str) else None
+    if isinstance(node, ast.Name):
+        value = assigns.get(node.id)
+        return None if value is None else _opening_strings(value, assigns, depth + 1)
+    if isinstance(node, ast.IfExp):
+        head = _opening_strings(node.body, assigns, depth + 1)
+        tail = _opening_strings(node.orelse, assigns, depth + 1)
+        return None if head is None or tail is None else head + tail
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = _opening_strings(node.left, assigns, depth + 1)
+        right = _opening_strings(node.right, assigns, depth + 1)
+        if left is None or right is None:
+            return None
+        return [a + b for a in left for b in right]
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mod):
+        template = _opening_strings(node.left, assigns, depth + 1)
+        args = node.right.elts if isinstance(node.right, ast.Tuple) else [node.right]
+        if template is None or len(args) != 1:
+            return None
+        argument = _opening_strings(args[0], assigns, depth + 1)
+        if argument is None:
+            return None
+        out = []
+        for text in template:
+            if "%" not in text:
+                out.append(text)
+                continue
+            head, _, rest = text.partition("%")
+            if not rest.startswith("s") or "%" in rest[1:]:
+                return None
+            out.extend(head + a + rest[1:] for a in argument)
+        return out
+    if isinstance(node, ast.JoinedStr):
+        acc = [""]
+        for part in node.values:
+            if isinstance(part, ast.Constant) and isinstance(part.value, str):
+                piece = [part.value]
+            elif isinstance(part, ast.FormattedValue):
+                piece = _opening_strings(part.value, assigns, depth + 1)
+            else:
+                return None
+            if piece is None:
+                return None
+            acc = [a + p for a in acc for p in piece]
+        return acc
+    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "format"):
+        return _opening_strings(node.func.value, assigns, depth + 1)
+    return None
+
+
+def _print_openings(source: str):
+    """`(line, openings)` for every print call; openings is None when unreadable."""
+    tree = ast.parse(source)
+    assigns = {}
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)):
+            name = node.targets[0].id
+            if name in assigns:
+                assigns[name] = None  # written twice: this file cannot read it
+            else:
+                assigns[name] = node.value
+    out = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id == "print"):
+            continue
+        openings = _opening_strings(node.args[0], assigns) if node.args else [""]
+        out.append((node.lineno, openings))
+    return out
+
+
+def unlabelled_refusal_sites(source: str) -> list:
+    """The line numbers of print sites that can open the refusal word without an id.
+
+    The question is about the line a site can print, so the answer is computed from the
+    expression it prints -- constants, names this source binds to a constant,
+    concatenation, `%`, conditionals, f-strings and `.format`. A site that holds the word
+    in a name prints the word; a site that mentions the word away from the opening of its
+    line prints something else. Sites whose opening cannot be computed are reported by
+    `print_sites_with_unreadable_openings`, never silently passed over.
+    """
+    out = []
+    for line, openings in _print_openings(source):
+        if openings is None:
+            continue
+        if any(s.startswith(REFUSAL_WORD) and not s.startswith(REFUSAL_WORD + "[")
+               for s in openings):
+            out.append(line)
+    return sorted(set(out))
+
+
+def print_sites_with_unreadable_openings(source: str) -> list:
+    """The line numbers of print sites whose opening this file cannot compute.
+
+    These are the sites the scan above cannot answer for. Counting them as "no site"
+    would be the vacuity this rule exists against: a zero from a scan that read nothing.
+    """
+    return sorted({line for line, openings in _print_openings(source)
+                   if openings is None})
+
+
+def run_check(tree, only=None):
+    """One `--check` of a planted tree, narrowed to one helper where the arm asks about it.
+
+    A control whose cost outgrows the run is not a control: eleven un-narrowed checks in
+    one `--selftest` did not finish inside the hour its job allowed (exit 124, 2026-09-27),
+    and an instrument that cannot be run is not read at all. An arm that patches one helper
+    only asks about that helper, so it names it; the arms whose question is about the whole
+    tree -- the untouched copy, the tree that refuses to read, and the `no-reader` kind,
+    whose orphan check a narrowed run does not take -- still run it whole.
+    """
+    argv = [sys.executable, str(pathlib.Path(__file__).resolve()), "--check",
+            "--root", str(tree)]
+    if only:
+        argv[3:3] = ["--only", only]
+    return subprocess.run(argv, capture_output=True, text=True)
+
+
 def selftest() -> int:
     """Three broken trees must be refused, and the untouched copy must not.  A refusal is recognised by the id it prints -- `FAIL[LITERAL-HALF]` -- not by a
   phrase inside it: the phrase is prose, this probe's summary block reuses it, and
@@ -695,18 +932,15 @@ def selftest() -> int:
     with tempfile.TemporaryDirectory(prefix="parts-reading-") as td:
         base = pathlib.Path(td) / "base"
         base.mkdir()
-        for name in ("fragments.py", "catches.json"):
-            shutil.copy(src / name, base / name)
-        code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
-                               "--check", "--root", str(base)],
-                              capture_output=True, text=True)
+        carry(src, base, files_the_tree_reads(src))
+        code = run_check(base)
         ok = code.returncode == 0
         bad += 0 if ok else 1
         # The copy under test is the tree this probe lives in. When that tree carries the
         # defect, the first refusal is the finding, not a broken fixture -- so the line
         # names it instead of leaving the reader to guess which of the two happened.
         why = next((ln for ln in code.stdout.splitlines() if ln.startswith("FAIL")), "")
-        print(f"{'ok  ' if ok else 'FAIL'} an untouched copy is not refused "
+        print(f"{'ok  ' if ok else 'FAIL[UNTOUCHED-COPY]'} an untouched copy is not refused "
               f"(exit {code.returncode})" + (f": {why}" if why else ""))
 
         # Every helper in the tree must be REPORTED, not merely looked at: a control that
@@ -715,14 +949,15 @@ def selftest() -> int:
         source_names = set(HELPER.findall((src / "fragments.py").read_text(encoding="utf-8")))
         unreported = sorted(n for n in source_names if n not in code.stdout)
         bad += 1 if unreported else 0
-        print(f"{'ok  ' if not unreported else 'FAIL'} every helper in the tree is reported "
+        print(f"{'ok  ' if not unreported else 'FAIL[UNREPORTED-HELPER]'} every helper in the "
+              f"tree is reported "
               f"({len(source_names) - len(unreported)}/{len(source_names)})"
               + (f": unreported {unreported}" if unreported else ""))
 
         rows = readings(base)
         first = rows[0][0] if rows else None
         if first is None:
-            print("FAIL the copy under test has no helper at all")
+            print("FAIL[NO-HELPER] the copy under test has no helper at all")
             return 1
         for kind, what in (("same-value", "a helper whose two halves are one value"),
                            ("expected-is-written", "an entry recording the written half "
@@ -730,15 +965,12 @@ def selftest() -> int:
                            ("no-reader", "a helper no entry reads")):
             tree = pathlib.Path(td) / kind
             tree.mkdir()
-            for name in ("fragments.py", "catches.json"):
-                shutil.copy(src / name, tree / name)
+            carry(src, tree, files_the_tree_reads(src))
             patch(tree, first, kind)
-            code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
-                                   "--check", "--root", str(tree)],
-                                  capture_output=True, text=True)
+            code = run_check(tree, None if kind == "no-reader" else first)
             caught = code.returncode == 1
             bad += 0 if caught else 1
-            print(f"{'ok  ' if caught else 'FAIL'} {what} is refused "
+            print(f"{'ok  ' if caught else 'FAIL[NOT-REFUSED]'} {what} is refused "
                   f"(exit {code.returncode})")
 
         # A list typed into the source is a tally of the file on the day it was typed. The
@@ -746,19 +978,17 @@ def selftest() -> int:
         # would have caught the eight-name list standing beside "every _readings_of_*".
         tree = pathlib.Path(td) / "typed-list"
         tree.mkdir()
-        for name in ("fragments.py", "catches.json"):
-            shutil.copy(src / name, tree / name)
+        carry(src, tree, files_the_tree_reads(src))
         frag = tree / "fragments.py"
         defined = sorted(set(HELPER.findall((src / "fragments.py").read_text(encoding="utf-8"))))
         typed = ", ".join('"%s"' % n for n in defined[:-1])
         frag.write_text(frag.read_text(encoding="utf-8") + TYPED_LIST % typed,
                         encoding="utf-8")
-        code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
-                               "--check", "--root", str(tree)],
-                              capture_output=True, text=True)
+        code = run_check(tree, first)
         caught = code.returncode == 1
         bad += 0 if caught else 1
-        print(f"{'ok  ' if caught else 'FAIL'} a list typed beside the file that does not "
+        print(f"{'ok  ' if caught else 'FAIL[NOT-REFUSED]'} a list typed beside the file that "
+              f"does not "
               f"name every helper it defines is refused (exit {code.returncode})")
 
         # A tree that carries the control and still answers from the entry has to be named,
@@ -766,8 +996,7 @@ def selftest() -> int:
         # two-file fixture, so a full tree could refuse to read and pass.
         tree = pathlib.Path(td) / "no-control"
         (tree / "probes").mkdir(parents=True)
-        for name in ("fragments.py", "catches.json"):
-            shutil.copy(src / name, tree / name)
+        carry(src, tree, files_the_tree_reads(src))
         shutil.copy(pathlib.Path(__file__).resolve(), tree / "probes" / "parts_of_a_reading.py")
         frag = tree / "fragments.py"
         frag.write_text(
@@ -778,12 +1007,11 @@ def selftest() -> int:
             "def _readings_of_a_tree_that_refuses_to_read():\n"
             "    raise NoControlBesideThisTree('no control beside this tree')\n",
             encoding="utf-8")
-        code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
-                               "--check", "--root", str(tree)],
-                              capture_output=True, text=True)
+        code = run_check(tree)
         caught = code.returncode == 1 and "FAIL[NO-CONTROL]" in code.stdout
         bad += 0 if caught else 1
-        print(f"{'ok  ' if caught else 'FAIL'} a tree that carries the control and refuses to "
+        print(f"{'ok  ' if caught else 'FAIL[NOT-CAUGHT]'} a tree that carries the control and "
+              f"refuses to "
               f"read it is refused by name (exit {code.returncode})")
 
         # The strongest mutant an independent review could build: the helper replaced by a
@@ -798,11 +1026,10 @@ def selftest() -> int:
         for name in moved_names:
             tree = pathlib.Path(td) / "constant-equals-entry"
             tree.mkdir()
-            for f in ("fragments.py", "catches.json"):
-                shutil.copy(src / f, tree / f)
+            carry(src, tree, files_the_tree_reads(src))
             index = entry_index_for(tree, name)
             if index is None:
-                print(f"FAIL the copy under test has no entry reading {name}")
+                print(f"FAIL[NO-ENTRY] the copy under test has no entry reading {name}")
                 return 1
             i, j = index
             ledger = json.loads((tree / "catches.json").read_text(encoding="utf-8"))
@@ -814,13 +1041,12 @@ def selftest() -> int:
                 + "\n\ndef %s(**kw):\n    return {'as_written': %s, 'as_repaired': %s}\n"
                 % (name, record["observed"], record["expected"]),
                 encoding="utf-8")
-            code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
-                                   "--check", "--root", str(tree)],
-                                  capture_output=True, text=True)
+            code = run_check(tree, name)
             caught = code.returncode == 1
             bad += 0 if caught else 1
             why = next((ln for ln in code.stdout.splitlines() if ln.startswith("FAIL")), "")
-            print(f"{'ok  ' if caught else 'FAIL'} a helper replaced by a constant equal to "
+            print(f"{'ok  ' if caught else 'FAIL[NOT-REFUSED]'} a helper replaced by a constant "
+                  f"equal to "
                   f"its own entry is refused (exit {code.returncode})"
                   + (f": {why}" if why else ""))
         # The survivor an independent review found, in the shape the input rule cannot
@@ -833,11 +1059,10 @@ def selftest() -> int:
         for name in quiet:
             tree = pathlib.Path(td) / "typed-halves"
             tree.mkdir()
-            for f in ("fragments.py", "catches.json"):
-                shutil.copy(src / f, tree / f)
+            carry(src, tree, files_the_tree_reads(src))
             index = entry_index_for(tree, name)
             if index is None:
-                print(f"FAIL the copy under test has no entry reading {name}")
+                print(f"FAIL[NO-ENTRY] the copy under test has no entry reading {name}")
                 return 1
             i, j = index
             ledger = json.loads((tree / "catches.json").read_text(encoding="utf-8"))
@@ -849,14 +1074,13 @@ def selftest() -> int:
                 + "\n\ndef %s(**kw):\n    return {'as_written': %s, 'as_repaired': %s}\n"
                 % (name, record["observed"], record["expected"]),
                 encoding="utf-8")
-            code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
-                                   "--check", "--root", str(tree)],
-                                  capture_output=True, text=True)
+            code = run_check(tree, name)
             named = [ln for ln in code.stdout.splitlines()
                      if ln.startswith(LITERAL_HALF_REFUSAL)]
             caught = code.returncode == 1 and bool(named)
             bad += 0 if caught else 1
-            print(f"{'ok  ' if caught else 'FAIL'} a helper whose halves are literals equal "
+            print(f"{'ok  ' if caught else 'FAIL[NOT-CAUGHT]'} a helper whose halves are literals "
+                  f"equal "
                   f"to its own entry is refused by the shape of the half, and the line says "
                   f"so (exit {code.returncode}"
                   + (f", line: {named[0][:80]}" if named else ", no such line") + ")")
@@ -868,11 +1092,10 @@ def selftest() -> int:
         for name in quiet:
             tree = pathlib.Path(td) / "called-literals"
             tree.mkdir()
-            for f in ("fragments.py", "catches.json"):
-                shutil.copy(src / f, tree / f)
+            carry(src, tree, files_the_tree_reads(src))
             index = entry_index_for(tree, name)
             if index is None:
-                print(f"FAIL the copy under test has no entry reading {name}")
+                print(f"FAIL[NO-ENTRY] the copy under test has no entry reading {name}")
                 return 1
             i, j = index
             ledger = json.loads((tree / "catches.json").read_text(encoding="utf-8"))
@@ -889,14 +1112,13 @@ def selftest() -> int:
                 + "\n\ndef %s(**kw):\n    return {'as_written': %s, 'as_repaired': %s}\n"
                 % (name, halves[0], halves[1]),
                 encoding="utf-8")
-            code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
-                                   "--check", "--root", str(tree)],
-                                  capture_output=True, text=True)
+            code = run_check(tree, name)
             named = [ln for ln in code.stdout.splitlines()
                      if ln.startswith(LITERAL_HALF_REFUSAL)]
             caught = code.returncode == 1 and bool(named)
             bad += 0 if caught else 1
-            print(f"{'ok  ' if caught else 'FAIL'} a half written as a call over literals is "
+            print(f"{'ok  ' if caught else 'FAIL[NOT-CAUGHT]'} a half written as a call over "
+                  f"literals is "
                   f"refused by the literal arm (exit {code.returncode})"
                   + (f": {named[0][:90]}" if caught else ""))
 
@@ -911,13 +1133,16 @@ def selftest() -> int:
         for shape in ("comprehension over literals", "decoder over literals",
                       "pickle round trip", "local function over literals",
                       "local lambda over literals"):
-            tree = pathlib.Path(td) / ("decoy-" + shape.split()[0])
+            # The whole shape in the name, not its first word: `local function over
+            # literals` and `local lambda over literals` both begin with `local`, and a
+            # directory named after the first word made the second shape's arm die in
+            # `mkdir` -- one decoy less, reported as a traceback rather than as a shape.
+            tree = pathlib.Path(td) / ("decoy-" + "-".join(shape.split()))
             tree.mkdir()
-            for f in ("fragments.py", "catches.json"):
-                shutil.copy(src / f, tree / f)
+            carry(src, tree, files_the_tree_reads(src))
             index = entry_index_for(tree, quiet[0])
             if index is None:
-                print(f"FAIL the copy under test has no entry reading {quiet[0]}")
+                print(f"FAIL[NO-ENTRY] the copy under test has no entry reading {quiet[0]}")
                 return 1
             i, j = index
             ledger = json.loads((tree / "catches.json").read_text(encoding="utf-8"))
@@ -957,14 +1182,12 @@ def selftest() -> int:
                 + "\n\ndef %s(**kw):\n%s    return {'as_written': %s, 'as_repaired': %s}\n"
                 % (quiet[0], imports, halves[0], halves[1]),
                 encoding="utf-8")
-            code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
-                                   "--check", "--root", str(tree)],
-                                  capture_output=True, text=True)
+            code = run_check(tree, quiet[0])
             named = [ln for ln in code.stdout.splitlines()
                      if ln.startswith(LITERAL_HALF_REFUSAL)]
             caught = code.returncode == 1 and bool(named)
             bad += 0 if caught else 1
-            print(f"{'ok  ' if caught else 'FAIL'} a half written as the literals of "
+            print(f"{'ok  ' if caught else 'FAIL[NOT-CAUGHT]'} a half written as the literals of "
                   f"its own entry behind a {shape} is refused by the literal arm "
                   f"(exit {code.returncode})" + (f": {named[0][:90]}" if caught else ""))
         # The other direction, and it cost five helpers of this tree to learn: a half that
@@ -977,8 +1200,7 @@ def selftest() -> int:
         # a rule no tree can satisfy is not a stricter rule, it is a broken one.
         tree = pathlib.Path(td) / "model-over-an-argument"
         tree.mkdir()
-        for name in ("fragments.py", "catches.json"):
-            shutil.copy(src / name, tree / name)
+        carry(src, tree, files_the_tree_reads(src))
         frag = tree / "fragments.py"
         frag.write_text(
             frag.read_text(encoding="utf-8")
@@ -992,15 +1214,75 @@ def selftest() -> int:
               "            'as_repaired': _model([kept, dropped])}\n"
               % quiet[0],
             encoding="utf-8")
-        code = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve()),
-                               "--check", "--root", str(tree)],
-                              capture_output=True, text=True)
+        code = run_check(tree, quiet[0])
         named = [ln for ln in code.stdout.splitlines()
                  if ln.startswith(LITERAL_HALF_REFUSAL) and quiet[0] in ln]
         bad += 1 if named else 0
-        print(f"{'ok  ' if not named else 'FAIL'} a half computed by a function that reads "
+        print(f"{'ok  ' if not named else 'FAIL[SILENT-ON-MODEL]'} a half computed by a function "
+              f"that reads "
               f"its argument is not read as a literal"
               + (f": {named[0][:110]}" if named else ""))
+
+        # A half that calls a rule the helper ASSEMBLED AT RUN TIME. The rule this file
+        # carried resolved a local name to its initializer, so `planted = {}` filled by
+        # `exec` was the empty dict and the call through it was read as a constant: measured
+        # on this tree, `FAIL[LITERAL-HALF] _readings_of_a_refusal_that_names_no_rule: the
+        # as_written half is written as a literal`, `halves written as literals rather than
+        # measured 1`, and the probe exiting 1 on the tree it ships in. The arm plants the
+        # shape and requires the literal arm to stay SILENT: refusing a half for calling
+        # something is refusing a computation, whatever the rule can resolve.
+        tree = pathlib.Path(td) / "rule-assembled-at-run-time"
+        tree.mkdir()
+        carry(src, tree, files_the_tree_reads(src))
+        frag = tree / "fragments.py"
+        frag.write_text(
+            frag.read_text(encoding="utf-8")
+            + "\n\ndef %s(**kw):\n"
+              "    planted = {}\n"
+              "    exec(compile('def scan(source):\\n    return [1]\\n', '<planted>',"
+              " 'exec'), planted)\n"
+              # Both halves call something here, and that is the point of the fixture: a
+              # repaired half left as a bare dict is a half that computes nothing, which
+              # this probe's literal arm refuses on its own account -- the first version of
+              # this arm wrote `{'a': 2}` and was read as a literal, so it measured the
+              # literal rule instead of the call it means to test.
+              "    return {'as_written': {k: planted['scan'](k) for k in ['a']},\n"
+              "            'as_repaired': {'a': len(planted['scan']('b'))}}\n"
+              % quiet[0],
+            encoding="utf-8")
+        code = run_check(tree, quiet[0])
+        named = [ln for ln in code.stdout.splitlines()
+                 if ln.startswith(LITERAL_HALF_REFUSAL) and quiet[0] in ln]
+        bad += 1 if named else 0
+        print(f"{'ok  ' if not named else 'FAIL[LITERAL-HALF-ON-A-CALL]'} a half that calls a "
+              f"rule the "
+              f"helper assembled at run time is not read as a literal"
+              + (f": {named[0][:110]}" if named else ""))
+
+        # And the same rule's measured cost, printed rather than hidden: a name handed to
+        # `exec` is unresolved, so a helper that hands its halves into an `exec` and returns
+        # them out of it is accepted -- the constant is inside code the tree writes at run
+        # time, which no reading of the source can follow. Registered as
+        # `a-constant-hidden-in-code-the-helper-writes-at-run-time`.
+        tree = pathlib.Path(td) / "constant-behind-exec"
+        tree.mkdir()
+        carry(src, tree, files_the_tree_reads(src))
+        frag = tree / "fragments.py"
+        frag.write_text(
+            frag.read_text(encoding="utf-8")
+            + "\n\ndef %s(**kw):\n"
+              "    planted = {}\n"
+              "    exec(compile(\"d = {'rows': 1}\\n\", '<planted>', 'exec'), planted)\n"
+              "    return {'as_written': planted['d'], 'as_repaired': {'rows': 2}}\n"
+              % quiet[0],
+            encoding="utf-8")
+        code = run_check(tree, quiet[0])
+        hidden = [ln for ln in code.stdout.splitlines()
+                  if ln.startswith(LITERAL_HALF_REFUSAL) and quiet[0] in ln]
+        print(f"cost  a constant handed into `exec` and returned out of it is accepted by the "
+              f"literal arm ({'refused' if hidden else 'not refused'}): the rule reads a name "
+              f"`exec` was handed as unresolved, so it cannot tell a computation there from a "
+              f"value written into code the tree runs")
 
         # The phrase is not a name. This line is another class's refusal -- a half that
         # disagrees with its entry -- reusing the words the literal arm used to match on,
@@ -1010,9 +1292,87 @@ def selftest() -> int:
         taken = [ln for ln in impostor.splitlines()
                  if ln.startswith(LITERAL_HALF_REFUSAL)]
         bad += 1 if taken else 0
-        print(f"{'ok  ' if not taken else 'FAIL'} a refusal that reuses the phrase under "
+        print(f"{'ok  ' if not taken else 'FAIL[PHRASE-FOR-ID]'} a refusal that reuses the phrase "
+              f"under "
               f"another id is not taken for the literal refusal" + (f": {taken}" if taken
                                                                     else ""))
+
+
+        # The word is what a reader greps for and a gate reads, and an id is what says
+        # which check spoke. An independent review found sixteen sites in this file able
+        # to print the word with no id beside it, and a run that exits 1 with a bare line
+        # leaves the reader to guess -- exit 1 does not imply a named refusal exists. The
+        # rule is measured here on this file's own source, and on a copy with one id
+        # stripped, so the arm fails if the scan stops reading sites rather than matching
+        # fewer of them.
+        mine = pathlib.Path(__file__).read_text(encoding="utf-8")
+        unlabelled = unlabelled_refusal_sites(mine)
+        bad += 1 if unlabelled else 0
+        print(f"{'ok  ' if not unlabelled else 'FAIL[UNLABELLED-SITE]'} every print site in this "
+              f"file that can print the refusal word carries an id "
+              f"({len(unlabelled)} without: {unlabelled[:4]})")
+        stripped = mine.replace("FAIL[NO-HELPER] ", "FAIL ", 1)
+        found = unlabelled_refusal_sites(stripped)
+        bad += 0 if found else 1
+        print(f"{'ok  ' if found else 'FAIL[UNLABELLED-SITE]'} a copy of this file with one id "
+              f"stripped is read as an unlabelled site" + (f": lines {found}" if found else ""))
+
+
+        # The scan above is a reading of a source, so it is measured on sources written
+        # to be read by it. A site that holds the refusal word in a name is a site that
+        # prints the word, and a site that mentions the word away from the opening of its
+        # line is not one: a scan matching the text around a site misses the first and
+        # flags the second, which is how these two shapes were found.
+        held = 'word = "FAIL"\nprint(word + " the tree is broken")\n'
+        found_held = unlabelled_refusal_sites(held)
+        bad += 0 if found_held else 1
+        print(f"{'ok  ' if found_held else 'FAIL[UNLABELLED-SITE]'} a site that holds the "
+              f"refusal word in a name is a site that prints it ({found_held})")
+        mid = 'print("the gate said FAIL, and the run continued")\n'
+        found_mid = unlabelled_refusal_sites(mid)
+        bad += 0 if not found_mid else 1
+        print(f"{'ok  ' if not found_mid else 'FAIL[UNLABELLED-SITE]'} a site that mentions the "
+              f"word away from the opening of its line is not one ({found_mid})")
+        unreadable = print_sites_with_unreadable_openings('import sys\nprint(sys.argv[0])\n')
+        bad += 0 if unreadable else 1
+        print(f"{'ok  ' if unreadable else 'FAIL[UNLABELLED-SITE]'} a site whose opening this "
+              f"file cannot compute is counted, not passed over ({unreadable})")
+
+        # A `%`-template is not the line it renders. The reader answered with the template,
+        # so `print("%s ..." % "FAIL")` -- a line that opens with the refusal word and no id --
+        # was neither named nor counted: the site was invisible to both questions. Found by
+        # asking the scan about shapes it was not written against, not by rereading it.
+        via_percent = 'print("%s the tree is broken" % "FAIL")\n'
+        found_percent = unlabelled_refusal_sites(via_percent)
+        bad += 0 if found_percent else 1
+        print(f"{'ok  ' if found_percent else 'FAIL[UNLABELLED-SITE]'} a site that renders the "
+              f"refusal word through a template is a site that prints it ({found_percent})")
+        odd_conversion = 'print("%d rows" % 3)\n'
+        named_odd = unlabelled_refusal_sites(odd_conversion)
+        unread_odd = print_sites_with_unreadable_openings(odd_conversion)
+        bad += 0 if (not named_odd and unread_odd) else 1
+        print(f"{'ok  ' if (not named_odd and unread_odd) else 'FAIL[UNLABELLED-SITE]'} a "
+              f"template this file cannot render is counted, not answered "
+              f"(named={named_odd}, unreadable={unread_odd})")
+
+
+        # The fixture list, one level down from the copy rule: a hand-written tuple of
+        # names carries what the tree needed when it was written. The tuple here was
+        # `("fragments.py", "catches.json")`, a helper beside them reads `check.py`, and
+        # every arm of this selftest printed `0/19 helpers reported` with a traceback --
+        # a broken probe read as the defect it had planted. The list is derived from the
+        # imports of the copy, and this arm adds a sibling module, imports it, and
+        # requires the derivation to carry it.
+        tree = pathlib.Path(td) / "reads-a-sibling"
+        tree.mkdir()
+        (tree / "fragments.py").write_text("import json\nimport helper_module\n",
+                                           encoding="utf-8")
+        (tree / "helper_module.py").write_text("VALUE = 1\n", encoding="utf-8")
+        carried = files_the_tree_reads(tree)
+        ok_sibling = "helper_module.py" in carried
+        bad += 0 if ok_sibling else 1
+        print(f"{'ok  ' if ok_sibling else 'FAIL[FIXTURE-FILES]'} a module a copy of the tree "
+              f"imports is carried into the fixture beside it ({sorted(carried)})")
 
     return 1 if bad else 0
 
@@ -1021,6 +1381,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--root", default=str(ROOT))
+    ap.add_argument("--only", default=None,
+                    help="read one helper by name, so a control that plants one defect "
+                         "does not pay for every other helper in the tree")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
     if args.selftest:
@@ -1028,7 +1391,12 @@ def main() -> int:
 
     root = pathlib.Path(args.root)
     source = (root / "fragments.py").read_text(encoding="utf-8")
-    rows = readings(root)
+    rows = readings(root, args.only)
+    if args.only is not None and not rows:
+        print("FAIL[NO-HELPER] --only names a helper this tree does not define; nothing "
+              "was read")
+        print(f"          the name asked for: {args.only}")
+        return 1
     lines, bad = verdicts(rows)
     for line in lines:
         print(line)
@@ -1036,7 +1404,9 @@ def main() -> int:
     for line, named, defined, missing, extra in stale:
         print(f"FAIL[TYPED-LIST] fragments.py:{line} types {named} name(s) beside the file's "
               f"{len(defined)}: never named {missing or '[]'}, not defined {extra or '[]'}")
-    orphaned = perturbations_no_helper_answers_to(rows)
+    # A narrowed run cannot answer this: the perturbations of every helper it did not
+    # read are absent from `rows`, and a control read as missing is a false refusal.
+    orphaned = [] if args.only else perturbations_no_helper_answers_to(rows)
     for name in orphaned:
         print(f"FAIL[ORPHAN-INPUT] this probe declares an input for {name}, and no helper answers to it")
     typed = halves_typed_rather_than_measured(source)
@@ -1057,7 +1427,16 @@ def main() -> int:
     print(f"halves written as literals rather than measured  {len(typed)}")
     print(f"typed lists that do not cover the file  {len(stale)}")
     print(f"helpers with no control beside this tree  {len(unread)}")
-    if args.check and (bad or stale or orphaned or typed or (unread and carrying)):
+    unlabelled = unlabelled_refusal_sites(pathlib.Path(__file__).read_text(encoding="utf-8"))
+    for line in unlabelled:
+        print(f"FAIL[UNLABELLED-SITE] this probe's print site at parts_of_a_reading.py:{line} "
+              f"can open a line with the refusal word and no id beside it")
+    print(f"print sites that can open the refusal word with no id  {len(unlabelled)}")
+    unread_openings = print_sites_with_unreadable_openings(
+        pathlib.Path(__file__).read_text(encoding="utf-8"))
+    print(f"print sites whose opening this file cannot compute  {len(unread_openings)}")
+    if args.check and (bad or stale or orphaned or typed or unlabelled
+                      or (unread and carrying)):
         print("REFUSED: a helper's half is not the one the entry records, or nothing in this "
               "repository reads it, or its answer does not move with the input it declares "
               "-- either way the half that says what the repair does is unwitnessed, so it "
@@ -1069,7 +1448,8 @@ def main() -> int:
               "a second time and every comparison against that entry is satisfied by it; or "
               "this tree carries the control beside it and a helper still answers that no "
               "control stands there, so that helper is read from its entry and not from the "
-              "tree")
+              "tree; or a print site in this probe can open a line with the refusal word "
+              "and no id beside it, so a failing run names nothing")
         return 1
     return 0
 

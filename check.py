@@ -48,7 +48,14 @@ for _stream in (sys.stdout, sys.stderr):
         pass
 
 HERE = Path(__file__).resolve().parent
-os.chdir(HERE)
+
+# `os.chdir(HERE)` stood here. A module that is imported as a fixture must not move the
+# process it is imported into: every fixture that copied this file and imported it
+# chdir'd the RUNNING checker into a temporary tree, so the later relative reads of the
+# run below (`fragments.py` in `duplicate_declarations`) resolved against a directory
+# that had been deleted, and `check.py` died with FileNotFoundError after printing every
+# row. The directory a reading is resolved against is now this file's own, not the
+# process's.
 
 from fragments import NAMESPACES  # noqa: E402
 
@@ -980,7 +987,7 @@ def duplicate_declarations() -> list[str]:
     now reports too. Statements are read in document order, which is the order a
     reader reads them, not a claim about call order.
     """
-    src = Path("fragments.py").read_text(encoding="utf-8")
+    src = (HERE / "fragments.py").read_text(encoding="utf-8")
     tree = ast.parse(src)
     out = []
     subscripted = {}

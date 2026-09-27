@@ -7562,6 +7562,12 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         ("_readings_of_a_half_written_as_a_literal", 0),
         ("_readings_of_a_half_spelled_from_the_record_it_is_checked_against", 0),
         ("_readings_of_a_record_written_in_a_shape_its_reader_cannot_parse", 0),
+        ("_readings_of_a_fixture_that_names_the_files_the_tree_needed_when_it_was_written", 0),
+        ("_readings_of_a_refusal_that_names_no_rule", 0),
+        ("_readings_of_an_item_certified_by_its_status_when_it_printed_nothing", 0),
+        ('_readings_of_a_rule_read_from_the_text_when_only_the_path_the_shell_took_decides', 0),
+        ('_readings_of_a_rule_stated_over_the_whole_word_when_only_the_order_in_it_decides', 0),
+        ('_readings_of_a_path_resolved_against_a_directory_a_fixture_moved_the_process_into', 0),
     ]
 
     def as_written(helpers):
@@ -8135,3 +8141,610 @@ def _readings_of_a_record_written_in_a_shape_its_reader_cannot_parse():
 
 
 NAMESPACES.setdefault('a-record-written-in-a-shape-its-reader-cannot-parse', {}).update({'a_record_written_in_a_shape_its_reader_cannot_parse': a_record_written_in_a_shape_its_reader_cannot_parse})
+
+
+
+def a_refusal_that_names_no_rule():
+    """A refusal that prints the refusal word and the name of no rule.
+
+    `probes/parts_of_a_reading.py` refuses a tree by printing a line; when the line opens
+    with `FAIL` and nothing follows it, a reader has the colour of the run and not the rule
+    that produced it. The site's answer is the line it can print, so the rule has to be
+    computed from the printed expression: a site that holds the word in a name prints it,
+    and a site that mentions the word away from its opening does not.
+    """
+    return _readings_of_a_refusal_that_names_no_rule()["as_written"]
+
+
+def _readings_of_a_refusal_that_names_no_rule():
+    """Both halves, read by running the planted rule and this tree's own scan.
+
+    A print site is a reading of the line it can print. The rule this tree carried when
+    the defect was found asked instead whether the *text* around the call carried the
+    refusal word with no id beside it -- so a site holding the word in a name printed it
+    and was never flagged, while a site mentioning the word away from the opening of its
+    line cannot open a line with it and was flagged. That rule is planted below, both it
+    and this tree's scan are run on the same four sources, and the entry records the two
+    answers. The sources that separate the rules are a site that holds the word in a name,
+    a site that mentions it mid-line, a site printing it with no id, and a site carrying
+    its id; the number of sites this probe's own scan cannot answer for is recorded beside
+    them, because a zero from a scan that read nothing is not an answer.
+    """
+    import importlib.util
+    import pathlib
+
+    HERE = pathlib.Path(__file__).resolve().parent
+    PROBE = HERE / "probes" / "parts_of_a_reading.py"
+    if not PROBE.exists():
+        raise NoControlBesideThisTree(
+            "no control beside this tree: the scan that reads the sites lives in "
+            "`probes/parts_of_a_reading.py`, and nothing here measured them")
+
+    spec = importlib.util.spec_from_file_location("por_for_the_named_refusal_class",
+                                                 str(PROBE))
+    probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(probe)
+
+    text_rule = (
+        "def unlabelled_refusal_sites(source):\n"
+        "    import ast\n"
+        "    out = []\n"
+        "    for node in ast.walk(ast.parse(source)):\n"
+        "        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)\n"
+        "                and node.func.id == \"print\"):\n"
+        "            continue\n"
+        "        text = ast.get_source_segment(source, node) or \"\"\n"
+        "        if \"FAIL\" in text and \"FAIL[\" not in text:\n"
+        "            out.append(node.lineno)\n"
+        "    return sorted(set(out))\n")
+    planted = {}
+    exec(compile(text_rule, "<the rule this tree carried>", "exec"), planted)
+
+    shapes = {
+        "a site that holds the word in a name":
+            "word = \"FAIL\"\nprint(word + \" the tree is broken\")\n",
+        "a site that mentions the word away from its opening":
+            "print(\"the gate said FAIL, and the run continued\")\n",
+        "a site that prints the word with no id":
+            "print(\"FAIL the copy under test has no helper\")\n",
+        "a site that carries its id":
+            "print(\"FAIL[NO-HELPER] the copy under test has no helper\")\n",
+    }
+    source = PROBE.read_text(encoding="utf-8")
+    written = {name: planted["unlabelled_refusal_sites"](text)
+               for name, text in shapes.items()}
+    repaired = {name: probe.unlabelled_refusal_sites(text)
+                for name, text in shapes.items()}
+    return {
+        "as_written": {
+            "sites_the_planted_text_rule_flags_in_each_source": written,
+            "what_it_leaves_a_reader_of_a_site_that_holds_the_word_in_a_name":
+                "the word printed, and no site flagged",
+            "sites_too_big_to_read": "no such answer: a text rule matches a phrase",
+        },
+        "as_repaired": {
+            "sites_this_tree_s_scan_flags_in_each_source": repaired,
+            "print_sites_of_this_probe_the_scan_cannot_answer_for":
+                len(probe.print_sites_with_unreadable_openings(source)),
+            "what_it_leaves_a_reader_of_a_site_that_holds_the_word_in_a_name":
+                "the site, by line number",
+        },
+    }
+
+
+NAMESPACES.setdefault('a-refusal-that-names-no-rule', {}).update({'a_refusal_that_names_no_rule': a_refusal_that_names_no_rule})
+
+
+
+def an_item_certified_by_its_status_when_it_printed_nothing():
+    """An item the harness certifies `ok` when its command printed nothing.
+
+    `repro/run_all.sh` read an item's verdict off its exit status: a command that never
+    started, or died before its first line, was `ok` with the digest of an empty log
+    quoted as its output. The suite's own control mode now drives the refusal.
+    """
+    return _readings_of_an_item_certified_by_its_status_when_it_printed_nothing()["as_written"]
+
+
+def _readings_of_an_item_certified_by_its_status_when_it_printed_nothing():
+    """Both halves, read by running the harness's own control in two states of itself.
+
+    The written half is the harness with the emptiness guard taken out of `run()`; the
+    repaired half is the harness as it stands. Each is read by running
+    `repro/run_all.sh --empty-control` over a copy -- never by looking for a phrase in
+    the file, so a guard whose behaviour changed while its text stood still is not read
+    as present. The command the control hands the harness prints nothing and exits 0.
+    """
+    import os
+    import pathlib
+    import subprocess
+    import tempfile
+
+    HERE = pathlib.Path(__file__).resolve().parent
+    RUNNER = HERE / "repro" / "run_all.sh"
+    if not RUNNER.exists():
+        raise NoControlBesideThisTree(
+            "no control beside this tree: `repro/run_all.sh` is not here, and nothing "
+            "else carries the item verdicts this reading is about")
+
+    HEAD = '  local printed; printed='
+    TAIL = '  local cert; if [ "$rc" = 0 ]'
+    source = RUNNER.read_text(encoding="utf-8")
+    start = source.find(HEAD)
+    end = source.find(TAIL)
+    if start < 0 or end <= start:
+        raise AssertionError(
+            "the emptiness guard is not in this harness: there is no written half to "
+            "read here, and an absent control is not a repaired one")
+
+    def verdict(text):
+        with tempfile.TemporaryDirectory() as td:
+            where = pathlib.Path(td) / "repro"
+            where.mkdir()
+            (where / "run_all.sh").write_text(text, encoding="utf-8")
+            env = dict(os.environ, REPRO_LEDGER=str(HERE), REPRO_WS=str(where))
+            run = subprocess.run(["bash", str(where / "run_all.sh"), "--empty-control"],
+                                 capture_output=True, text=True, timeout=900, env=env)
+        line = next((l for l in run.stdout.splitlines()
+                     if "fixture that printed nothing" in l), "")
+        digest = ""
+        for word in line.split():
+            if word.startswith("out="):
+                digest = word[4:]
+        return {
+            "exit_code_of_the_control": run.returncode,
+            "an_item_whose_command_printed_nothing_is_certified_as":
+                ("ok, with the digest of an empty log" if line.startswith("ok")
+                 else "FAIL, and the refusal names the item and its exit status"
+                 if line.startswith("FAIL") else "nothing: the control printed no line"),
+            "the_digest_the_ok_row_quotes_as_its_output": digest,
+            "the_harness_refuses_such_an_item": line.startswith("FAIL"),
+        }
+
+    written = verdict(source[:start] + source[end:])
+    repaired = verdict(source)
+    return {"as_written": written, "as_repaired": repaired}
+
+
+NAMESPACES.setdefault('an-item-certified-by-its-status-when-it-printed-nothing', {}).update({'an_item_certified_by_its_status_when_it_printed_nothing': an_item_certified_by_its_status_when_it_printed_nothing})
+
+
+
+def a_fixture_that_names_the_files_the_tree_needed_when_it_was_written():
+    """A fixture that carries the files the tree needed when the list was written.
+
+    The probe builds its fixture trees by copying two names. A helper beside them had
+    begun to read `check.py`, and the two names were never asked again -- so the fixtures
+    were trees whose helpers could not run, and ten arms reported a broken probe in place
+    of the defect they had planted.
+    """
+    return _readings_of_a_fixture_that_names_the_files_the_tree_needed_when_it_was_written()["as_written"]
+
+
+def _readings_of_a_fixture_that_names_the_files_the_tree_needed_when_it_was_written():
+    """Both halves, read off two fixtures this helper builds out of the tree it lives in.
+
+    The written half carries the hand-written tuple `("fragments.py", "catches.json")`;
+    the repaired half carries what the probe's `files_the_tree_reads` derives from the
+    imports of the copy -- an import written inside a function counts, and that is where
+    `check.py` is read from. The derivation also carries the control itself, because a
+    helper beside the tree reads `probes/parts_of_a_reading.py` by path: a fixture without
+    it is a tree whose first such helper raises, and both halves here copy to the path a
+    name sits at, not to the root.
+    """
+    import ast
+    import importlib
+    import importlib.util
+    import pathlib
+    import shutil
+    import sys
+    import tempfile
+
+    HERE = pathlib.Path(__file__).resolve().parent
+    probe_spec = importlib.util.spec_from_file_location(
+        "por_for_the_fixture_class", str(HERE / "probes" / "parts_of_a_reading.py"))
+    probe = importlib.util.module_from_spec(probe_spec)
+    probe_spec.loader.exec_module(probe)
+
+    def modules_beside_the_tree(root: pathlib.Path) -> list:
+        """Every sibling module `fragments.py` imports, wherever the import is written."""
+        found = []
+        for node in ast.walk(ast.parse((root / "fragments.py").read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                names = [node.module]
+            else:
+                continue
+            for name in names:
+                root_module = name.split(".")[0]
+                if (root / (root_module + ".py")).exists() and root_module not in found:
+                    found.append(root_module)
+        return sorted(found)
+
+    def half(names) -> dict:
+        holder = tempfile.TemporaryDirectory()
+        root = pathlib.Path(holder.name)
+        carried = []
+        kept_check = sys.modules.pop("check", None)
+        try:
+            for name in names:
+                destination = root / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(HERE / name, destination)
+                carried.append(name)
+            sys.path.insert(0, str(root))
+            said = ""
+            try:
+                importlib.import_module("check")
+            except Exception as exc:
+                said = f"{type(exc).__name__}: {exc}"
+            finally:
+                sys.path.remove(str(root))
+            return {
+                "files_the_fixture_carries": sorted(carried),
+                "modules_beside_the_tree_that_the_tree_imports": modules_beside_the_tree(HERE),
+                "importing_them_in_the_fixture_said": said,
+            }
+        finally:
+            if kept_check is not None:
+                sys.modules["check"] = kept_check
+            else:
+                sys.modules.pop("check", None)
+            holder.cleanup()
+
+    written = half(("fragments.py", "catches.json"))
+    derived = probe.files_the_tree_reads(HERE)
+    repaired = dict(half(derived), files_the_derivation_carries=sorted(derived))
+    return {"as_written": written, "as_repaired": repaired}
+
+
+NAMESPACES.setdefault('a-fixture-that-names-the-files-the-tree-needed-when-it-was-written', {}).update({'a_fixture_that_names_the_files_the_tree_needed_when_it_was_written': a_fixture_that_names_the_files_the_tree_needed_when_it_was_written})
+
+
+
+def a_path_resolved_against_a_directory_a_fixture_moved_the_process_into():
+    """A checker that moves the process it is imported into, from a fixture's copy of it."""
+    return _readings_of_a_path_resolved_against_a_directory_a_fixture_moved_the_process_into()["as_written"]
+
+
+def _readings_of_a_path_resolved_against_a_directory_a_fixture_moved_the_process_into():
+    """Both halves, measured by importing a copy of this tree's checker from a caller.
+
+    The worlds are constructed here rather than read off this tree, because the tree may
+    stand in either of them: the written half is the checker with the import-time
+    `os.chdir(HERE)` present, the repaired half is the same bytes with that line removed.
+    The reading also says which of the two this tree stands on.
+
+    Each half copies `check.py`, `fragments.py` and `catches.json` into a root, and runs a
+    child whose cwd is a second directory holding its own `fragments.py`. The child imports
+    the copy and then reads `fragments.py` by relative path, and prints where the process
+    stands after the import, what the relative read returned, and what the import said.
+    """
+    import json
+    import pathlib
+    import subprocess
+    import sys
+    import tempfile
+
+    HERE = pathlib.Path(__file__).resolve().parent
+    source = (HERE / "check.py").read_text(encoding="utf-8")
+    TARGET = "os.chdir(HERE)"
+    ANCHOR = "HERE = Path(__file__).resolve().parent"
+    if ANCHOR not in source:
+        raise AssertionError("no directory line in this tree's checker to read")
+
+    def lines_without(text, target):
+        return "".join(l for l in text.splitlines(True) if l.strip() != target)
+
+    def lines_with(text, anchor, target):
+        """The same text with `target` as its own line after the line carrying `anchor`."""
+        out = []
+        for line in text.splitlines(True):
+            out.append(line)
+            if line.strip() == anchor:
+                out.append(target + "\n")
+        return "".join(out)
+
+    with_defect = source if TARGET in [l.strip() for l in source.splitlines()] \
+        else lines_with(source, ANCHOR, TARGET)
+    without_defect = lines_without(source, TARGET)
+    if with_defect == without_defect:
+        raise AssertionError("the two worlds are one text: nothing to read")
+
+    CHILD = (
+        "import json, os, sys\n"
+        "from pathlib import Path\n"
+        "root, caller = Path(sys.argv[1]), Path(sys.argv[2])\n"
+        "os.chdir(caller)\n"
+        "before = str(Path.cwd())\n"
+        "sys.path.insert(0, str(root))\n"
+        "said = ''\n"
+        "try:\n"
+        "    import check\n"
+        "except Exception as exc:\n"
+        "    said = type(exc).__name__ + ': ' + str(exc)\n"
+        "after = str(Path.cwd())\n"
+        "read = Path('fragments.py').read_text(encoding='utf-8')[:80]\n"
+        "print(json.dumps({'moved': before != after, 'said': said,\n"
+        "                  'own_file': 'caller-side' in read}))\n"
+    )
+
+    def half(check_text):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = pathlib.Path(tmp)
+            root, caller = base / "root", base / "caller"
+            root.mkdir()
+            caller.mkdir()
+            (root / "check.py").write_text(check_text, encoding="utf-8")
+            for name in ("fragments.py", "catches.json"):
+                (root / name).write_text((HERE / name).read_text(encoding="utf-8"),
+                                         encoding="utf-8")
+            (caller / "fragments.py").write_text('MARK = "caller-side"\n',
+                                                 encoding="utf-8")
+            child = base / "child.py"
+            child.write_text(CHILD, encoding="utf-8")
+            out = subprocess.run([sys.executable, str(child), str(root), str(caller)],
+                                 capture_output=True, text=True, timeout=900)
+            if out.returncode != 0:
+                said = (out.stderr.strip().splitlines() or [""])[-1][:160]
+                return {"the_process_moved_into_the_directory_of_the_copied_checker": None,
+                        "the_relative_read_returned_the_callers_own_file": None,
+                        "what_importing_the_copied_checker_said": said}
+            said = json.loads(out.stdout)
+            return {"the_process_moved_into_the_directory_of_the_copied_checker":
+                        said["moved"],
+                    "the_relative_read_returned_the_callers_own_file": said["own_file"],
+                    "what_importing_the_copied_checker_said": said["said"]}
+
+    # Where this tree itself stands travels inside each half, not beside them: the
+    # reading is two halves or it is not a reading, and a third top-level key made
+    # this helper answer with three -- refused as `FAIL[NOT-TWO-HALVES]` by the
+    # probe, so the fact was measured and the reading was thrown away with it.
+    stands_on = TARGET in [l.strip() for l in source.splitlines()]
+    as_written = half(with_defect)
+    as_repaired = half(without_defect)
+    for reading in (as_written, as_repaired):
+        reading["the_checker_this_tree_stands_on_carries_an_import_time_chdir"] = stands_on
+    return {"as_written": as_written, "as_repaired": as_repaired}
+NAMESPACES.setdefault('a-path-resolved-against-a-directory-a-fixture-moved-the-process-into', {}).update({'a_path_resolved_against_a_directory_a_fixture_moved_the_process_into': a_path_resolved_against_a_directory_a_fixture_moved_the_process_into})
+
+
+def a_rule_stated_over_the_whole_word_when_only_the_order_in_it_decides():
+    """A rule about the inside of a word, stated over the whole word."""
+    return _readings_of_a_rule_stated_over_the_whole_word_when_only_the_order_in_it_decides()["as_written"]
+
+
+def a_rule_stated_over_the_whole_word_when_only_the_order_in_it_decides():
+    """A rule about the inside of a word, stated over the whole word."""
+    return _readings_of_a_rule_stated_over_the_whole_word_when_only_the_order_in_it_decides()["as_written"]
+
+
+def _readings_of_a_rule_stated_over_the_whole_word_when_only_the_order_in_it_decides():
+    """Two rules, each applied to five fixtures that bash itself is asked about.
+
+    Every fixture prints `read=<...>|` for the value bash gave the `$?` read, and the
+    reading checks that the fixture still prints the value it quotes. The written half
+    refuses a read whose word contains a command substitution; the repaired half refuses a
+    read a command substitution has already run before on the same line. A rule is wrong on
+    a fixture when it refuses a read that carried the status or lets through one that did
+    not, and those two counts against bash are the whole of the reading.
+    """
+    import re
+    import subprocess
+
+    EXPECTED = 7
+    # `g` writes two bytes and returns 3, and it takes no argument, so a substitution of
+    # it holds no whitespace: the boundary the written rule reads and the boundary the
+    # expansions respect are then two different things, which is the whole point.
+    HEAD = "f() { return 7; }\ng() { printf x.y; return 3; }\n"
+    FIXTURES = [
+        ("plain",
+         HEAD + "f\nprintf 'read=<%s>|' \"$?\"",
+         "7", True),
+        ("the_read_stands_to_the_left_of_a_substitution_in_its_own_word",
+         HEAD + "f\nprintf 'read=<%s>|' \"$?$(g)\"",
+         "7x.y", True),
+        ("a_substitution_stands_to_the_left_of_the_read_in_its_own_word",
+         HEAD + "f\ng\nprintf 'read=<%s>|' \"$(g)$?\"",
+         "x.y3", False),
+        ("a_substitution_stands_to_the_left_of_the_read_in_another_word_of_the_same_string",
+         HEAD + "f\ng\nprintf 'read=<%s>|' \"$(g) $?\"",
+         "x.y 3", False),
+        ("two_reads_and_only_the_second_one_is_after_a_substitution",
+         HEAD + "f\nprintf 'read=<%s>|' \"$?\"\nf\ng\n"
+         "printf 'read=<%s>|' \"$(g)$?\"",
+         "x.y3", False),
+    ]
+
+    def spans_of_subs(text):
+        """(start, end) of every command substitution, by matching `$(` to its `)`."""
+        out, i = [], 0
+        while i < len(text) - 1:
+            if text[i:i + 2] != "$(":
+                i += 1
+                continue
+            depth, j = 1, i + 2
+            while j < len(text) and depth:
+                if text[j:j + 2] == "$(":
+                    depth += 1
+                    j += 2
+                    continue
+                if text[j] == ")":
+                    depth -= 1
+                j += 1
+            out.append((i, j))
+            i = j
+        return out
+
+    def word_around(text, at):
+        start, end = at, at
+        while start > 0 and not text[start - 1].isspace():
+            start -= 1
+        while end < len(text) and not text[end].isspace():
+            end += 1
+        return start, end
+
+    def reads_of(text):
+        return [m.start() for m in re.finditer(r"\$\?", text)]
+
+    def refuses_by_the_whole_word(text):
+        subs = spans_of_subs(text)
+        for at in reads_of(text):
+            w0, w1 = word_around(text, at)
+            if any(w0 <= s and e <= w1 for s, e in subs):
+                return True
+        return False
+
+    def refuses_by_what_stands_to_the_left(text):
+        subs = spans_of_subs(text)
+        for at in reads_of(text):
+            if any(e <= at for s, e in subs):
+                return True
+        return False
+
+    rows = []
+    for name, script, quoted_read, carried in FIXTURES:
+        said = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+        printed = said.stdout.rsplit("read=<", 1)[-1].split(">", 1)[0]
+        rows.append({
+            "fixture": name,
+            "what_bash_printed_for_the_read": printed,
+            "the_read_this_fixture_quotes": quoted_read,
+            "the_quoted_read_was_the_one_bash_printed": printed == quoted_read,
+            "the_read_carried_the_status_of_the_command": carried,
+        })
+
+    def tally(refuses):
+        # The witnesses travel INSIDE each half: this probe refuses a helper whose answer
+        # is not exactly the two halves, and a third key beside them would make every
+        # reading of this helper unreadable rather than wrong.
+        return {
+            "fixtures": len(rows),
+            "commands_run": len(rows),
+            "reads_a_rule_refuses": sum(1 for (_, text, _, _), row in zip(FIXTURES, rows)
+                                        if refuses(text)),
+            "reads_that_carried_the_status_a_rule_refuses":
+                sum(1 for (_, text, _, _), row in zip(FIXTURES, rows)
+                    if row["the_read_carried_the_status_of_the_command"] and refuses(text)),
+            "reads_a_substitution_corrupted_a_rule_lets_through":
+                sum(1 for (_, text, _, _), row in zip(FIXTURES, rows)
+                    if not row["the_read_carried_the_status_of_the_command"]
+                    and not refuses(text)),
+            "fixtures_where_bash_and_the_rule_disagree":
+                sum(1 for (_, text, _, _), row in zip(FIXTURES, rows)
+                    if refuses(text) != (not row["the_read_carried_the_status_of_the_command"])),
+            "fixtures_whose_quoted_read_bash_no_longer_prints":
+                sum(1 for row in rows
+                    if not row["the_quoted_read_was_the_one_bash_printed"]),
+            "the_fixtures_and_what_bash_printed": rows,
+            "the_status_every_fixture_makes_its_command_return": EXPECTED,
+        }
+
+    return {"as_written": tally(refuses_by_the_whole_word),
+            "as_repaired": tally(refuses_by_what_stands_to_the_left)}
+NAMESPACES.setdefault('a-rule-stated-over-the-whole-word-when-only-the-order-in-it-decides', {}).update({'a_rule_stated_over_the_whole_word_when_only_the_order_in_it_decides': a_rule_stated_over_the_whole_word_when_only_the_order_in_it_decides})
+
+
+
+def a_rule_read_from_the_text_when_only_the_path_the_shell_took_decides():
+    """A rule the text decides, when only the path the shell took can."""
+    return _readings_of_a_rule_read_from_the_text_when_only_the_path_the_shell_took_decides()["as_written"]
+
+
+def _readings_of_a_rule_read_from_the_text_when_only_the_path_the_shell_took_decides():
+    """Two rules for one question: did the read this fixture quotes carry the status?
+
+    Every fixture is a whole bash script that prints `read=<...>|` for the value the `$?`
+    read the fixture is about received, and the reading checks that the fixture still
+    prints the value it quotes. The written half decides from the text -- does a `$(` stand
+    before that read in the script? -- and the repaired half is the fixture's own run,
+    compared with the status the command before the read returned. The three fixtures that
+    part them are the two in which the lazy expansion skips the substitution although its
+    text stands to the left of the read, and the one in which the read's text stands above
+    the substitution that ran. A rule is wrong on a fixture when it refuses a read that
+    carried the status or lets through one that did not, and those two counts against bash
+    are the whole of the reading.
+    """
+    import subprocess
+
+    EXPECTED = 7
+    # `g` writes two bytes and returns 3, and it takes no argument, so the expansion that
+    # skips it and the expansion that runs it hold the same text: the boundary the written
+    # rule reads is then not the boundary the shell respects, which is the whole point.
+    HEAD = "f() { return 7; }\ng() { printf x.y; return 3; }\n"
+    FIXTURES = [
+        ("plain",
+         HEAD + "f\nprintf 'read=<%s>|' \"$?\"",
+         "7", True),
+        ("the_lazy_expansion_takes_the_branch_so_the_read_carries_the_substitution",
+         HEAD + "v=1\nf\nprintf 'read=<%s>|' \"${v:+$(g)}$?\"",
+         "x.y3", False),
+        ("the_lazy_expansion_skips_the_branch_so_the_read_carries_the_command",
+         HEAD + "v=\nf\nprintf 'read=<%s>|' \"${v:+$(g)}$?\"",
+         "7", True),
+        ("the_parameter_is_unset_by_the_run_so_the_read_carries_the_command",
+         HEAD + "unset v\nf\nprintf 'read=<%s>|' \"${v:+$(g)}$?\"",
+         "7", True),
+        ("the_read_stands_in_the_text_above_the_substitution_that_ran",
+         HEAD + "read_status() { printf 'read=<%s>|' \"$?\"; }\nf\nlate=$(g)\n"
+         "read_status",
+         "3", False),
+        ("two_reads_and_only_the_one_the_fixture_quotes_is_after_the_substitution",
+         HEAD + "f\nprintf 'read=<%s>|' \"$?\"\nv=1\nf\n"
+         "printf 'read=<%s>|' \"${v:+$(g)}$?\"",
+         "x.y3", False),
+    ]
+
+    def refuses_by_the_text(script):
+        at = script.rindex("$?")
+        return "$(" in script[:at]
+
+    def refuses_by_what_the_run_printed(script):
+        said = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+        tail = said.stdout.rsplit("read=<", 1)
+        return bool(tail) and tail[-1].split(">", 1)[0] != str(EXPECTED)
+
+    rows = []
+    for name, script, quoted_read, carried in FIXTURES:
+        said = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+        out = said.stdout
+        printed = out[out.rindex("read=<") + len("read=<"):].split(">", 1)[0]
+        rows.append({
+            "fixture": name,
+            "what_bash_printed_for_the_read": printed,
+            "the_read_this_fixture_quotes": quoted_read,
+            "the_quoted_read_was_the_one_bash_printed": printed == quoted_read,
+            "the_read_carried_the_status_of_the_command": carried,
+        })
+
+    def tally(refuses):
+        # The witnesses travel INSIDE each half: this probe refuses a helper whose answer
+        # is not exactly the two halves, and a third key beside them would make every
+        # reading of this helper unreadable rather than wrong.
+        return {
+            "fixtures": len(rows),
+            "commands_run": len(rows),
+            "reads_a_rule_refuses": sum(1 for (_, text, _, _), row in zip(FIXTURES, rows)
+                                        if refuses(text)),
+            "reads_that_carried_the_status_a_rule_refuses":
+                sum(1 for (_, text, _, _), row in zip(FIXTURES, rows)
+                    if row["the_read_carried_the_status_of_the_command"] and refuses(text)),
+            "reads_a_substitution_corrupted_a_rule_lets_through":
+                sum(1 for (_, text, _, _), row in zip(FIXTURES, rows)
+                    if not row["the_read_carried_the_status_of_the_command"]
+                    and not refuses(text)),
+            "fixtures_where_bash_and_the_rule_disagree":
+                sum(1 for (_, text, _, _), row in zip(FIXTURES, rows)
+                    if refuses(text) != (not row["the_read_carried_the_status_of_the_command"])),
+            "fixtures_whose_quoted_read_bash_no_longer_prints":
+                sum(1 for row in rows
+                    if not row["the_quoted_read_was_the_one_bash_printed"]),
+            "the_fixtures_and_what_bash_printed": rows,
+            "the_status_every_fixture_makes_its_command_return": EXPECTED,
+        }
+
+    return {"as_written": tally(refuses_by_the_text),
+            "as_repaired": tally(refuses_by_what_the_run_printed)}
+NAMESPACES.setdefault('a-rule-read-from-the-text-when-only-the-path-the-shell-took-decides', {}).update({'a_rule_read_from_the_text_when_only_the_path_the_shell_took_decides': a_rule_read_from_the_text_when_only_the_path_the_shell_took_decides})
+

@@ -47,7 +47,7 @@ cd "$HERE"
 WS="${REPRO_WS:-$HERE}"
 LEDGER="${REPRO_LEDGER:-$(cd "$HERE/.." && pwd)}"
 export UV_CACHE_DIR="${UV_CACHE_DIR:-$WS/.uvcache}"
-REQUIRE=""; NET=0; SELFTEST=0; STABLE=0; GUARD_CONTROL=0
+REQUIRE=""; NET=0; SELFTEST=0; STABLE=0; GUARD_CONTROL=0; EMPTY_CONTROL=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --net) NET=1 ;;
@@ -55,6 +55,7 @@ while [ $# -gt 0 ]; do
     --expect) REQUIRE="${2:-}"; shift ;;
     --self-test) SELFTEST=1 ;;
     --guard-control) GUARD_CONTROL=1 ;;
+    --empty-control) EMPTY_CONTROL=1 ;;
   esac
   shift
 done
@@ -494,6 +495,19 @@ run() {                       # run <name> <command...>
     printf '     moved over the declared field (key): %s\n' "$moved"
   fi
 
+  # An item whose command printed nothing is certified by its exit status alone: a
+  # command that never started, or died before its first line, would be `ok` with the
+  # digest of an empty log. Measured, not asserted -- `--empty-control` below drives
+  # this branch on a fixture whose command prints nothing and exits 0.
+  local printed; printed="$(grep -c . "$log" || true)"
+  if [ "$printed" = 0 ]; then
+    printf 'FAIL %-34s the command printed nothing: exit %s is not a reading of the tree\n' "$name" "$rc"
+    fails=$((fails + 1))
+    add_row "$(row_of "$name" "$rc" 2 "$d" "$n" "$sd")"
+    rm -f "$log"
+    return
+  fi
+
   local cert; if [ "$rc" = 0 ]; then cert=0; else cert=1; fi
   if [ "$rc" = 0 ]; then
     printf 'ok   %-34s out=%s set=%s norm=%d tree=%s  %s\n' "$name" "$d" "$sd" "$n" "$tb" "$last"
@@ -514,6 +528,45 @@ run() {                       # run <name> <command...>
 # the fault this item exists to catch. It used to exit 0 with one line of prose;
 # it exits 1 and says which directory was handed to it, because the failure is a
 # fact about the layout, not about the files.
+# A branch no path exercises is a sentence. This mode hands `run` a command that
+# prints nothing and exits 0 and REQUIRES the refusal, then the other half: a command
+# that prints a line must not be refused. Reached the way a reader reaches the suite --
+# `bash repro/run_all.sh --empty-control` -- and as an item in the list below, so no
+# path that runs the suite can skip it.
+if [ "$EMPTY_CONTROL" = 1 ]; then
+  fails=0
+  ok=1
+  # The refusal count is read in THIS shell: a counter incremented inside `$( ... )`
+  # is a counter of a subshell, and reading it outside is reading a copy that never
+  # moved -- the control's first version reported `did not reach the failure count (0)`
+  # while the refusal line above it was printed.
+  ctl_out="$(mktemp)"
+  run "fixture that printed nothing" true > "$ctl_out" 2>&1
+  out="$(cat "$ctl_out")"
+  printf '%s\n' "$out"
+  case "$out" in
+    *'printed nothing'*) ;;
+    *) ok=0; printf 'the control: an item whose command printed nothing was NOT refused\n' ;;
+  esac
+  [ "$fails" = 1 ] || { ok=0; printf 'the control: the refusal did not reach the failure count (%s)\n' "$fails"; }
+  fails=0
+  run "fixture that printed one line" echo 'one line' > "$ctl_out" 2>&1
+  out="$(cat "$ctl_out")"
+  printf '%s\n' "$out"
+  rm -f "$ctl_out"
+  case "$out" in
+    *'printed nothing'*) ok=0; printf 'the control: an item that printed a line was refused as empty\n' ;;
+  esac
+  [ "$fails" = 0 ] || { ok=0; printf 'the control: a readable item was counted as a failure (%s)\n' "$fails"; }
+  if [ "$ok" = 1 ]; then
+    echo "an item whose command printed nothing is refused, and an item that printed a line is not (two readings)"
+    exit 0
+  fi
+  echo "the empty-output guard did not answer as required: a guard that cannot be shown to fire is not a guard"
+  exit 1
+fi
+
+run "empty output control"       bash "$HERE/run_all.sh" --empty-control
 run "record guard control"        bash "$HERE/run_all.sh" --guard-control
 # The registry's entry for the shared case root claims its instance is a pair of
 # processes. A claim about a pair is measured by starting the pair: this item runs two
