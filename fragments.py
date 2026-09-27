@@ -7571,6 +7571,7 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         ('_readings_of_a_rule_stated_over_the_whole_word_when_only_the_order_in_it_decides', 0),
         ('_readings_of_a_path_resolved_against_a_directory_a_fixture_moved_the_process_into', 0),
         ("_readings_of_an_empty_substitution_read_as_a_number_the_rule_measured", 0),
+        ('_readings_of_a_counter_that_numbers_one_board_read_as_an_order_in_time', 0),
         ('_readings_of_a_census_of_the_file_kept_in_the_record_of_one_class', 0),
         ('_readings_of_a_first_line_read_as_a_name_where_the_kernel_reads_a_program_and_one_argument', 0),
     ]
@@ -9429,4 +9430,215 @@ print(json.dumps(out, ensure_ascii=False))"""
             "as_repaired": tally(REPAIRED_RULE, "as_repaired")}
 
 NAMESPACES.setdefault('a-census-of-the-file-kept-in-the-record-of-one-class', {}).update({'a_census_of_the_file_kept_in_the_record_of_one_class': a_census_of_the_file_kept_in_the_record_of_one_class})
+
+
+def a_counter_that_numbers_one_board_read_as_an_order_in_time():
+    """A counter that numbers one board, read as an order in time."""
+    return _readings_of_a_counter_that_numbers_one_board_read_as_an_order_in_time()["as_written"]
+
+
+
+def _readings_of_a_counter_that_numbers_one_board_read_as_an_order_in_time():
+    """Two readings of a file whose rows carry a number and a time: one sorts by the number and
+    calls the result the order in time; one reads the time and reports the rows the two columns
+    order differently.
+
+    The fixture is a miniature of the published wall file: its rows are the published rows, and
+    both halves are asked in what order the tiles were laid.  They differ in the column they
+    read, and in what their count of disagreements compares.
+    """
+    import json
+    import pathlib
+    import subprocess
+    import sys
+    import tempfile
+
+    MINI = r"""
+# A miniature of the published wall file: the rows it carries, and one question -- in what
+# order were the tiles laid. Both readings answer it; they differ in the column they read.
+#
+# WRITTEN  the row numbers in the file put the tiles in the order they were laid
+# REPAIRED the order in time is read from the timestamp each row carries; the row number
+#          counts one board and orders its rows against no other board's
+import json
+import sys
+
+ROWS = [
+    [
+        12216,
+        1789400321,
+        "anonymous"
+    ],
+    [
+        29119,
+        1789022361,
+        "named"
+    ],
+    [
+        29385,
+        1789030893,
+        "named"
+    ],
+    [
+        33136,
+        1789195409,
+        "named"
+    ],
+    [
+        33142,
+        1789195559,
+        "named"
+    ],
+    [
+        34103,
+        1789235420,
+        "named"
+    ],
+    [
+        34168,
+        1789239743,
+        "named"
+    ],
+    [
+        34810,
+        1789260644,
+        "named"
+    ],
+    [
+        40146,
+        1789527581,
+        "named"
+    ],
+    [
+        41187,
+        1789565069,
+        "named"
+    ],
+    [
+        45419,
+        1789747026,
+        "named"
+    ],
+    [
+        45488,
+        1789750375,
+        "named"
+    ],
+    [
+        45528,
+        1789751245,
+        "named"
+    ],
+    [
+        45640,
+        1789757234,
+        "named"
+    ],
+    [
+        45834,
+        1789764480,
+        "named"
+    ],
+    [
+        45936,
+        1789767427,
+        "named"
+    ],
+    [
+        54404,
+        1790229773,
+        "named"
+    ],
+    [
+        54553,
+        1790235376,
+        "named"
+    ],
+    [
+        54566,
+        1790235648,
+        "named"
+    ],
+    [
+        54676,
+        1790238864,
+        "named"
+    ],
+    [
+        54697,
+        1790239742,
+        "named"
+    ],
+    [
+        54749,
+        1790242481,
+        "named"
+    ],
+    [
+        54908,
+        1790248364,
+        "named"
+    ],
+    [
+        55476,
+        1790268072,
+        "named"
+    ],
+    [
+        58374,
+        1790369819,
+        "named"
+    ]
+]
+
+WRITTEN = "the row numbers in the file put the tiles in the order they were laid"
+REPAIRED = "the order in time is read from the timestamp each row carries; the row number counts one board"
+
+
+def order_by(column):
+    return [seq for seq, ts, _board in sorted(ROWS, key=lambda r: r[0] if column == "seq" else r[1])]
+
+
+def out_of_order(a, b):
+    # how many pairs the two orders put the other way round
+    rank = {seq: place for place, seq in enumerate(b)}
+    return sum(1 for place, seq in enumerate(a) for later in a[place + 1:] if rank[seq] > rank[later])
+
+
+def answer(mode):
+    seq_order = order_by("seq")
+    ts_order = order_by("ts")
+    if mode == "as_written":
+        return {"the_rule": WRITTEN,
+                "the_column_the_order_is_read_from": "seq",
+                "the_order": seq_order,
+                "rows_the_two_columns_order_differently": out_of_order(seq_order, seq_order)}
+    return {"the_rule": REPAIRED,
+            "the_column_the_order_is_read_from": "ts",
+            "the_order": ts_order,
+            "rows_the_two_columns_order_differently": out_of_order(seq_order, ts_order)}
+
+
+if __name__ == "__main__":
+    print(json.dumps(answer(sys.argv[1]), sort_keys=True))
+"""
+
+    def tally(mode):
+        where = pathlib.Path(tempfile.mkdtemp(prefix="counter-as-clock-"))
+        program = where / "mini.py"
+        program.write_text(MINI, encoding="utf-8")
+        said = subprocess.run([sys.executable, str(program), mode],
+                              capture_output=True, text=True)
+        rows = [line for line in said.stdout.splitlines() if line.startswith("{")]
+        if not rows or said.returncode != 0:
+            raise RuntimeError("the fixture did not answer: rc=%s %s"
+                               % (said.returncode, said.stderr.strip()[:200]))
+        out = json.loads(rows[-1])
+        out["the_exit_status_of_the_fixture"] = said.returncode
+        return out
+
+    return {"as_written": tally("as_written"),
+            "as_repaired": tally("as_repaired")}
+
+NAMESPACES.setdefault('a-counter-that-numbers-one-board-read-as-an-order-in-time', {}).update({'a_counter_that_numbers_one_board_read_as_an_order_in_time': a_counter_that_numbers_one_board_read_as_an_order_in_time})
 
