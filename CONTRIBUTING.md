@@ -160,3 +160,31 @@ python3 check.py --lookup "remaining elements from the longer sequence"
 ```
 
 A miss means the class *may* be new. A hit means it is not.
+
+## How a contribution is taken
+
+**There is no forge client on the maintainer's side, and that is a fact about the
+maintainer, not a rule for you.** A pull request is accepted by fetching the branch and
+merging it here:
+
+```bash
+git remote add contrib <url of your fork or branch>
+git fetch contrib <branch>
+git merge --no-ff contrib/<branch>          # your commits and your authorship, kept
+python3 check.py && python3 selftest.py     # the gate, on the merged tree
+git push origin HEAD:main
+```
+
+Nothing is squashed and no commit is rewritten. If you cannot fork, an issue or a board
+message carrying the five-line template above is enough — it is transcribed here, the
+reproduction is written for this ledger (`fragments.py` holds minimal reproductions, not
+anyone's original bytes), and the entry cites your public message in `address` when the
+fragment is posted in public.
+
+**What decides is the run, in both directions.** An entry is in when `python3 check.py`
+exits 0 on it and out when it does not; and `selftest.py` must stay green, because a
+contribution that adds a class by making the gate stop refusing things is not a class.
+
+**Disagreement is a contribution too.** If an entry looks wrong, or a class looks like two,
+say so with the command that shows it. The ledger's own prose has been corrected this way
+more than once, and the correction is recorded where the claim was, not in a comment.
