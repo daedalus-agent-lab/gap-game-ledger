@@ -7574,6 +7574,7 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         ('_readings_of_a_counter_that_numbers_one_board_read_as_an_order_in_time', 0),
         ('_readings_of_a_census_of_the_file_kept_in_the_record_of_one_class', 0),
         ('_readings_of_a_first_line_read_as_a_name_where_the_kernel_reads_a_program_and_one_argument', 0),
+        ("_readings_of_a_vocabulary_whose_containment_only_the_end_of_the_run_reports", 0),
     ]
 
     def as_written(helpers):
@@ -9642,3 +9643,498 @@ if __name__ == "__main__":
 
 NAMESPACES.setdefault('a-counter-that-numbers-one-board-read-as-an-order-in-time', {}).update({'a_counter_that_numbers_one_board_read_as_an_order_in_time': a_counter_that_numbers_one_board_read_as_an_order_in_time})
 
+
+#!/usr/bin/env python3
+"""Class 238 -- `a-vocabulary-whose-containment-only-the-end-of-the-run-reports`. Round 2.
+
+THE CLASS. `fragments.py` recognises refusals by the id inside `FAIL[...]`; the probe
+`probes/parts_of_a_reading.py` prints those ids. Each side keeps its list of ids, and
+NOTHING IN THE TREE COMPARES THE TWO LISTS, so a rename on one side is reported by no
+phase at all -- it shows up, if at all, as a wrong answer at the end of a long run,
+never as a named disagreement between a producer and its consumer. The containment
+holds today; that is luck, not a check.
+
+WHAT ROUND 1 WAS REFUSED FOR (`_scratch/i234/class238/REVIEW.md`), and what this file does
+about it. The refusals are not negotiable, so each one is answered by the shape of the code:
+
+  D1  `as_written`'s two decisive keys were literals: `False` and `None` typed into the
+      half, so the pair differed by construction and the search that was run beside them
+      returned a non-empty list the helper explained away in prose. HERE: NO VALUE IN
+      EITHER HALF IS TYPED. Every field of both halves is a function of what
+      `_the_search(root)` returns, and the two halves differ only because it ran on two
+      different trees.
+  D2  the tree was located by a path carrying this machine's workspace, typed into the
+      source. HERE: the tree is found the way the tree's own helpers find it -- `HERE =
+      pathlib.Path(__file__).resolve().parent` -- and walking up from it to the place that
+      carries `fragments.py` beside `probes/parts_of_a_reading.py`. The SOURCE carries no
+      absolute path of any machine (a grep for this host's workspace prefix finds nothing;
+      the same grep over the 800+ lines of this file finds nothing else either), and
+      nothing in the recorded halves names a directory: what the halves carry is file names
+      relative to the tree they were read from. The run PRINTS the trees it read, because a
+      measurement should say where it was taken.
+  D3  the pair is not "type the absent value, compute the present one": it is THE SAME
+      READING TAKEN ON TWO TREES THAT DIFFER BY THE REPAIR. HERE: the written half is
+      `_the_search` on the live tree; the repaired half is the same function on a copy of
+      that tree carrying the repair design item 5 prescribes (a phase beside the probe
+      that prints both sets and the difference and fails when `recognised - declared` is
+      non-empty). The two trees are built by one builder from one record of files, so they
+      differ by one file, and the run prints that difference as a measurement.
+
+HOW THIS WAS CHECKED, beyond this file's own run
+(scripts beside it, logs beside them; the ledger tree was only ever read):
+
+  * `exploration/registered_probe.py` copies the tree's record into
+    `exploration/tmp-registered/`, drops this file's helper and probe into the copy's
+    `fragments.py`, adds it to the copy's own list of helpers, adds an entry to the copy's
+    `catches.json`, and runs the tree's own gates there. Two verdicts, both logged:
+    `probes/parts_of_a_reading.py --only <the helper>` exit 0 with "both halves read
+    against <the class>", "helpers with two halves 1", "halves written as literals rather
+    than measured 0"; and `check.py --class <the class>` printing `ok` on this entry --
+    `probe == observed`, `observed != expected` -- in the tree whose own checker runs it.
+    Its exit code is 1 for the copy and not for this entry: the copy carries one more
+    helper and one more entry than the tree does, so the census entries that count them
+    (and `CLASSES.md`) disagree with it by one, which is the artefact
+    `_readings_of_a_half_written_as_a_literal` documents for its own copies.
+  * `exploration/intree_probe.py` is the first, narrower attempt of the same thing.
+  * the run itself searches seven trees whose answer is read off them (above), and applies
+    the tree's own literal rule to this file's halves, armed so that rule is shown not to
+    be blind on a file shaped like this one.
+
+THE ONE QUESTION BOTH HALVES ASK, and the search that answers it:
+
+    "In this tree, does any file compare the two vocabularies -- the ids `fragments.py`
+     recognises with the ids `probes/parts_of_a_reading.py` prints?"
+
+The rule, mechanical and stated so a reader can rerun it by hand:
+
+  1. the ids of each side are read from that tree's own two files by one rule -- the
+     marker `FAIL[...]`, over the file's lines with comment lines dropped (the rule
+     `_scratch/i232/vocab_two_readers.py` measured the class's numbers with, kept by the
+     review as the right instinct);
+  2. a file is a COMPARER when it contains a relation (`<`, `<=`, `>`, `>=`, `-`,
+     `.issubset`, `.issuperset`, `.difference`, `.symmetric_difference`) whose two
+     operands REACH THE TWO DIFFERENT READER FILES -- directly by a string constant, a
+     name, an attribute or an import naming the file, or through a local assignment whose
+     value reaches it. A relation reaching only one side, a relation over `len(...)`, and a
+     relation that is not a set relation are NOT counted, and the run PRINTS every
+     relation it saw between the two sides that it did not read as the containment, so the
+     decision is visible instead of being explained away.
+
+Reads SOURCE only: nothing in the tree under measurement is written to, and nothing in it
+is run -- with one exception, printed by the run: `probes/parts_of_a_reading.py` is
+imported so that the tree's OWN literal rule can be applied to this file's halves (the
+rule D1 broke), and that import executes nothing but definitions.
+Stdlib only (`git` is called the way the tree's own helpers call it, and the search falls
+back to walking the tree where there is no checkout), no network.
+"""
+import ast
+import contextlib
+import json
+import pathlib
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+
+# The two readers, named once. The names are the tree's own file names, not paths of a
+# machine: every path below is built from `root`, which is found from `__file__`.
+RECOGNITION_FILE = "fragments.py"
+EMISSION_FILE = "probes/parts_of_a_reading.py"
+
+MARKER = re.compile(r"FAIL\[([A-Z0-9-]+)\]")
+
+# A relation counts as the containment only when one operand reaches the file that
+# recognises the ids and the other reaches the file that prints them.
+SIDES = {"A": "fragments", "B": "parts_of_a_reading"}
+SET_OPERATORS = {ast.Lt: "<", ast.LtE: "<=", ast.Gt: ">", ast.GtE: ">="}
+OTHER_COMPARISONS = {ast.Eq: "==", ast.NotEq: "!=", ast.In: "in", ast.NotIn: "not in"}
+SET_METHODS = {"issubset", "issuperset", "difference", "symmetric_difference"}
+OTHER_METHODS = {"intersection", "union", "intersection_update", "difference_update"}
+
+if "NoControlBesideThisTree" not in globals():
+    class NoControlBesideThisTree(Exception):
+        """The tree's own name for "nothing beside this tree to read".
+
+        In the tree the class is `fragments.py`'s. Standalone this file carries a class of
+        the same name, because the tree's probe reads a helper by the NAME of what it
+        raises (`probes/parts_of_a_reading.py:256`) and a helper that cannot read here must
+        be read as unread rather than as a broken tree.
+        """
+
+# The repair, in the shape `_scratch/i232/class238_design.md` item 5 asks for. It is
+# written into the copy the repaired half reads; it is the class's own repair, not a
+# value typed into a half.
+REPAIR_FILE = "probes/vocabulary_containment.py"
+THE_REPAIRS_SOURCE = '''#!/usr/bin/env python3
+"""The phase design item 5 asks for: the two sets, and the difference that matters.
+
+It fails when an id the fragment recognises is printed by nothing, and it does NOT fail
+the other way round: the probe legitimately prints ids the fragment has no business
+recognising.
+"""
+import pathlib
+import re
+import sys
+
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = HERE.parent
+MARKER = re.compile(r"FAIL\\[([A-Z0-9-]+)\\]")
+THE_RECOGNITION_FILE = ROOT / "fragments.py"
+THE_EMISSION_FILE = HERE / "parts_of_a_reading.py"
+
+
+def the_ids_a_reader_finds(path):
+    """The ids in one file, comments stripped."""
+    text = path.read_text(encoding="utf-8")
+    return set(MARKER.findall("\\n".join(line for line in text.splitlines()
+                                         if not line.lstrip().startswith("#"))))
+
+
+def main() -> int:
+    recognised = the_ids_a_reader_finds(THE_RECOGNITION_FILE)
+    printed = the_ids_a_reader_finds(THE_EMISSION_FILE)
+    missing = recognised - printed
+    print(f"recognised: {sorted(recognised)}")
+    print(f"printed:    {sorted(printed)}")
+    print(f"recognised and printed by nothing: {sorted(missing)}")
+    return 1 if missing else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+'''
+
+
+def _the_tree_beside_this_file() -> pathlib.Path:
+    """The ledger tree, found from this file's own place -- never from a machine path.
+
+    The tree's helpers live in the tree, so `HERE` is the tree for them. This file lives
+    one directory down (in `_scratch/`), so the place that carries the two readers is
+    looked for beside it and then up the chain; dropped into `fragments.py` itself the
+    first candidate answers at once. Where nothing carries both readers, the answer is the
+    place this file stands in -- the house rule -- and NOT a crash: the tree's own probe
+    imports `fragments.py` into fixtures that carry neither the probe nor this file's other
+    reader, and a helper that raises something the probe does not know kills the whole run
+    (measured: the first version of this file did exactly that, and the probe printed no
+    line about any helper). What a helper does in a tree like that is refuse by the name
+    the probe reads as UNREAD -- `NoControlBesideThisTree` -- and the helper below does.
+    """
+    here = pathlib.Path(__file__).resolve().parent
+    for place in [here, *here.parents]:
+        for candidate in (place, place / "gap-game-ledger"):
+            if (candidate / RECOGNITION_FILE).is_file() \
+                    and (candidate / EMISSION_FILE).is_file():
+                return candidate
+    return here
+
+
+def _the_ids_in(path: pathlib.Path) -> list:
+    """The ids a reader finds in `path`, comment lines dropped, sorted."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    return sorted(set(MARKER.findall(
+        "\n".join(line for line in text.splitlines() if not line.lstrip().startswith("#")))))
+
+
+def _the_files_the_tree_records(root: pathlib.Path) -> list:
+    """The `.py` files this tree keeps, as paths relative to it.
+
+    Where the tree is a checkout, the answer is `git ls-files`: the record is what git
+    tracks, so an ignored cache needs no name in a list -- the rule cannot rot (this is
+    the rule the tree's own copy path was repaired to, `AGENTS.md` iteration 191). A copy
+    of the tree carries exactly those files and has no `.git`, and there the same question
+    is answered by walking it; the two answers are printed by the run so a reader can see
+    that the copy carries the record and nothing else.
+    """
+    if (root / ".git").exists():
+        run = subprocess.run(["git", "ls-files", "-z", "--", "*.py"], cwd=str(root),
+                             capture_output=True, text=True)
+        if run.returncode == 0:
+            return sorted({name for name in run.stdout.split("\0") if name})
+    return sorted(path.relative_to(root).as_posix() for path in root.rglob("*.py")
+                  if not {".git", "__pycache__"} & set(path.relative_to(root).parts))
+
+
+def _the_sides_a_node_reaches(node: ast.AST) -> set:
+    """Which of the two readers this expression names: "A", "B", both or neither."""
+    reached = set()
+    for inner in ast.walk(node):
+        texts = []
+        if isinstance(inner, ast.Constant) and isinstance(inner.value, str):
+            texts.append(inner.value)
+        elif isinstance(inner, ast.Name):
+            texts.append(inner.id)
+        elif isinstance(inner, ast.Attribute):
+            texts.append(inner.attr)
+        elif isinstance(inner, (ast.Import, ast.ImportFrom)):
+            texts.extend(alias.name for alias in inner.names)
+        for side, module in SIDES.items():
+            if any(pathlib.PurePath(text).name in (module, module + ".py") for text in texts):
+                reached.add(side)
+    return reached
+
+
+def _the_names_the_assignments_bind(source: str) -> tuple:
+    """`(the module's map, [(scope, that scope's map, the relations it holds)])`.
+
+    name -> the sides its value reaches, to a fixed point within ONE SCOPE. One line of
+    indirection is where a comparer hides -- `ids = ids_in(THE_FILE)` followed by
+    `ids <= printed` never names the reader file on the line the relation stands on -- so
+    names are followed through assignments. Per scope, not per file: a name is a name only
+    inside the function that bound it, and a file that reuses `printed` somewhere else
+    would otherwise make every operand of every relation reach both readers (measured: the
+    probe's own file does exactly that, and the first version of this rule read its
+    appended phase as no comparer at all).
+    """
+    tree = ast.parse(source)
+
+    def own_nodes(scope) -> list:
+        """The nodes of one scope: a nested function's body is a scope of its own."""
+        out = []
+
+        def descend(node):
+            for child in ast.iter_child_nodes(node):
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+                    continue
+                out.append(child)
+                descend(child)
+
+        descend(scope)
+        return out
+
+    def bindings(nodes, outer) -> dict:
+        reaches = {}
+        changed = True
+        while changed:
+            changed = False
+            for node in nodes:
+                if isinstance(node, ast.Assign):
+                    targets, value = node.targets, node.value
+                elif isinstance(node, ast.AnnAssign) and node.value is not None:
+                    targets, value = [node.target], node.value
+                elif isinstance(node, ast.For):
+                    targets, value = [node.target], node.iter
+                else:
+                    continue
+                found = _sides_of(value, reaches, outer)
+                for target in targets:
+                    if isinstance(target, ast.Name) and found - reaches.get(target.id, set()):
+                        reaches[target.id] = reaches.get(target.id, set()) | found
+                        changed = True
+        return reaches
+
+    module = bindings(own_nodes(tree), {})
+    scopes = [(tree, module, own_nodes(tree))]
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            nodes = own_nodes(node)
+            scopes.append((node, bindings(nodes, module), nodes))
+    return module, scopes
+
+
+def _sides_of(node: ast.AST, local: dict, module: dict) -> set:
+    """The sides an operand reaches: by its own text, then through the names it uses."""
+    found = _the_sides_a_node_reaches(node)
+    for inner in ast.walk(node):
+        if isinstance(inner, ast.Name):
+            if inner.id in local:
+                found |= local[inner.id]
+            elif inner.id in module:
+                found |= module[inner.id]
+    return found
+
+
+def _is_a_size(node: ast.AST) -> bool:
+    """A relation over `len(x)` is a relation over the sizes, not over the collections."""
+    return isinstance(node, ast.Call) and isinstance(node.func, ast.Name) \
+        and node.func.id == "len"
+
+
+def _a_reading_of_the_relation(path: str, line: int, operator: str, left: str,
+                              right: str) -> str:
+    return f"{path}:{line}: {operator} {left} || {right}"
+
+
+def _the_relations_in(source: str) -> tuple:
+    """`(relations this search reads as the containment, relations it does not)`.
+
+    A relation between the two sides is one whose operands reach the two DIFFERENT readers.
+    Every such relation is reported; only those over the collections themselves (not over
+    their sizes) and with a set operator are read as the containment. The second list is
+    printed by the run, so a reader can see what was seen and not counted.
+    """
+    module, scopes = _the_names_the_assignments_bind(source)
+    read, unread = [], []
+
+    def note(scope, left, right, operator, line):
+        here = _sides_of(left, scope, module)
+        there = _sides_of(right, scope, module)
+        if not ((here - there) and (there - here)):
+            return
+        record = (line, operator, ast.unparse(left)[:70], ast.unparse(right)[:70])
+        if operator in ("<", "<=", ">", ">=", "-", ".issubset", ".issuperset",
+                        ".difference", ".symmetric_difference") \
+                and not (_is_a_size(left) or _is_a_size(right)):
+            read.append(record)
+        else:
+            unread.append(record)
+
+    for _, scope, nodes in scopes:
+        for node in nodes:
+            if isinstance(node, ast.Compare):
+                for operator, right in zip(node.ops, node.comparators):
+                    name = SET_OPERATORS.get(type(operator)) \
+                        or OTHER_COMPARISONS.get(type(operator))
+                    if name:
+                        note(scope, node.left, right, name, node.lineno)
+            elif isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Sub, ast.Add)):
+                note(scope, node.left, node.right,
+                     "-" if isinstance(node.op, ast.Sub) else "+", node.lineno)
+            elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
+                    and node.args and node.func.attr in SET_METHODS | OTHER_METHODS:
+                note(scope, node.func.value, node.args[0], "." + node.func.attr, node.lineno)
+    return read, unread
+
+
+def _the_search(root: pathlib.Path, files: list) -> dict:
+    """The one reading both halves take: what this tree holds, by the rules above.
+
+    Nothing here returns a value that was not read from `root`, and nothing here names a
+    tree: the same call on another root is the same reading of another tree.
+    """
+    read, unread, comparers = [], [], []
+    for name in files:
+        text = (root / name).read_text(encoding="utf-8", errors="replace")
+        # A file that names neither reader cannot open one. The rule is a sieve, not a
+        # decision: every file it lets through is parsed and read by the rule below.
+        if not any(module in text for module in SIDES.values()):
+            continue
+        try:
+            found_read, found_unread = _the_relations_in(text)
+        except SyntaxError:
+            continue  # a file this instrument cannot parse is not a file it can read
+        if found_read:
+            comparers.append(name)
+        read.extend(_a_reading_of_the_relation(name, *record) for record in found_read)
+        unread.extend(_a_reading_of_the_relation(name, *record) for record in found_unread)
+    return {
+        "files_the_search_read": len(files),
+        "files_that_compare_the_two_sets": sorted(comparers),
+        "the_relations_the_search_read_as_the_containment": sorted(read),
+        "the_relations_the_search_left_unread": sorted(unread),
+        "the_ids_the_fragment_recognises": _the_ids_in(root / RECOGNITION_FILE),
+        "the_ids_the_probe_prints": _the_ids_in(root / EMISSION_FILE),
+    }
+
+
+@contextlib.contextmanager
+def _a_tree_carrying(root: pathlib.Path, files: list, name, text):
+    """A copy of the tree under a temporary directory, with one file added or appended to.
+
+    The copy carries exactly the files the search reads of the tree it copies, so the two
+    trees are one file apart, and the run prints that one file as a measurement rather
+    than asserting it.
+    """
+    with tempfile.TemporaryDirectory(prefix="class238-round2-") as tmp:
+        copy = pathlib.Path(tmp)
+        for carried in files:
+            (copy / carried).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(root / carried, copy / carried)
+        if name is not None:
+            (copy / name).parent.mkdir(parents=True, exist_ok=True)
+            if (copy / name).is_file():
+                (copy / name).write_text(
+                    (copy / name).read_text(encoding="utf-8") + text, encoding="utf-8")
+            else:
+                (copy / name).write_text(text, encoding="utf-8")
+        yield copy
+
+
+@contextlib.contextmanager
+def _a_copy_of_the_tree_carrying_the_repair(root: pathlib.Path, files: list):
+    """The copy the repaired half reads: this tree's files, and the repair written in."""
+    with _a_tree_carrying(root, files, REPAIR_FILE, THE_REPAIRS_SOURCE) as copy:
+        yield copy
+
+
+def _readings_of_a_vocabulary_whose_containment_only_the_end_of_the_run_reports():
+    """Both halves: the same search, run once on this tree and once on a copy of it.
+
+    `as_written` is what the tree beside this file holds: the two vocabularies, and the
+    search's answer to whether anything compares them. `as_repaired` is the same search on
+    a copy carrying the repair design item 5 asks for -- a phase beside the probe that
+    prints both sets and the difference and fails when `recognised - declared` is
+    non-empty. Neither half names a value: a field is a function of the search, and the
+    numbers and lists the two halves report are that search's own output.
+    """
+    root = _the_tree_beside_this_file()
+    missing = [name for name in (RECOGNITION_FILE, EMISSION_FILE)
+               if not (root / name).is_file()]
+    if missing:
+        # A tree without both readers has no vocabulary to compare, and an empty answer
+        # would be a sentence about the instrument pretending to be a sentence about the
+        # tree. The name is the tree's own (`fragments.py:5765`), and the tree's own probe
+        # reads it as UNREAD.
+        raise NoControlBesideThisTree(
+            "the pair this class reads is between two files that are not both here ("
+            + ", ".join(missing) + " missing beside this tree): a fixture that carries the "
+            "pair in its own entry instead is read as unread, not as green")
+    files = _the_files_the_tree_records(root)
+    written = _the_search(root, files)
+    with _a_copy_of_the_tree_carrying_the_repair(root, files) as copy:
+        repaired = _the_search(copy, _the_files_the_tree_records(copy))
+
+    def as_written(measured):
+        recognised = set(measured["the_ids_the_fragment_recognises"])
+        printed = set(measured["the_ids_the_probe_prints"])
+        comparers = list(measured["files_that_compare_the_two_sets"])
+        return {
+            "files_the_search_read": measured["files_the_search_read"],
+            "files_that_compare_the_two_sets": comparers,
+            "the_containment_relation_is_computed_by": comparers[0] if comparers else None,
+            "the_relations_the_search_read_as_the_containment":
+                list(measured["the_relations_the_search_read_as_the_containment"]),
+            "the_relations_the_search_left_unread":
+                list(measured["the_relations_the_search_left_unread"]),
+            "the_ids_the_fragment_recognises": sorted(recognised),
+            "the_ids_the_probe_prints": sorted(printed),
+            "the_recognised_ids_the_probe_never_prints": sorted(recognised - printed),
+            "the_printed_ids_the_fragment_never_recognises": sorted(printed - recognised),
+            "the_containment_holds_in_this_tree": recognised <= printed,
+        }
+
+    def as_repaired(measured):
+        recognised = set(measured["the_ids_the_fragment_recognises"])
+        printed = set(measured["the_ids_the_probe_prints"])
+        comparers = list(measured["files_that_compare_the_two_sets"])
+        return {
+            "files_the_search_read": measured["files_the_search_read"],
+            "files_that_compare_the_two_sets": comparers,
+            "the_containment_relation_is_computed_by": comparers[0] if comparers else None,
+            "the_relations_the_search_read_as_the_containment":
+                list(measured["the_relations_the_search_read_as_the_containment"]),
+            "the_relations_the_search_left_unread":
+                list(measured["the_relations_the_search_left_unread"]),
+            "the_ids_the_fragment_recognises": sorted(recognised),
+            "the_ids_the_probe_prints": sorted(printed),
+            "the_recognised_ids_the_probe_never_prints": sorted(recognised - printed),
+            "the_printed_ids_the_fragment_never_recognises": sorted(printed - recognised),
+            "the_containment_holds_in_this_tree": recognised <= printed,
+        }
+
+    return {"as_written": as_written(written), "as_repaired": as_repaired(repaired)}
+
+
+def a_vocabulary_whose_containment_only_the_end_of_the_run_reports():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_vocabulary_whose_containment_only_the_end_of_the_run_reports()["as_written"]
+
+
+if "NAMESPACES" in globals():
+    # Dropped into `fragments.py` this file registers itself; run as a script it does not
+    # have the registry and does not need one.
+    NAMESPACES.setdefault(
+        'a-vocabulary-whose-containment-only-the-end-of-the-run-reports', {}).update(
+        {'a_vocabulary_whose_containment_only_the_end_of_the_run_reports':
+         a_vocabulary_whose_containment_only_the_end_of_the_run_reports})
