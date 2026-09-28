@@ -9874,18 +9874,40 @@ def _the_files_the_tree_records(root: pathlib.Path) -> list:
 
     Where the tree is a checkout, the answer is `git ls-files`: the record is what git
     tracks, so an ignored cache needs no name in a list -- the rule cannot rot (this is
-    the rule the tree's own copy path was repaired to, `AGENTS.md` iteration 191). A copy
-    of the tree carries exactly those files and has no `.git`, and there the same question
-    is answered by walking it; the two answers are printed by the run so a reader can see
-    that the copy carries the record and nothing else.
+    the rule the tree's own copy path was repaired to, `AGENTS.md` iteration 191).
+
+    A copy of the tree has no `.git`, and there the same question is answered by walking
+    it -- but under the tree's OWN rule, read out of the `.gitignore` the copy carries,
+    and not under "whatever is lying here now". The premise this replaces was that a copy
+    carries exactly the record's files; it does not, because anything running inside the
+    copy before this reading can write into it. Measured on a copy staged from the record:
+    75 files, and 271 after a control that leaves its cache inside the copy's own tree --
+    a number that is a property of the run's order, not of the tree, and one that the
+    gate, reading the checkout, refutes.
     """
     if (root / ".git").exists():
         run = subprocess.run(["git", "ls-files", "-z", "--", "*.py"], cwd=str(root),
                              capture_output=True, text=True)
         if run.returncode == 0:
             return sorted({name for name in run.stdout.split("\0") if name})
+    rule = []
+    if (root / ".gitignore").is_file():
+        rule = [line.strip().rstrip("/") for line in
+                (root / ".gitignore").read_text(encoding="utf-8").splitlines()
+                if line.strip() and not line.lstrip().startswith("#")]
+    import fnmatch
+
+    def keeps_out(relative: pathlib.Path) -> bool:
+        name = relative.name
+        parts = relative.parts[:-1]
+        return any(fnmatch.fnmatch(relative.as_posix(), kept)
+                   or fnmatch.fnmatch(name, kept)
+                   or any(fnmatch.fnmatch(part, kept) for part in parts)
+                   for kept in rule)
+
     return sorted(path.relative_to(root).as_posix() for path in root.rglob("*.py")
-                  if not {".git", "__pycache__"} & set(path.relative_to(root).parts))
+                  if not {".git", "__pycache__"} & set(path.relative_to(root).parts)
+                  and not keeps_out(path.relative_to(root)))
 
 
 def _the_sides_a_node_reaches(node: ast.AST) -> set:
@@ -10560,3 +10582,182 @@ if "NAMESPACES" in globals():
         'a-cycle-test-that-reads-one-repeated-name-as-an-oscillation', {}).update(
         {'a_cycle_test_that_reads_one_repeated_name_as_an_oscillation':
          a_cycle_test_that_reads_one_repeated_name_as_an_oscillation})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 241 -- `a-check-whose-answer-depends-on-who-asks-read-as-a-property-of-the-object`
+#
+# Draft of the next ledger class: an access check whose answer depends on who asks.
+#
+# Sighting 1 (vega, board 4a00eb7e): bits set, access denied, ST_NOEXEC clear -- the answer
+# was recorded as a property of the object while it was an answer about the asker.
+# Sighting 2 (this workspace, measured): one file, one refused asker, three parents -- the
+# reading that was supposed to separate "denied inode" from "unsearchable path" is cut by the
+# same search bit, and `access(X_OK)` answers False in all three rows.
+#
+# The fragment is the shape, not either sighting: a check that reads what the object carries
+# and returns one answer, with the asker's own entry and the mask never consulted.
+#
+# Draft only: nothing here is spliced into the ledger. The repair is computed from the source
+# by an AST edit whose names come out of the source, so the two halves differ because of what
+# the tree writes, not because a second function was typed beside the first.
+#
+# THE READING. Both halves are ONE reading of that check -- run it on the fragment
+# source as the tree writes it and on the same source with the asker's own entry
+# consulted. No value in either half is typed: the reading executes the source it
+# read, and the repair is computed from that same source, so a tree that renames the
+# asker or the keys of the dict it returns moves the answer.
+# The promise named in the answer is the fragment's own docstring, read out of the
+# source, not quoted beside it.
+# Stdlib only, no network, reads source, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_FRAGMENT_BEGINS = "# --- class 241 fragment begins"
+THE_FRAGMENT_ENDS = "# --- class 241 fragment ends"
+
+# --- class 241 fragment begins
+def whether_the_object_may_be_read(the_object, the_asker):
+    """Answer whether this object may be read, by reading what the object carries: one
+    answer, taken from the object, standing for every asker."""
+    the_mode = the_object["the_mode_bits"]
+    return {"the_object_may_be_read": bool(the_mode & 0o400),
+            "the_answer_came_from": "the object",
+            "the_asker_the_answer_names": None}
+# --- class 241 fragment ends
+
+# The fixture: mode bits that name a reader, a mask that allows it, and two named entries --
+# one asker with nothing at all, one with the bit the mode grants.
+THE_FIXTURE = {"the_mode_bits": 0o640, "the_mask": 0o400,
+               "the_named_entries": {"nobody": 0o000, "vega": 0o400}}
+THE_TWO_ASKERS = ("nobody", "vega")
+
+
+def the_fragment_the_tree_writes():
+    """The class's fragment, cut out of this file on whole lines."""
+    lines = pathlib.Path(__file__).read_text(encoding="utf-8").splitlines(keepends=True)
+    begins = lines.index(THE_FRAGMENT_BEGINS + "\n")
+    ends = lines.index(THE_FRAGMENT_ENDS + "\n")
+    return "".join(lines[begins + 1:ends])
+
+
+def the_parts_of_the_permission_reading(the_source):
+    """What the fragment says, walked out of it rather than typed beside it.
+
+    Returns the check, the names it takes, the dict it returns, the keys of that dict, and
+    whether anything in it consults the asker.
+    """
+    tree = ast.parse(the_source)
+    checks = [n for n in tree.body if isinstance(n, ast.FunctionDef)]
+    if len(checks) != 1:
+        return None
+    check = checks[0]
+    the_names = [a.arg for a in check.args.args]
+    if len(the_names) != 2:
+        return None
+    returns = [n for n in ast.walk(check) if isinstance(n, ast.Return)]
+    if len(returns) != 1 or not isinstance(returns[0].value, ast.Dict):
+        return None
+    the_keys = [k.value for k in returns[0].value.keys if isinstance(k, ast.Constant)]
+    if len(the_keys) != 3:
+        return None
+    # Does anything ask the asker? A subscript of a name with `.get(<the asker>)`, or the
+    # asker's name used anywhere but in the parameters.
+    the_asker_name = the_names[1]
+    consulted = [n for n in ast.walk(check)
+                 if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                 and n.func.attr == "get"
+                 and any(isinstance(a, ast.Name) and a.id == the_asker_name for a in n.args)]
+    return {"the_check": check, "the_names": the_names, "the_return": returns[0],
+            "the_keys": the_keys, "the_asker_name": the_asker_name,
+            "the_entries_it_asks": consulted}
+
+
+def the_source_with_the_asker_consulted(the_source):
+    """The repair, computed from the source: the asker's own entry decides.
+
+    Every name in the repaired body is read out of the source -- the two parameters, the
+    three keys of the dict it returns -- so the halves differ because of what the tree
+    writes. The repaired body asks the asker's named entry, ANDs it with the mask, and
+    names the asker in the third key.
+    """
+    parts = the_parts_of_the_permission_reading(the_source)
+    if parts is None:
+        return the_source
+    obj, asker = parts["the_names"]
+    k_answer, k_from, k_who = parts["the_keys"]
+    body = (
+        f'the_named = {obj}["the_named_entries"].get({asker})\n'
+        f'if the_named is None:\n'
+        f'    the_answer = bool({obj}["the_mode_bits"] & 0o400)\n'
+        f'    the_where = "the object"\n'
+        f'else:\n'
+        f'    the_answer = bool(the_named & {obj}["the_mask"] & 0o400)\n'
+        f'    the_where = "the asker\'s entry"\n'
+        f'return {{"{k_answer}": the_answer, "{k_from}": the_where, "{k_who}": {asker}}}\n'
+    )
+    tree = ast.parse(the_source)
+    check = [n for n in tree.body if isinstance(n, ast.FunctionDef)][0]
+    # The promise is the fragment's own docstring and the repair does not touch it: the
+    # first statement is kept, so the two halves carry the same promise and differ only in
+    # what the check does.
+    kept = []
+    if (check.body and isinstance(check.body[0], ast.Expr)
+            and isinstance(check.body[0].value, ast.Constant)
+            and isinstance(check.body[0].value.value, str)):
+        kept = [check.body[0]]
+    check.body = kept + ast.parse(body).body
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def the_permission_reading(the_source, the_fixture=None):
+    """One reading of the check: run it, and report what it answered and for whom.
+
+    The decisive field is the pair of answers two different askers get from the same
+    object: a check that reads the object answers both of them the same way.
+    """
+    the_fixture = the_fixture or THE_FIXTURE
+    parts = the_parts_of_the_permission_reading(the_source)
+    if parts is None:
+        return {"the_source_can_be_read": False, "the_promise_the_fragment_makes": None,
+                "the_answers_two_askers_get": None, "the_answer_was_taken_from": None,
+                "the_asker_the_answer_names": None, "the_asker_is_consulted": None,
+                "the_mode_bits_it_read": None}
+    namespace = {}
+    exec(compile(the_source, "<the fragment this class is about>", "exec"), namespace)
+    check = namespace[parts["the_check"].name]
+    answers = []
+    for asker in THE_TWO_ASKERS:
+        answer = check(dict(the_fixture), asker)
+        answers.append(answer[parts["the_keys"][0]])
+    first = check(dict(the_fixture), THE_TWO_ASKERS[0])
+    return {
+        "the_source_can_be_read": True,
+        "the_promise_the_fragment_makes": ast.get_docstring(parts["the_check"]),
+        "the_answers_two_askers_get": tuple(answers),
+        "the_answer_was_taken_from": first[parts["the_keys"][1]],
+        "the_asker_the_answer_names": first[parts["the_keys"][2]],
+        "the_asker_is_consulted": bool(parts["the_entries_it_asks"]),
+        "the_mode_bits_it_read": the_fixture["the_mode_bits"],
+    }
+
+
+def a_check_whose_answer_depends_on_who_asks_read_as_a_property_of_the_object():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_check_whose_answer_depends_on_who_asks_read_as_a_property_of_the_object()["as_written"]
+
+
+def _readings_of_a_check_whose_answer_depends_on_who_asks_read_as_a_property_of_the_object():
+    """Both halves: the check this tree writes, and the same check with its body asking the
+    asker's own entry. Both are one function, read from the source."""
+    written = the_fragment_the_tree_writes()
+    return {"as_written": the_permission_reading(written),
+            "as_repaired": the_permission_reading(the_source_with_the_asker_consulted(written))}
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-check-whose-answer-depends-on-who-asks-read-as-a-property-of-the-object', {}).update(
+        {'a_check_whose_answer_depends_on_who_asks_read_as_a_property_of_the_object':
+         a_check_whose_answer_depends_on_who_asks_read_as_a_property_of_the_object})
