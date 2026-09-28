@@ -338,6 +338,12 @@ def clone_matrix_one(matrix):
     return [row[:] for row in matrix]
 
 
+def clone_config(d):
+    """Return a deep copy of the config dict.
+    Mutating the clone never affects the original, even for nested structures."""
+    return dict(d)
+
+
 def merge_prefer_second(a, b):
     """Merge two dicts; on key conflicts, values from `b` (the second argument) win."""
     return {**b, **a}
@@ -3598,7 +3604,7 @@ NAMESPACES = {
     "exception-constructed-not-raised": {"is_divisible": is_divisible},
     "true-div-sold-as-floor-int": {"halves": halves},
     "split-last-empty-on-trailing-newline": {"last_line": last_line},
-    "one-level-copy-sold-as-deep": {"clone_matrix_one": clone_matrix_one},
+    "one-level-copy-sold-as-deep": {"clone_matrix_one": clone_matrix_one, "clone_config": clone_config},
     "rehearsal-stricter-than-the-rule-reported-as-the-rule": {
         "border_runs": border_runs, "rule_verdict": rule_verdict,
         "stricter_count": stricter_count, "colour_steps": colour_steps,
@@ -5900,10 +5906,19 @@ def a_census_taken_from_the_thing_it_counts():
     helper is not consulted for the helpers the source no longer has. An inventory has to be
     pinned outside the thing it counts, or it is a mirror.
 
-    On the revision this class was registered on (`db83fe1`) nothing refused the smaller
-    tree. On this tree something does, and that is a field of this class's helper rather than
-    a number typed here: the probe of the halves reads a list typed into the source against
-    the file the source defines, and the smaller tree's typed list no longer covers it.
+    The reading asks the reader's own rules, in process, on two trees: the helpers that
+    rule finds in the file, and the typed lists that claim the file and miss part of it -- the
+    clause the promise ends on. An earlier version of this helper ran the whole reader in two
+    copies of the tree with a 300-second ceiling; reading every helper in this file costs about
+    an hour, so that run always timed out, this class's probe always raised, and the whole-ledger
+    gate could not be green on any tree that carried this class. A control whose cost outgrows
+    the run that must exercise it is not a control.
+
+    On the revision this class was registered on (`db83fe1`) nothing refused the smaller tree,
+    and on this tree nothing does either: the typed list at `fragments.py:7539` names every
+    helper the file defines, and a name the smaller tree no longer has is not a refusal. The
+    field says which rule was asked and what it answered, and the value it carried when the
+    class was registered was a property of that revision's list rather than of this class.
 
     (The copy the control runs in is this tree minus this class's block: the block carries the
     helper that runs the control.)
@@ -5911,15 +5926,33 @@ def a_census_taken_from_the_thing_it_counts():
     return _readings_of_a_census_taken_from_the_thing_it_counts()["as_written"]
 
 
+def _the_reader_the_census_is_taken_with():
+    """`probes/parts_of_a_reading.py` of this tree, loaded by path.
+
+    The census this class is about is taken with the reader's own rules -- the pattern that
+    says what a reading helper is, the walk that lists them, the tally that reads a typed
+    list against the file it claims, and the fragments that call one helper -- so the two
+    cannot drift apart. The module is imported, read, and dropped from `sys.modules` again.
+    """
+    import importlib.util
+    import pathlib
+    import sys
+
+    path = pathlib.Path(__file__).resolve().parent / "probes" / "parts_of_a_reading.py"
+    name = "the_reader_the_census_is_taken_with"
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    sys.modules.pop(name, None)
+    return module
+
+
 def _readings_of_a_census_taken_from_the_thing_it_counts():
-    """Both halves, read off a copy this helper makes and runs the control in."""
+    """Both halves, read off the two trees with the reader's own rules."""
     import json
     import pathlib
     import re
-    import shutil
-    import subprocess
-    import sys
-    import tempfile
 
     HERE = pathlib.Path(__file__).resolve().parent
     entries = json.loads((HERE / "catches.json").read_text(encoding="utf-8"))["entries"]
@@ -5951,51 +5984,49 @@ def _readings_of_a_census_taken_from_the_thing_it_counts():
             "no control beside this tree: the pair in the entry is what a reading is "
             "compared against, and nothing here measured it")
 
-    def run_in_copy(text):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = pathlib.Path(tmp)
-            (root / "probes").mkdir()
-            (root / "fragments.py").write_text(text, encoding="utf-8")
-            (root / "catches.json").write_text(
-                json.dumps(live, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-            shutil.copy(HERE / "probes" / "parts_of_a_reading.py",
-                        root / "probes" / "parts_of_a_reading.py")
-            # the module every reading of this tree takes its rule from, copied beside it:
-            # a copy without `check.py` dies in `import check` instead of being read.
-            if (HERE / "check.py").exists():
-                (root / "check.py").write_text((HERE / "check.py").read_text(encoding="utf-8"),
-                                               encoding="utf-8")
-            run = subprocess.run(
-                [sys.executable, "probes/parts_of_a_reading.py", "--check"],
-                cwd=root, capture_output=True, text=True, timeout=300)
-            counted = next((int(line.split()[-1]) for line in run.stdout.splitlines()
-                            if line.startswith("helpers with two halves")), 0)
-            return run.returncode, counted
+    reader = _the_reader_the_census_is_taken_with()
 
-    intact_code, counted_intact = run_in_copy(tree)
-    smaller_code, counted_smaller = run_in_copy(smaller)
+    def read_the_source(text):
+        """What the reader's own source-level rules answer about one tree.
 
-    def as_written(intact_code, smaller_code, counted_intact, counted_smaller):
+        Two numbers: the helpers that rule finds in the file, and the typed lists that
+        claim the file and miss part of it -- the only refusal this tree can make without
+        running a helper, and the one the promise's last clause is about.
+        """
+        defined = sorted(name for name in reader.defs_of(text)
+                         if reader.HELPER.match("def %s(" % name))
+        return len(defined), len(reader.tallies_that_do_not_cover_the_file(text))
+
+    counted_intact, refusals_intact = read_the_source(tree)
+    counted_smaller, refusals_smaller = read_the_source(smaller)
+    # the entries that still name the helper the smaller tree no longer has: the fragments
+    # that call it, looked up among the entries of the copy's own ledger
+    callers = reader.probes_that_read(target, reader.defs_of(tree))
+    naming = [e for e in live["entries"]
+              if any("%s()" % caller in (e.get("probe") or "") for caller in callers)]
+    named_by_no_line = 0 if target in reader.defs_of(smaller) else 1
+
+    def as_written(counted_intact, counted_smaller, refusals_smaller, naming):
         # read the way the control's promise reads it: every helper it lists is read against
         # an entry, and this tree has one fewer helper to list
         return {
-            "helpers_removed_from_the_source": 1,
-            "entries_still_naming_the_removed_helper": 1,
-            "control_refused_the_smaller_tree": 1 if smaller_code else 0,
+            "helpers_removed_from_the_source": counted_intact - counted_smaller,
+            "entries_still_naming_the_removed_helper": len(naming),
+            "control_refused_the_smaller_tree": 1 if refusals_smaller else 0,
             "the_census_moved_with_the_source": 1 if counted_smaller != counted_intact else 0,
         }
 
-    def as_repaired(intact_code, smaller_code, counted_intact, counted_smaller):
+    def as_repaired(counted_intact, counted_smaller, refusals_smaller, naming):
         return {
-            "helpers_removed_from_the_source": 1,
-            "entries_still_naming_the_removed_helper": 1,
-            "control_refused_the_smaller_tree": 1 if smaller_code else 0,
-            "the_missing_half_named_by_no_line": 1,
+            "helpers_removed_from_the_source": counted_intact - counted_smaller,
+            "entries_still_naming_the_removed_helper": len(naming),
+            "control_refused_the_smaller_tree": 1 if refusals_smaller else 0,
+            "the_missing_half_named_by_no_line": named_by_no_line,
             "the_intact_tree_still_counts": counted_intact - counted_smaller,
         }
 
-    return {"as_written": as_written(intact_code, smaller_code, counted_intact, counted_smaller),
-            "as_repaired": as_repaired(intact_code, smaller_code, counted_intact, counted_smaller)}
+    return {"as_written": as_written(counted_intact, counted_smaller, refusals_smaller, naming),
+            "as_repaired": as_repaired(counted_intact, counted_smaller, refusals_smaller, naming)}
 
 
 NAMESPACES.setdefault('a-census-taken-from-the-thing-it-counts', {}).update({'a_census_taken_from_the_thing_it_counts': a_census_taken_from_the_thing_it_counts})
@@ -7575,6 +7606,7 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         ('_readings_of_a_census_of_the_file_kept_in_the_record_of_one_class', 0),
         ('_readings_of_a_first_line_read_as_a_name_where_the_kernel_reads_a_program_and_one_argument', 0),
         ("_readings_of_a_vocabulary_whose_containment_only_the_end_of_the_run_reports", 0),
+        ("_readings_of_a_tombstone_written_before_the_move_read_as_the_move_having_landed", 0),
     ]
 
     def as_written(helpers):
@@ -10138,3 +10170,393 @@ if "NAMESPACES" in globals():
         'a-vocabulary-whose-containment-only-the-end-of-the-run-reports', {}).update(
         {'a_vocabulary_whose_containment_only_the_end_of_the_run_reports':
          a_vocabulary_whose_containment_only_the_end_of_the_run_reports})
+
+
+# ---------------------------------------------------------------------------------------
+# Class 239 -- `a-tombstone-written-before-the-move-read-as-the-move-having-landed`
+#
+# THE CLASS. The fragment promises "exactly once per op id, and survive a kill at any
+# line". The code remembers the op as done BEFORE it moves anything, and the retry reads
+# that memory as the move having landed: a run killed in that window loses the transfer,
+# and the retry that was supposed to repair it answers "already done" and moves nothing.
+# The promise is a claim about a crash window; the code is a claim about a write order,
+# and the two part exactly where the promise is loudest.
+#
+# THE READING. Both halves are ONE reading of that window -- kill the transfer between the
+# marker and the move, retry, then count -- taken on the fragment source as the tree
+# writes it and on the same source with the marker statement moved after the move. No
+# value in either half is typed: the reading executes the source it read, and the repair
+# is computed from that same source, so a tree that rewrites the promise or moves the
+# write moves the answer. The promise named in the answer is the fragment's own docstring,
+# read out of the source, not quoted beside it.
+# Stdlib only, no network, reads source, writes nothing.
+# ---------------------------------------------------------------------------------------
+_THE_FRAGMENT_BEGINS = "# --- class 239 fragment begins"
+_THE_FRAGMENT_ENDS = "# --- class 239 fragment ends"
+
+# --- class 239 fragment begins
+class _TheRunWasKilled(BaseException):
+    """A run that died between two writes -- not an `Exception`: a kill is not caught."""
+
+
+def _the_kill_is_here(die_at):
+    """The reproduction's one liberty: the death stands at a line, not at a signal."""
+    if die_at:
+        raise _TheRunWasKilled()
+
+
+def a_transfer_marked_done_before_it_moves(accounts, src, dst, amount, op_id, die_at=False):
+    """Move `amount` from `src` to `dst` exactly once per `op_id`, and survive a kill at
+    any line: a full retry of an interrupted transfer lands the same move as the run that
+    died, and never a second one."""
+    done = accounts.setdefault("_done", {})
+    if op_id in done:
+        return "already done"
+    done[op_id] = True
+    _the_kill_is_here(die_at)
+    accounts[src]["balance"] -= amount
+    accounts[dst]["balance"] += amount
+    return "moved"
+# --- class 239 fragment ends
+
+
+def _the_fragment_the_tree_itself_writes():
+    """The class's fragment, cut out of this file on whole lines.
+
+    A substring search for the marker finds it TWICE: the constant above holds the same
+    characters as the line that delimits the block, so the naive cut starts inside a
+    string literal. The cut is therefore `splitlines()` and an exact line match.
+    """
+    lines = pathlib.Path(__file__).read_text(encoding="utf-8").splitlines(keepends=True)
+    begins = lines.index(_THE_FRAGMENT_BEGINS + "\n")
+    ends = lines.index(_THE_FRAGMENT_ENDS + "\n")
+    return "".join(lines[begins + 1:ends])
+
+
+def _the_parts_of_a_crash_window(the_source):
+    """Which statements of the fragment stand in which order -- read, not typed.
+
+    Returns, all discovered by walking the source this function is given:
+    the transfer function, the function it calls (the death), the class the death raises,
+    the index of the death, the index of the write that marks the work done, and the
+    indices of the moves. Nothing here names a name: the shapes are what is walked.
+    """
+    tree = ast.parse(the_source)
+    functions = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    raised = [n for n in tree.body
+              if isinstance(n, ast.ClassDef)
+              and any(isinstance(b, ast.Name) and b.id == "BaseException" for b in n.bases)]
+    transfer = death = None
+    for fn in functions.values():
+        called = sorted({s.func.id for s in ast.walk(fn)
+                         if isinstance(s, ast.Call) and isinstance(s.func, ast.Name)
+                         and s.func.id in functions})
+        if called:
+            transfer, death = fn, functions[called[0]]
+    if transfer is None or death is None or not raised:
+        return None
+    body = transfer.body
+    deaths = [i for i, s in enumerate(body)
+              if isinstance(s, ast.Expr) and isinstance(s.value, ast.Call)
+              and isinstance(s.value.func, ast.Name) and s.value.func.id == death.name]
+    markers = [i for i, s in enumerate(body)
+               if isinstance(s, ast.Assign) and len(s.targets) == 1
+               and isinstance(s.targets[0], ast.Subscript)]
+    moves = [i for i, s in enumerate(body) if isinstance(s, ast.AugAssign)]
+    raises = [body for body in ast.walk(death) if isinstance(body, ast.Raise)]
+    if len(deaths) != 1 or len(markers) != 1 or not moves or len(raises) != 1:
+        return None
+    return {
+        "the_transfer": transfer,
+        "the_death": deaths[0],
+        "the_marker": markers[0],
+        "the_moves": moves,
+        "the_done_write": body[markers[0]],
+        "the_killed_run": raised[0].name,
+    }
+
+
+def _the_source_with_the_marker_after_the_move(the_source):
+    """The repair, computed from the source: move the done-write past the two moves.
+
+    The write is taken out of the transfer's body and put back just before its last
+    statement, so the window the defect opens -- work marked done, money not moved -- is
+    no longer reachable. The repaired text is `ast.unparse`'s rendering of that edit; the
+    halves are executed, and only the class's own probe is ever cited.
+    """
+    parts = _the_parts_of_a_crash_window(the_source)
+    if parts is None:
+        return the_source
+    tree = ast.parse(the_source)
+    functions = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    transfer = functions[parts["the_transfer"].name]
+    body = transfer.body
+    done = body.pop(parts["the_marker"])
+    last_return = max((i for i, s in enumerate(body) if isinstance(s, ast.Return)),
+                      default=len(body) - 1)
+    body.insert(last_return, done)
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def _the_crash_reading(the_source):
+    """One reading of the window: kill the run at the death and then retry in full.
+
+    The fixture is the instrument's input and is named as such in the answer; every field
+    about the fragment -- the promise, which statement stands where, and what the retry
+    does to the balances -- is computed from `the_source`, which is the text this file
+    writes between the class's two markers (or that text with one statement moved).
+    """
+    fixture = {"a": {"balance": 60}, "b": {"balance": 40}}
+    start = fixture["b"]["balance"]
+    parts = _the_parts_of_a_crash_window(the_source)
+    if parts is None:
+        return {"the_source_can_be_read": False, "the_promise_the_fragment_makes": None,
+                "the_marker_stands_before_the_move": None,
+                "the_death_stands_after_the_marker": None, "the_run_died": None,
+                "the_retry_says": None, "the_destination_gained": None,
+                "the_balances_final": None}
+    namespace = {}
+    exec(compile(the_source, "<the fragment this class is about>", "exec"), namespace)
+    transfer = namespace[parts["the_transfer"].name]
+    killed = namespace[parts["the_killed_run"]]
+    accounts = {k: dict(v) for k, v in fixture.items()}
+    try:
+        transfer(accounts, "a", "b", 30, "op-1", die_at=True)
+        died = False
+    except killed:
+        died = True
+    verdict = transfer(accounts, "a", "b", 30, "op-1")
+    return {
+        "the_source_can_be_read": True,
+        "the_promise_the_fragment_makes": ast.get_docstring(parts["the_transfer"]),
+        "the_marker_stands_before_the_move": parts["the_marker"] < min(parts["the_moves"]),
+        "the_death_stands_after_the_marker": parts["the_marker"] < parts["the_death"],
+        "the_run_died": died,
+        "the_retry_says": verdict,
+        "the_destination_gained": accounts["b"]["balance"] - start,
+        "the_balances_final": [accounts["a"]["balance"], accounts["b"]["balance"]],
+    }
+
+
+def a_tombstone_written_before_the_move_read_as_the_move_having_landed():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_tombstone_written_before_the_move_read_as_the_move_having_landed()[
+        "as_written"]
+
+
+def _readings_of_a_tombstone_written_before_the_move_read_as_the_move_having_landed():
+    """Both halves: the crash window on the source this tree writes, and on the same
+    source with the done-write moved past the two moves. Both are one function."""
+    written = _the_fragment_the_tree_itself_writes()
+    return {"as_written": _the_crash_reading(written),
+            "as_repaired": _the_crash_reading(_the_source_with_the_marker_after_the_move(written))}
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-tombstone-written-before-the-move-read-as-the-move-having-landed', {}).update(
+        {'a_tombstone_written_before_the_move_read_as_the_move_having_landed':
+         a_tombstone_written_before_the_move_read_as_the_move_having_landed})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 240 -- `a-cycle-test-that-reads-one-repeated-name-as-an-oscillation`
+#
+# Draft of the next ledger class, measured as a standalone module before it is spliced.
+#
+# The class: a fixed-point search whose cycle test compares each NAME of the record against
+# every earlier state, so a name whose value repeats an older state's -- because it came back
+# down, or because it never moved at all -- is read as the whole record oscillating, and the
+# search is stopped short of its fixed point with the record left alone.
+#
+# Sighting (2026-09-28): this ledger's own re-take tool refused to write with
+# `CYCLE class=a-half-written-as-a-literal-is-not-a-reading field=observed period=2` while
+# the joint state was still moving, one pass short of the fixed point.
+#
+# Run:  python3 class240_draft.py
+#
+# THE READING. Both halves are ONE reading of that guard -- run the search on the
+# fragment source as the tree writes it and on the same source with the guard's test
+# replaced by a comparison of the whole record. No value in either half is typed: the
+# reading executes the source it read, and the repair is computed from that same
+# source, so a tree that rewrites the promise or rewrites the guard moves the answer.
+# The promise named in the answer is the fragment's own docstring, read out of the
+# source, not quoted beside it.
+# Stdlib only, no network, reads source, writes nothing.
+# ---------------------------------------------------------------------------------------
+_THE_CYCLE_FRAGMENT_BEGINS = "# --- class 240 fragment begins"
+_THE_CYCLE_FRAGMENT_ENDS = "# --- class 240 fragment ends"
+
+# --- class 240 fragment begins
+def a_search_that_stops_at_a_fixed_point(the_readings, the_seed, the_ceiling=6):
+    """Re-take the readings until one pass moves nothing, and return the record they settle
+    at: a pass that moves nothing is the end of the search, and a value that comes back is
+    the search oscillating, so the record is left alone."""
+    history = [dict(the_seed)]
+    record = dict(the_seed)
+    for _ in range(the_ceiling):
+        record = the_readings(record)
+        if any(old.get(name) == value for old in history[:-1]
+               for name, value in record.items()):
+            return {"the_search_stopped": "a cycle", "the_record_it_kept": None,
+                    "the_passes_it_ran": len(history)}
+        history.append(dict(record))
+        if record == history[-2]:
+            return {"the_search_stopped": "a fixed point", "the_record_it_kept": record,
+                    "the_passes_it_ran": len(history) - 1}
+    return {"the_search_stopped": "the ceiling", "the_record_it_kept": None,
+            "the_passes_it_ran": len(history)}
+# --- class 240 fragment ends
+
+
+def _the_cycle_fragment_the_tree_itself_writes():
+    """The class's fragment, cut out of this file on whole lines.
+
+    A substring search for the marker finds it twice -- the constant above holds the same
+    characters as the line that delimits the block -- so the cut is `splitlines()` and an
+    exact line match.
+    """
+    lines = pathlib.Path(__file__).read_text(encoding="utf-8").splitlines(keepends=True)
+    begins = lines.index(_THE_CYCLE_FRAGMENT_BEGINS + "\n")
+    ends = lines.index(_THE_CYCLE_FRAGMENT_ENDS + "\n")
+    return "".join(lines[begins + 1:ends])
+
+
+def _the_parts_of_a_cycle_guard(the_source):
+    """Which statements of the fragment stand where -- walked, never typed.
+
+    Returns the search function, its loop, the guard (an `if` whose test is `any` over a
+    generator), the per-name comparison inside that generator, and the fixed-point test.
+    """
+    tree = ast.parse(the_source)
+    searches = [n for n in tree.body if isinstance(n, ast.FunctionDef)]
+    if len(searches) != 1:
+        return None
+    search = searches[0]
+    loops = [n for n in ast.walk(search) if isinstance(n, ast.For)]
+    if len(loops) != 1:
+        return None
+    guards = []
+    for node in ast.walk(loops[0]):
+        if not isinstance(node, ast.If):
+            continue
+        test = node.test
+        if not (isinstance(test, ast.Call) and isinstance(test.func, ast.Name)
+                and test.func.id == "any" and len(test.args) == 1
+                and isinstance(test.args[0], ast.GeneratorExp)):
+            continue
+        element = test.args[0].elt
+        if not (isinstance(element, ast.Compare) and element.ops
+                and isinstance(element.ops[0], ast.Eq)):
+            continue
+        guards.append((node, element))
+    if len(guards) != 1:
+        return None
+    guard, element = guards[0]
+    # Which names the guard compares: a per-name shape reads them with `.get(name)`, the
+    # joint shape compares the whole record. Both are readable here, because the repaired
+    # source has to be read by the same walker as the source this tree writes.
+    watched = sorted({n.attr for n in ast.walk(element)
+                      if isinstance(n, ast.Attribute) and n.attr == "get"})
+    fixed = [n for n in ast.walk(loops[0])
+             if isinstance(n, ast.Compare) and isinstance(n.left, ast.Name)
+             and n.left.id == "record" and len(n.comparators) == 1]
+    return {"the_search": search, "the_loop": loops[0], "the_guard": guard,
+            "the_compared_element": element, "the_watched_names": watched,
+            "the_fixed_point_test": fixed[0] if fixed else None,
+            "the_history_append": [n for n in ast.walk(loops[0])
+                                   if isinstance(n, ast.Expr)
+                                   and isinstance(n.value, ast.Call)
+                                   and isinstance(n.value.func, ast.Attribute)
+                                   and n.value.func.attr == "append"]}
+
+
+def _the_source_with_the_joint_state_test(the_source):
+    """The repair, computed from the source: compare the whole record, not one name.
+
+    The guard's test is replaced by `any(old == record for old in history[:-1])`, built by
+    parsing that expression, so a reading that comes back to an earlier value while the
+    other names are still moving is no longer read as an oscillation. The repaired text is
+    `ast.unparse`'s rendering of that edit; the halves are executed, and only the class's
+    own probe is ever cited.
+    """
+    parts = _the_parts_of_a_cycle_guard(the_source)
+    if parts is None:
+        return the_source
+    tree = ast.parse(the_source)
+    search = [n for n in tree.body if isinstance(n, ast.FunctionDef)][0]
+    loops = [n for n in ast.walk(search) if isinstance(n, ast.For)]
+    guards = [n for n in ast.walk(loops[0]) if isinstance(n, ast.If)
+              and isinstance(n.test, ast.Call) and isinstance(n.test.func, ast.Name)
+              and n.test.func.id == "any"]
+    guards[0].test = ast.parse("any(old == record for old in history[:-1])",
+                               mode="eval").body
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def _the_two_readings(record):
+    """The instrument's readings, taken from the record the last pass wrote.
+
+    The second is ABOUT the first: it is the census of what the other reading still has to
+    move, so it comes back down to an earlier value on the pass after the totals settle --
+    which is exactly the shape of a class whose reading lists the entries its copy
+    disagrees with.
+    """
+    totals = record["totals"] + 1 if record["totals"] < 3 else record["totals"]
+    return {"totals": totals, "census": 1 if totals < 3 else 0}
+
+
+def _the_cycle_reading(the_source, the_readings=None):
+    """One reading of the guard: run the search on the source and report where it stopped.
+
+    Everything about the fragment -- where the guard stands, what it compares, how many
+    passes the search ran and what record it kept -- is computed from `the_source`, which is
+    the text this file writes between the class's two markers (or that text with the guard's
+    test replaced). `the_readings` is the instrument's input; the class's own pair passes the
+    instrument this file carries.
+    """
+    the_readings = the_readings or _the_two_readings
+    parts = _the_parts_of_a_cycle_guard(the_source)
+    if parts is None:
+        return {"the_source_can_be_read": False, "the_promise_the_fragment_makes": None,
+                "the_search_stopped": None, "the_record_it_kept": None,
+                "the_passes_it_ran": None, "the_guard_watches_one_name": None,
+                "the_readings_settle_at": None}
+    namespace = {}
+    exec(compile(the_source, "<the fragment this class is about>", "exec"), namespace)
+    search = namespace[parts["the_search"].name]
+    answer = search(the_readings, {"totals": 0, "census": 0})
+    return {
+        "the_source_can_be_read": True,
+        "the_promise_the_fragment_makes": ast.get_docstring(parts["the_search"]),
+        "the_search_stopped": answer["the_search_stopped"],
+        "the_record_it_kept": answer["the_record_it_kept"],
+        "the_passes_it_ran": answer["the_passes_it_ran"],
+        "the_guard_watches_one_name": bool(parts["the_watched_names"]),
+        "the_readings_settle_at": _the_two_readings(_the_two_readings(
+            _the_two_readings({"totals": 0, "census": 0}))),
+    }
+
+
+def a_cycle_test_that_reads_one_repeated_name_as_an_oscillation():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_cycle_test_that_reads_one_repeated_name_as_an_oscillation()["as_written"]
+
+
+def _readings_of_a_cycle_test_that_reads_one_repeated_name_as_an_oscillation():
+    """Both halves: the search on the source this tree writes, and on the same source with
+    the guard's test replaced by a comparison of the whole record. Both are one function."""
+    written = _the_cycle_fragment_the_tree_itself_writes()
+    return {"as_written": _the_cycle_reading(written),
+            "as_repaired": _the_cycle_reading(_the_source_with_the_joint_state_test(written))}
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-cycle-test-that-reads-one-repeated-name-as-an-oscillation', {}).update(
+        {'a_cycle_test_that_reads_one_repeated_name_as_an_oscillation':
+         a_cycle_test_that_reads_one_repeated_name_as_an_oscillation})
