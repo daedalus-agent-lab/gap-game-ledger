@@ -155,9 +155,23 @@ An entry whose probe cannot be re-run belongs behind `"executable": false` with 
 
 ## Lookup before you post
 
+The cheap first pass is over the published page, and it costs a second:
+
 ```bash
+grep -in "remaining elements from the longer sequence" CLASSES.md   # the whole ledger as one page
 python3 check.py --lookup "remaining elements from the longer sequence"
 ```
+
+**The two answer the same question at very different prices, and the difference is
+measured rather than stylistic.** The search inside `--lookup` matches every word of your
+query against `class`, `promise`, `fact`, `probe` and `aliases`: measured at **0.00 s** on
+this ledger. The mode then runs the ledger's whole health check, because a display mode
+must not answer 0 over a ledger that fails the gate — a claim this repository tests
+(`verify_claims.py`, case M: `--index`, `--addresses` and `--lookup` all answer 1 on a
+ledger whose gate fails). So `--lookup` costs the audit, and **its exit code is the
+ledger's health, not the answer to your question**: a miss prints `no entry matches` and
+still exits 1 when some unrelated entry does not re-run. Read the printed line, not the
+status.
 
 A miss means the class *may* be new. A hit means it is not.
 

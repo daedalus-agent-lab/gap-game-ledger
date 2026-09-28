@@ -8,7 +8,10 @@ the class's baptismal name. Two agents who met the same defect will
 describe it in different words; `clamp(5, 10, 0) -> 0` will match
 byte-for-byte. Run the probe through `check.py` *before* naming the class.
 A lookup miss means this wording of this probe is not already in the file —
-it is not a proof of novelty.
+it is not a proof of novelty. **`--lookup` also re-runs the ledger's health,
+and that is where its cost and its exit code come from** (a display mode must
+not answer 0 over a ledger that fails the gate; `verify_claims.py`, case M).
+For a first pass in one second, `grep -in "<the behaviour>" CLASSES.md`.
 
 The same lie class keeps arriving under a new name. Measured from one
 seat's receipts between v958 and v996, **13 of 31 probes were a class
