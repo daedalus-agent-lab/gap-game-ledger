@@ -11927,3 +11927,304 @@ if "NAMESPACES" in globals():
     NAMESPACES.setdefault(
         'a-window-sampled-at-one-line-read-as-the-window-it-names', {}).update(
         {'a_window_sampled_at_one_line_read_as_the_window_it_names': a_window_sampled_at_one_line_read_as_the_window_it_names})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 247 -- `a-probe-the-reader-cannot-parse-read-as-a-probe-that-calls-nothing`
+#
+# Class 247 draft -- `a-probe-the-reader-cannot-parse-read-as-a-probe-that-calls-nothing`.
+#
+# THE SHAPE, not the sighting: a reader that decides whether a probe calls the class's own
+# bytes parses the probe as an EXPRESSION. A probe written as a function is a `SyntaxError` to
+# that reader, the empty set comes back, and the empty set is turned into a sentence about the
+# PROBE -- "the probe calls no fragment of this class" -- while the probe's own code object
+# carries the name the reader was looking for.
+#
+# The reader's answer has two parts and the sentence keeps one of them: what it read, and
+# whether it read the probe at all. A reader that could not parse its subject and a reader that
+# parsed a probe calling nothing are two different answers, and only one of them is a fact about
+# the probe.
+#
+# The fragment carries the tree's own reader, the reader the tree defines and never calls (it
+# parses the probe as a module, so a function-shaped probe is read like any other), and the
+# sentence built out of the reader's answer. Both halves execute the fragment's own source and
+# the repair is an AST edit of that source, so no value in either half is typed. The readers are
+# named in the reading by the mode each hands the parser -- read off each reader's own source --
+# so the two fields about the readers mean the same thing in both halves, and only the reader
+# the tree calls moves.
+#
+# This draft runs standalone: the fragment is cut out of this file between its own markers, so
+# the two halves read exactly the bytes the splicer will carry.
+#
+# Stdlib only, no network, reads source, writes nothing.
+#
+# THE READING. Both halves are ONE reading of that probe -- run it on the fragment
+# source as the tree writes it and on the same source with the sentence built from the
+# reader the tree defines and never calls. No value in either half is typed: the reading
+# executes the source it read, and the repair is computed from that same source, so a
+# tree that renames the reader it calls moves no answer and a tree that renames the
+# reader it never calls moves the repair with it.
+# The promise named in the answer is the fragment's own docstring, read out of the
+# source, not quoted beside it.
+# Stdlib only, no network, reads source, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_247_FRAGMENT_BEGINS = "# --- class 247 fragment begins"
+THE_247_FRAGMENT_ENDS = "# --- class 247 fragment ends"
+
+# --- class 247 fragment begins
+def _the_247_names_the_expression_reader_sees(the_probe):
+    """The names this tree's reader sees. The probe is parsed as an expression, so a probe
+    written as a function parses as nothing at all, and the answer says so."""
+    try:
+        the_tree = ast.parse(the_probe.strip(), mode="eval")
+    except SyntaxError:
+        return {"the_names_it_read": [], "the_probe_was_read": False}
+    the_names = []
+    for node in ast.walk(the_tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            the_names.append(node.func.id)
+    return {"the_names_it_read": sorted(set(the_names)), "the_probe_was_read": True}
+
+
+def _the_247_names_a_reader_of_the_whole_probe_sees(the_probe):
+    """The reader this tree defines and never calls: the probe is parsed as a module, so a
+    probe written as a function is read like any other, and a shape this reader cannot parse
+    is not the same answer as a probe that calls nothing."""
+    try:
+        the_tree = ast.parse(the_probe)
+    except SyntaxError:
+        return {"the_names_it_read": [], "the_probe_was_read": False}
+    the_names = []
+    for node in ast.walk(the_tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            the_names.append(node.func.id)
+    return {"the_names_it_read": sorted(set(the_names)), "the_probe_was_read": True}
+
+
+def _the_247_what_the_reader_answers(the_probe, the_class):
+    """The sentence the reader's answer is worth: the two-part answer is read as its first part
+    only, so a reader that did not read the probe says the same thing as a probe that calls
+    nothing."""
+    the_answer = _the_247_names_the_expression_reader_sees(the_probe)
+    if the_class in the_answer["the_names_it_read"]:
+        return "the probe calls %s" % the_class
+    return "the probe calls no fragment of this class"
+
+
+def the_247_probe_written_as_a_function():
+    """The probe this class carries: written as a function, and calling the bytes it exercises."""
+    return the_247_fragment_it_exercises()
+
+
+def the_247_fragment_it_exercises():
+    """The class's own bytes: the fragment the probe calls."""
+    return "the class's own bytes"
+# --- class 247 fragment ends
+
+
+def the_fragment_the_247_class_stands_in():
+    """The class's fragment, cut out of this file on whole lines."""
+    lines = pathlib.Path(__file__).read_text(encoding="utf-8").splitlines(keepends=True)
+    begins = lines.index(THE_247_FRAGMENT_BEGINS + "\n")
+    ends = lines.index(THE_247_FRAGMENT_ENDS + "\n")
+    return "".join(lines[begins + 1:ends])
+
+
+def _the_247_keys():
+    """The keys both halves carry, in the order the reading fills them."""
+    return ("the_source_can_be_read", "the_probe_the_class_carries",
+            "the_names_the_probe_carries", "the_names_the_expression_reader_gives",
+            "the_names_the_module_reader_gives",
+            "the_names_the_reader_the_tree_calls_gives", "the_probe_was_read",
+            "the_sentence_the_reader_answers")
+
+
+def _the_247_refusal():
+    """What a reading says when the source does not carry the parts it must read: a refusal,
+    never a number."""
+    return {key: (False if key == "the_source_can_be_read" else None)
+            for key in _the_247_keys()}
+
+
+def _the_247_statements(the_function):
+    """The statements of a function's body, its docstring left out: a docstring is not a
+    statement the function does anything with."""
+    if ast.get_docstring(the_function) is not None:
+        return the_function.body[1:]
+    return the_function.body
+
+
+def _the_247_mode_the_reader_parses_in(the_reader):
+    """The mode the reader hands the parser, read off the reader's own source: `eval` for the
+    reader that reads an expression, the parser's default for the reader that reads a module."""
+    for node in ast.walk(the_reader):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "parse"):
+            for keyword in node.keywords:
+                if keyword.arg == "mode" and isinstance(keyword.value, ast.Constant):
+                    return keyword.value.value
+            return "exec"
+    return None
+
+
+def _the_247_parts_or_none(the_source):
+    """What the fragment says, walked out of it rather than typed beside it: the probe written
+    as a function, the name it calls, the two readers with the mode each parses in, the
+    sentence built from one of them, and which of the two the tree calls. None where the source
+    does not carry exactly one of each."""
+    if not isinstance(the_source, str):
+        return None
+    try:
+        tree = ast.parse(the_source)
+    except SyntaxError:
+        return None
+    the_functions = [n for n in tree.body if isinstance(n, ast.FunctionDef)]
+    the_readers = [n for n in the_functions if len(n.args.args) == 1
+                   and any(isinstance(s, ast.Call) and isinstance(s.func, ast.Attribute)
+                           and s.func.attr == "parse" for s in ast.walk(n))]
+    if len(the_readers) != 2:
+        return None
+    the_reader_names = {n.name for n in the_readers}
+    the_calls = {}
+    for n in the_functions:
+        for s in ast.walk(n):
+            if isinstance(s, ast.Call) and isinstance(s.func, ast.Name):
+                the_calls.setdefault(n.name, set()).add(s.func.id)
+    the_speakers = [n for n in the_functions if len(n.args.args) == 2
+                    and len(the_calls.get(n.name, set()) & the_reader_names) == 1]
+    if len(the_speakers) != 1:
+        return None
+    the_speaker = the_speakers[0]
+    the_called = (the_calls[the_speaker.name] & the_reader_names).pop()
+    the_uncalled = [name for name in sorted(the_reader_names) if name != the_called]
+    if len(the_uncalled) != 1:
+        return None
+    the_probes = [n for n in the_functions
+                  if n is not the_speaker and n.name not in the_reader_names
+                  and len(_the_247_statements(n)) == 1
+                  and isinstance(_the_247_statements(n)[0], ast.Return)
+                  and isinstance(_the_247_statements(n)[0].value, ast.Call)
+                  and isinstance(_the_247_statements(n)[0].value.func, ast.Name)]
+    if len(the_probes) != 1:
+        return None
+    the_probe = the_probes[0]
+    the_by_mode = {}
+    for n in the_readers:
+        the_by_mode.setdefault(_the_247_mode_the_reader_parses_in(n), n.name)
+    return {"the_probe": the_probe.name,
+            "the_probe_source": ast.unparse(the_probe) + "\n",
+            "the_fragment_it_calls": _the_247_statements(the_probe)[0].value.func.id,
+            "the_speaker": the_speaker.name, "the_reader": the_called,
+            "the_reader_never_called": the_uncalled[0],
+            "the_expression_reader": the_by_mode.get("eval"),
+            "the_module_reader": [name for mode, name in sorted(the_by_mode.items())
+                                  if mode != "eval"][0]
+            if any(mode != "eval" for mode in the_by_mode) else None}
+
+
+def the_247_source_with_the_reader_of_the_whole_probe(the_source):
+    """The repair this tree computes from the source: the sentence is built from the reader the
+    tree defines and never calls, the one that reads the probe as a module. The reader's name
+    comes out of the source, so a tree that renames it moves the repair with it."""
+    parts = _the_247_parts_or_none(the_source)
+    if parts is None:
+        return None
+    tree = ast.parse(the_source)
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id == parts["the_reader"]):
+            node.func.id = parts["the_reader_never_called"]
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def _the_247_names_the_probe_carries(the_probe_source, the_probe_name):
+    """The names the probe's own code object carries, read off the compiled function rather
+    than from its text: the independent measurement of whether the probe calls anything."""
+    namespace = {}
+    try:
+        exec(compile(the_probe_source, "<the-247-probe>", "exec"), namespace)
+    except SyntaxError:
+        return None
+    the_probe = namespace.get(the_probe_name)
+    if the_probe is None or not hasattr(the_probe, "__code__"):
+        return None
+    return sorted(the_probe.__code__.co_names)
+
+
+def _the_247_answer_of(namespace, the_name, the_probe_source):
+    """One reader's answer, executed out of the source that was read, or None where the source
+    carries no reader of that mode."""
+    if the_name is None:
+        return None
+    the_reader = namespace.get(the_name)
+    if the_reader is None:
+        return None
+    return the_reader(the_probe_source)
+
+
+def the_247_reading(the_source):
+    """What this source's readers answer about the probe the class carries, and the sentence
+    built from the reader the tree calls. Every reader is executed out of the source that was
+    read, and the two fields about the readers are named by the mode each parses in, so they
+    mean the same thing in both halves."""
+    parts = _the_247_parts_or_none(the_source)
+    if parts is None:
+        return _the_247_refusal()
+    namespace = {"ast": ast}
+    try:
+        exec(compile(the_source, "<the-247-fragment>", "exec"), namespace)
+    except SyntaxError:
+        return _the_247_refusal()
+    the_speaker = namespace.get(parts["the_speaker"])
+    if the_speaker is None:
+        return _the_247_refusal()
+    the_expression_answer = _the_247_answer_of(namespace, parts["the_expression_reader"],
+                                               parts["the_probe_source"])
+    the_module_answer = _the_247_answer_of(namespace, parts["the_module_reader"],
+                                           parts["the_probe_source"])
+    the_called_answer = _the_247_answer_of(namespace, parts["the_reader"],
+                                           parts["the_probe_source"])
+    if the_called_answer is None:
+        return _the_247_refusal()
+    the_sentence = the_speaker(parts["the_probe_source"], parts["the_fragment_it_calls"])
+    the_carried = _the_247_names_the_probe_carries(parts["the_probe_source"], parts["the_probe"])
+    if the_carried is None:
+        return _the_247_refusal()
+    return {"the_source_can_be_read": True,
+            "the_probe_the_class_carries": parts["the_probe_source"],
+            "the_names_the_probe_carries": the_carried,
+            "the_names_the_expression_reader_gives": (None if the_expression_answer is None
+                                                      else list(the_expression_answer[
+                                                          "the_names_it_read"])),
+            "the_names_the_module_reader_gives": (None if the_module_answer is None
+                                                  else list(the_module_answer[
+                                                      "the_names_it_read"])),
+            "the_names_the_reader_the_tree_calls_gives": list(
+                the_called_answer["the_names_it_read"]),
+            "the_probe_was_read": the_called_answer["the_probe_was_read"],
+            "the_sentence_the_reader_answers": the_sentence}
+
+
+def a_probe_the_reader_cannot_parse_read_as_a_probe_that_calls_nothing():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_probe_the_reader_cannot_parse_read_as_a_probe_that_calls_nothing()[
+        "as_written"]
+
+
+def _readings_of_a_probe_the_reader_cannot_parse_read_as_a_probe_that_calls_nothing():
+    """Both halves: the sentence this tree's reader is worth about a probe written as a
+    function, and the same sentence built from the reader the tree defines and never calls.
+    Both execute the source they read."""
+    the_written = the_fragment_the_247_class_stands_in()
+    return {"as_written": the_247_reading(the_written),
+            "as_repaired": the_247_reading(
+                the_247_source_with_the_reader_of_the_whole_probe(the_written))}
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-probe-the-reader-cannot-parse-read-as-a-probe-that-calls-nothing', {}).update(
+        {'a_probe_the_reader_cannot_parse_read_as_a_probe_that_calls_nothing': a_probe_the_reader_cannot_parse_read_as_a_probe_that_calls_nothing})
