@@ -12228,3 +12228,249 @@ if "NAMESPACES" in globals():
     NAMESPACES.setdefault(
         'a-probe-the-reader-cannot-parse-read-as-a-probe-that-calls-nothing', {}).update(
         {'a_probe_the_reader_cannot_parse_read_as_a_probe_that_calls_nothing': a_probe_the_reader_cannot_parse_read_as_a_probe_that_calls_nothing})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 248 -- `a-path-taken-as-written-read-as-a-path-inside-the-folder`
+#
+# Draft of a registry class: a path taken as written, read as a path inside the folder.
+#
+# The defect: the rule that decides whether a path is inside a folder compares the path **as written**,
+# so a path carrying a fold (``sub/../..`` or ``../``) matches the folder's prefix and is named as
+# inside, while the path it names lands outside. The repair is computed from the same source by an AST
+# transform: every use of the rule's path argument is wrapped in the normalizer the fragment defines,
+# so the rule judges the path it lands on.
+#
+# The two halves execute the fragment's own source. The fixture is built out of the fragment's own
+# folder constant, so a tree that renames the folder moves the fixture with it, and the answer to
+# "which of the named shapes actually lands outside" is measured by a reader outside the fragment
+# (``os.path.realpath`` and the parents test), never by the rule under test.
+#
+# Stdlib only, no network, reads its own file, writes nothing. Standalone: the fragment is cut out
+# between its own markers, so both halves read exactly the bytes a splicer would carry.
+#
+# THE READING. Both halves are ONE reading of that fixture -- run it on the fragment
+# source as the tree writes it and on the same source with every use of the rule's path
+# argument wrapped in the normalizer. No value in either half is typed: the reading
+# executes the source it read, and the repair is computed from that same source, so a
+# tree that renames any part moves no answer, and the fixture is built out of the
+# fragment's own folder constant rather than typed beside it.
+# Which named shapes actually land outside is measured by a reader outside the fragment
+# (realpath plus the parents test), never by the rule under test.
+# The promise named in the answer is the fragment's own docstring, read out of the
+# source, not quoted beside it.
+# Stdlib only, no network, reads its own file, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_248_FRAGMENT_BEGINS = "# --- class 248 fragment begins"
+THE_248_FRAGMENT_ENDS = "# --- class 248 fragment ends"
+
+import os
+
+# --- class 248 fragment begins
+THE_248_FOLDER = "/the-248-wall"
+
+
+def _the_248_where_the_path_lands(the_path):
+    """Where a path lands, with the folds in it taken out. The function this class's repair wraps
+    the path in, and the one the rule below never calls."""
+    return os.path.normpath(the_path)
+
+
+def _the_248_the_folder_that_holds(the_path, the_folders):
+    """Which folder holds this path. The path is taken as it is written."""
+    for the_folder in the_folders:
+        if the_path == the_folder or the_path.startswith(the_folder.rstrip("/") + "/"):
+            return the_folder
+    return None
+# --- class 248 fragment ends
+
+
+def the_fragment_the_248_class_stands_in():
+    """The class's fragment, cut out of this file on whole lines: a marker is a line, not a
+    substring, so a marker named inside a string does not cut anything."""
+    lines = pathlib.Path(__file__).read_text(encoding="utf-8").splitlines(keepends=True)
+    begins = lines.index(THE_248_FRAGMENT_BEGINS + "\n")
+    ends = lines.index(THE_248_FRAGMENT_ENDS + "\n")
+    return "".join(lines[begins + 1:ends])
+
+
+def _the_248_keys():
+    """The keys both halves carry, in the order the reading fills them."""
+    return ("the_source_can_be_read", "the_rule_that_decides",
+            "the_shapes_the_rule_names_as_inside", "the_shapes_that_land_outside",
+            "the_shape_it_names_for_a_path_that_leaves",
+            "the_folder_it_names_for_that_shape", "the_path_that_shape_lands_on")
+
+
+def _the_248_refusal():
+    """What a reading says when the source does not carry the parts it must read: a refusal, never
+    a number."""
+    return {key: (False if key == "the_source_can_be_read" else None)
+            for key in _the_248_keys()}
+
+
+def _the_248_statements(the_function):
+    """The statements of a function's body, its docstring left out: a docstring is not a statement
+    the function does anything with."""
+    if ast.get_docstring(the_function) is not None:
+        return the_function.body[1:]
+    return the_function.body
+
+
+def _the_248_parts_or_none(the_source):
+    """The three parts the reading needs, found in the source by shape and named from it: the rule
+    that decides (two arguments, and a comparison against its second), the normalizer (one
+    argument, one statement, a return of a call on that argument) and the folder the fragment
+    carries as its own constant."""
+    try:
+        tree = ast.parse(the_source)
+    except SyntaxError:
+        return None
+    functions = [n for n in tree.body if isinstance(n, ast.FunctionDef)]
+    constants = {t.id: n.value.value for n in tree.body if isinstance(n, ast.Assign)
+                 for t in n.targets if isinstance(t, ast.Name)
+                 and isinstance(n.value, ast.Constant) and isinstance(n.value.value, str)}
+    rules = []
+    for function in functions:
+        args = function.args.args
+        if len(args) != 2:
+            continue
+        uses = [n for n in ast.walk(function)
+                if isinstance(n, ast.Name) and n.id == args[0].arg]
+        compares = [n for n in ast.walk(function)
+                    if isinstance(n, ast.Compare)
+                    and any(isinstance(inner, ast.Name) and inner.id == args[0].arg
+                            for inner in ast.walk(n))]
+        if uses and compares:
+            rules.append((function, args[0].arg))
+    normalizers = []
+    for function in functions:
+        args = function.args.args
+        statements = _the_248_statements(function)
+        if len(args) != 1 or len(statements) != 1:
+            continue
+        only = statements[0]
+        if (isinstance(only, ast.Return) and isinstance(only.value, ast.Call)
+                and isinstance(only.value.func, ast.Attribute)
+                and only.value.args
+                and isinstance(only.value.args[0], ast.Name)
+                and only.value.args[0].id == args[0].arg):
+            normalizers.append(function)
+    if len(rules) != 1 or len(normalizers) != 1 or len(constants) != 1:
+        return None
+    return {"the_rule": rules[0][0].name, "the_path_argument": rules[0][1],
+            "the_normalizer": normalizers[0].name,
+            "the_folder": constants[list(constants)[0]]}
+
+
+def _the_248_the_shapes(the_folder):
+    """The shapes the rule is asked about, every one of them built out of the fragment's own folder
+    constant: a fixture typed here would be a sentence about a folder the fragment may rename."""
+    return (("inside", the_folder + "/a.txt"),
+            ("traversal", the_folder + "/sub/../../outside/secret.txt"),
+            ("up-one", the_folder + "/../outside/secret.txt"),
+            ("sibling", the_folder + "x/b.txt"))
+
+
+def _the_248_where_it_lands(the_path, the_folders):
+    """Where a path lands and whether it is inside a folder, judged on the real path by a reader
+    outside the fragment: the independent half of the comparison, never the rule under test."""
+    lands = os.path.realpath(the_path)
+    roots = [os.path.realpath(folder) for folder in the_folders]
+    inside = any(lands == root or pathlib.Path(root) in pathlib.Path(lands).parents
+                 for root in roots)
+    return lands, inside
+
+
+def the_248_reading(the_source):
+    """What the rule this source carries answers about the fixture, and which of the shapes it
+    names as inside actually lands outside. The rule is executed out of the source that was read,
+    and the shape that leaves is found by the independent reader, so a rule that names everything
+    inside is reported as naming everything inside."""
+    parts = _the_248_parts_or_none(the_source)
+    if parts is None:
+        return _the_248_refusal()
+    namespace = {"os": os, "pathlib": pathlib}
+    try:
+        exec(compile(the_source, "<the-248-fragment>", "exec"), namespace)
+    except SyntaxError:
+        return _the_248_refusal()
+    the_rule = namespace.get(parts["the_rule"])
+    if the_rule is None:
+        return _the_248_refusal()
+    the_folders = [parts["the_folder"]]
+    the_shapes = _the_248_the_shapes(parts["the_folder"])
+    named = []
+    for label, path in the_shapes:
+        if the_rule(path, the_folders) is not None:
+            named.append(label)
+    leaving = []
+    for label, path in the_shapes:
+        if label not in named:
+            continue
+        lands, inside = _the_248_where_it_lands(path, the_folders)
+        if not inside:
+            leaving.append(label)
+    the_first = leaving[0] if leaving else None
+    the_path_of = {label: path for label, path in the_shapes}
+    return {"the_source_can_be_read": True,
+            "the_rule_that_decides": parts["the_rule"],
+            "the_shapes_the_rule_names_as_inside": named,
+            "the_shapes_that_land_outside": leaving,
+            "the_shape_it_names_for_a_path_that_leaves": the_first,
+            "the_folder_it_names_for_that_shape": (None if the_first is None
+                                                   else the_rule(the_path_of[the_first],
+                                                                 the_folders)),
+            "the_path_that_shape_lands_on": (None if the_first is None
+                                             else _the_248_where_it_lands(the_path_of[the_first],
+                                                                          the_folders)[0])}
+
+
+def the_248_source_that_judges_the_path_it_lands_on(the_source):
+    """The repair this class computes from the source: inside the rule that decides, every use of
+    the path argument is wrapped in the normalizer the fragment defines. The names come out of the
+    source, so a tree that renames either one moves the repair with it."""
+    parts = _the_248_parts_or_none(the_source)
+    if parts is None:
+        return None
+
+    class TheWrapper(ast.NodeTransformer):
+        """One substitution, applied by the tree's own visitor: a use of the path argument becomes
+        a call of the normalizer on it. A name the rule assigns is left alone."""
+
+        def visit_Name(self, node):
+            if node.id == parts["the_path_argument"] and isinstance(node.ctx, ast.Load):
+                return ast.Call(func=ast.Name(id=parts["the_normalizer"], ctx=ast.Load()),
+                                args=[ast.Name(id=parts["the_path_argument"], ctx=ast.Load())],
+                                keywords=[])
+            return node
+
+    tree = ast.parse(the_source)
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == parts["the_rule"]:
+            TheWrapper().visit(node)
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def a_path_taken_as_written_read_as_a_path_inside_the_folder():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_path_taken_as_written_read_as_a_path_inside_the_folder()["as_written"]
+
+
+def _readings_of_a_path_taken_as_written_read_as_a_path_inside_the_folder():
+    """Both halves: the shapes this tree's rule names as inside and the ones that land outside, and
+    the same reading where every use of the path argument is wrapped in the fold the tree carries
+    and never calls. Both execute the source they read."""
+    the_written = the_fragment_the_248_class_stands_in()
+    return {"as_written": the_248_reading(the_written),
+            "as_repaired": the_248_reading(
+                the_248_source_that_judges_the_path_it_lands_on(the_written))}
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-path-taken-as-written-read-as-a-path-inside-the-folder', {}).update(
+        {'a_path_taken_as_written_read_as_a_path_inside_the_folder': a_path_taken_as_written_read_as_a_path_inside_the_folder})
