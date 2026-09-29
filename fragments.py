@@ -11012,3 +11012,264 @@ if "NAMESPACES" in globals():
     NAMESPACES.setdefault(
         'a-count-of-a-copy-taken-under-a-rule-the-copy-does-not-carry', {}).update(
         {'a_count_of_a_copy_taken_under_a_rule_the_copy_does_not_carry': a_count_of_a_copy_taken_under_a_rule_the_copy_does_not_carry})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 244 -- `a-rule-read-as-its-simplest-shape`
+#
+# Class fragment: a rule read as its simplest shape.
+#
+# Sighting (the ledger's own copy-rule reader, measured 2026-09-28): the repair that made a
+# gitless copy count its files under the rule the copy carries reads that rule with `fnmatch`.
+# `fnmatch` is not the `.gitignore` grammar: it has no re-inclusion (`!`), no anchoring (a
+# leading `/`), no directory-spanning wildcard (`**`), and no last-match-wins precedence. Five
+# one-feature fixtures, each asked of the reader and of `git check-ignore --no-index`, agree on
+# two (a plain name, and a directory rule, which is a name) and disagree on three:
+#
+#     *.py + !keep/important.py   git keeps keep/important.py   the reader keeps nothing
+#     /a.py                       git keeps sub/a.py            the reader also drops a.py
+#     **/deep.py                  git keeps nothing              the reader keeps deep.py
+#
+# The reader's docstring already says it is not git's matcher, so the sentence around the count
+# was honest; what was not is that the count is still given for a rule the reader could not read.
+# A reader that cannot read a shape must refuse the rule, not answer as if it had: the count is
+# then either right or absent.
+#
+# The fragment is the shape, not the sighting: a count that reads a rule with a name matcher and
+# answers with a number whether or not the rule carries a shape that matcher cannot read.
+#
+# The repair is computed from the source by an AST edit whose name comes out of the source -- it
+# is the helper the tree defines and never names -- so the halves differ because of what the tree
+# writes, not because a second function was typed beside the first.
+#
+# THE READING. Both halves are ONE reading of that count -- run it on the fragment
+# source as the tree writes it and on the same source with the count taken from the
+# reader that refuses a rule it cannot read. No value in either half is typed: the
+# reading executes the source it read, and the repair is computed from that same
+# source, so a tree that renames the refusing reader moves the answer.
+# The promise named in the answer is the fragment's own docstring, read out of the
+# source, not quoted beside it.
+# Stdlib only, no network, reads source, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_244_FRAGMENT_BEGINS = "# --- class 244 fragment begins"
+THE_244_FRAGMENT_ENDS = "# --- class 244 fragment ends"
+
+# --- class 244 fragment begins
+def _the_rule_the_copy_carries(the_root):
+    """The rule this copy carries about which of its own files are its own, read from the
+    copy. None where the copy carries none."""
+    the_rule = the_root / ".gitignore"
+    if not the_rule.is_file():
+        return None
+    the_lines = [line.strip() for line in the_rule.read_text(encoding="utf-8").splitlines()]
+    return "\n".join(line for line in the_lines if line and not line.startswith("#"))
+
+
+def _the_shapes_a_name_matcher_cannot_read(the_rule):
+    """The lines of this rule whose meaning is not "a name to match".
+
+    Three shapes: a re-inclusion (`!`), an anchored path (a leading `/`), and a
+    directory-spanning wildcard (`**`). This function is defined here and named by nothing
+    -- the repair is what names it.
+    """
+    the_shapes = []
+    for line in the_rule.splitlines():
+        if not line.strip():
+            continue
+        if line.startswith("!") or line.startswith("/") or "**" in line:
+            the_shapes.append(line)
+    return the_shapes
+
+
+def _the_files_a_matcher_leaves(the_root, the_rule):
+    """Every `.py` file under this root that the rule leaves, matched as names.
+
+    A line with a slash in it is matched against the file's path from the root; any other
+    line against the file's own name and against the name of every directory it stands in,
+    so a rule that names a cache by its directory name catches that directory wherever it
+    is. A line whose meaning is not a name to match is matched as though it were one.
+    """
+    import fnmatch
+    the_names = [line.rstrip("/") for line in the_rule.splitlines() if line.strip()]
+    the_files = []
+    for path in sorted(the_root.rglob("*.py")):
+        the_relative = path.relative_to(the_root).as_posix()
+        the_directories = the_relative.split("/")[:-1]
+        if any(fnmatch.fnmatch(the_relative, name)
+               or fnmatch.fnmatch(path.name, name)
+               or any(fnmatch.fnmatch(part, name) for part in the_directories)
+               for name in the_names):
+            continue
+        the_files.append(the_relative)
+    return sorted(the_files)
+
+
+def _the_files_a_reader_that_refuses_leaves(the_root, the_rule):
+    """Every `.py` file under this root that the rule leaves -- None where the rule carries a
+    shape a name matcher cannot read, because then there is no count to give."""
+    if _the_shapes_a_name_matcher_cannot_read(the_rule):
+        return None
+    return _the_files_a_matcher_leaves(the_root, the_rule)
+
+
+def the_files_the_rule_leaves(the_root):
+    """Count the `.py` files this copy keeps under its own rule."""
+    the_rule = _the_rule_the_copy_carries(the_root) or ""
+    the_reader = _the_files_a_matcher_leaves
+    the_files = the_reader(the_root, the_rule)
+    return {"the_files_the_count_named": None if the_files is None else len(the_files),
+            "the_rule_the_count_used": the_reader.__name__,
+            "the_files_the_count_named_by_path": the_files}
+# --- class 244 fragment ends
+
+
+def the_fragment_the_rule_stands_in():
+    """The class's fragment, cut out of this file on whole lines."""
+    lines = pathlib.Path(__file__).read_text(encoding="utf-8").splitlines(keepends=True)
+    begins = lines.index(THE_244_FRAGMENT_BEGINS + "\n")
+    ends = lines.index(THE_244_FRAGMENT_ENDS + "\n")
+    return "".join(lines[begins + 1:ends])
+
+
+def the_parts_of_the_rule_reading(the_source):
+    """What the fragment says, walked out of it rather than typed beside it.
+
+    Returns the counting function, its parameter, the keys of the dict it returns, the
+    reader the count's own assignment names, and the other reader the tree defines -- the one
+    the repair has to call, read off the source so a rename moves it.
+    """
+    tree = ast.parse(the_source)
+    counts = [n for n in tree.body if isinstance(n, ast.FunctionDef)
+              and n.name == "the_files_the_rule_leaves"]
+    if len(counts) != 1:
+        return None
+    count = counts[0]
+    if len(count.args.args) != 1:
+        return None
+    the_readers = {n.name: len(n.args.args) for n in tree.body
+                   if isinstance(n, ast.FunctionDef)
+                   and n.name not in ("the_files_the_rule_leaves", "the_rule_the_copy_carries")}
+    the_assignments = [n for n in count.body if isinstance(n, ast.Assign)
+                       and isinstance(n.value, ast.Name)
+                       and n.value.id in the_readers]
+    if len(the_assignments) != 1:
+        return None
+    the_named_reader = the_assignments[0].value.id
+    the_arity = the_readers[the_named_reader]
+    the_others = sorted(name for name, arity in the_readers.items()
+                        if name != the_named_reader and arity == the_arity)
+    if len(the_others) != 1:
+        return None
+    returns = [n for n in ast.walk(count) if isinstance(n, ast.Return)]
+    if len(returns) != 1 or not isinstance(returns[0].value, ast.Dict):
+        return None
+    the_keys = [k.value for k in returns[0].value.keys if isinstance(k, ast.Constant)]
+    if len(the_keys) != 3 or not all(isinstance(k, str) for k in the_keys):
+        return None
+    return {"the_count": count, "the_root": count.args.args[0].arg,
+            "the_uncalled_helper": the_others[0], "the_named_reader": the_named_reader,
+            "the_assignment": the_assignments[0], "the_keys": the_keys}
+
+
+def the_source_with_the_refusal_applied(the_source):
+    """The repair, computed from the source: the count takes its files from the reader that
+    refuses a rule it cannot read.
+
+    Both names are read out of the source -- the reader the count's own assignment names, and
+    the other reader the tree defines -- and the statement the repair rewrites is that
+    assignment. So the halves differ because of what the tree writes, and a rename moves the
+    repair with it.
+    """
+    parts = the_parts_of_the_rule_reading(the_source)
+    if parts is None:
+        return the_source
+    tree = ast.parse(the_source)
+    count = [n for n in tree.body if isinstance(n, ast.FunctionDef)
+             and n.name == "the_files_the_rule_leaves"][0]
+    the_assignments = [n for n in count.body if isinstance(n, ast.Assign)
+                       and isinstance(n.value, ast.Name)
+                       and n.value.id == parts["the_named_reader"]]
+    if len(the_assignments) != 1:
+        return the_source
+    the_assignments[0].value = ast.Name(id=parts["the_uncalled_helper"], ctx=ast.Load())
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def the_rule_reading(the_source, the_root):
+    """One reading of the count: run it on this copy, and say what it named and under what.
+
+    The decisive field is the pair -- the files the count named, and the shapes of the rule
+    that a name matcher cannot read. A reader that refuses the rule it cannot read gives no
+    number, and the shapes are the reason it gives.
+    """
+    parts = the_parts_of_the_rule_reading(the_source)
+    if parts is None:
+        return {"the_source_can_be_read": False, "the_promise_the_fragment_makes": None,
+                "the_files_the_count_named": None, "the_files_the_count_left_out": None,
+                "the_rule_the_count_used": None, "the_shapes_of_the_rule_not_read": None,
+                "the_answer_the_count_gives": None}
+    namespace = {}
+    exec(compile(the_source, "<the fragment this class is about>", "exec"), namespace)
+    answer = namespace["the_files_the_rule_leaves"](the_root)
+    everything = sorted(path.relative_to(the_root).as_posix()
+                        for path in the_root.rglob("*.py"))
+    named = answer[parts["the_keys"][2]]
+    the_rule = (the_root / ".gitignore").read_text(encoding="utf-8") if (
+        the_root / ".gitignore").is_file() else ""
+    the_shapes = [line.strip() for line in the_rule.splitlines()
+                  if line.strip() and (line.strip().startswith("!")
+                                       or line.strip().startswith("/")
+                                       or "**" in line)]
+    return {
+        "the_source_can_be_read": True,
+        "the_promise_the_fragment_makes": ast.get_docstring(parts["the_count"]),
+        "the_files_the_count_named": answer[parts["the_keys"][0]],
+        "the_files_the_count_left_out": None if named is None
+        else [p for p in everything if p not in named],
+        "the_rule_the_count_used": answer[parts["the_keys"][1]],
+        "the_shapes_of_the_rule_not_read": the_shapes,
+        "the_answer_the_count_gives": "a refusal" if answer[parts["the_keys"][0]] is None
+        else "a number",
+    }
+
+
+def the_copy_the_rule_stands_on(the_root, the_rule="*.py\n!keep/important.py"):
+    """A copy of a tree: three files of its own and the rule the tree keeps about them.
+
+    The rule is the fixture's, not the tree's: one re-inclusion over a broad pattern, which
+    is the shape a name matcher cannot read. `git check-ignore --no-index` on this copy keeps
+    `keep/important.py` and ignores the other two.
+    """
+    for name in ("b.py", "keep/important.py", "keep/other.py"):
+        path = the_root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# a file of the tree\n", encoding="utf-8")
+    if the_rule is not None:
+        (the_root / ".gitignore").write_text(the_rule + "\n", encoding="utf-8")
+    return the_root
+
+
+def a_rule_read_as_its_simplest_shape():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_rule_read_as_its_simplest_shape()["as_written"]
+
+
+def _readings_of_a_rule_read_as_its_simplest_shape():
+    """Both halves: the count this tree writes for a rule it cannot read, and the same count
+    taken by a reader that refuses that rule. Both are one function, read from the source."""
+    import tempfile
+    written = the_fragment_the_rule_stands_in()
+    with tempfile.TemporaryDirectory() as the_place:
+        the_root = the_copy_the_rule_stands_on(pathlib.Path(the_place))
+        return {"as_written": the_rule_reading(written, the_root),
+                "as_repaired": the_rule_reading(
+                    the_source_with_the_refusal_applied(written), the_root)}
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-rule-read-as-its-simplest-shape', {}).update(
+        {'a_rule_read_as_its_simplest_shape': a_rule_read_as_its_simplest_shape})
