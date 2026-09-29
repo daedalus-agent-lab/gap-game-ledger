@@ -11273,3 +11273,282 @@ if "NAMESPACES" in globals():
     NAMESPACES.setdefault(
         'a-rule-read-as-its-simplest-shape', {}).update(
         {'a_rule_read_as_its_simplest_shape': a_rule_read_as_its_simplest_shape})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 245 -- `a-rule-read-at-one-scope-read-as-the-rule-of-the-copy`
+#
+# Class fragment: a rule read at one scope read as the rule of the copy.
+#
+# Sighting (2026-09-29, the ledger's own copy reader `_the_files_the_tree_records`): that reader
+# was repaired to read the rule the copy carries instead of counting whatever is lying in the
+# copy. It reads `<root>/.gitignore` -- one file, one scope. A copy whose rules live at two
+# scopes is then answered as if they lived at one, and the answer is not a subset of the truth:
+# it is a number that a second file would have changed.
+#
+# Two fixtures, and the difference between them is the whole finding:
+#
+#     root `*.py`, `sub/.gitignore` `!keep.py`    git keeps ['sub/keep.py']   the reader keeps []
+#     root `cache/`, `cache/.gitignore` `!k.py`   git keeps ['a.py']          the reader keeps ['a.py']
+#
+# The second row is the control: there the root rule excludes the directory, so nothing inside it
+# can be re-included and the nested file changes no answer -- the one-scope reader agrees by luck.
+# The first row is the defect: the nested rule decides, and the reader, which never opened it,
+# answers 0 where the record's answer is 1.
+#
+# The fragment is the shape, not the sighting: a count that reads the copy's rule at one scope and
+# answers with a number whether or not the copy keeps rules at another.
+#
+# A reader that cannot certify the grammar authority of the answer must refuse the reading. The
+# repair is computed from the source by an AST edit whose name comes out of the source -- the
+# helper the tree defines and never names -- so the halves differ because of what the tree writes,
+# not because a second function was typed beside the first.
+#
+# THE READING. Both halves are ONE reading of that count -- run it on the fragment
+# source as the tree writes it and on the same source with the count taken from the
+# reader of every scope. No value in either half is typed: the
+# reading executes the source it read, and the repair is computed from that same
+# source, so a tree that renames the reader of every scope moves the answer.
+# The promise named in the answer is the fragment's own docstring, read out of the
+# source, not quoted beside it.
+# Stdlib only, no network, reads source, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_245_FRAGMENT_BEGINS = "# --- class 245 fragment begins"
+THE_245_FRAGMENT_ENDS = "# --- class 245 fragment ends"
+
+# --- class 245 fragment begins
+def _the_rule_the_root_scope_carries(the_root):
+    """The rule this copy carries about which of its own files are its own, read from the
+    copy at the root. None where the copy carries none there."""
+    the_rule = the_root / ".gitignore"
+    if not the_rule.is_file():
+        return None
+    the_lines = [line.strip() for line in the_rule.read_text(encoding="utf-8").splitlines()]
+    return "\n".join(line for line in the_lines if line and not line.startswith("#"))
+
+
+def _the_scopes_below_the_root(the_root):
+    """Every place under this root that carries a rule of its own, as paths relative to the
+    root, the root itself first.
+
+    This function is defined here and named by nothing -- the repair is what names it. A rule
+    file below the root speaks for the subtree it stands in, so a reader that read only the
+    root has not read the copy's rule: it has read one of them.
+    """
+    the_scopes = []
+    if (the_root / ".gitignore").is_file():
+        the_scopes.append(".")
+    for path in sorted(the_root.rglob(".gitignore")):
+        if path.parent == the_root or {".git", "__pycache__"} & set(path.relative_to(the_root).parts):
+            continue
+        the_scopes.append(path.parent.relative_to(the_root).as_posix())
+    return the_scopes
+
+
+def _the_files_the_name_reader_leaves(the_root, the_rule):
+    """Every `.py` file under this root that the rule leaves, matched as names.
+
+    A line with a slash in it is matched against the file's path from the root; any other
+    line against the file's own name and against the name of every directory it stands in,
+    so a rule that names a cache by its directory name catches that directory wherever it
+    is. A line whose meaning is not a name to match is matched as though it were one.
+    """
+    import fnmatch
+    the_names = [line.rstrip("/") for line in the_rule.splitlines() if line.strip()]
+    the_files = []
+    for path in sorted(the_root.rglob("*.py")):
+        the_relative = path.relative_to(the_root).as_posix()
+        the_directories = the_relative.split("/")[:-1]
+        if any(fnmatch.fnmatch(the_relative, name)
+               or fnmatch.fnmatch(path.name, name)
+               or any(fnmatch.fnmatch(part, name) for part in the_directories)
+               for name in the_names):
+            continue
+        the_files.append(the_relative)
+    return sorted(the_files)
+
+
+def _the_files_the_scope_reader_leaves(the_root, the_rule):
+    """Every `.py` file under this root that the copy's rules leave -- None where the copy
+    keeps a rule somewhere the reading did not open, because then the count has no authority
+    to give.
+
+    A second scope is refused whether or not it would have changed this answer: a reader that
+    did not open a rule cannot say that the rule does not matter, and "it would not have
+    changed anything" is exactly the sentence a reader that did not look is in no position to
+    write.
+    """
+    if len(_the_scopes_below_the_root(the_root)) > 1:
+        return None
+    return _the_files_the_name_reader_leaves(the_root, the_rule)
+
+
+def the_count_the_scopes_give(the_root):
+    """Count the `.py` files this copy keeps under every rule it carries."""
+    the_rule = _the_rule_the_root_scope_carries(the_root) or ""
+    the_reader = _the_files_the_name_reader_leaves
+    the_files = the_reader(the_root, the_rule)
+    return {"the_files_the_count_named": None if the_files is None else len(the_files),
+            "the_rule_the_count_used": the_reader.__name__,
+            "the_files_the_count_named_by_path": the_files}
+# --- class 245 fragment ends
+
+
+def the_fragment_the_scope_class_stands_in():
+    """The class's fragment, cut out of this file on whole lines."""
+    lines = pathlib.Path(__file__).read_text(encoding="utf-8").splitlines(keepends=True)
+    begins = lines.index(THE_245_FRAGMENT_BEGINS + "\n")
+    ends = lines.index(THE_245_FRAGMENT_ENDS + "\n")
+    return "".join(lines[begins + 1:ends])
+
+
+def the_parts_of_the_scope_reading(the_source):
+    """What the fragment says, walked out of it rather than typed beside it.
+
+    Returns the counting function, its parameter, the keys of the dict it returns, the reader
+    the count's own assignment names, and the other reader of the same arity the tree defines
+    -- the one the repair has to call, read off the source so a rename moves it.
+    """
+    tree = ast.parse(the_source)
+    counts = [n for n in tree.body if isinstance(n, ast.FunctionDef)
+              and n.name == "the_count_the_scopes_give"]
+    if len(counts) != 1:
+        return None
+    count = counts[0]
+    if len(count.args.args) != 1:
+        return None
+    the_readers = {n.name: len(n.args.args) for n in tree.body
+                   if isinstance(n, ast.FunctionDef)
+                   and n.name not in ("the_count_the_scopes_give", "the_rule_the_copy_carries")}
+    the_assignments = [n for n in count.body if isinstance(n, ast.Assign)
+                       and isinstance(n.value, ast.Name)
+                       and n.value.id in the_readers]
+    if len(the_assignments) != 1:
+        return None
+    the_named_reader = the_assignments[0].value.id
+    the_arity = the_readers[the_named_reader]
+    the_others = sorted(name for name, arity in the_readers.items()
+                        if name != the_named_reader and arity == the_arity)
+    if len(the_others) != 1:
+        return None
+    returns = [n for n in ast.walk(count) if isinstance(n, ast.Return)]
+    if len(returns) != 1 or not isinstance(returns[0].value, ast.Dict):
+        return None
+    the_keys = [k.value for k in returns[0].value.keys if isinstance(k, ast.Constant)]
+    if len(the_keys) != 3 or not all(isinstance(k, str) for k in the_keys):
+        return None
+    return {"the_count": count, "the_root": count.args.args[0].arg,
+            "the_uncalled_helper": the_others[0], "the_named_reader": the_named_reader,
+            "the_assignment": the_assignments[0], "the_keys": the_keys}
+
+
+def the_source_with_every_scope_read(the_source):
+    """The repair, computed from the source: the count takes its files from the reader that
+    refuses a copy whose rules it did not all read.
+
+    Both names are read out of the source -- the reader the count's own assignment names, and
+    the other reader the tree defines -- and the statement the repair rewrites is that
+    assignment. So the halves differ because of what the tree writes, and a rename moves the
+    repair with it.
+    """
+    parts = the_parts_of_the_scope_reading(the_source)
+    if parts is None:
+        return the_source
+    tree = ast.parse(the_source)
+    count = [n for n in tree.body if isinstance(n, ast.FunctionDef)
+             and n.name == "the_count_the_scopes_give"][0]
+    the_assignments = [n for n in count.body if isinstance(n, ast.Assign)
+                       and isinstance(n.value, ast.Name)
+                       and n.value.id == parts["the_named_reader"]]
+    if len(the_assignments) != 1:
+        return the_source
+    the_assignments[0].value = ast.Name(id=parts["the_uncalled_helper"], ctx=ast.Load())
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def the_scope_reading(the_source, the_root):
+    """One reading of the count: run it on this copy, and say what it named and under what.
+
+    The decisive field is the pair -- the files the count named, and the scopes of the copy
+    whose rule the reading did not open. A reader that refuses gives no number, and the scopes
+    are the reason it gives.
+    """
+    parts = the_parts_of_the_scope_reading(the_source)
+    if parts is None:
+        return {"the_source_can_be_read": False, "the_promise_the_fragment_makes": None,
+                "the_files_the_count_named": None, "the_files_the_count_left_out": None,
+                "the_rule_the_count_used": None, "the_scopes_of_the_rule_not_read": None,
+                "the_answer_the_count_gives": None}
+    namespace = {}
+    exec(compile(the_source, "<the fragment this class is about>", "exec"), namespace)
+    answer = namespace["the_count_the_scopes_give"](the_root)
+    everything = sorted(path.relative_to(the_root).as_posix()
+                        for path in the_root.rglob("*.py"))
+    named = answer[parts["the_keys"][2]]
+    scopes = []
+    if (the_root / ".gitignore").is_file():
+        scopes.append(".")
+    for path in sorted(the_root.rglob(".gitignore")):
+        if path.parent == the_root or {".git", "__pycache__"} & set(path.relative_to(the_root).parts):
+            continue
+        scopes.append(path.parent.relative_to(the_root).as_posix())
+    return {
+        "the_source_can_be_read": True,
+        "the_promise_the_fragment_makes": ast.get_docstring(parts["the_count"]),
+        "the_files_the_count_named": answer[parts["the_keys"][0]],
+        "the_files_the_count_left_out": None if named is None
+        else [p for p in everything if p not in named],
+        "the_rule_the_count_used": answer[parts["the_keys"][1]],
+        "the_scopes_of_the_rule_not_read": scopes[1:],
+        "the_answer_the_count_gives": "a refusal" if answer[parts["the_keys"][0]] is None
+        else "a number",
+    }
+
+
+def the_copy_the_scopes_stand_on(the_root, the_rule="*.py", the_nested=None):
+    """A copy of a tree: three files of its own, a rule at the root, and a rule below it.
+
+    The rules are the fixture's, not the tree's. With the default pair -- `*.py` at the root and
+    `!keep.py` under `sub/` -- `git check-ignore` keeps `sub/keep.py` and ignores the other two,
+    because the negation stands in the subtree it speaks for and the root rule does not exclude
+    the directory that holds it.
+    """
+    for name in ("b.py", "sub/keep.py", "sub/other.py"):
+        path = the_root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# a file of the tree\n", encoding="utf-8")
+    if the_rule is not None:
+        (the_root / ".gitignore").write_text(the_rule + "\n", encoding="utf-8")
+    if the_nested is not None:
+        where, rule = the_nested
+        (the_root / where).mkdir(parents=True, exist_ok=True)
+        (the_root / where / ".gitignore").write_text(rule + "\n", encoding="utf-8")
+    return the_root
+
+
+def a_rule_read_at_one_scope_read_as_the_rule_of_the_copy():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_rule_read_at_one_scope_read_as_the_rule_of_the_copy()["as_written"]
+
+
+def _readings_of_a_rule_read_at_one_scope_read_as_the_rule_of_the_copy():
+    """Both halves: the count this tree writes for a copy whose rules live at two scopes, and
+    the same count taken by a reader that reads every scope or refuses. Both are one function,
+    read from the source."""
+    import tempfile
+    written = the_fragment_the_scope_class_stands_in()
+    with tempfile.TemporaryDirectory() as the_place:
+        the_root = the_copy_the_scopes_stand_on(pathlib.Path(the_place),
+                                               the_nested=("sub", "!keep.py"))
+        return {"as_written": the_scope_reading(written, the_root),
+                "as_repaired": the_scope_reading(
+                    the_source_with_every_scope_read(written), the_root)}
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-rule-read-at-one-scope-read-as-the-rule-of-the-copy', {}).update(
+        {'a_rule_read_at_one_scope_read_as_the_rule_of_the_copy': a_rule_read_at_one_scope_read_as_the_rule_of_the_copy})
