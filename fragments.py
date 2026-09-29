@@ -11552,3 +11552,378 @@ if "NAMESPACES" in globals():
     NAMESPACES.setdefault(
         'a-rule-read-at-one-scope-read-as-the-rule-of-the-copy', {}).update(
         {'a_rule_read_at_one_scope_read_as_the_rule_of_the_copy': a_rule_read_at_one_scope_read_as_the_rule_of_the_copy})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 246 -- `a-window-sampled-at-one-line-read-as-the-window-it-names`
+#
+# Class fragment: a window sampled at one line read as the window it names.
+#
+# Sighting (2026-09-29, this tree's own crash-window instrument): the fragment registered as
+# `a-tombstone-written-before-the-move-read-as-the-move-having-landed` promises, in its own
+# docstring, that a transfer marked done before it moves will "survive a kill at any line: a full
+# retry of an interrupted transfer lands the same move as the run that died, and never a second
+# one". Its instrument kills the run at exactly one statement -- the death call the fragment itself
+# places -- and then retries in full. One line, one reading.
+#
+# Sampling every statement of the transfer's body instead, on the same repaired source:
+#
+#     as written   8 statements   done-write at 3   moves at [5, 6]
+#                  kill at 4, 5  -> the move never happens     kill at 6 -> the money vanished
+#     the repair   8 statements   done-write at 6   moves at [4, 5]
+#                  kill at 5, 6  -> the money left twice
+#
+# 3 violation points as written, 2 after the repair, and not the same points. The repair did not
+# close the window, it moved it: the one line the instrument kills at is a line the repair fixes,
+# so the instrument certifies a repair it cannot see the far side of.
+#
+# The fragment is the shape, not the sighting: an instrument whose kill points are the one line the
+# death stands at, answering for a promise quantified over every line of the body. The repair is
+# computed from the source by an AST edit whose name comes out of the source -- the reader the tree
+# defines and never calls -- so the halves differ because of what the tree writes, not because a
+# second instrument was typed beside the first.
+#
+# THE READING. Both halves are ONE reading of that window -- run it on the fragment
+# source as the tree writes it and on the same source with the kill points taken from the
+# reader the tree defines and never calls. No value in either half is typed: the
+# reading executes the source it read, and the repair is computed from that same
+# source, so a tree that renames the reader of every scope moves the answer, and a tree
+# that samples every statement of the body moves the kill points with it.
+# The promise named in the answer is the fragment's own docstring, read out of the
+# source, not quoted beside it.
+# Stdlib only, no network, reads source, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_246_FRAGMENT_BEGINS = "# --- class 246 fragment begins"
+THE_246_FRAGMENT_ENDS = "# --- class 246 fragment ends"
+
+# --- class 246 fragment begins
+class _The246RunWasKilled(BaseException):
+    """The death the instrument plants: not an error of the transfer, the end of the run."""
+
+
+_THE_246_DONE = {}
+
+
+def _the_246_kill_is_here(die_at):
+    """The line the death stands at. It is a statement of the transfer's body, so an instrument
+    that kills at one line kills at the position of this call."""
+    if die_at:
+        raise _The246RunWasKilled("the run died here")
+
+
+def a_transfer_whose_tombstone_the_repair_moves(accounts, src, dst, amount, op_id, die_at=False):
+    """Move `amount` from `src` to `dst` once per `op_id`, and write the tombstone that says so.
+
+    The promise: a full retry of an interrupted transfer lands the same move as the run that
+    died, and never a second one.
+    """
+    done = _THE_246_DONE
+    if done.get(op_id):
+        return (accounts[src]["balance"], accounts[dst]["balance"])
+    done[op_id] = True
+    _the_246_kill_is_here(die_at)
+    accounts[src]["balance"] -= amount
+    accounts[dst]["balance"] += amount
+    return (accounts[src]["balance"], accounts[dst]["balance"])
+
+
+def _the_246_one_point(the_body):
+    """The line this tree's instrument kills at: the body's one bare call, where the death is."""
+    return [i for i, s in enumerate(the_body)
+            if isinstance(s, ast.Expr) and isinstance(s.value, ast.Call)
+            and isinstance(s.value.func, ast.Name)]
+
+
+def _the_246_every_point(the_body):
+    """Every statement of the body: the window the promise is quantified over."""
+    return [i for i in range(len(the_body))]
+
+
+def _the_246_kill_points(the_body):
+    """The kill points this tree's instrument samples."""
+    return _the_246_one_point(the_body)
+# --- class 246 fragment ends
+
+
+def the_fragment_the_246_class_stands_in():
+    """The class's fragment, cut out of this file on whole lines."""
+    lines = pathlib.Path(__file__).read_text(encoding="utf-8").splitlines(keepends=True)
+    begins = lines.index(THE_246_FRAGMENT_BEGINS + "\n")
+    ends = lines.index(THE_246_FRAGMENT_ENDS + "\n")
+    return "".join(lines[begins + 1:ends])
+
+
+def the_accounts_the_246_fixture_stands_on():
+    """The accounts this class's fixture moves money between, and the amount it moves."""
+    return {"the_accounts": {"a": {"balance": 60}, "b": {"balance": 40}},
+            "the_amount": 30, "the_op": "op-1", "the_from": "a", "the_to": "b"}
+
+
+def _the_246_keys():
+    """The keys both halves carry, in the order the reading fills them."""
+    return ("the_source_can_be_read", "the_promise_the_fragment_makes",
+            "the_kill_points_the_instrument_samples",
+            "the_violations_at_the_points_it_samples",
+            "the_kill_points_the_other_reader_gives",
+            "the_violations_the_other_reader_gives",
+            "the_windows_this_instrument_does_not_see", "the_repair_looks_complete")
+
+
+def _the_246_refusal():
+    """What a reading says when the source does not carry the parts it must read: a refusal,
+    never a number."""
+    return {key: (False if key == "the_source_can_be_read" else None)
+            for key in _the_246_keys()}
+
+
+def _the_246_parts_or_none(the_source):
+    """What the fragment says, walked out of it rather than typed beside it: the transfer, the
+    death it can plant, the tombstone, the moves, the promise, and the instrument with the two
+    readers it chooses between. None where the source does not carry exactly one of each."""
+    if not isinstance(the_source, str):
+        return None
+    try:
+        tree = ast.parse(the_source)
+    except SyntaxError:
+        return None
+    the_functions = [n for n in tree.body if isinstance(n, ast.FunctionDef)]
+    the_transfers = [n for n in the_functions
+                     if sum(1 for s in n.body if isinstance(s, ast.AugAssign)) == 2
+                     and any(isinstance(s, ast.Assign) and isinstance(s.value, ast.Constant)
+                             and s.value.value is True for s in n.body)]
+    if len(the_transfers) != 1:
+        return None
+    the_transfer = the_transfers[0]
+    the_deaths = [n for n in the_functions if len(n.args.args) == 1
+                  and any(isinstance(s, ast.Raise) for s in ast.walk(n))]
+    if len(the_deaths) != 1 or not the_deaths[0].args.args:
+        return None
+    the_death = the_deaths[0]
+    the_classes = [n for n in tree.body if isinstance(n, ast.ClassDef)
+                   and any(isinstance(b, ast.Name) and b.id == "BaseException" for b in n.bases)]
+    if len(the_classes) != 1:
+        return None
+    the_kills = [i for i, s in enumerate(the_transfer.body)
+                 if isinstance(s, ast.Expr) and isinstance(s.value, ast.Call)
+                 and isinstance(s.value.func, ast.Name) and s.value.func.id == the_death.name]
+    if len(the_kills) != 1:
+        return None
+    the_tombstones = [i for i, s in enumerate(the_transfer.body)
+                      if isinstance(s, ast.Assign) and isinstance(s.value, ast.Constant)
+                      and s.value.value is True]
+    if len(the_tombstones) != 1:
+        return None
+    the_moves = [i for i, s in enumerate(the_transfer.body) if isinstance(s, ast.AugAssign)]
+    the_readers = []
+    for n in the_functions:
+        the_statements = n.body[1:] if ast.get_docstring(n) is not None else n.body
+        if (len(n.args.args) == 1 and len(the_statements) == 1
+                and isinstance(the_statements[0], ast.Return)
+                and isinstance(the_statements[0].value, ast.ListComp)):
+            the_readers.append(n.name)
+    if len(the_readers) != 2:
+        return None
+    the_calls = {}
+    for n in the_functions:
+        for s in ast.walk(n):
+            if isinstance(s, ast.Call) and isinstance(s.func, ast.Name):
+                the_calls.setdefault(n.name, set()).add(s.func.id)
+    the_instruments = [n.name for n in the_functions
+                       if len(n.args.args) == 1
+                       and len(the_calls.get(n.name, set()) & set(the_readers)) == 1]
+    if len(the_instruments) != 1:
+        return None
+    the_instrument = the_instruments[0]
+    the_called = (the_calls[the_instrument] & set(the_readers)).pop()
+    the_uncalled = [name for name in the_readers if name != the_called]
+    if len(the_uncalled) != 1:
+        return None
+    return {"the_transfer": the_transfer.name, "the_body": the_transfer.body,
+            "the_death": the_death.name, "the_death_class": the_classes[0].name,
+            "the_flag": the_death.args.args[0].arg, "the_kill": the_kills[0],
+            "the_tombstone": the_tombstones[0], "the_moves": the_moves,
+            "the_promise": ast.get_docstring(the_transfer) or "",
+            "the_instrument": the_instrument, "the_reader": the_called,
+            "the_reader_never_called": the_uncalled[0]}
+
+
+def _the_246_function(tree, the_name):
+    """The top-level function of that name, or None."""
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == the_name:
+            return node
+    return None
+
+
+def the_246_source_with_the_tombstone_after_the_move(the_source):
+    """The repair this tree computes from the source: the tombstone is written once the money has
+    moved, so a kill before the move leaves nothing for the retry to do twice."""
+    parts = _the_246_parts_or_none(the_source)
+    if parts is None:
+        return None
+    tree = ast.parse(the_source)
+    the_body = _the_246_function(tree, parts["the_transfer"]).body
+    the_tombstone = the_body.pop(parts["the_tombstone"])
+    the_last_return = max((i for i, s in enumerate(the_body) if isinstance(s, ast.Return)),
+                          default=len(the_body) - 1)
+    the_body.insert(the_last_return, the_tombstone)
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def the_246_source_with_every_statement_sampled(the_source):
+    """The repair of the instrument: it kills at every statement of the body rather than at the
+    one line the death stands at. The reader it reaches for is the one the tree defines and never
+    calls, read off the source, so a rename moves the repair with it."""
+    parts = _the_246_parts_or_none(the_source)
+    if parts is None:
+        return None
+    tree = ast.parse(the_source)
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id == parts["the_reader"]):
+            node.func.id = parts["the_reader_never_called"]
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def _the_246_source_with_the_death_at(the_source, the_kill_point):
+    """The death call moved to statement `the_kill_point` of the transfer. Moved, never added:
+    two death calls mean the first one fires and every later kill point measures the same line."""
+    parts = _the_246_parts_or_none(the_source)
+    if parts is None:
+        return None
+    tree = ast.parse(the_source)
+    the_body = _the_246_function(tree, parts["the_transfer"]).body
+    the_death_statement = the_body.pop(parts["the_kill"])
+    the_where = the_kill_point - 1 if the_kill_point > parts["the_kill"] else the_kill_point
+    if not 0 <= the_where <= len(the_body):
+        return None
+    the_call = ast.Expr(value=ast.Call(func=ast.Name(id=parts["the_death"], ctx=ast.Load()),
+                                       args=[ast.Name(id=parts["the_flag"], ctx=ast.Load())],
+                                       keywords=[]))
+    the_body.insert(the_where, ast.copy_location(the_call, the_death_statement))
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def _the_246_points_the_source_samples(the_source, the_body):
+    """The kill points the source's own instrument samples: the instrument is executed, not
+    restated, so an edit to the instrument moves this reading with it."""
+    parts = _the_246_parts_or_none(the_source)
+    if parts is None:
+        return None
+    namespace = {"ast": ast}
+    exec(compile(the_source, "<the-246-instrument>", "exec"), namespace)
+    the_instrument = namespace.get(parts["the_instrument"])
+    if the_instrument is None:
+        return None
+    return list(the_instrument(the_body))
+
+
+def _the_246_verdict(the_lost, the_gained, the_amount):
+    """What a kill at one statement left, in the words of the promise: the retry landed the same
+    move, the move never happened, the money vanished, or it moved twice."""
+    if the_lost == the_amount and the_gained == the_amount:
+        return "lands the same move"
+    if the_lost == 0 and the_gained == 0:
+        return "the move never happens"
+    if the_lost == the_amount and the_gained == 0:
+        return "the money vanished"
+    if the_lost > the_amount:
+        return "the money left twice"
+    return "neither"
+
+
+def _the_246_run(the_source, the_fixture):
+    """Kill the run at every point this source's own instrument samples, retry in full, and read
+    what the retry left. None where the source or its instrument cannot be read."""
+    parts = _the_246_parts_or_none(the_source)
+    if parts is None:
+        return None
+    the_points = _the_246_points_the_source_samples(the_source, parts["the_body"])
+    if not the_points:
+        return None
+    the_rows = []
+    for the_point in the_points:
+        the_killed = _the_246_source_with_the_death_at(the_source, the_point)
+        if the_killed is None:
+            return None
+        namespace = {"ast": ast}
+        exec(compile(the_killed, "<the-246-killed>", "exec"), namespace)
+        the_death = namespace.get(parts["the_death_class"], ())
+        accounts = {name: dict(entry) for name, entry in the_fixture["the_accounts"].items()}
+        try:
+            namespace[parts["the_transfer"]](accounts, the_fixture["the_from"],
+                                             the_fixture["the_to"], the_fixture["the_amount"],
+                                             the_fixture["the_op"], True)
+        except the_death:
+            pass
+        the_after = (accounts[the_fixture["the_from"]]["balance"],
+                     accounts[the_fixture["the_to"]]["balance"])
+        namespace[parts["the_transfer"]](accounts, the_fixture["the_from"],
+                                         the_fixture["the_to"], the_fixture["the_amount"],
+                                         the_fixture["the_op"])
+        the_final = (accounts[the_fixture["the_from"]]["balance"],
+                     accounts[the_fixture["the_to"]]["balance"])
+        the_lost = the_fixture["the_accounts"][the_fixture["the_from"]]["balance"] - the_final[0]
+        the_gained = the_final[1] - the_fixture["the_accounts"][the_fixture["the_to"]]["balance"]
+        the_rows.append({"the_kill_point": the_point, "the_after_the_kill": the_after,
+                         "the_final": the_final, "the_lost": the_lost,
+                         "the_gained": the_gained,
+                         "the_verdict": _the_246_verdict(the_lost, the_gained,
+                                                         the_fixture["the_amount"])})
+    the_violations = [row for row in the_rows
+                      if row["the_verdict"] != "lands the same move"]
+    return {"the_points": list(the_points), "the_rows": the_rows,
+            "the_violations": len(the_violations),
+            "the_verdicts": [row["the_verdict"] for row in the_violations]}
+
+
+def the_246_reading(the_source, the_fixture):
+    """What this source's instrument says about the repair, and what an instrument that samples
+    every statement says about the same repaired source."""
+    parts = _the_246_parts_or_none(the_source)
+    if parts is None:
+        return _the_246_refusal()
+    the_repaired = the_246_source_with_the_tombstone_after_the_move(the_source)
+    the_repaired_parts = _the_246_parts_or_none(the_repaired)
+    if the_repaired_parts is None:
+        return _the_246_refusal()
+    the_one = _the_246_run(the_repaired, the_fixture)
+    the_every = _the_246_run(the_246_source_with_every_statement_sampled(the_repaired),
+                             the_fixture)
+    if the_one is None or the_every is None:
+        return _the_246_refusal()
+    return {"the_source_can_be_read": True,
+            "the_promise_the_fragment_makes": the_repaired_parts["the_promise"],
+            "the_kill_points_the_instrument_samples": len(the_one["the_points"]),
+            "the_violations_at_the_points_it_samples": the_one["the_violations"],
+            "the_kill_points_the_other_reader_gives": len(the_every["the_points"]),
+            "the_violations_the_other_reader_gives": the_every["the_violations"],
+            "the_windows_this_instrument_does_not_see": the_every["the_verdicts"],
+            "the_repair_looks_complete": the_one["the_violations"] == 0}
+
+
+def a_window_sampled_at_one_line_read_as_the_window_it_names():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_window_sampled_at_one_line_read_as_the_window_it_names()["as_written"]
+
+
+def _readings_of_a_window_sampled_at_one_line_read_as_the_window_it_names():
+    """Both halves: the reading this tree's instrument takes of its own repair, and the same
+    reading taken by an instrument that samples every statement of the body. Both execute the
+    source they read."""
+    the_written = the_fragment_the_246_class_stands_in()
+    the_fixture = the_accounts_the_246_fixture_stands_on()
+    return {"as_written": the_246_reading(the_written, the_fixture),
+            "as_repaired": the_246_reading(
+                the_246_source_with_every_statement_sampled(the_written), the_fixture)}
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-window-sampled-at-one-line-read-as-the-window-it-names', {}).update(
+        {'a_window_sampled_at_one_line_read_as_the_window_it_names': a_window_sampled_at_one_line_read_as_the_window_it_names})
