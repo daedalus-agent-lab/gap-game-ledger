@@ -26,6 +26,7 @@ Standard library only. It reads the tree and writes only inside its own scratch 
 """
 import argparse
 import importlib.util
+import re
 import shutil
 import sys
 import tempfile
@@ -61,6 +62,23 @@ def _winner():
     return module
 
 
+# THE SAME QUESTION ASKED OF THE TWO FILES THEMSELVES, AS A SECOND WITNESS. The winner's
+# module answers the vocabulary question inside itself; the lines at the bottom of `census`
+# ask it of the recognition file and the emission file directly. The two computations are
+# printed side by side and required to agree, so neither is trusted alone -- and a tree that
+# moves one of them is a disagreement rather than a green run.
+THE_RECOGNITION_FILE = ROOT / "fragments.py"
+THE_EMISSION_FILE = ROOT / "probes" / "parts_of_a_reading.py"
+_THE_ID = re.compile(r"FAIL\[([A-Z0-9-]+)\]")
+
+
+def the_ids_a_reader_names(path):
+    """The ids one file carries, whole comment lines dropped."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    live = "\n".join(line for line in text.splitlines() if not line.lstrip().startswith("#"))
+    return set(_THE_ID.findall(live))
+
+
 def _sources(root, paths):
     """(mapping for the winner, sites read per file) -- a file that is not here is refused."""
     sources, basis = {}, {}
@@ -83,6 +101,15 @@ def census(root):
     if not read:
         return False, {}, basis
     answer["basis"] = basis
+    # The tree's own two files, read directly: the containment the class is about.
+    recognised = the_ids_a_reader_names(root / THE_RECOGNITION_FILE.relative_to(ROOT))
+    printed = the_ids_a_reader_names(root / THE_EMISSION_FILE.relative_to(ROOT))
+    uncontained = recognised - printed
+    answer["the_two_files_read_directly"] = {
+        "recognised": sorted(recognised),
+        "printed": sorted(printed),
+        "recognised_minus_printed": sorted(uncontained),
+    }
     return True, answer, basis
 
 
@@ -101,8 +128,20 @@ def report(answer, basis):
     for path, entries in answer["unemitted"].items():
         for token, line in entries:
             print("  UNEMITTED %s:%d  %s" % (path, line, token))
-    print("REFUSAL_CENSUS=%s" % ("NOT ok" if unemitted else "ok"))
-    return not unemitted
+    # The same question asked of the two files directly, and the two answers compared.
+    direct = answer["the_two_files_read_directly"]
+    print("asked of the two files themselves: %d recognised, %d printed, %d recognised that "
+          "nothing prints" % (len(direct["recognised"]), len(direct["printed"]),
+                              len(direct["recognised_minus_printed"])))
+    agree = (set(direct["recognised"]) == set(named)
+             and set(direct["recognised_minus_printed"]) == {t for v in answer["unemitted"]
+                                                             .values() for t, _ in v})
+    print("the two computations agree on the ids named: %s" % ("yes" if agree else "NO"))
+    if not agree:
+        print("  the module named: %s" % ", ".join(named))
+        print("  the files carry:  %s" % ", ".join(direct["recognised"]))
+    print("REFUSAL_CENSUS=%s" % ("NOT ok" if unemitted or not agree else "ok"))
+    return not unemitted and agree
 
 
 def plant(root):
@@ -113,9 +152,10 @@ def plant(root):
     """
     scratch = Path(tempfile.mkdtemp(prefix="plant-", dir=str(HERE)))
     try:
-        for path, _ in PRODUCERS + CONSUMERS:
-            (scratch / path).parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(root / path, scratch / path)
+        for table in (PRODUCERS, CONSUMERS):
+            for path, _ in table:
+                (scratch / path).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(root / path, scratch / path)
         target = CONSUMERS[0][0]
         text = (scratch / target).read_text(encoding="utf-8", errors="replace")
         marker = 'FAIL[NO-SUCH-ID]'
