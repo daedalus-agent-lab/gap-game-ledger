@@ -10761,3 +10761,254 @@ if "NAMESPACES" in globals():
         'a-check-whose-answer-depends-on-who-asks-read-as-a-property-of-the-object', {}).update(
         {'a_check_whose_answer_depends_on_who_asks_read_as_a_property_of_the_object':
          a_check_whose_answer_depends_on_who_asks_read_as_a_property_of_the_object})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 242 -- `a-count-of-a-copy-taken-under-a-rule-the-copy-does-not-carry`
+#
+# Class fragment: a count of a copy taken under a rule the copy does not carry.
+#
+# Sighting 1 (this workspace, measured 2026-09-28): the ledger's own re-take stages a copy of the
+# tree -- git-tracked files plus untracked-not-ignored ones -- and counts the `.py` files in it.
+# The helper that counts uses the tree's own record where the tree is a checkout (`git ls-files`)
+# and a walk of every `.py` file where it is not. A copy is not a checkout: it carries the tree's
+# bytes and not the rule the tree keeps about which of them are its own, because `.gitignore`
+# excludes a cache by its untrackedness and nothing in the copy reads that rule. An earlier
+# reading's command sets its cache inside the tree it runs in (`UV_CACHE_DIR` defaults to
+# `$WS/.uvcache` with `WS` = the directory the harness script lives in), so the copy ends up with
+# 196 more `.py` files and the count reads 271 where the tree holds 75. 75 + 196 = 271 exactly.
+#
+# Sighting 2 (same measurement, the other way round): a re-take that measures every class in one
+# pass cannot see it. That pass reproduces the order that produces the number, so the entry reads
+# "in agreement" at 271; the same entry measured alone reads 75. Two runs of one order are not two
+# readings of the tree.
+#
+# The fragment is the shape, not either sighting: a count that picks its rule by asking whether the
+# root is a checkout, and walks everything when it is not -- while the tree already carries the
+# helper that would take the count under the rule the copy keeps, uncalled.
+#
+# The repair is computed from the source by an AST edit whose name comes out of the source, so the
+# two halves differ because of what the tree writes, not because a second function was typed beside
+# the first.
+#
+# THE READING. Both halves are ONE reading of that count -- run it on the fragment
+# source as the tree writes it and on the same source with the count taken under the
+# rule the copy keeps. No value in either half is typed: the reading executes the
+# source it read, and the repair is computed from that same source, so a tree that
+# renames the rule-keeping helper or rewrites its rule moves the answer.
+# The promise named in the answer is the fragment's own docstring, read out of the
+# source, not quoted beside it.
+# Stdlib only, no network, reads source, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_242_FRAGMENT_BEGINS = "# --- class 242 fragment begins"
+THE_242_FRAGMENT_ENDS = "# --- class 242 fragment ends"
+
+# --- class 242 fragment begins
+def _the_rule_the_copy_keeps(the_root):
+    """The rule this copy carries about which of its own files are its own, read from the
+    copy. None where the copy carries none."""
+    the_rule = the_root / ".gitignore"
+    if not the_rule.is_file():
+        return None
+    the_lines = [line.strip() for line in the_rule.read_text(encoding="utf-8").splitlines()]
+    return "\n".join(line for line in the_lines if line and not line.startswith("#"))
+
+
+def _the_files_git_records(the_root):
+    """Every `.py` file the tree's own record names, where the root is a checkout."""
+    import subprocess
+    the_answer = subprocess.run(["git", "-C", str(the_root), "ls-files", "-z", "--", "*.py"],
+                                capture_output=True, text=True)
+    return sorted(name for name in the_answer.stdout.split("\0") if name)
+
+
+def _the_files_a_walk_names(the_root):
+    """Every `.py` file under this root, as a walk of the directory finds it."""
+    return sorted(path.relative_to(the_root).as_posix()
+                  for path in the_root.rglob("*.py"))
+
+
+def _the_files_the_copy_keeps(the_root):
+    """Every `.py` file under this root that the rule the copy carries does not name.
+
+    This is not git's matcher and does not claim to be. What it does is the thing the count
+    needs: the rule is read from the copy the count is taken of, and a line is matched the
+    way a reader of that rule would read it -- a line with a slash in it against the file's
+    path from the root, any other line against the file's own name and against the name of
+    every directory it stands in, so a rule that names a cache by its directory name catches
+    that directory wherever it is.
+    """
+    the_names = [line.rstrip("/") for line in (_the_rule_the_copy_keeps(the_root) or "").splitlines()
+                 if line.strip()]
+    import fnmatch
+    the_files = []
+    for path in sorted(the_root.rglob("*.py")):
+        the_relative = path.relative_to(the_root).as_posix()
+        the_directories = the_relative.split("/")[:-1]
+        if any(fnmatch.fnmatch(the_relative, name)
+               or fnmatch.fnmatch(path.name, name)
+               or any(fnmatch.fnmatch(part, name) for part in the_directories)
+               for name in the_names):
+            continue
+        the_files.append(the_relative)
+    return sorted(the_files)
+
+
+def the_files_the_copy_records(the_root):
+    """Count the `.py` files this copy of the tree holds, and name the rule the count used."""
+    the_walk = _the_files_a_walk_names
+    if (the_root / ".git").exists():
+        the_walk = _the_files_git_records
+    the_files = the_walk(the_root)
+    return {"the_files_the_count_named": len(the_files),
+            "the_rule_the_count_used": the_walk.__name__,
+            "the_files_the_count_named_by_path": the_files}
+# --- class 242 fragment ends
+
+
+def the_fragment_the_copy_writes():
+    """The class's fragment, cut out of this file on whole lines."""
+    lines = pathlib.Path(__file__).read_text(encoding="utf-8").splitlines(keepends=True)
+    begins = lines.index(THE_242_FRAGMENT_BEGINS + "\n")
+    ends = lines.index(THE_242_FRAGMENT_ENDS + "\n")
+    return "".join(lines[begins + 1:ends])
+
+
+def the_parts_of_the_count(the_source):
+    """What the fragment says, walked out of it rather than typed beside it.
+
+    Returns the counting function, its parameter, the keys of the dict it returns, and the
+    name of the helper the tree defines and never names -- the one a repair has to call,
+    read off the source so a rename moves it.
+    """
+    tree = ast.parse(the_source)
+    counts = [n for n in tree.body if isinstance(n, ast.FunctionDef)
+              and n.name == "the_files_the_copy_records"]
+    if len(counts) != 1:
+        return None
+    count = counts[0]
+    if len(count.args.args) != 1:
+        return None
+    the_named = {n.id for n in ast.walk(tree)
+                 if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}
+    the_uncalled = [n.name for n in tree.body if isinstance(n, ast.FunctionDef)
+                    and n.name != "the_files_the_copy_records" and n.name not in the_named]
+    if len(the_uncalled) > 1:
+        return None
+    returns = [n for n in ast.walk(count) if isinstance(n, ast.Return)]
+    if len(returns) != 1 or not isinstance(returns[0].value, ast.Dict):
+        return None
+    the_keys = [k.value for k in returns[0].value.keys if isinstance(k, ast.Constant)]
+    if len(the_keys) != 3 or not all(isinstance(k, str) for k in the_keys):
+        return None
+    return {"the_count": count, "the_root": count.args.args[0].arg,
+            "the_uncalled_helper": the_uncalled[0] if the_uncalled else None,
+            "the_keys": the_keys}
+
+
+def _the_statements(the_node):
+    """Every statement under this one, following the branches of an `if`."""
+    for the_statement in getattr(the_node, "body", []):
+        yield the_statement
+        if isinstance(the_statement, ast.If):
+            yield from _the_statements(the_statement)
+        for the_other in getattr(the_statement, "orelse", []):
+            yield the_other
+            if isinstance(the_other, ast.If):
+                yield from _the_statements(the_other)
+
+
+def the_source_with_the_rule_applied(the_source):
+    """The repair, computed from the source: the count is taken under the rule the copy keeps.
+
+    The name the repair calls is read out of the source -- it is the helper the tree already
+    defines and never names -- and the statement it replaces is the count's fallback, the
+    assignment the count starts from before the checkout test can override it. So the halves
+    differ because of what the tree writes, and a rename moves the repair with it. The repair
+    types no rule of its own: the rule is read from the copy the count is taken of.
+    """
+    parts = the_parts_of_the_count(the_source)
+    if parts is None or parts["the_uncalled_helper"] is None:
+        # Nothing uncalled to reach for: the tree already keeps the rule.
+        return the_source
+    the_helper = parts["the_uncalled_helper"]
+    tree = ast.parse(the_source)
+    count = [n for n in tree.body if isinstance(n, ast.FunctionDef)
+             and n.name == "the_files_the_copy_records"][0]
+    the_fallback = [n for n in count.body
+                    if isinstance(n, ast.Assign) and isinstance(n.value, ast.Name)
+                    and n.value.id != the_helper]
+    if len(the_fallback) != 1:
+        return the_source
+    the_fallback[0].value = ast.parse(the_helper).body[0].value
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def the_count_reading(the_source, the_root):
+    """One reading of the count: run it on this copy, and say what it named and what it left out.
+
+    The decisive field is the pair -- the files the count named, and the files the copy holds
+    that it did not name. A count taken under the rule the copy carries leaves nothing out.
+    """
+    parts = the_parts_of_the_count(the_source)
+    if parts is None:
+        return {"the_source_can_be_read": False, "the_promise_the_fragment_makes": None,
+                "the_files_the_count_named": None, "the_files_the_count_left_out": None,
+                "the_rule_the_count_used": None, "the_rule_the_copy_keeps": None}
+    namespace = {}
+    exec(compile(the_source, "<the fragment this class is about>", "exec"), namespace)
+    answer = namespace["the_files_the_copy_records"](the_root)
+    everything = sorted(path.relative_to(the_root).as_posix()
+                        for path in the_root.rglob("*.py"))
+    named = list(answer[parts["the_keys"][2]])
+    return {
+        "the_source_can_be_read": True,
+        "the_promise_the_fragment_makes": ast.get_docstring(parts["the_count"]),
+        "the_files_the_count_named": answer[parts["the_keys"][0]],
+        "the_files_the_count_left_out": [p for p in everything if p not in named],
+        "the_rule_the_count_used": answer[parts["the_keys"][1]],
+        "the_rule_the_copy_keeps": (the_root / ".gitignore").read_text(encoding="utf-8").strip()
+        if (the_root / ".gitignore").is_file() else None,
+    }
+
+
+def the_copy(the_root, the_rule="cache/", the_cache=True):
+    """A copy of a tree: three files of its own, a cache a command left behind, and the rule
+    the tree keeps about which of them are its own."""
+    for name in ("a.py", "b.py", "sub/c.py"):
+        path = the_root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# a file of the tree\n", encoding="utf-8")
+    if the_cache:
+        for name in ("cache/d.py", "cache/e.py"):
+            path = the_root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("# a cache a command left in the copy\n", encoding="utf-8")
+    if the_rule is not None:
+        (the_root / ".gitignore").write_text(the_rule + "\n", encoding="utf-8")
+    return the_root
+
+
+def a_count_of_a_copy_taken_under_a_rule_the_copy_does_not_carry():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_count_of_a_copy_taken_under_a_rule_the_copy_does_not_carry()["as_written"]
+
+
+def _readings_of_a_count_of_a_copy_taken_under_a_rule_the_copy_does_not_carry():
+    """Both halves: the count this tree writes, and the same count taken under the rule the
+    copy carries. Both are one function, read from the source."""
+    import tempfile
+    written = the_fragment_the_copy_writes()
+    with tempfile.TemporaryDirectory() as the_place:
+        the_root = the_copy(pathlib.Path(the_place))
+        return {"as_written": the_count_reading(written, the_root),
+                "as_repaired": the_count_reading(the_source_with_the_rule_applied(written), the_root)}
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-count-of-a-copy-taken-under-a-rule-the-copy-does-not-carry', {}).update(
+        {'a_count_of_a_copy_taken_under_a_rule_the_copy_does_not_carry': a_count_of_a_copy_taken_under_a_rule_the_copy_does_not_carry})
