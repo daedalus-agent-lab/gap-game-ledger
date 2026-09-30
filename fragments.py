@@ -12474,3 +12474,266 @@ if "NAMESPACES" in globals():
     NAMESPACES.setdefault(
         'a-path-taken-as-written-read-as-a-path-inside-the-folder', {}).update(
         {'a_path_taken_as_written_read_as_a_path_inside_the_folder': a_path_taken_as_written_read_as_a_path_inside_the_folder})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 249 -- `one-level-copy-sold-as-deep`
+#
+#
+# THE READING. Both halves are ONE reading of that fixture -- run it on the fragment
+# source as the tree writes it and on the same source with the slice the copier makes of
+# a row replaced by a call of the copy-by-cells function the fragment defines and never
+# calls. The repair is computed from that same source, so a tree that renames any part
+# moves no answer, and the fixture is built out of the fragment's own constant rather
+# than typed beside it.
+# Which rows the clone still shares is measured through the ORIGINAL: the clone is
+# mutated and the original is read, so the copier is never asked what it copied.
+# The promise named in the reading is the copier's own docstring, read out of the source.
+# A copier whose repair cannot be computed is a REFUSAL in both halves, not the written
+# half returned twice.
+# Stdlib only, no network, reads its own file, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_249_FRAGMENT_BEGINS = "# --- class 249 fragment begins"
+THE_249_FRAGMENT_ENDS = "# --- class 249 fragment ends"
+
+# --- class 249 fragment begins
+THE_249_THE_CELLS = (((1,),), ((2,),))
+
+
+def _the_249_a_copy_that_shares_nothing(the_row):
+    """A copy of a row that shares nothing with it: what a copy promised as independent
+    must be made of, and what the copier below never calls."""
+    return [list(the_cell) for the_cell in the_row]
+
+
+def clone_the_rows_one_level_deep(the_matrix):
+    """Independent deep copy; mutating the clone never touches the original."""
+    return [row[:] for row in the_matrix]
+# --- class 249 fragment ends
+
+
+def the_fragment_the_249_class_stands_in():
+    """The class's fragment, cut out of this file on whole lines: a marker is a line, not a
+    substring, so a marker named inside a string does not cut anything."""
+    lines = pathlib.Path(__file__).read_text(encoding="utf-8").splitlines(keepends=True)
+    begins = lines.index(THE_249_FRAGMENT_BEGINS + "\n")
+    ends = lines.index(THE_249_FRAGMENT_ENDS + "\n")
+    return "".join(lines[begins + 1:ends])
+
+
+def _the_249_keys():
+    """The keys both halves carry, in the order the reading fills them."""
+    return ("the_source_can_be_read", "the_copier", "the_copy_that_shares_nothing",
+            "the_promise_the_copier_carries", "the_rows_the_fixture_has",
+            "the_rows_the_clone_shares_with_the_original")
+
+
+def _the_249_refusal():
+    """What a reading says when the source does not carry the parts it must read, or when the
+    repair cannot be computed from it: a refusal, never an answer."""
+    return {key: (False if key == "the_source_can_be_read" else None)
+            for key in _the_249_keys()}
+
+
+def _the_249_statements(the_function):
+    """The statements of a function's body, its docstring left out: a docstring is not a
+    statement the function does anything with."""
+    if ast.get_docstring(the_function) is not None:
+        return the_function.body[1:]
+    return the_function.body
+
+
+def _the_249_the_row_walked(node):
+    """The names a list comprehension walks and binds -- the sequence and the row -- or None: a
+    comprehension of one generator, walking a plain name, binding a plain name. Which name it
+    walks is checked against the function's own argument by the caller; the name it binds is the
+    row whose cell a copy one level deep leaves shared."""
+    if not isinstance(node, ast.ListComp) or len(node.generators) != 1:
+        return None
+    target = node.generators[0].target
+    walked = node.generators[0].iter
+    if not isinstance(target, ast.Name) or not isinstance(walked, ast.Name):
+        return None
+    return (walked.id, target.id)
+
+
+def _the_249_parts_or_none(the_source):
+    """The parts the reading needs, found by shape and named from the source: the copier (one
+    argument, one statement, a list comprehension whose element slices the row) and the copy of
+    a row (one argument, one statement, a list comprehension whose element is a call), and the
+    constant the fixture is built out of."""
+    try:
+        tree = ast.parse(the_source)
+    except SyntaxError:
+        return None
+    functions = [node for node in tree.body if isinstance(node, ast.FunctionDef)]
+    constants = [node for node in tree.body if isinstance(node, ast.Assign)
+                 and isinstance(node.value, ast.Tuple)]
+    copiers, cell_copies = [], []
+    defined = {function.name for function in functions}
+    for function in functions:
+        if len(function.args.args) != 1:
+            continue
+        statements = _the_249_statements(function)
+        if len(statements) != 1 or not isinstance(statements[0], ast.Return):
+            continue
+        comprehension = statements[0].value
+        the_argument = function.args.args[0].arg
+        walked = _the_249_the_row_walked(comprehension)
+        if walked is None or walked[0] != the_argument:
+            continue
+        element = comprehension.elt
+        if isinstance(element, ast.Subscript) and isinstance(element.slice, ast.Slice):
+            copiers.append(function)
+        elif (isinstance(element, ast.Call) and isinstance(element.func, ast.Name)
+              and element.func.id in defined):
+            # a call of a function THIS source defines: the copier after its repair, which wraps
+            # the row in the copy of a row rather than slicing it
+            copiers.append(function)
+        elif isinstance(element, ast.Call) and isinstance(element.func, ast.Name):
+            # a call of something the source does not define (a builtin such as `list`): the copy
+            # of a row itself, which shares nothing with the row it is given
+            cell_copies.append(function)
+    if len(copiers) != 1 or len(cell_copies) != 1 or len(constants) != 1:
+        return None
+    targets = [target for target in constants[0].targets if isinstance(target, ast.Name)]
+    if len(targets) != 1:
+        return None
+    return {"the_copier": copiers[0].name, "the_copy_that_shares_nothing": cell_copies[0].name,
+            "the_cells_constant": targets[0].id}
+
+
+def _the_249_the_rows(the_cells):
+    """The fixture, built out of the fragment's own constant: three levels, so a copy one level
+    deep leaves the third -- the cell inside a row -- shared. A fixture typed here would be a
+    sentence about a constant the fragment may re-shape."""
+    return [[list(the_cell) for the_cell in the_row] for the_row in the_cells]
+
+
+def _the_249_the_labels(the_rows):
+    """What each row of the fixture is called, derived from the fixture's own length: an ordinal,
+    not a value typed beside it."""
+    return [f"row {index + 1}" for index in range(len(the_rows))]
+
+
+def _the_249_the_promise(the_source, the_copier):
+    """The promise the copier carries, read out of the source rather than quoted beside it."""
+    for node in ast.parse(the_source).body:
+        if isinstance(node, ast.FunctionDef) and node.name == the_copier:
+            return ast.get_docstring(node) or ""
+    return ""
+
+
+def _the_249_the_rows_the_clone_shares(the_copier, the_cells):
+    """Which rows the clone shares with the original: the clone's own cell is appended to, and the
+    ORIGINAL is read afterwards. The copier is never asked what it copied; the original answers.
+    A copy that cannot be appended to through (a tuple, a shared object that refuses) shares what
+    it shares and is reported as such, so a copier of the wrong shape is not read as a clean one."""
+    shared = []
+    fresh = _the_249_the_rows(the_cells)
+    for index, label in enumerate(_the_249_the_labels(fresh)):
+        the_original = _the_249_the_rows(the_cells)
+        reached = the_copier(the_original)
+        try:
+            reached[index][0].append(9)
+        except (AttributeError, IndexError, TypeError):
+            continue
+        if len(the_original[index][0]) != len(fresh[index][0]):
+            shared.append(label)
+    return shared
+
+
+def the_249_reading(the_source):
+    """What this source answers about the fixture: the copier it carries, the promise that copier
+    makes, and which rows of the clone are still the original's rows. The copier is executed out
+    of the source that was read, and the sharing is read off the original, never described."""
+    parts = _the_249_parts_or_none(the_source)
+    if parts is None:
+        return _the_249_refusal()
+    namespace = {}
+    try:
+        exec(compile(the_source, "<the-249-fragment>", "exec"), namespace)
+    except SyntaxError:
+        return _the_249_refusal()
+    the_copier = namespace.get(parts["the_copier"])
+    the_cells = namespace.get(parts["the_cells_constant"])
+    if the_copier is None or not isinstance(the_cells, tuple):
+        return _the_249_refusal()
+    fresh = _the_249_the_rows(the_cells)
+    return {"the_source_can_be_read": True,
+            "the_copier": parts["the_copier"],
+            "the_copy_that_shares_nothing": parts["the_copy_that_shares_nothing"],
+            "the_promise_the_copier_carries": _the_249_the_promise(
+                the_source, parts["the_copier"]),
+            "the_rows_the_fixture_has": _the_249_the_labels(fresh),
+            "the_rows_the_clone_shares_with_the_original":
+                _the_249_the_rows_the_clone_shares(the_copier, the_cells)}
+
+
+class _The249TheSliceBecomesACopyOfIt(ast.NodeTransformer):
+    """One substitution, applied by the tree's own visitor: a slice of the iterated row becomes a
+    call of the copy of a row this fragment carries and never calls."""
+
+    def __init__(self, the_row, the_copy):
+        self.the_row = the_row
+        self.the_copy = the_copy
+
+    def visit_Subscript(self, node):
+        node = self.generic_visit(node)
+        if (isinstance(node.slice, ast.Slice) and isinstance(node.value, ast.Name)
+                and node.value.id == self.the_row):
+            return ast.Call(func=ast.Name(id=self.the_copy, ctx=ast.Load()),
+                            args=[ast.Name(id=self.the_row, ctx=ast.Load())], keywords=[])
+        return node
+
+
+def the_249_source_that_copies_what_it_promises(the_source):
+    """The same source with the copier's slice of a row replaced by the copy of a row, or None when
+    the source carries no such slice: the repair is computed from the source, so a copier that
+    does not slice cannot be repaired by wrapping anything, and both halves refuse."""
+    parts = _the_249_parts_or_none(the_source)
+    if parts is None:
+        return None
+    tree = ast.parse(the_source)
+    replaced = []
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == parts["the_copier"]:
+            statements = _the_249_statements(node)
+            if len(statements) != 1 or not isinstance(statements[0], ast.Return):
+                return None
+            comprehension = statements[0].value
+            walked = _the_249_the_row_walked(comprehension)
+            if walked is None or walked[0] != node.args.args[0].arg:
+                return None
+            the_row = walked[1]
+            comprehension.elt = _The249TheSliceBecomesACopyOfIt(
+                the_row, parts["the_copy_that_shares_nothing"]).visit(comprehension.elt)
+            replaced.append(True)
+    if not replaced:
+        return None
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def _readings_of_a_copy_one_level_deep_read_through_the_original():
+    """Both halves: the rows this tree's clone still shares with the original, and the same
+    reading where the copier's slice of a row is the copy of a row the tree carries and never
+    calls. Both halves execute the source they read."""
+    the_written = the_fragment_the_249_class_stands_in()
+    the_repaired = the_249_source_that_copies_what_it_promises(the_written)
+    return {"as_written": the_249_reading(the_written),
+            "as_repaired": (the_249_reading(the_repaired) if the_repaired is not None
+                            else _the_249_refusal())}
+
+
+def a_copy_one_level_deep_read_through_the_original():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_copy_one_level_deep_read_through_the_original()["as_written"]
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'one-level-copy-sold-as-deep', {}).update(
+        {'a_copy_one_level_deep_read_through_the_original': a_copy_one_level_deep_read_through_the_original})
