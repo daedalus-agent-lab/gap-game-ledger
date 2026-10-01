@@ -13353,3 +13353,388 @@ if "NAMESPACES" in globals():
     NAMESPACES.setdefault(
         'a-fixture-that-carries-every-kind-in-one-place', {}).update(
         {'a_fixture_that_carries_every_kind_in_one_place': a_fixture_that_carries_every_kind_in_one_place})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 252 -- `a-memo-that-names-the-reader-and-not-its-bytes`
+#
+# Draft of a registry class: a memo that names the reader and not its bytes.
+#
+# The defect: an answer is memoised under a key built from the digest of the OBJECT and the reader's
+# NAME. The reader is not a fixed function -- the fixture hands the memo the reader as SOURCE TEXT
+# under a fixed name -- so one name can be two different readers. Read the memo twice, once with
+# reader source A and once with reader source B, same name, same object: the second read finds the
+# first reader's key already in the memo and answers with the FIRST reader's answer, because the key
+# names the reader and the reader's bytes are not in it. A key that names a thing is a claim about a
+# thing that can change without the name changing.
+#
+# The repair is computed from the same source by an AST transform: the key's element that holds the
+# reader's name becomes the digest of the reader's source text, so the second read misses, recomputes,
+# and answers the second reader. A source the transform cannot act on -- one whose key already carries
+# the reader's bytes -- is a REFUSAL in the repaired half, not the written half returned twice: a
+# repair that cannot be computed is not a repair.
+#
+# The reading is taken by executing the source, not by describing it: the fragment is executed, the
+# fixture's own memo is asked once per reader source it hands over, and the answers are reported in
+# the order the fixture hands the readers over. Every name, constant and function the reading uses is
+# found in the source by SHAPE -- by type and position -- so a source whose names are all changed
+# answers the same.
+#
+# Stdlib only, no network, reads its own file, writes nothing. The fragment is cut out of this file on
+# whole lines, so both halves read exactly the bytes a splicer would carry.
+#
+# THE READING. Both halves are ONE reading of that fixture -- run on the fragment source
+# as the tree writes it and on the same source with the key's element that holds the
+# reader's NAME replaced by the digest of the reader's source text. No value in either
+# half is typed: the reading executes the source it read, and the repair is computed from
+# that same source, so a tree that renames any part moves no answer.
+# What the SECOND read answers is measured, not argued: the fixture hands two readers over
+# under one name, each read is executed, and the answers are reported in the order the
+# fixture hands the readers over -- never by describing what a memo would do.
+# A repair that cannot be computed is a refusal in both halves, not the written half
+# returned twice.
+# Stdlib only, no network, reads its own file, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_252_FRAGMENT_BEGINS = "# --- class 252 fragment begins"
+THE_252_FRAGMENT_ENDS = "# --- class 252 fragment ends"
+
+# --- class 252 fragment begins
+# The promise this fragment makes: a memoised reading answers what THIS reader gives for THIS
+# object. The reader is not a fixed function: the fixture hands the memo the reader as SOURCE TEXT
+# under a fixed name, and two reads under one name can be two different readers.
+#
+# The module is bound under a name of this fragment's own: a fragment spliced into a shared file is
+# an edit to ONE namespace, and a top-level `import hashlib` would rebind a name the file already
+# has. The binding is the same module either way, but the splice guard refuses a name the file
+# already carries, and teaching the guard to be lenient is the wrong repair.
+the_252_hashlib = __import__("hashlib")
+
+THE_252_THE_READERS = {
+    "the_reader": (
+        "def the_reader(the_object):\n"
+        "    return len(the_object)\n",
+        "def the_reader(the_object):\n"
+        "    return len(the_object.split())\n",
+    ),
+}
+THE_252_THE_OBJECT = "the object the reader was handed\nand read twice under one name\n"
+THE_252_THE_MEMO = {}
+
+
+def the_252_digest(the_text):
+    """The bytes of a text, digested: what a key can carry about a reader that is not its name."""
+    return the_252_hashlib.sha256(the_text.encode("utf-8")).hexdigest()
+
+
+def the_252_run_the_reader(the_reader_source, the_reader_name, the_object):
+    """The reader the fixture hands over, run under the fixed name it arrives under: the text is
+    compiled, not described."""
+    the_space: dict = {}
+    exec(compile(the_reader_source, the_reader_name, "exec"), the_space)      # noqa: S102
+    return the_space[the_reader_name](the_object)
+
+
+def the_252_key_of(the_object, the_reader_source, the_reader_name):
+    """The key an answer is filed under: the object's digest, and the reader -- by NAME, so a reader
+    whose bytes change without its name changing is the same reader here."""
+    return (the_252_digest(the_object), the_reader_name)
+
+
+def the_252_the_reading_the_memo_gives(the_memo, the_object, the_reader_source, the_reader_name):
+    """What this reader gives for this object: out of the memo when the memo already has this key,
+    computed by the reader when it does not."""
+    the_key = the_252_key_of(the_object, the_reader_source, the_reader_name)
+    if the_key not in the_memo:
+        the_memo[the_key] = the_252_run_the_reader(the_reader_source, the_reader_name, the_object)
+    return the_memo[the_key]
+# --- class 252 fragment ends
+
+
+def the_fragment_the_252_class_stands_in():
+    """The class's fragment, cut out of this file with a marker that must be a LINE: the search is
+    for `"\\n%s\\n" % marker`, never for a substring, so a marker named inside a string does not
+    cut anything."""
+    the_text = pathlib.Path(__file__).read_text(encoding="utf-8")
+    begins = the_text.index("\n%s\n" % THE_252_FRAGMENT_BEGINS) + len(THE_252_FRAGMENT_BEGINS) + 2
+    ends = the_text.index("\n%s\n" % THE_252_FRAGMENT_ENDS) + 1
+    return the_text[begins:ends]
+
+
+def _the_252_keys():
+    """The keys both halves carry, in the order the reading fills them."""
+    return ("the_source_can_be_read", "the_name_both_readers_arrive_under",
+            "the_object_both_reads_were_given", "the_answers_the_reads_gave")
+
+
+def _the_252_refusal():
+    """What a reading says when the source does not carry the parts it must read, or when the
+    repair cannot be computed from it: a refusal, never an answer."""
+    return {key: (False if key == "the_source_can_be_read" else None)
+            for key in _the_252_keys()}
+
+
+def _the_252_statements(the_function):
+    """The statements of a function's body, its docstring left out: a docstring is not a statement
+    the function does anything with."""
+    if ast.get_docstring(the_function) is not None:
+        return the_function.body[1:]
+    return the_function.body
+
+
+def _the_252_the_digest_function(the_tree):
+    """The digest: the module-level function of one argument whose body is a single return. Read by
+    shape, not by name, so renaming it moves no answer."""
+    for the_node in the_tree.body:
+        if not isinstance(the_node, ast.FunctionDef) or len(the_node.args.args) != 1:
+            continue
+        the_statements = _the_252_statements(the_node)
+        if len(the_statements) == 1 and isinstance(the_statements[0], ast.Return):
+            return the_node
+    return None
+
+
+def _the_252_the_key_function(the_tree):
+    """The key: the module-level function of three arguments whose body is a single return of a
+    sequence. The LENGTH of that sequence is not part of the shape -- a key a mutant has dropped the
+    reader out of is still a key, and a reader that refused it would report an unreadable source
+    where the pair it must part on is still there."""
+    for the_node in the_tree.body:
+        if not isinstance(the_node, ast.FunctionDef) or len(the_node.args.args) != 3:
+            continue
+        the_statements = _the_252_statements(the_node)
+        if (len(the_statements) == 1 and isinstance(the_statements[0], ast.Return)
+                and isinstance(the_statements[0].value, (ast.Tuple, ast.List))
+                and len(the_statements[0].value.elts) >= 1):
+            return the_node
+    return None
+
+
+def _the_252_the_read_function(the_tree, the_key_name):
+    """The read: the module-level function of four arguments that files an answer under the key --
+    it is the one that calls the key function."""
+    for the_node in the_tree.body:
+        if not isinstance(the_node, ast.FunctionDef) or len(the_node.args.args) != 4:
+            continue
+        if any(isinstance(the_call, ast.Call) and isinstance(the_call.func, ast.Name)
+               and the_call.func.id == the_key_name for the_call in ast.walk(the_node)):
+            return the_node
+    return None
+
+
+def _the_252_the_memo_constant(the_tree):
+    """The memo: a module-level constant bound to an empty mapping. Read by shape, not by name."""
+    for the_node in the_tree.body:
+        if (isinstance(the_node, ast.Assign) and len(the_node.targets) == 1
+                and isinstance(the_node.targets[0], ast.Name)
+                and isinstance(the_node.value, ast.Dict) and not the_node.value.keys):
+            return the_node
+    return None
+
+
+def _the_252_the_readers_constant(the_tree):
+    """The readers: a module-level constant bound to a mapping of the ONE name the readers arrive
+    under to the source texts that arrive under that name. Two sources under one name is the shape
+    this class is about, so a fixture that hands the same text over twice, or hands over one text,
+    is not this class's fixture."""
+    for the_node in the_tree.body:
+        if (not isinstance(the_node, ast.Assign) or len(the_node.targets) != 1
+                or not isinstance(the_node.targets[0], ast.Name)
+                or not isinstance(the_node.value, ast.Dict) or len(the_node.value.keys) != 1):
+            continue
+        the_name, the_sources = the_node.value.keys[0], the_node.value.values[0]
+        if (isinstance(the_name, ast.Constant) and isinstance(the_name.value, str)
+                and isinstance(the_sources, (ast.Tuple, ast.List)) and len(the_sources.elts) >= 2
+                and all(isinstance(element, ast.Constant) and isinstance(element.value, str)
+                        for element in the_sources.elts)
+                and len({element.value for element in the_sources.elts})
+                == len(the_sources.elts)):
+            return the_node
+    return None
+
+
+def _the_252_the_object_constant(the_tree):
+    """The object: a module-level constant bound to a text -- the thing the readers are asked about,
+    the only other constant the fixture carries. Read by shape, not by name."""
+    for the_node in the_tree.body:
+        if (isinstance(the_node, ast.Assign) and len(the_node.targets) == 1
+                and isinstance(the_node.targets[0], ast.Name)
+                and isinstance(the_node.value, ast.Constant)
+                and isinstance(the_node.value.value, str)):
+            return the_node
+    return None
+
+
+def _the_252_parts_or_none(the_source):
+    """The names this class reads out of the source, or None: a source that does not carry them is
+    not this class's fragment, and a reading of it is a refusal."""
+    try:
+        the_tree = ast.parse(the_source)
+    except SyntaxError:
+        return None
+    the_digest = _the_252_the_digest_function(the_tree)
+    the_key = _the_252_the_key_function(the_tree)
+    if the_digest is None or the_key is None:
+        return None
+    the_read = _the_252_the_read_function(the_tree, the_key.name)
+    the_memo = _the_252_the_memo_constant(the_tree)
+    the_readers = _the_252_the_readers_constant(the_tree)
+    the_object = _the_252_the_object_constant(the_tree)
+    if the_read is None or the_memo is None or the_readers is None or the_object is None:
+        return None
+    return {"the_digest_function": the_digest.name,
+            "the_key_function": the_key.name,
+            "the_read_function": the_read.name,
+            "the_memo_constant": the_memo.targets[0].id,
+            "the_readers_constant": the_readers.targets[0].id,
+            "the_object_constant": the_object.targets[0].id}
+
+
+def _the_252_how_the_read_function_is_called(the_source, parts):
+    """The parameters the read function files answers under and reads with, read out of the source
+    by position: the memo is the parameter the key is a subscript of, and the object, the reader's
+    source and the reader's name are the parameters the key function is handed, in the key's own
+    order. The reading calls the read function BY THESE NAMES, so a source whose parameters stand in
+    another order answers the same question."""
+    the_tree = ast.parse(the_source)
+    the_key = _the_252_the_key_function(the_tree)
+    the_read = next((the_node for the_node in the_tree.body
+                     if isinstance(the_node, ast.FunctionDef)
+                     and the_node.name == parts["the_read_function"]), None)
+    if the_key is None or the_read is None:
+        return None
+    the_parameters = [the_argument.arg for the_argument in the_read.args.args]
+    the_call = next((the_node for the_node in ast.walk(the_read)
+                     if isinstance(the_node, ast.Call) and isinstance(the_node.func, ast.Name)
+                     and the_node.func.id == the_key.name), None)
+    if the_call is None or len(the_call.args) != len(the_key.args.args):
+        return None
+    if not all(isinstance(the_argument, ast.Name) and the_argument.id in the_parameters
+               for the_argument in the_call.args):
+        return None
+    the_under = sorted({the_node.value.id for the_node in ast.walk(the_read)
+                        if isinstance(the_node, ast.Subscript) and isinstance(the_node.value, ast.Name)
+                        and the_node.value.id in the_parameters})
+    if len(the_under) != 1:
+        return None
+    return {"the_memo_argument": the_under[0],
+            "the_object_argument": the_call.args[0].id,
+            "the_reader_source_argument": the_call.args[1].id,
+            "the_reader_name_argument": the_call.args[2].id}
+
+
+def _the_252_is_literal(the_value):
+    """Whether a value is one the printed halves can be read back from: a reading that reported a
+    value `literal_eval` cannot read would print a half nobody can check."""
+    try:
+        ast.literal_eval(repr(the_value))
+    except (ValueError, SyntaxError, TypeError):
+        return False
+    return True
+
+
+def the_252_reading(the_source):
+    """What this source answers about its own fixture: the name the readers arrive under, the object
+    they were given, and the answers the memo gave, in the order the fixture hands the readers over.
+    The source is executed and its own memo is asked -- the reading describes nothing."""
+    parts = _the_252_parts_or_none(the_source)
+    if parts is None:
+        return _the_252_refusal()
+    the_arguments = _the_252_how_the_read_function_is_called(the_source, parts)
+    if the_arguments is None:
+        return _the_252_refusal()
+    the_space: dict = {}
+    try:
+        exec(compile(the_source, "<the-252-fragment>", "exec"), the_space)      # noqa: S102
+    except Exception:                                                          # noqa: BLE001
+        return _the_252_refusal()
+    the_read = the_space.get(parts["the_read_function"])
+    the_memo = the_space.get(parts["the_memo_constant"])
+    the_readers = the_space.get(parts["the_readers_constant"])
+    the_object = the_space.get(parts["the_object_constant"])
+    if not callable(the_read) or not isinstance(the_memo, dict) or not isinstance(the_readers, dict):
+        return _the_252_refusal()
+    if len(the_readers) != 1 or not isinstance(the_object, str):
+        return _the_252_refusal()
+    the_name = next(iter(the_readers))
+    the_sources = the_readers[the_name]
+    if not isinstance(the_sources, (tuple, list)) or len(the_sources) < 2:
+        return _the_252_refusal()
+    the_answers = []
+    for the_reader_source in the_sources:
+        try:
+            the_answers.append(the_read(**{
+                the_arguments["the_memo_argument"]: the_memo,
+                the_arguments["the_object_argument"]: the_object,
+                the_arguments["the_reader_source_argument"]: the_reader_source,
+                the_arguments["the_reader_name_argument"]: the_name}))
+        except Exception:                                                      # noqa: BLE001
+            return _the_252_refusal()
+    if not all(_the_252_is_literal(the_answer) for the_answer in the_answers):
+        return _the_252_refusal()
+    return {"the_source_can_be_read": True,
+            "the_name_both_readers_arrive_under": the_name,
+            "the_object_both_reads_were_given": the_object,
+            "the_answers_the_reads_gave": the_answers}
+
+
+def the_252_source_that_keys_by_the_readers_bytes(the_source):
+    """The same source, repaired: the key's element that holds the reader's NAME becomes the digest
+    of the reader's source text, computed from the source by an AST transform. None when the
+    transform cannot act on the source -- a key that already carries the reader's bytes has no name
+    to replace, and a repair that cannot be computed is not one."""
+    parts = _the_252_parts_or_none(the_source)
+    if parts is None:
+        return None
+    the_tree = ast.parse(the_source)
+    the_digest = _the_252_the_digest_function(the_tree)
+    the_key = _the_252_the_key_function(the_tree)
+    if the_digest is None or the_key is None:
+        return None
+    the_statements = _the_252_statements(the_key)
+    if len(the_statements) != 1 or not isinstance(the_statements[0], ast.Return):
+        return None
+    the_elements = the_statements[0].value
+    if not isinstance(the_elements, (ast.Tuple, ast.List)) or len(the_elements.elts) < 2:
+        return None
+    the_object_part, the_reader_part = the_elements.elts[0], the_elements.elts[1]
+    # The object's digest must be there already: the repair adds the reader's bytes, it does not put
+    # the object back. What the object digests is not part of this check -- a mutant that digests
+    # the reader's source where the object belonged is still a source this repair can act on.
+    if not (isinstance(the_object_part, ast.Call) and isinstance(the_object_part.func, ast.Name)
+            and the_object_part.func.id == the_digest.name and len(the_object_part.args) == 1):
+        return None
+    # The reader's element must still be the NAME the reader arrives under. A key that already
+    # carries the reader's bytes is a source this repair cannot act on, and that is a refusal.
+    if not (isinstance(the_reader_part, ast.Name)
+            and the_reader_part.id == the_key.args.args[2].arg):
+        return None
+    the_elements.elts[1] = ast.Call(
+        func=ast.Name(id=the_digest.name, ctx=ast.Load()),
+        args=[ast.Name(id=the_key.args.args[1].arg, ctx=ast.Load())], keywords=[])
+    ast.fix_missing_locations(the_tree)
+    return ast.unparse(the_tree) + "\n"
+
+
+def _readings_of_a_memo_that_names_the_reader_and_not_its_bytes():
+    """Both halves: what this class's own fixture answers as it stands, and the same reading of the
+    source the repair computes from it. Both halves execute the source they read, and a repair that
+    cannot be computed is a refusal in the repaired half rather than the written half returned
+    twice."""
+    the_written = the_fragment_the_252_class_stands_in()
+    the_repaired = the_252_source_that_keys_by_the_readers_bytes(the_written)
+    return {"as_written": the_252_reading(the_written),
+            "as_repaired": (the_252_reading(the_repaired) if the_repaired is not None
+                            else _the_252_refusal())}
+
+
+def a_memo_that_names_the_reader_and_not_its_bytes():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_memo_that_names_the_reader_and_not_its_bytes()["as_written"]
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-memo-that-names-the-reader-and-not-its-bytes', {}).update(
+        {'a_memo_that_names_the_reader_and_not_its_bytes': a_memo_that_names_the_reader_and_not_its_bytes})
