@@ -12992,3 +12992,364 @@ if "NAMESPACES" in globals():
     NAMESPACES.setdefault(
         'a-verdict-computed-and-thrown-away', {}).update(
         {'a_verdict_computed_and_thrown_away': a_verdict_computed_and_thrown_away})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 251 -- `a-fixture-that-carries-every-kind-in-one-place`
+#
+# Draft of a registry class: a fixture that carries every kind in one place.
+#
+# The defect: a check owns a list of kinds -- four patterns, each matching a different kind of
+# thing -- and its fixture carries one instance of every kind in ONE file. The arm then asserts
+# only that the report NAMES THAT FILE. Any single kind can be dropped from the list of kinds and
+# the check stays green, because the remaining kinds still make that one file be named: the fixture
+# depends on the FULL SET rather than on one kind, so the death of a kind moves no answer.
+#
+# The repair is computed from the same source by an AST transform: the fixture becomes one file per
+# kind, and the check names every file it matched, so deleting a kind takes its file out of the
+# names. A source the transform cannot act on -- a fixture that already carries one file per kind,
+# or a fixture whose lines no kind accounts for -- is a REFUSAL in the repaired half, not the
+# written half returned twice: a repair that cannot be computed is not a repair.
+#
+# The reading is one reading of one fixture, executed out of the source that is read and not
+# described: the source is executed, its check is run over its own fixture, and then each kind is
+# deleted from the list of kinds IN THE SOURCE -- a deletion is a source of its own, executed, with
+# its own check asked -- so what a deletion moves is measured rather than argued. Every name the
+# reading uses is taken from the source by SHAPE, not by a literal name, so a source whose names are
+# all changed answers the same.
+#
+# Stdlib only, no network, reads its own file, writes nothing. The fragment is cut out of this file
+# on whole lines, so both halves read exactly the bytes a splicer would carry.
+#
+# THE READING. Both halves are ONE reading of that fixture -- run it on the fragment
+# source as the tree writes it and on the same source with the fixture split into one
+# file per kind and the check naming every file it matched. No value in either half is
+# typed: the reading executes the source it read, and the repair is computed from that
+# same source, so a tree that renames any part moves no answer.
+# What a DELETION moves is measured, not argued: each kind is deleted from the list of
+# kinds IN THE SOURCE, the deletion is executed as a source of its own, and that source's
+# own check is asked -- never by describing what a deletion would do.
+# A repair that cannot be computed is a refusal in both halves, not the written half
+# returned twice.
+# Stdlib only, no network, reads its own file, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_251_FRAGMENT_BEGINS = "# --- class 251 fragment begins"
+THE_251_FRAGMENT_ENDS = "# --- class 251 fragment ends"
+
+# --- class 251 fragment begins
+# The module is bound under a name of this fragment's own: a fragment spliced into a shared
+# file is an edit to ONE namespace, and a top-level `import re` would rebind a name the file
+# already has. The binding is the same module either way, but the splice guard refuses a name
+# the file already carries, and teaching the guard to be lenient is the wrong repair.
+the_251_re = __import__("re")
+
+THE_251_THE_KINDS = (
+    ("a bare number", r"^[0-9]+$"),
+    ("a bare word", r"^[a-z]+$"),
+    ("a quoted string", r'^"[a-z]+"$'),
+    ("a bracketed tag", r"^\[[a-z]+\]$"),
+)
+THE_251_THE_FIXTURE = {
+    "the fixture file": "42\nword\n\"quoted\"\n[tag]\n",
+}
+
+
+def the_checker_that_names_the_file_it_matched(the_files, the_kinds):
+    """Name the file a kind this check knows was found in: the first one it matched."""
+    the_named = []
+    for the_name, the_text in the_files.items():
+        for the_kind, the_pattern in the_kinds:
+            if the_251_re.search(the_pattern, the_text, the_251_re.M):
+                the_named.append(the_name)
+                break
+        if the_named:
+            break
+    return the_named
+# --- class 251 fragment ends
+
+
+def the_fragment_the_251_class_stands_in():
+    """The class's fragment, cut out of this file with a marker that must be a LINE: the search is
+    for `"\\n%s\\n" % marker`, never for a substring, so a marker named inside a string does not
+    cut anything."""
+    the_text = pathlib.Path(__file__).read_text(encoding="utf-8")
+    begins = the_text.index("\n%s\n" % THE_251_FRAGMENT_BEGINS) + len(THE_251_FRAGMENT_BEGINS) + 2
+    ends = the_text.index("\n%s\n" % THE_251_FRAGMENT_ENDS) + 1
+    return the_text[begins:ends]
+
+
+def _the_251_keys():
+    """The keys both halves carry, in the order the reading fills them."""
+    return ("the_source_can_be_read", "the_kinds_the_check_knows", "the_files_the_fixture_has",
+            "the_files_the_check_names", "the_kinds_a_deletion_moves")
+
+
+def _the_251_refusal():
+    """What a reading says when the source does not carry the parts it must read, or when the
+    repair cannot be computed from it: a refusal, never an answer."""
+    return {key: (False if key == "the_source_can_be_read" else None)
+            for key in _the_251_keys()}
+
+
+def _the_251_statements(the_function):
+    """The statements of a function's body, its docstring left out: a docstring is not a
+    statement the function does anything with."""
+    if ast.get_docstring(the_function) is not None:
+        return the_function.body[1:]
+    return the_function.body
+
+
+def _the_251_the_kinds_constant(tree):
+    """The list of kinds the check knows: a module-level constant bound to pairs of a kind's name
+    and the pattern that matches that kind. Read by shape, not by name, so renaming it moves no
+    answer."""
+    for node in tree.body:
+        if (not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Tuple)
+                or len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name)):
+            continue
+        pairs = node.value.elts
+        if len(pairs) < 2:
+            continue
+        if all(isinstance(p, ast.Tuple) and len(p.elts) == 2
+               and isinstance(p.elts[0], ast.Constant) and isinstance(p.elts[0].value, str)
+               and isinstance(p.elts[1], ast.Constant) and isinstance(p.elts[1].value, str)
+               for p in pairs):
+            return node
+    return None
+
+
+def _the_251_the_fixture_constant(tree):
+    """The fixture: a module-level constant bound to a mapping of a file's name to the text of
+    that file. Read by shape, not by name."""
+    for node in tree.body:
+        if (not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Dict)
+                or len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name)):
+            continue
+        keys, values = node.value.keys, node.value.values
+        if keys and all(isinstance(k, ast.Constant) and isinstance(k.value, str)
+                        and isinstance(v, ast.Constant) and isinstance(v.value, str)
+                        for k, v in zip(keys, values)):
+            return node
+    return None
+
+
+def _the_251_the_check(tree):
+    """The check: the function that names the files a kind was found in. Read by shape, not by
+    name: two arguments, a list opened in one statement, a loop over the first argument, and that
+    list returned. What the loop does with the list is NOT part of the shape -- the repaired half
+    names every file it matched and the written half stops at the first, and a reader that
+    recognised only one of them would read the other as not this class's fragment at all."""
+    for node in tree.body:
+        if not isinstance(node, ast.FunctionDef) or len(node.args.args) != 2:
+            continue
+        statements = _the_251_statements(node)
+        if len(statements) != 3:
+            continue
+        opened, looped, returned = statements
+        if (isinstance(opened, ast.Assign) and len(opened.targets) == 1
+                and isinstance(opened.targets[0], ast.Name)
+                and isinstance(opened.value, ast.List)
+                and isinstance(looped, ast.For)
+                and isinstance(returned, ast.Return) and isinstance(returned.value, ast.Name)
+                and returned.value.id == opened.targets[0].id):
+            return node
+    return None
+
+
+def _the_251_parts_or_none(the_source):
+    """The names this class reads out of the source, or None: a source that does not carry them
+    is not this class's fragment, and a reading of it is a refusal."""
+    try:
+        tree = ast.parse(the_source)
+    except SyntaxError:
+        return None
+    the_check = _the_251_the_check(tree)
+    the_fixture = _the_251_the_fixture_constant(tree)
+    the_kinds = _the_251_the_kinds_constant(tree)
+    if the_check is None or the_fixture is None or the_kinds is None:
+        return None
+    return {"the_check": the_check.name,
+            "the_fixture_constant": the_fixture.targets[0].id,
+            "the_kinds_constant": the_kinds.targets[0].id}
+
+
+def _the_251_the_kinds_in(the_source):
+    """The kinds the source carries, in its own order, read out of the source."""
+    the_kinds = _the_251_the_kinds_constant(ast.parse(the_source))
+    if the_kinds is None:
+        return None
+    return [(element.elts[0].value, element.elts[1].value) for element in the_kinds.value.elts]
+
+
+def _the_251_the_files_of(the_source):
+    """The names of the files the source's fixture carries, read out of the source."""
+    the_fixture = _the_251_the_fixture_constant(ast.parse(the_source))
+    if the_fixture is None:
+        return None
+    return [key.value for key in the_fixture.value.keys]
+
+
+def _the_251_the_names_one_source_names(the_source, parts):
+    """The files the check this source carries names, run over the fixture this source carries:
+    the source is executed and its own check is asked, or None when that cannot be done."""
+    namespace: dict = {}
+    try:
+        exec(compile(the_source, "<the-251-fragment>", "exec"), namespace)
+    except Exception:                                          # noqa: BLE001
+        return None
+    the_check = namespace.get(parts["the_check"])
+    the_fixture = namespace.get(parts["the_fixture_constant"])
+    the_kinds = namespace.get(parts["the_kinds_constant"])
+    if not callable(the_check) or not isinstance(the_fixture, dict) or not isinstance(the_kinds, tuple):
+        return None
+    try:
+        return the_check(the_fixture, the_kinds)
+    except Exception:                                          # noqa: BLE001
+        return None
+
+
+def _the_251_source_without_the_kind(the_source, the_index):
+    """The same source with one kind deleted from the list of kinds: a deletion of a kind is a
+    source of its own, and the check is asked out of that source rather than told about it."""
+    tree = ast.parse(the_source)
+    the_kinds = _the_251_the_kinds_constant(tree)
+    if the_kinds is None or the_index >= len(the_kinds.value.elts):
+        return None
+    del the_kinds.value.elts[the_index]
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def _the_251_the_kinds_a_deletion_moves(the_source, parts, the_named):
+    """The kinds whose deletion from the list of kinds changes what the check names: each
+    deletion is executed and its own check is asked, and the answer is compared with the answer
+    of the source as it stands."""
+    the_kinds = _the_251_the_kinds_in(the_source)
+    if the_kinds is None:
+        return None
+    the_moves = []
+    for the_index, (the_kind, _) in enumerate(the_kinds):
+        the_variant = _the_251_source_without_the_kind(the_source, the_index)
+        if the_variant is None:
+            return None
+        the_names_after = _the_251_the_names_one_source_names(the_variant, parts)
+        if the_names_after is None:
+            return None
+        if the_names_after != the_named:
+            the_moves.append(the_kind)
+    return the_moves
+
+
+def the_251_reading(the_source):
+    """What this source answers about its own fixture: the kinds the check knows, the files the
+    fixture has, the files the check names, and the kinds whose deletion moves what is named.
+    The source is executed, and every deletion is a source of its own, also executed."""
+    parts = _the_251_parts_or_none(the_source)
+    if parts is None:
+        return _the_251_refusal()
+    the_named = _the_251_the_names_one_source_names(the_source, parts)
+    the_kinds = _the_251_the_kinds_in(the_source)
+    the_files = _the_251_the_files_of(the_source)
+    if the_named is None or the_kinds is None or the_files is None:
+        return _the_251_refusal()
+    the_moves = _the_251_the_kinds_a_deletion_moves(the_source, parts, the_named)
+    if the_moves is None:
+        return _the_251_refusal()
+    return {"the_source_can_be_read": True,
+            "the_kinds_the_check_knows": sorted(the_kind for the_kind, _ in the_kinds),
+            "the_files_the_fixture_has": sorted(the_files),
+            "the_files_the_check_names": sorted(the_named),
+            "the_kinds_a_deletion_moves": sorted(the_moves)}
+
+
+def _the_251_the_file_a_kind_gets(the_kind):
+    """The name of the file a kind gets in the repaired fixture: the kind's own name, so nothing
+    is written here that the fixture was supposed to demonstrate."""
+    return the_kind.replace(" ", "_") + ".txt"
+
+
+def _the_251_the_split(the_fixture, the_kinds):
+    """One file per kind: every line of the fixture goes to the file of the first kind that
+    matches it, or None when the fixture already carries one kind per file (nothing for the
+    transform to act on) or carries a line no kind accounts for (a line the repair would have to
+    invent a home for)."""
+    import re
+
+    the_lines_of_a_kind: dict = {}
+    the_most_kinds_in_one_file = 0
+    for the_name, the_text in the_fixture.items():
+        the_carried = set()
+        for the_line in the_text.splitlines():
+            the_first = None
+            for the_kind, the_pattern in the_kinds:
+                if re.search(the_pattern, the_line):
+                    the_first = the_kind
+                    break
+            if the_first is None:
+                return None
+            the_lines_of_a_kind.setdefault(the_first, []).append(the_line)
+            the_carried.add(the_first)
+        the_most_kinds_in_one_file = max(the_most_kinds_in_one_file, len(the_carried))
+    if the_most_kinds_in_one_file < 2:
+        return None
+    return {_the_251_the_file_a_kind_gets(the_kind): "\n".join(the_lines) + "\n"
+            for the_kind, the_lines in the_lines_of_a_kind.items()}
+
+
+def the_251_source_with_one_file_per_kind(the_source):
+    """The same source, repaired: one file per kind in the fixture, and the check naming every
+    file it matched, both computed from the source by an AST transform. None when the transform
+    cannot act on the source -- a fixture that already carries one kind per file, or a fixture a
+    line of which no kind accounts for -- because a repair that cannot be computed is not one."""
+    parts = _the_251_parts_or_none(the_source)
+    if parts is None:
+        return None
+    tree = ast.parse(the_source)
+    the_fixture = _the_251_the_fixture_constant(tree)
+    the_kinds = _the_251_the_kinds_constant(tree)
+    the_check = _the_251_the_check(tree)
+    if the_fixture is None or the_kinds is None or the_check is None:
+        return None
+    the_kinds_here = [(element.elts[0].value, element.elts[1].value) for element in the_kinds.value.elts]
+    the_fixture_here = {key.value: value.value
+                        for key, value in zip(the_fixture.value.keys, the_fixture.value.values)}
+    the_split = _the_251_the_split(the_fixture_here, the_kinds_here)
+    if the_split is None:
+        return None
+    the_fixture.value = ast.Dict(
+        keys=[ast.Constant(value=the_name) for the_name in the_split],
+        values=[ast.Constant(value=the_text) for the_text in the_split.values()])
+    # The arm: the written check stops at the first file it matched, which is what makes one file
+    # carrying every kind enough for it. The repaired check names every file it matched, so a
+    # kind that dies takes its own file out of the names.
+    the_loop = _the_251_statements(the_check)[1]
+    if (the_loop.body and isinstance(the_loop.body[-1], ast.If) and the_loop.body[-1].body
+            and isinstance(the_loop.body[-1].body[0], ast.Break)):
+        the_loop.body.pop()
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def _readings_of_a_fixture_that_carries_every_kind_in_one_place():
+    """Both halves: what this class's own fixture answers as it stands, and the same reading of
+    the source the repair computes from it. Both halves execute the source they read, and a
+    repair that cannot be computed is a refusal in the repaired half rather than the written half
+    returned twice."""
+    the_written = the_fragment_the_251_class_stands_in()
+    the_repaired = the_251_source_with_one_file_per_kind(the_written)
+    return {"as_written": the_251_reading(the_written),
+            "as_repaired": (the_251_reading(the_repaired) if the_repaired is not None
+                            else _the_251_refusal())}
+
+
+def a_fixture_that_carries_every_kind_in_one_place():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_fixture_that_carries_every_kind_in_one_place()["as_written"]
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-fixture-that-carries-every-kind-in-one-place', {}).update(
+        {'a_fixture_that_carries_every_kind_in_one_place': a_fixture_that_carries_every_kind_in_one_place})
