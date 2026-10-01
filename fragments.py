@@ -12737,3 +12737,258 @@ if "NAMESPACES" in globals():
     NAMESPACES.setdefault(
         'one-level-copy-sold-as-deep', {}).update(
         {'a_copy_one_level_deep_read_through_the_original': a_copy_one_level_deep_read_through_the_original})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 250 -- `a-verdict-computed-and-thrown-away`
+#
+# Draft of a registry class: a verdict computed, printed, and thrown away.
+#
+# The defect: a check that computes the verdict its row needs, prints it as a sentence, and
+# returns a status that does not depend on it. The row reads only the exit status, so on a
+# tree where the rule the check measures is broken the row is green -- the check reports the
+# broken state and passes.
+#
+# The repair is computed from the same source by an AST transform: the constant the check
+# returns becomes the verdict it computed, compared with the constant that names the good
+# verdict, so the status the row reads IS the verdict. A source the transform cannot act on
+# -- a check that returns no constant, or that already returns its verdict -- is a REFUSAL in
+# both halves, not the written half returned twice: a repair that cannot be computed is not a
+# repair.
+#
+# The fixture is built out of the fragment's own constant, so a tree that renames or
+# re-shapes the constant moves the fixture with it. What the check prints and what status the
+# row reads are measured by RUNNING the check, once per tree of the fixture, and reading its
+# stdout and its return value.
+#
+# Stdlib only, no network, reads its own file, writes nothing. The fragment is cut out of
+# this file on whole lines, so both halves read exactly the bytes a splicer would carry.
+#
+# THE READING. Both halves are ONE reading of that fixture -- run it on the fragment
+# source as the tree writes it and on the same source with the constant the check
+# returns replaced by the verdict it computed. No value in either half is typed: the
+# reading executes the source it read, and the repair is computed from that same source,
+# so a tree that renames any part moves no answer, and the fixture is built out of the
+# fragment's own constant rather than typed beside it.
+# What the check prints and what status the row reads are read by RUNNING the check once
+# per tree of the fixture -- its stdout and its return value -- never by describing it.
+# A repair that cannot be computed is a refusal in both halves, not the written half
+# returned twice.
+# Stdlib only, no network, reads its own file, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_250_FRAGMENT_BEGINS = "# --- class 250 fragment begins"
+THE_250_FRAGMENT_ENDS = "# --- class 250 fragment ends"
+
+# --- class 250 fragment begins
+THE_250_THE_TREES = (("a tree where the rule holds", True),
+                     ("a tree where the rule does not hold", False))
+THE_250_THE_VERDICT_THE_RULE_HOLDS = "the rule holds"
+
+
+def _the_250_the_verdict(the_tree):
+    """The verdict this tree answers: the sentence the check prints."""
+    return THE_250_THE_VERDICT_THE_RULE_HOLDS if the_tree else "the rule does not hold"
+
+
+def the_checker_whose_verdict_the_row_never_reads(the_tree):
+    """Print the verdict this tree answers, and hand back the status the row reads."""
+    the_verdict = _the_250_the_verdict(the_tree)
+    print(the_verdict)
+    return 0
+# --- class 250 fragment ends
+
+
+def the_fragment_the_250_class_stands_in():
+    """The class's fragment, cut out of this file on whole lines: a marker is a line, not a
+    substring, so a marker named inside a string does not cut anything."""
+    lines = pathlib.Path(__file__).read_text(encoding="utf-8").splitlines(keepends=True)
+    begins = lines.index(THE_250_FRAGMENT_BEGINS + "\n")
+    ends = lines.index(THE_250_FRAGMENT_ENDS + "\n")
+    return "".join(lines[begins + 1:ends])
+
+
+def _the_250_keys():
+    """The keys both halves carry, in the order the reading fills them."""
+    return ("the_source_can_be_read", "the_checker", "the_trees_the_fixture_has",
+            "the_verdicts_the_checker_prints", "the_status_the_row_reads",
+            "the_rows_that_go_red")
+
+
+def _the_250_refusal():
+    """What a reading says when the source does not carry the parts it must read, or when the
+    repair cannot be computed from it: a refusal, never an answer."""
+    return {key: (False if key == "the_source_can_be_read" else None)
+            for key in _the_250_keys()}
+
+
+def _the_250_statements(the_function):
+    """The statements of a function's body, its docstring left out: a docstring is not a
+    statement the function does anything with."""
+    if ast.get_docstring(the_function) is not None:
+        return the_function.body[1:]
+    return the_function.body
+
+
+def _the_250_the_trees_constant(tree):
+    """The fixture: the module-level constant bound to pairs of a label and a flag. Read by
+    shape, not by name, so renaming it moves no answer."""
+    for node in tree.body:
+        if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Tuple):
+            continue
+        pairs = node.value.elts
+        if len(pairs) < 2:
+            continue
+        if all(isinstance(p, ast.Tuple) and len(p.elts) == 2
+               and isinstance(p.elts[0], ast.Constant) and isinstance(p.elts[0].value, str)
+               and isinstance(p.elts[1], ast.Constant) and isinstance(p.elts[1].value, bool)
+               for p in pairs):
+            return node
+    return None
+
+
+def _the_250_the_verdict_constant(tree):
+    """The name of the good verdict: the module-level constant bound to a sentence. Read by
+    shape, not by name."""
+    for node in tree.body:
+        if (isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant)
+                and isinstance(node.value.value, str) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)):
+            return node
+    return None
+
+
+def _the_250_the_checker(tree):
+    """The check: the function that assigns a name from a call, prints something, and returns
+    a constant. Read by shape, not by name."""
+    for node in tree.body:
+        if not isinstance(node, ast.FunctionDef) or len(node.args.args) != 1:
+            continue
+        statements = _the_250_statements(node)
+        if len(statements) != 3:
+            continue
+        assign, printed, returned = statements
+        if (isinstance(assign, ast.Assign) and len(assign.targets) == 1
+                and isinstance(assign.targets[0], ast.Name)
+                and isinstance(assign.value, ast.Call)
+                and isinstance(printed, ast.Expr) and isinstance(printed.value, ast.Call)
+                and isinstance(printed.value.func, ast.Name)
+                and printed.value.func.id == "print"
+                and isinstance(returned, ast.Return)):
+            # The returned expression is NOT required to be a constant: the repaired half of this
+            # class returns the verdict it computed, and a reader that only recognised a constant
+            # here would read the repair as a source that is not this class's fragment at all.
+            return node, assign.targets[0].id, returned
+    return None
+
+
+def _the_250_parts_or_none(the_source):
+    """The names this class reads out of the source, or None: a source that does not carry
+    them is not this class's fragment, and a reading of it is a refusal."""
+    try:
+        tree = ast.parse(the_source)
+    except SyntaxError:
+        return None
+    checker = _the_250_the_checker(tree)
+    trees = _the_250_the_trees_constant(tree)
+    verdict = _the_250_the_verdict_constant(tree)
+    if checker is None or trees is None or verdict is None:
+        return None
+    return {"the_checker": checker[0].name,
+            "the_verdict_variable": checker[1],
+            "the_returned": checker[2],
+            "the_trees_constant": trees.targets[0].id,
+            "the_verdict_constant": verdict.targets[0].id}
+
+
+def the_250_reading(the_source):
+    """What this source answers about the fixture: the check it carries, what that check prints
+    on each tree of the fixture, and which status the row reads on each. The check is executed
+    out of the source that was read, and its printed line is read off its own stdout."""
+    parts = _the_250_parts_or_none(the_source)
+    if parts is None:
+        return _the_250_refusal()
+    # The check PRINTS its verdict, so the printed line is read off the check itself rather than
+    # described: the namespace it runs in carries a `print` that records what was written, which
+    # keeps this reading to the standard library the ledger's fragment file already imports.
+    lines: list = []
+    namespace: dict = {"print": lambda *parts, **kw: lines.append(
+        " ".join(str(part) for part in parts))}
+    try:
+        exec(compile(the_source, "<the-250-fragment>", "exec"), namespace)
+    except SyntaxError:
+        return _the_250_refusal()
+    the_checker = namespace.get(parts["the_checker"])
+    the_trees = namespace.get(parts["the_trees_constant"])
+    if not callable(the_checker) or not isinstance(the_trees, tuple):
+        return _the_250_refusal()
+    printed, status = {}, {}
+    for label, the_tree in the_trees:
+        del lines[:]
+        try:
+            answered = the_checker(the_tree)
+        except Exception:                                     # noqa: BLE001
+            return _the_250_refusal()
+        printed[label] = "\n".join(lines).strip()
+        status[label] = answered
+    return {"the_source_can_be_read": True,
+            "the_checker": parts["the_checker"],
+            "the_trees_the_fixture_has": [label for label, _ in the_trees],
+            "the_verdicts_the_checker_prints": printed,
+            "the_status_the_row_reads": status,
+            "the_rows_that_go_red": [label for label, _ in the_trees if status[label] != 0]}
+
+
+def the_250_source_whose_status_is_its_verdict(the_source):
+    """The same source with the constant the check returns replaced by the verdict it computed,
+    compared with the constant that names the good verdict, or None when the source carries no
+    such return: the repair is computed from the source, so a check that returns no constant
+    cannot be repaired by wrapping anything, and both halves refuse."""
+    parts = _the_250_parts_or_none(the_source)
+    if parts is None:
+        return None
+    tree = ast.parse(the_source)
+    replaced = []
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == parts["the_checker"]:
+            statements = _the_250_statements(node)
+            if len(statements) != 3 or not isinstance(statements[2], ast.Return):
+                return None
+            returned = statements[2]
+            if not isinstance(returned.value, ast.Constant):
+                return None
+            returned.value = ast.IfExp(
+                test=ast.Compare(
+                    left=ast.Name(id=parts["the_verdict_variable"], ctx=ast.Load()),
+                    ops=[ast.Eq()],
+                    comparators=[ast.Name(id=parts["the_verdict_constant"], ctx=ast.Load())]),
+                body=ast.Constant(value=0),
+                orelse=ast.Constant(value=1))
+            replaced.append(True)
+    if not replaced:
+        return None
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree) + "\n"
+
+
+def _readings_of_a_verdict_computed_and_thrown_away():
+    """Both halves: the status the row reads on each tree of this tree's fixture, and the same
+    reading where the check returns the verdict it computed. Both halves execute the source
+    they read."""
+    the_written = the_fragment_the_250_class_stands_in()
+    the_repaired = the_250_source_whose_status_is_its_verdict(the_written)
+    return {"as_written": the_250_reading(the_written),
+            "as_repaired": (the_250_reading(the_repaired) if the_repaired is not None
+                            else _the_250_refusal())}
+
+
+def a_verdict_computed_and_thrown_away():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_verdict_computed_and_thrown_away()["as_written"]
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-verdict-computed-and-thrown-away', {}).update(
+        {'a_verdict_computed_and_thrown_away': a_verdict_computed_and_thrown_away})
