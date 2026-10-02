@@ -14127,3 +14127,316 @@ if "NAMESPACES" in globals():
     NAMESPACES.setdefault(
         'iso-timestamp-semantic-moment-vs-literal-key', {}).update(
         {'iso_timestamp_semantic_moment_vs_literal_key': iso_timestamp_semantic_moment_vs_literal_key})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 254 -- `a-walk-that-starts-late-against-a-promised-length`
+#
+# Draft of a registry class: a-walk-that-starts-late-against-a-promised-length.
+#
+# The defect: a function walks a window over a sequence, and its docstring promises that the output
+# carries one element per input position -- that its length equals len(values). The loop starts at
+# `window - 1`, so the leading `window - 1` positions are never emitted: the walk answers
+# len(values) - (window - 1) elements, and the promise is false by exactly the warm-up it skipped. Run
+# the probe on the fixture ([1, 2, 3, 4], window 3): the answer is 2 where the promise is 4.
+#
+# The repair is computed from the same source by an AST transform: the loop starts at the first
+# position and the chunk's lower bound is clamped to the start of the sequence, so the warm-up is
+# filled with the mean of the elements available and the walk emits one value per input position. A
+# source the transform cannot act on -- one whose loop already starts at the first position -- is a
+# REFUSAL in the repaired half, not the written half returned twice: a repair that cannot be computed
+# is not a repair.
+#
+# The reading is taken by executing the source, not by describing it: the fragment is cut out of this
+# file between two markers, executed, and its own walk is asked about its own fixture. The values and
+# the window are module-level constants found by SHAPE -- a sequence of numbers, an integer -- so a
+# source whose names are all changed answers the same question.
+#
+# Stdlib only, no network, reads its own file, writes nothing. The fragment is cut out of this file on
+# whole lines, so both halves read exactly the bytes a splicer would carry.
+#
+# THE READING. Both halves are ONE reading of that fixture -- run on the fragment source
+# as the tree writes it and on the same source with the key's element that holds the
+# reader's NAME replaced by the digest of the reader's source text. No value in either
+# half is typed: the reading executes the source it read, and the repair is computed from
+# that same source, so a tree that renames any part moves no answer.
+# What the SECOND read answers is measured, not argued: the fixture hands two readers over
+# under one name, each read is executed, and the answers are reported in the order the
+# fixture hands the readers over -- never by describing what a memo would do.
+# A repair that cannot be computed is a refusal in both halves, not the written half
+# returned twice.
+# Stdlib only, no network, reads its own file, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_254_FRAGMENT_BEGINS = "# --- class 254 fragment begins"
+THE_254_FRAGMENT_ENDS = "# --- class 254 fragment ends"
+
+# --- class 254 fragment begins
+# The promise this fragment makes, in the docstring of the walk below: a rolling mean over
+# `the_window` elements carrying one element per input position, so its length equals
+# len(the_values). The fixture the reading runs on is read by SHAPE -- a module-level constant bound
+# to a sequence of numbers, and one bound to an integer -- so a fixture whose names are all changed
+# answers the same question.
+THE_254_THE_VALUES = [1, 2, 3, 4]
+THE_254_THE_WINDOW = 3
+
+
+def the_254_the_mean_of(the_chunk):
+    """The mean of the elements available: the one division this fragment makes."""
+    return sum(the_chunk) / len(the_chunk)
+
+
+def the_254_walk_the_window_over(the_values, the_window):
+    """The rolling mean over `the_window` elements: the output carries one element per input
+    position, so its length equals len(the_values)."""
+    the_answers = []
+    for the_position in range(the_window - 1, len(the_values)):
+        the_chunk = the_values[the_position - the_window + 1:the_position + 1]
+        the_answers.append(the_254_the_mean_of(the_chunk))
+    return the_answers
+# --- class 254 fragment ends
+
+
+def the_fragment_the_254_class_stands_in():
+    """The class's fragment, cut out of this file with a marker that must be a LINE: the search is
+    for `"\\n%s\\n" % marker`, never for a substring, so a marker named inside a string does not
+    cut anything."""
+    the_text = pathlib.Path(__file__).read_text(encoding="utf-8")
+    the_begins = (the_text.index("\n%s\n" % THE_254_FRAGMENT_BEGINS)
+                  + len(THE_254_FRAGMENT_BEGINS) + 2)
+    the_ends = the_text.index("\n%s\n" % THE_254_FRAGMENT_ENDS) + 1
+    return the_text[the_begins:the_ends]
+
+
+def _the_254_keys():
+    """The keys both halves carry, in the order the reading fills them."""
+    return ("the_source_can_be_read", "the_values_the_walk_was_given",
+            "the_window_the_walk_was_given", "the_length_the_walk_answers",
+            "the_answers_the_walk_gave")
+
+
+def _the_254_refusal():
+    """What a reading says when the source does not carry the parts it must read, or when the
+    repair cannot be computed from it: a refusal, never an answer."""
+    return {the_key: (False if the_key == "the_source_can_be_read" else None)
+            for the_key in _the_254_keys()}
+
+
+def _the_254_statements(the_function):
+    """The statements of a function's body, its docstring left out: a docstring is not a statement
+    the function does anything with."""
+    if ast.get_docstring(the_function) is not None:
+        return the_function.body[1:]
+    return the_function.body
+
+
+def _the_254_is_a_number(the_value):
+    """Whether a value is a number the fixture may carry: a bool is an int in Python and is not a
+    value a window or a sequence of measurements is written with."""
+    return isinstance(the_value, (int, float)) and not isinstance(the_value, bool)
+
+
+def _the_254_the_walk_function(the_tree):
+    """The walk: the module-level function of two arguments whose body holds a loop -- the loop is
+    what walks a window over a sequence. Read by shape, not by name, so renaming it moves nothing."""
+    for the_node in the_tree.body:
+        if not isinstance(the_node, ast.FunctionDef) or len(the_node.args.args) != 2:
+            continue
+        if any(isinstance(the_inner, ast.For) for the_inner in ast.walk(the_node)):
+            return the_node
+    return None
+
+
+def _the_254_the_loop(the_walk):
+    """The walk's loop: the first `for` in it."""
+    return next((the_node for the_node in ast.walk(the_walk)
+                 if isinstance(the_node, ast.For)), None)
+
+
+def _the_254_the_values_constant(the_tree):
+    """The values: a module-level constant bound to a sequence of numbers -- the thing the walk
+    walks over. Read by shape, not by name."""
+    for the_node in the_tree.body:
+        if (not isinstance(the_node, ast.Assign) or len(the_node.targets) != 1
+                or not isinstance(the_node.targets[0], ast.Name)
+                or not isinstance(the_node.value, (ast.List, ast.Tuple))):
+            continue
+        the_elements = the_node.value.elts
+        if (len(the_elements) >= 2
+                and all(isinstance(the_element, ast.Constant)
+                        and _the_254_is_a_number(the_element.value)
+                        for the_element in the_elements)):
+            return the_node
+    return None
+
+
+def _the_254_the_window_constant(the_tree):
+    """The window: a module-level constant bound to an integer of at least one. Read by shape, not
+    by name. It is the constant the walk is handed beside the values, so the fixture is the pair --
+    a source that carries values and no window is not this class's fixture."""
+    for the_node in the_tree.body:
+        if (isinstance(the_node, ast.Assign) and len(the_node.targets) == 1
+                and isinstance(the_node.targets[0], ast.Name)
+                and isinstance(the_node.value, ast.Constant)
+                and isinstance(the_node.value.value, int)
+                and not isinstance(the_node.value.value, bool)
+                and the_node.value.value >= 1):
+            return the_node
+    return None
+
+
+def _the_254_the_chunk_inside(the_loop, the_sequence_name):
+    """The chunk: the one subscript of the sequence inside the loop whose slice has both bounds --
+    the piece the walk means to average. Exactly one, or the source is not this class's walk."""
+    the_chunks = [the_node for the_node in ast.walk(the_loop)
+                  if isinstance(the_node, ast.Subscript) and isinstance(the_node.value, ast.Name)
+                  and the_node.value.id == the_sequence_name
+                  and isinstance(the_node.slice, ast.Slice)
+                  and the_node.slice.lower is not None
+                  and the_node.slice.upper is not None]
+    if len(the_chunks) != 1:
+        return None
+    return the_chunks[0]
+
+
+def _the_254_parts_or_none(the_source):
+    """The names this class reads out of the source, or None: a source that does not carry them is
+    not this class's fragment, and a reading of it is a refusal."""
+    try:
+        the_tree = ast.parse(the_source)
+    except SyntaxError:
+        return None
+    the_walk = _the_254_the_walk_function(the_tree)
+    the_values = _the_254_the_values_constant(the_tree)
+    the_window = _the_254_the_window_constant(the_tree)
+    if the_walk is None or the_values is None or the_window is None:
+        return None
+    return {"the_walk_function": the_walk.name,
+            "the_values_constant": the_values.targets[0].id,
+            "the_window_constant": the_window.targets[0].id}
+
+
+def _the_254_how_the_walk_is_called(the_source, parts):
+    """The parameters the walk walks with, read out of the source by position: the first is the
+    sequence it walks over, the second is the window it walks. The reading calls the walk BY THESE
+    NAMES, so a source whose parameters stand in another order answers the same question."""
+    the_tree = ast.parse(the_source)
+    the_walk = next((the_node for the_node in the_tree.body
+                     if isinstance(the_node, ast.FunctionDef)
+                     and the_node.name == parts["the_walk_function"]), None)
+    if the_walk is None or len(the_walk.args.args) != 2:
+        return None
+    return {"the_values_argument": the_walk.args.args[0].arg,
+            "the_window_argument": the_walk.args.args[1].arg}
+
+
+def _the_254_is_literal(the_value):
+    """Whether a value is one the printed halves can be read back from: a reading that reported a
+    value `literal_eval` cannot read would print a half nobody can check."""
+    try:
+        ast.literal_eval(repr(the_value))
+    except (ValueError, SyntaxError, TypeError):
+        return False
+    return True
+
+
+def the_254_reading(the_source):
+    """What this source answers about its own fixture: the values the walk was given, the window it
+    walked, the length it answered and the answers themselves. The source is executed and its own
+    walk is asked -- the reading describes nothing."""
+    parts = _the_254_parts_or_none(the_source)
+    if parts is None:
+        return _the_254_refusal()
+    the_arguments = _the_254_how_the_walk_is_called(the_source, parts)
+    if the_arguments is None:
+        return _the_254_refusal()
+    the_space: dict = {}
+    try:
+        exec(compile(the_source, "<the-254-fragment>", "exec"), the_space)          # noqa: S102
+    except Exception:                                                              # noqa: BLE001
+        return _the_254_refusal()
+    the_walk = the_space.get(parts["the_walk_function"])
+    the_values = the_space.get(parts["the_values_constant"])
+    the_window = the_space.get(parts["the_window_constant"])
+    if not callable(the_walk) or not isinstance(the_values, (list, tuple)):
+        return _the_254_refusal()
+    if not isinstance(the_window, int) or isinstance(the_window, bool):
+        return _the_254_refusal()
+    try:
+        the_answers = the_walk(**{the_arguments["the_values_argument"]: the_values,
+                                  the_arguments["the_window_argument"]: the_window})
+    except Exception:                                                              # noqa: BLE001
+        return _the_254_refusal()
+    if not isinstance(the_answers, (list, tuple)):
+        return _the_254_refusal()
+    the_answers = list(the_answers)
+    if not all(_the_254_is_literal(the_answer) for the_answer in the_answers):
+        return _the_254_refusal()
+    return {"the_source_can_be_read": True,
+            "the_values_the_walk_was_given": list(the_values),
+            "the_window_the_walk_was_given": the_window,
+            "the_length_the_walk_answers": len(the_answers),
+            "the_answers_the_walk_gave": the_answers}
+
+
+def the_254_source_that_emits_one_value_per_position(the_source):
+    """The same source, repaired: the loop starts at the first position and the chunk's lower bound
+    is clamped to the start of the sequence, so the warm-up is filled with the mean of what is
+    available and the walk emits one value per input position. Computed from the source by an AST
+    transform. None when the transform cannot act on the source -- a walk whose loop already starts
+    at the first position has nothing to rewrite, and a repair that cannot be computed is not one.
+    """
+    parts = _the_254_parts_or_none(the_source)
+    if parts is None:
+        return None
+    the_tree = ast.parse(the_source)
+    the_walk = _the_254_the_walk_function(the_tree)
+    if the_walk is None:
+        return None
+    the_loop = _the_254_the_loop(the_walk)
+    if the_loop is None or not isinstance(the_loop.iter, ast.Call):
+        return None
+    if not (isinstance(the_loop.iter.func, ast.Name) and len(the_loop.iter.args) == 2):
+        return None
+    the_start = the_loop.iter.args[0]
+    if isinstance(the_start, ast.Constant) and the_start.value == 0:
+        # The walk already begins at the first position: every input position is emitted, and this
+        # repair has nothing to act on. That is a refusal, not the written half returned twice.
+        return None
+    the_loop.iter.args[0] = ast.Constant(value=0)
+    the_chunk = _the_254_the_chunk_inside(the_loop, the_walk.args.args[0].arg)
+    if the_chunk is None:
+        return None
+    the_lower = the_chunk.slice.lower
+    if (isinstance(the_lower, ast.Call) and isinstance(the_lower.func, ast.Name)
+            and the_lower.func.id == "max"):
+        # The warm-up is already filled from what is available: nothing left for this repair.
+        return None
+    the_chunk.slice.lower = ast.Call(func=ast.Name(id="max", ctx=ast.Load()),
+                                     args=[ast.Constant(value=0), the_lower], keywords=[])
+    ast.fix_missing_locations(the_tree)
+    return ast.unparse(the_tree) + "\n"
+
+
+def _readings_of_a_walk_that_starts_late_against_a_promised_length():
+    """Both halves: what this class's own fixture answers as it stands, and the same reading of the
+    source the repair computes from it. Both halves execute the source they read, and a repair that
+    cannot be computed is a refusal in the repaired half rather than the written half returned
+    twice."""
+    the_written = the_fragment_the_254_class_stands_in()
+    the_repaired = the_254_source_that_emits_one_value_per_position(the_written)
+    return {"as_written": the_254_reading(the_written),
+            "as_repaired": (the_254_reading(the_repaired) if the_repaired is not None
+                            else _the_254_refusal())}
+
+
+def a_walk_that_starts_late_against_a_promised_length():
+    """The probe: one half of this class's own pair. The entry's `expected` is the other."""
+    return _readings_of_a_walk_that_starts_late_against_a_promised_length()["as_written"]
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'a-walk-that-starts-late-against-a-promised-length', {}).update(
+        {'a_walk_that_starts_late_against_a_promised_length': a_walk_that_starts_late_against_a_promised_length})
