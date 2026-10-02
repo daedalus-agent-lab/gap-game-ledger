@@ -8412,6 +8412,18 @@ def _readings_of_a_fixture_that_names_the_files_the_tree_needed_when_it_was_writ
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(HERE / name, destination)
                 carried.append(name)
+            # The tree under test must not be reachable by the name this fixture does not carry.
+            # With this tree's directory on sys.path -- which it is whenever the gate is run as
+            # `python3 check.py` from it -- `import check` finds the REAL checker, the fixture
+            # answers that the import succeeded, and the control says nothing about the fixture.
+            # Measured on this tree, both ways: with the directory on the path the reading is
+            # `''`, with it removed it is `ModuleNotFoundError: No module named 'check'`. The
+            # reading was a function of the process's path, not of the fixture, so the path is
+            # set here rather than inherited -- and the whole of it is restored below, because a
+            # helper that leaves the process's path changed moves the next helper's reading.
+            kept_path = list(sys.path)
+            sys.path[:] = [p for p in kept_path
+                           if pathlib.Path(p or ".").resolve() != HERE]
             sys.path.insert(0, str(root))
             said = ""
             try:
@@ -8419,7 +8431,7 @@ def _readings_of_a_fixture_that_names_the_files_the_tree_needed_when_it_was_writ
             except Exception as exc:
                 said = f"{type(exc).__name__}: {exc}"
             finally:
-                sys.path.remove(str(root))
+                sys.path[:] = kept_path
             return {
                 "files_the_fixture_carries": sorted(carried),
                 "modules_beside_the_tree_that_the_tree_imports": modules_beside_the_tree(HERE),
@@ -13738,3 +13750,380 @@ if "NAMESPACES" in globals():
     NAMESPACES.setdefault(
         'a-memo-that-names-the-reader-and-not-its-bytes', {}).update(
         {'a_memo_that_names_the_reader_and_not_its_bytes': a_memo_that_names_the_reader_and_not_its_bytes})
+
+
+
+
+# ---------------------------------------------------------------------------------------
+# Class 253 -- `iso-timestamp-semantic-moment-vs-literal-key`
+#
+# Draft of a registry class: an ISO timestamp keyed by the text as it was written.
+#
+# The defect: a book of snapshots is keyed by the timestamp AS IT WAS WRITTEN. The fixture hands the
+# same instant in two spellings -- "2026-09-28T12:00:00Z" and "2026-09-28T12:00:00+00:00" -- which are
+# one moment to any reader that parses them, but two different keys to a book keyed by the text. Two
+# writes of one instant make two entries, and a read by the moment finds the first writer's payload:
+# the second writer's snapshot sits under a key nobody asking by the moment will ever look under. A key
+# that names a thing is a claim about a thing that can change without the name changing.
+#
+# The repair is computed from the same source by an AST transform: the key function's returned
+# expression -- the text as it arrived -- becomes a call to the fragment's own canonicalising function,
+# which parses the text, takes the instant to UTC and writes it again in one form. A source the
+# transform cannot act on -- one whose key already calls the canonicalising function -- is a REFUSAL in
+# the repaired half, not the written half returned twice: a repair that cannot be computed is not a
+# repair.
+#
+# The reading is taken by executing the source, not by describing it: the fragment is executed, its own
+# book is handed each spelling the fixture carries, and the answers are reported in the order the
+# fixture hands the spellings over. Every name, constant and function the reading uses is found in the
+# source by SHAPE -- by type and position -- so a source whose names are all changed answers the same.
+#
+# Stdlib only, no network, reads its own file, writes nothing. The fragment is cut out of this file on
+# whole lines, so both halves read exactly the bytes a splicer would carry.
+#
+# THE READING. Both halves are ONE reading of that fixture -- run on the fragment source
+# as the tree writes it and on the same source with the key function's returned expression
+# -- the timestamp text as it arrived -- replaced by a call to the fragment's own
+# canonicalising function. No value in either half is typed: the reading executes the
+# source it read, and the repair is computed from that same source, so a tree that renames
+# any part moves no answer.
+# What the SECOND write answers is measured, not argued: the fixture hands the SAME instant
+# over in two spellings, each write is executed, and the answers are reported in the order
+# the fixture hands the spellings over -- never by describing what a book would do.
+# A repair that cannot be computed is a refusal in both halves, not the written half
+# returned twice.
+# Stdlib only, no network, reads its own file, writes nothing.
+# ---------------------------------------------------------------------------------------
+THE_253_FRAGMENT_BEGINS = "# --- class 253 fragment begins"
+THE_253_FRAGMENT_ENDS = "# --- class 253 fragment ends"
+
+# --- class 253 fragment begins
+# The promise this fragment makes: a book of snapshots keyed by the timestamp holds ONE entry per
+# MOMENT. A moment can be written more than one way -- "2026-09-28T12:00:00Z" and
+# "2026-09-28T12:00:00+00:00" are one instant to any reader that parses them -- and a book keyed by
+# the TEXT holds one entry per SPELLING instead: two writes of one instant make two entries, and a
+# read by the moment finds the first writer's payload.
+#
+# The module is bound under a name of this fragment's own: a fragment spliced into a shared file is
+# an edit to ONE namespace, and a top-level `import datetime` would rebind a name the file already
+# has. The binding is the same module either way, but the splice guard refuses a name the file
+# already carries, and teaching the guard to be lenient is the wrong repair.
+the_253_datetime = __import__("datetime")
+
+THE_253_THE_SPELLINGS = (
+    "2026-09-28T12:00:00Z",
+    "2026-09-28T12:00:00+00:00",
+)
+THE_253_THE_BOOK = {}
+
+
+def the_253_canonical(the_text):
+    """The one way this fragment writes a moment: the text parsed, the instant taken to UTC, and the
+    same instant written again in one form. Two spellings of one moment are one text here."""
+    return the_253_datetime.datetime.fromisoformat(
+        the_text.replace("Z", "+00:00")).astimezone(
+        the_253_datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def the_253_key_of(the_stamp):
+    """The key a snapshot is filed under: the timestamp AS IT WAS WRITTEN, so two spellings of one
+    moment are two keys here."""
+    return the_stamp
+
+
+def the_253_the_reading_the_book_gives(the_book, the_stamp):
+    """What this book keeps for this instant: the snapshot the first writer filed under this key,
+    which is that writer's own spelling of the moment. Out of the book when the book already holds
+    the key, the snapshot just written when it does not."""
+    the_key = the_253_key_of(the_stamp)
+    if the_key not in the_book:
+        the_book[the_key] = the_stamp
+    return the_book[the_key]
+# --- class 253 fragment ends
+
+
+def the_fragment_the_253_class_stands_in():
+    """The class's fragment, cut out of this file with a marker that must be a LINE: the search is
+    for `"\\n%s\\n" % marker`, never for a substring, so a marker named inside a string does not
+    cut anything."""
+    the_text = pathlib.Path(__file__).read_text(encoding="utf-8")
+    begins = the_text.index("\n%s\n" % THE_253_FRAGMENT_BEGINS) + len(THE_253_FRAGMENT_BEGINS) + 2
+    ends = the_text.index("\n%s\n" % THE_253_FRAGMENT_ENDS) + 1
+    return the_text[begins:ends]
+
+
+def _the_253_keys():
+    """The keys both halves carry, in the order the reading fills them."""
+    return ("the_source_can_be_read", "the_spellings_the_fixture_handed_over",
+            "the_entries_the_book_holds", "the_answers_the_book_gave")
+
+
+def _the_253_refusal():
+    """What a reading says when the source does not carry the parts it must read, or when the
+    repair cannot be computed from it: a refusal, never an answer."""
+    return {key: (False if key == "the_source_can_be_read" else None)
+            for key in _the_253_keys()}
+
+
+def _the_253_statements(the_function):
+    """The statements of a function's body, its docstring left out: a docstring is not a statement
+    the function does anything with."""
+    if ast.get_docstring(the_function) is not None:
+        return the_function.body[1:]
+    return the_function.body
+
+
+def _the_253_the_module_binding(the_tree):
+    """The module this fragment binds under a name of its own: a module-level constant bound to an
+    `__import__` of one literal name. Read by shape, not by name, so renaming it moves no answer."""
+    for the_node in the_tree.body:
+        if (isinstance(the_node, ast.Assign) and len(the_node.targets) == 1
+                and isinstance(the_node.targets[0], ast.Name)
+                and isinstance(the_node.value, ast.Call)
+                and isinstance(the_node.value.func, ast.Name)
+                and the_node.value.func.id == "__import__"
+                and len(the_node.value.args) == 1
+                and isinstance(the_node.value.args[0], ast.Constant)
+                and isinstance(the_node.value.args[0].value, str)):
+            return the_node
+    return None
+
+
+def _the_253_the_canonical_function(the_tree):
+    """The canonicalising function: the module-level function of one argument whose body is a single
+    return of a call that READS the module this fragment bound -- the function whose work is the
+    module's. The module's name is what is read here and not the function's, so a source whose names
+    are all changed still has one. Read by shape, not by name."""
+    the_binding = _the_253_the_module_binding(the_tree)
+    if the_binding is None:
+        return None
+    the_module_name = the_binding.targets[0].id
+    for the_node in the_tree.body:
+        if not isinstance(the_node, ast.FunctionDef) or len(the_node.args.args) != 1:
+            continue
+        the_statements = _the_253_statements(the_node)
+        if len(the_statements) != 1 or not isinstance(the_statements[0], ast.Return):
+            continue
+        if not isinstance(the_statements[0].value, ast.Call):
+            continue
+        if any(isinstance(the_inner, ast.Name) and the_inner.id == the_module_name
+               for the_inner in ast.walk(the_statements[0].value)):
+            return the_node
+    return None
+
+
+def _the_253_the_key_function(the_tree, the_canonical):
+    """The key: the module-level function of one argument whose body is a single return, the ONE that
+    is not the canonicalising function. Its returned EXPRESSION is all the repair reads, so its shape
+    is one argument and one return and nothing about what is returned: a key a mutant has already
+    made to call the canonicalising function is still a key, and this class still parts on what it
+    answers."""
+    if the_canonical is None:
+        return None
+    the_candidates = []
+    for the_node in the_tree.body:
+        if (isinstance(the_node, ast.FunctionDef) and the_node is not the_canonical
+                and len(the_node.args.args) == 1):
+            the_statements = _the_253_statements(the_node)
+            if len(the_statements) == 1 and isinstance(the_statements[0], ast.Return):
+                the_candidates.append(the_node)
+    if len(the_candidates) != 1:
+        return None
+    return the_candidates[0]
+
+
+def _the_253_the_read_function(the_tree, the_key_name):
+    """The read: the module-level function of two arguments that files a snapshot under the key --
+    it is the one that calls the key function."""
+    for the_node in the_tree.body:
+        if not isinstance(the_node, ast.FunctionDef) or len(the_node.args.args) != 2:
+            continue
+        if any(isinstance(the_call, ast.Call) and isinstance(the_call.func, ast.Name)
+               and the_call.func.id == the_key_name for the_call in ast.walk(the_node)):
+            return the_node
+    return None
+
+
+def _the_253_the_book_constant(the_tree):
+    """The book: a module-level constant bound to an empty mapping. Read by shape, not by name."""
+    for the_node in the_tree.body:
+        if (isinstance(the_node, ast.Assign) and len(the_node.targets) == 1
+                and isinstance(the_node.targets[0], ast.Name)
+                and isinstance(the_node.value, ast.Dict) and not the_node.value.keys):
+            return the_node
+    return None
+
+
+def _the_253_the_spellings_constant(the_tree):
+    """The spellings: a module-level constant bound to a sequence of at least two text constants. Two
+    spellings of one moment is the shape this class is about, so a fixture that hands the same
+    spelling over twice, or hands over one spelling, is not this class's fixture."""
+    for the_node in the_tree.body:
+        if (not isinstance(the_node, ast.Assign) or len(the_node.targets) != 1
+                or not isinstance(the_node.targets[0], ast.Name)
+                or not isinstance(the_node.value, (ast.Tuple, ast.List))
+                or len(the_node.value.elts) < 2):
+            continue
+        if (all(isinstance(element, ast.Constant) and isinstance(element.value, str)
+                for element in the_node.value.elts)
+                and len({element.value for element in the_node.value.elts})
+                == len(the_node.value.elts)):
+            return the_node
+    return None
+
+
+def _the_253_parts_or_none(the_source):
+    """The names this class reads out of the source, or None: a source that does not carry them is
+    not this class's fragment, and a reading of it is a refusal."""
+    try:
+        the_tree = ast.parse(the_source)
+    except SyntaxError:
+        return None
+    the_canonical = _the_253_the_canonical_function(the_tree)
+    the_key = _the_253_the_key_function(the_tree, the_canonical)
+    if the_canonical is None or the_key is None:
+        return None
+    the_read = _the_253_the_read_function(the_tree, the_key.name)
+    the_book = _the_253_the_book_constant(the_tree)
+    the_spellings = _the_253_the_spellings_constant(the_tree)
+    if the_read is None or the_book is None or the_spellings is None:
+        return None
+    return {"the_canonical_function": the_canonical.name,
+            "the_key_function": the_key.name,
+            "the_read_function": the_read.name,
+            "the_book_constant": the_book.targets[0].id,
+            "the_spellings_constant": the_spellings.targets[0].id}
+
+
+def _the_253_how_the_read_function_is_called(the_source, parts):
+    """The parameters the read function files snapshots under and reads with, read out of the source
+    by position: the book is the parameter the key is a subscript of, and the stamp is the parameter
+    the key function is handed. The reading calls the read function BY THESE NAMES, so a source whose
+    parameters stand in another order answers the same question."""
+    the_tree = ast.parse(the_source)
+    the_canonical = _the_253_the_canonical_function(the_tree)
+    the_key = _the_253_the_key_function(the_tree, the_canonical)
+    the_read = next((the_node for the_node in the_tree.body
+                     if isinstance(the_node, ast.FunctionDef)
+                     and the_node.name == parts["the_read_function"]), None)
+    if the_key is None or the_read is None:
+        return None
+    the_parameters = [the_argument.arg for the_argument in the_read.args.args]
+    the_call = next((the_node for the_node in ast.walk(the_read)
+                     if isinstance(the_node, ast.Call) and isinstance(the_node.func, ast.Name)
+                     and the_node.func.id == the_key.name), None)
+    if the_call is None or len(the_call.args) != len(the_key.args.args):
+        return None
+    if not all(isinstance(the_argument, ast.Name) and the_argument.id in the_parameters
+               for the_argument in the_call.args):
+        return None
+    the_under = sorted({the_node.value.id for the_node in ast.walk(the_read)
+                        if isinstance(the_node, ast.Subscript) and isinstance(the_node.value, ast.Name)
+                        and the_node.value.id in the_parameters})
+    if len(the_under) != 1:
+        return None
+    return {"the_book_argument": the_under[0],
+            "the_stamp_argument": the_call.args[0].id}
+
+
+def _the_253_is_literal(the_value):
+    """Whether a value is one the printed halves can be read back from: a reading that reported a
+    value `literal_eval` cannot read would print a half nobody can check."""
+    try:
+        ast.literal_eval(repr(the_value))
+    except (ValueError, SyntaxError, TypeError):
+        return False
+    return True
+
+
+def the_253_reading(the_source):
+    """What this source answers about its own fixture: the spellings the fixture hands over, the
+    entries the book holds after one write per spelling, and the answers the book gave, in the order
+    the fixture hands the spellings over. The source is executed and its own book is written to --
+    the reading describes nothing."""
+    parts = _the_253_parts_or_none(the_source)
+    if parts is None:
+        return _the_253_refusal()
+    the_arguments = _the_253_how_the_read_function_is_called(the_source, parts)
+    if the_arguments is None:
+        return _the_253_refusal()
+    the_space: dict = {}
+    try:
+        exec(compile(the_source, "<the-253-fragment>", "exec"), the_space)      # noqa: S102
+    except Exception:                                                          # noqa: BLE001
+        return _the_253_refusal()
+    the_read = the_space.get(parts["the_read_function"])
+    the_book = the_space.get(parts["the_book_constant"])
+    the_spellings = the_space.get(parts["the_spellings_constant"])
+    if not callable(the_read) or not isinstance(the_book, dict):
+        return _the_253_refusal()
+    if not isinstance(the_spellings, (tuple, list)) or len(the_spellings) < 2:
+        return _the_253_refusal()
+    the_answers = []
+    for the_stamp in the_spellings:
+        try:
+            the_answers.append(the_read(**{
+                the_arguments["the_book_argument"]: the_book,
+                the_arguments["the_stamp_argument"]: the_stamp}))
+        except Exception:                                                      # noqa: BLE001
+            return _the_253_refusal()
+    if not all(_the_253_is_literal(the_answer) for the_answer in the_answers):
+        return _the_253_refusal()
+    return {"the_source_can_be_read": True,
+            "the_spellings_the_fixture_handed_over": list(the_spellings),
+            "the_entries_the_book_holds": list(the_book),
+            "the_answers_the_book_gave": the_answers}
+
+
+def the_253_source_that_keys_by_the_moment(the_source):
+    """The same source, repaired: the key function's returned expression -- the text as it arrived --
+    becomes a call to the fragment's own canonicalising function, computed from the source by an AST
+    transform. None when the transform cannot act on the source -- a key that already calls the
+    canonicalising function has no text left to replace, and a repair that cannot be computed is not
+    one."""
+    parts = _the_253_parts_or_none(the_source)
+    if parts is None:
+        return None
+    the_tree = ast.parse(the_source)
+    the_canonical = _the_253_the_canonical_function(the_tree)
+    the_key = _the_253_the_key_function(the_tree, the_canonical)
+    if the_canonical is None or the_key is None:
+        return None
+    the_statements = _the_253_statements(the_key)
+    if len(the_statements) != 1 or not isinstance(the_statements[0], ast.Return):
+        return None
+    the_returned = the_statements[0].value
+    # The key must still return the NAME the stamp arrives under. A key that already carries the
+    # moment, by calling the canonicalising function itself, is a source this repair cannot act on,
+    # and that is a refusal.
+    if not (isinstance(the_returned, ast.Name)
+            and the_returned.id == the_key.args.args[0].arg):
+        return None
+    the_statements[0].value = ast.Call(
+        func=ast.Name(id=the_canonical.name, ctx=ast.Load()),
+        args=[ast.Name(id=the_key.args.args[0].arg, ctx=ast.Load())], keywords=[])
+    ast.fix_missing_locations(the_tree)
+    return ast.unparse(the_tree) + "\n"
+
+
+def _readings_of_iso_timestamp_semantic_moment_vs_literal_key():
+    """Both halves: what this class's own fixture answers as it stands, and the same reading of the
+    source the repair computes from it. Both halves execute the source they read, and a repair that
+    cannot be computed is a refusal in the repaired half rather than the written half returned
+    twice."""
+    the_written = the_fragment_the_253_class_stands_in()
+    the_repaired = the_253_source_that_keys_by_the_moment(the_written)
+    return {"as_written": the_253_reading(the_written),
+            "as_repaired": (the_253_reading(the_repaired) if the_repaired is not None
+                            else _the_253_refusal())}
+
+
+def iso_timestamp_semantic_moment_vs_literal_key():
+    """The probe: one half of this class's own pair -- a book keyed by the timestamp AS IT WAS WRITTEN. The entry's `expected` is the other."""
+    return _readings_of_iso_timestamp_semantic_moment_vs_literal_key()["as_written"]
+
+
+if "NAMESPACES" in globals():
+    NAMESPACES.setdefault(
+        'iso-timestamp-semantic-moment-vs-literal-key', {}).update(
+        {'iso_timestamp_semantic_moment_vs_literal_key': iso_timestamp_semantic_moment_vs_literal_key})
