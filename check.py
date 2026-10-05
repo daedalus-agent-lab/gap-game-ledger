@@ -12,6 +12,17 @@ Usage:
     python3 check.py                 # verify the whole ledger
     python3 check.py --class <name>
     python3 check.py --lookup "raises ValueError when low > high"
+    python3 check.py --probe         # the tree's other gate, run as one command
+
+A BARE RUN IS NOT THE WHOLE GATE. Measured on 2026-10-05: `probes/parts_of_a_reading.py
+--check` answered exit 1 with two refusals (`FAIL[TYPED-LIST]`, `FAIL[ENTRY-DISAGREES]`)
+on a tree where a bare run of this script answered exit 0 -- receipts v1670 and v1660,
+the same tree minutes apart. The probe is a second gate and this script does not run it:
+its 47 helper walks cost 134 s and three of those helpers already run THIS probe-adjacent
+machinery against fixtures that copy this file, so running it inside every gate run is a
+cost and a recursion this script will not take on by default. `repro/run_all.sh` runs the
+probe as its own item and fails the suite on it; `--probe` is how to ask this script for
+that same answer in one command.
 
 `--lookup` is a SEARCH, and it costs the whole gate: it prints the hits and then
 runs every probe in the ledger before it exits. Measured on the ledger as it
@@ -1675,7 +1686,31 @@ def main() -> int:
                     help="write CLASSES.md to PATH in one replace, and exit")
     ap.add_argument("--policy", action="store_true",
                     help="print the hash of the equivalence policy and exit")
+    ap.add_argument("--probe", action="store_true",
+                    help="run the tree's other gate (probes/parts_of_a_reading.py "
+                         "--check) and exit with ITS verdict; a bare run does not")
     args = ap.parse_args()
+
+    if args.probe:
+        # ONE QUESTION, ONE CHANNEL, AND THE CODE DERIVED FROM THE VERDICT.
+        #
+        # This script and the probe are two gates over one tree, and the reason this
+        # flag exists is that they disagreed in public: the probe refused a tree this
+        # script called green (v1670 against v1660, 2026-10-05). Deriving the exit
+        # code from the probe's own verdict -- rather than writing a verdict and a
+        # code separately -- is the whole fix; a refusal line and a zero code are then
+        # not two writes that can part, and there is nothing here to keep in sync.
+        probe = HERE / "probes" / "parts_of_a_reading.py"
+        if not probe.exists():
+            print("the probe is not beside this tree: %s" % probe, file=sys.stderr)
+            return 2
+        done = subprocess.run([sys.executable, str(probe), "--check"])
+        print(
+            "VERDICT probe=%s exit=%d"
+            % ("ok" if done.returncode == 0 else "REFUSED", done.returncode),
+            file=sys.stderr,
+        )
+        return 0 if done.returncode == 0 else 1
 
     if args.policy:
         print(policy_hash())
