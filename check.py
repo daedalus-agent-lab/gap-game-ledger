@@ -596,6 +596,17 @@ def fingerprint(fn, *, frame: bool = True) -> str:
     it was written, so one logic under the two spellings of itself reads as two.
     The earlier pass is rebuilt here by a parameter rather than by reverting the
     repair, so the difference stays measurable in a tree that no longer takes it.
+
+    TWO SENSES OF "SPELLING", AND ONLY ONE OF THEM IS CLOSED (decided 2026-10-05,
+    pinned by `probes/collision_boundary.py`). The frame -- `lambda x: x + y` versus
+    `def f(x): return x + y` -- is a spelling of the same logic and is erased above,
+    measured. A behaviour-preserving rewrite of the BODY (`total = total + v` in a
+    loop versus `sum(nums[:window])`) is also one logic under two spellings, and no
+    fingerprint can see it: equivalence of programs is not decidable. The policy is
+    therefore "a second NAME for one logic is refused, a second SPELLING of it is
+    out of scope", and the boundary is a tested edge rather than a sentence -- the
+    four cases in `probes/collision_boundary.py` are asked of this function and of
+    `evaluate` with the answer each must give written down first.
     """
     tree = ast.parse(inspect.getsource(fn).lstrip())
     node = tree.body[0]
