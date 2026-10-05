@@ -1113,6 +1113,18 @@ def class_collisions(data: dict) -> tuple[int, list[str], list[str]]:
     failure -- a repeat claims an instance, not a shape -- but it is printed,
     because it means that repeat's claim is carried by its prose and its probe
     and not by any bytes of its own.
+
+    WHAT THIS CANNOT SEE, measured rather than assumed (2026-10-05). The comparison
+    is a fingerprint, so it refuses a second NAME for one logic and never a second
+    SPELLING of it: two classes over one logic, the second a behaviour-preserving
+    rewrite of the first, are accepted (`problems=[]`), while the same two differing
+    only in bound names are refused. Equivalence of programs is not decidable, so
+    no change to this function closes it. The cheap substitute -- agree on a fixed
+    input set -- was built and run over the ledger (`probes/behavioural_twin.py`)
+    and found nothing: its 4 candidates were artifacts of its own pool, and 134 of
+    242 class fragments take no arguments at all, so for the majority of this ledger
+    no input set can discriminate them and the fingerprint is the only comparison
+    available. `probes/behavioural_twin.py` records the negative result.
     """
     primaries = []
     for entry in data["entries"]:
