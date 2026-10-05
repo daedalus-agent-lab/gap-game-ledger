@@ -7935,6 +7935,14 @@ def _readings_of_a_half_written_as_a_literal():
             if (HERE / "check.py").exists():
                 (root / "check.py").write_text((HERE / "check.py").read_text(encoding="utf-8"),
                                                encoding="utf-8")
+            # WHAT THIS BUDGET WAS FITTED TO, measured 2026-10-05 on tree 43a86b2:
+            # probes/parts_of_a_reading.py took 422 s over 47 helpers, and run_in_copy
+            # calls it twice (intact copy, then mutant), so ~844 s of real work sits
+            # under this budget. The 1800 predates that measurement and was not derived
+            # from it -- it was already in this file. Anything that made "2x headroom"
+            # sound like a property of the design was an arithmetic claim about an
+            # inherited number. Re-measure before trusting the ratio; if the probe
+            # grows past ~850 s this budget becomes the failure mode it hides.
             run = subprocess.run(
                 [sys.executable, "probes/parts_of_a_reading.py", "--check"],
                 cwd=root, capture_output=True, text=True, timeout=1800)
