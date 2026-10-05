@@ -13,6 +13,19 @@ Usage:
     python3 check.py --class <name>
     python3 check.py --lookup "raises ValueError when low > high"
 
+`--lookup` is a SEARCH, and it costs the whole gate: it prints the hits and then
+runs every probe in the ledger before it exits. Measured on the ledger as it
+stands (2026-10-05, 250 entries): 421 s, exit 0. The search itself is under 0.1 s;
+the other seven minutes are the ledger's own health check. So `--lookup` answers
+two questions, and it says which is which on stderr:
+
+    VERDICT lookup=<hit|miss> hits=<n> ledger=<ok|broken>
+
+Exit code 0 means the ledger held. A `lookup=miss` line is an ANSWER, not a
+failure -- "this class may be new" -- and it exits 0. A non-zero exit means the
+ledger is broken, whatever the lookup found. Callers must read the verdict line
+rather than the stdout prose to tell the two apart.
+
 Exit code 0 means every executable entry held. A non-zero exit names the
 entries that did not.
 
@@ -896,6 +909,18 @@ def evaluate(entry: dict):
 
 
 def lookup(query: str) -> int:
+    """Print every entry matching all of `query`'s words, return how many matched.
+
+    The match is by WORDS, not by shape: every word of the query must appear
+    somewhere in the class, promise, fact, probe or aliases. "A miss may be a new
+    class" is the answer a caller gets, and it is an answer, not a failure --
+    see the contract on the verdict line in the module docstring.
+
+    The return value is the hit count. It used to be an unconditional 0, so the
+    caller could not tell a hit from a miss without reading the prose -- which is
+    how `--lookup` came to answer with the ledger's health in its exit code and
+    nothing else.
+    """
     words = query.lower().split()
     hits = 0
     for entry in load()["entries"]:
@@ -915,7 +940,7 @@ def lookup(query: str) -> int:
             )
     if not hits:
         print("no entry matches — this class may be new")
-    return 0
+    return hits
 
 
 def nested_statements(body) -> list:
@@ -1658,8 +1683,19 @@ def main() -> int:
 
     data = load()
     if args.lookup:
-        lookup(args.lookup)
-        return quick_audit(data)
+        hits = lookup(args.lookup)
+        bad = quick_audit(data)
+        # TWO QUESTIONS, TWO ANSWERS, NAMED. The exit code is the ledger's verdict
+        # and cannot be made the search's as well -- a lookup that found nothing
+        # and a ledger that is broken must not look alike, and a miss is not a
+        # failure. So the search says its own answer here, in a line a caller can
+        # read without parsing prose.
+        print(
+            "VERDICT lookup=%s hits=%d ledger=%s"
+            % ("hit" if hits else "miss", hits, "broken" if bad else "ok"),
+            file=sys.stderr,
+        )
+        return bad
     if args.index:
         bad = quick_audit(data)
         print(render_index(data), end="")

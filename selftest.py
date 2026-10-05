@@ -73,9 +73,9 @@ def modules_the_subject_imports() -> list:
     return sorted(beside[n] for n in needed & set(beside))
 
 
-def run(tree: Path) -> int:
+def run(tree: Path, *args) -> int:
     return subprocess.run(
-        [sys.executable, "check.py"], cwd=tree, capture_output=True, text=True
+        [sys.executable, "check.py", *args], cwd=tree, capture_output=True, text=True
     )
 
 
@@ -160,11 +160,17 @@ def the_first_row_with_a_line_and_no_address() -> str:
 MISSING_MODULE_CODE = 2  # no case may want this: the fixture refused before it ran
 
 
-def with_tree(mutate, extra_module="", mutate_tree=None, drop=(), mutate_counts=None):
+def with_tree(mutate, extra_module="", mutate_tree=None, drop=(), mutate_counts=None,
+              args=()):
     """Copy the ledger, apply `mutate(catches)`, return check.py's exit code.
 
     `drop` leaves names out of the copy on purpose, so the case that says the copy must
-    hold what the subject imports has a copy that does not.
+    hold what the subject imports has a copy that does not. `args` is passed to
+    check.py, for the modes that are not the default audit.
+
+    COST: every case pays a full `check.py` run over every entry, so a case added
+    here adds minutes to the suite, not seconds. That is why the two `--lookup`
+    cases below are two and not six.
     """
     with tempfile.TemporaryDirectory() as tmp:
         tree = Path(tmp) / "ledger"
@@ -199,7 +205,7 @@ def with_tree(mutate, extra_module="", mutate_tree=None, drop=(), mutate_counts=
             (tree / "counts.json").write_text(
                 json.dumps(counts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
             )
-        done = run(tree)
+        done = run(tree, *args)
         return Result(done.returncode, done.stdout + done.stderr)
 
 
@@ -663,6 +669,30 @@ def main() -> int:
 
     cases.append(
         ("a copy missing what the subject imports", copy_missing_what_the_subject_imports(), 1)
+    )
+
+    # TWO QUESTIONS, TWO ANSWERS. `--lookup` used to answer with the ledger's health
+    # in its exit code and the search's result in prose, so a stranger could not tell
+    # "this class may be new" from "the ledger is broken" without reading the words.
+    # The mode now names both on stderr: VERDICT lookup=<hit|miss> hits=<n>
+    # ledger=<ok|broken>. The two cases below fail on the version before that line --
+    # there was no marker to find -- and they are the pair that pins the distinction,
+    # not either one alone: a miss must read as an answer and a break must read as a
+    # break, on the same command.
+    cases.append(
+        ("a lookup miss is an answer, not a failure",
+         with_tree(lambda c: None,
+                   args=("--lookup", "zzzz surely not present zzzz")), 0,
+         "lookup=miss hits=0 ledger=ok")
+    )
+
+    def break_one_entry(catches):
+        catches["entries"][0]["observed"] = "BROKEN"
+
+    cases.append(
+        ("a lookup against a broken ledger reads as broken",
+         with_tree(break_one_entry, args=("--lookup", "clamp")), 1,
+         "ledger=broken")
     )
 
     # The want-0 control gates the run rather than being scored beside the others. A copy
