@@ -6,31 +6,46 @@ claim the board also prints. The two can be checked against each other by anyone
 with the roll and the published counting rule -- no key, no privileged route, no
 trust in the counting code.
 
-    python3 election_roll_check.py            # election:1, the roll read on 2026-09-25
-    python3 election_roll_check.py --self-test  # the tally can disagree
+    python3 election_roll_check.py                              # election:1, round 1 (built in)
+    python3 election_roll_check.py --roll rolls/election-0.json # every published round of a roll file
+    python3 election_roll_check.py --self-test                  # the tally can disagree
 
 WHAT IS FIXED HERE, and what a reader must replace to use this on another election:
-the roll below was read from `/v1/politics/elections/election:1/votes` (pages
+the built-in roll was read from `/v1/politics/elections/election:1/votes` (pages
 `before=8` and the page after it, 37 ballots, `as_of 1790363113`) and transcribed
 into this file as literals. Every identifier is a candidate account id; the string
 `vacancy` is the empty-office option the contract allows anywhere in a ranking.
+With `--roll`, the roll, the electorate and every published round are read from a
+JSON file instead, so nothing about a particular election is baked in here:
 
-WHAT THIS DOES NOT DO: it recomputes ROUND 1 only, first preferences. The published
-result of election:1 stops at round 1 because a majority was reached there, and a
-rule that stops early cannot be checked further from this payload. It also does not
-check that the roll is complete: `votes_cast` says 37 and the roll has 37 rows, and
-that agreement is between two numbers the same server printed -- a reader who wants
-more has to watch the roll while it fills.
+    {"election": "election:0", "electorate": 30, "votes_cast": 23,
+     "published_rounds": [{"counts": {...}, "eliminated": [...]}, ...],
+     "winner": "...", "ballots": {"1": ["<id>", ...], ...}}
 
-The counting rule, as published: instant-runoff, quorum 10 electors, a floor of
-max(5, ceil(0.30 * N)), a tie producing a vacancy. Note what the floor does here:
-it is 21 for every N in {67, 68, 69, 70}, so the winner's 21 of 37 sits exactly on
-the published line for all four admissible electorates and the result cannot
-separate them. That reading is published separately; this file only recomputes the
-counts.
+WHAT THIS DOES NOT DO. It does not check that the roll is complete: `votes_cast`
+and the row count are two numbers the same server printed, and their agreement is
+not evidence that no ballot is missing. It does not read the server's counting
+code: it recomputes the rounds the server published, along the elimination path
+the server published. If the server's arithmetic diverged from its own path the
+first comparison would already fail, but a wrong path would be reproduced here as
+faithfully as a right one. It decides nothing the rules leave open: a tie among
+the options holding the fewest votes is not resolved by this file.
+
+NOTE WHAT THE MULTI-ROUND COMPARISON IS WORTH. Recomputing round 2 from the
+roll is not merely "round 1 plus arithmetic": it moves ballots from a candidate
+who has left to whichever of their later preferences is still live, and a
+transcription error in a ballot's ORDER -- not in its first choice -- shows up
+here and nowhere else. That is why the election:0 fixture exists.
 """
 import argparse
+import json
 import sys
+from pathlib import Path
+
+WINNER = "50e6f3b4-5af0-4247-8102-fe55c14b8380"          # hermione
+PUBLISHED_VOTES_CAST = 37
+PUBLISHED_ELECTORATE = 67
+
 
 WINNER = "50e6f3b4-5af0-4247-8102-fe55c14b8380"          # hermione
 PUBLISHED_ROUND_1 = {
@@ -190,6 +205,23 @@ def first_preferences(roll):
     return counts
 
 
+def tally(ballots, alive):
+    """Counts over the ballots that still rest on a live option, and how many do.
+
+    A ballot resting on nothing is exhausted: it leaves the denominator, and its
+    preference for the empty office is not a vote for anybody.
+    """
+    counts = {}
+    continuing = 0
+    for ranking in ballots.values():
+        for opt in ranking:
+            if opt in alive:
+                counts[opt] = counts.get(opt, 0) + 1
+                continuing += 1
+                break
+    return counts, continuing
+
+
 def floor_for(n):
     """The published floor: max(5, ceil(0.30 * N))."""
     return max(5, -(-3 * n // 10))
@@ -217,11 +249,77 @@ def compare(roll):
     return problems, notes
 
 
+def recompute_rounds(spec):
+    """Recompute every published round along the published elimination path.
+
+    Returns (problems, notes). A round's counts are the first preferences among
+    the ballots still resting on an option that has not left.
+    """
+    ballots = {str(k): list(v) for k, v in spec["ballots"].items()}
+    alive = {opt for ranking in ballots.values() for opt in ranking}
+    published_rounds = spec.get("published_rounds", [])
+    problems, notes = [], []
+
+    if "votes_cast" in spec and spec["votes_cast"] != len(ballots):
+        notes.append(f"roll carries {len(ballots)} ballots, votes_cast "
+                     f"{spec['votes_cast']}: two numbers the same server printed "
+                     f"(this is not proof the roll is complete)")
+
+    for i, rnd in enumerate(published_rounds, 1):
+        counts, continuing = tally(ballots, alive)
+        published = rnd.get("counts", {})
+        for who, want in published.items():
+            got = counts.get(who, 0)
+            if got != want:
+                problems.append(f"round {i}: {who}: published {want}, recomputed {got}")
+        for who, got in counts.items():
+            if who not in published:
+                problems.append(f"round {i}: {who}: recomputed {got}, absent from the "
+                                f"published counts")
+        for who in published:
+            if who not in counts and published[who]:
+                problems.append(f"round {i}: {who}: published {published[who]}, recomputed "
+                                f"nothing (the option is not live and no ballot rests on it)")
+        majority = [w for w, c in counts.items() if c * 2 > continuing] if continuing else []
+        notes.append(f"round {i}: {len(published)} published counts recomputed, "
+                     f"{continuing} continuing"
+                     + (f", majority {majority}" if majority else ""))
+        gone = set(rnd.get("eliminated", []))
+        unknown = gone - alive
+        if unknown:
+            problems.append(f"round {i}: the published elimination names options that "
+                            f"are not live: {sorted(unknown)}")
+        alive -= gone
+
+    if published_rounds:
+        counts, continuing = tally(ballots, alive)
+        majority = sorted(w for w, c in counts.items() if c * 2 > continuing) if continuing else []
+        winner = spec.get("winner")
+        if winner:
+            if not majority:
+                problems.append(f"the last round reaches no majority, so the published "
+                                f"winner {winner} is not produced by this path")
+            elif winner not in majority:
+                problems.append(f"the last round's majority is {majority}, not the "
+                                f"published winner {winner}")
+            else:
+                fl = floor_for(spec.get("electorate", 0))
+                notes.append(f"final round: {counts[winner]} of {continuing} continuing, "
+                             f"floor {fl} {'cleared' if counts[winner] >= fl else 'NOT cleared'}")
+    return problems, notes
+
+
+def load_roll(path):
+    with open(path) as fh:
+        return json.load(fh)
+
+
 def self_test():
-    """The comparison can disagree: one ballot's first choice is swapped, and it must be
-    reported. (The first version of this self-test moved a first preference from one
-    ballot to another that voted for a different candidate -- and changed nothing,
-    because the two moves cancelled: the counts are unchanged when one voter swaps with
+    """The comparison can disagree, in both modes.
+
+    (The first version of this self-test moved a first preference from one ballot
+    to another that voted for a different candidate -- and changed nothing, because
+    the two moves cancelled: the counts are unchanged when one voter swaps with
     another. A control that cannot fail is the defect, not the control.)"""
     roll = {k: list(v) for k, v in ROLL.items()}
     roll[4] = ["vacancy"] + roll[4]
@@ -236,15 +334,87 @@ def self_test():
     print(f"self-test ok: an untouched roll reproduces all "
           f"{len(PUBLISHED_ROUND_1)} published counts; moving one first preference "
           f"raises {len(problems)} disagreement(s): {problems[0]}")
+
+    fixture = Path(__file__).resolve().parent / "rolls" / "election-0.json"
+    if not fixture.exists():
+        print("self-test: no roll fixture beside this file; the round arm did not run")
+        return 0
+
+    # The multi-round arm: an error a single-round check cannot see.
+    #
+    # The point of recomputing later rounds is that a ballot's ORDER matters, and
+    # its order only matters after its first preference has left. So the mutation
+    # here is a transposition of two LATER preferences, and the arm asserts two
+    # things: that no round-1 count moves, and that a later round does. An earlier
+    # version of this arm tried to swap the first preference of a ballot resting on
+    # a round-1 eliminated option; election:0 has no such ballot (only zenith-claude
+    # left in round 1 and no ballot names it), so the arm had nothing to mutate and
+    # refused -- correctly, but it proved nothing.
+    spec = load_roll(fixture)
+    problems3, _ = recompute_rounds(spec)
+    if problems3:
+        print(f"SELF-TEST FAILED: the untouched fixture does not reproduce the rounds: "
+              f"{problems3[0]}")
+        return 1
+
+    mutated, where = None, None
+    for key, ranking in spec["ballots"].items():
+        if len(ranking) < 3:
+            continue
+        for i, j in ((1, 2), (2, 3), (3, 4)):
+            if len(ranking) <= max(i, j):
+                continue
+            cand = json.loads(json.dumps(spec))
+            r = cand["ballots"][key]
+            r[i], r[j] = r[j], r[i]
+            probs, _ = recompute_rounds(cand)
+            if probs:
+                round1_before = first_preferences(spec["ballots"])
+                round1_after = first_preferences(cand["ballots"])
+                mutated, where = cand, (key, i, j, round1_before == round1_after, probs)
+                break
+        if mutated:
+            break
+    if not mutated:
+        print("SELF-TEST FAILED: no transposition of a later preference changed any "
+              "published round -- the multi-round comparison cannot disagree")
+        return 1
+    key, i, j, round1_same, probs = where
+    if not round1_same:
+        print("SELF-TEST FAILED: the chosen transposition also moved a round-1 count, "
+              "so it does not show what a later round adds")
+        return 1
+    print(f"self-test ok: the fixture's {len(spec['published_rounds'])} published rounds "
+          f"recompute exactly; transposing preferences {i} and {j} of ballot {key} leaves "
+          f"every round-1 count unchanged and still raises {len(probs)} disagreement(s) "
+          f"in a later round: {probs[0]}")
     return 0
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--roll", help="a roll file: elections, electorate, ballots, published_rounds")
     args = ap.parse_args()
     if args.self_test:
         return self_test()
+
+    if args.roll:
+        spec = load_roll(args.roll)
+        problems, notes = recompute_rounds(spec)
+        print(f"{spec.get('election', args.roll)}, {len(spec['published_rounds'])} "
+              f"published rounds, recomputed from the roll by hand")
+        for line in notes:
+            print(f"  {line}")
+        if problems:
+            print(f"DISAGREEMENTS {len(problems)}")
+            for p in problems:
+                print(f"  {p}")
+            return 1
+        total = sum(len(r.get("counts", {})) for r in spec["published_rounds"])
+        print(f"all {total} published counts over {len(spec['published_rounds'])} rounds "
+              f"reproduce exactly")
+        return 0
 
     mine = first_preferences(ROLL)
     print(f"election:1, round 1, recomputed from the published roll by hand")
