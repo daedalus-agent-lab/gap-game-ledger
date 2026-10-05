@@ -5925,8 +5925,9 @@ def a_census_taken_from_the_thing_it_counts():
     the run that must exercise it is not a control.
 
     On the revision this class was registered on (`db83fe1`) nothing refused the smaller tree,
-    and on this tree nothing does either: the typed list at `fragments.py:7539` names every
-    helper the file defines, and a name the smaller tree no longer has is not a refusal. The
+    and on this tree nothing does either: the list of helpers typed into
+    `_readings_of_a_control_over_an_argument_no_helper_takes` names every helper the file
+    defines, and a name the smaller tree no longer has is not a refusal. The
     field says which rule was asked and what it answered, and the value it carried when the
     class was registered was a property of that revision's list rather than of this class.
 
@@ -6022,7 +6023,16 @@ def _readings_of_a_census_taken_from_the_thing_it_counts():
         return {
             "helpers_removed_from_the_source": counted_intact - counted_smaller,
             "entries_still_naming_the_removed_helper": len(naming),
+            # both counts, each named for its own question. The second was computed above and
+            # read by nothing until an outside reader asked; the guard that asked only for
+            # its absence (the form this line carried for one revision) could never be met,
+            # measured over tree variants: whenever the smaller tree is refused, so is the
+            # intact one, because the smaller tree is a slice of it. A pair that reads
+            # one-and-one is therefore what a refusal that fires in every tree looks like,
+            # and only one-and-nought would be the smaller tree's own -- which is what this
+            # entry carried once, when the list beside this file was stale.
             "control_refused_the_smaller_tree": 1 if refusals_smaller else 0,
+            "the_refusal_also_fires_on_the_intact_tree": 1 if refusals_intact else 0,
             "the_census_moved_with_the_source": 1 if counted_smaller != counted_intact else 0,
         }
 
@@ -6030,7 +6040,10 @@ def _readings_of_a_census_taken_from_the_thing_it_counts():
         return {
             "helpers_removed_from_the_source": counted_intact - counted_smaller,
             "entries_still_naming_the_removed_helper": len(naming),
+            # the same rule as the half above, and for the same reason: the repaired reading
+            # asks both trees or it is a reading of the one that was refused.
             "control_refused_the_smaller_tree": 1 if refusals_smaller else 0,
+            "the_refusal_also_fires_on_the_intact_tree": 1 if refusals_intact else 0,
             "the_missing_half_named_by_no_line": named_by_no_line,
             "the_intact_tree_still_counts": counted_intact - counted_smaller,
         }
@@ -6071,6 +6084,8 @@ def _readings_of_a_half_no_command_recomputes():
     """Both halves, measured by calling the file's helpers in two copies of this tree."""
     import ast
     import importlib.util
+    import inspect
+    import asyncio
     import json
     import pathlib
     import re
@@ -6085,8 +6100,13 @@ def _readings_of_a_half_no_command_recomputes():
         raise AssertionError("no record beside this file to read the pairs from")
 
     def names_in(text):
+        # The other spelling counts here too: this list is printed as a count of the
+        # helpers of the file, and a count that names one spelling of a definition is
+        # the number a reader checks against, not the file. Measured by appending an
+        # `async def` twin of a helper to a copy: 46 with the old test, 47 with this.
         return [n.name for n in ast.parse(text).body
-                if isinstance(n, ast.FunctionDef) and n.name.startswith("_readings_of_")
+                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and n.name.startswith("_readings_of_")
                 and n.name != MINE]
 
     def load(root):
@@ -6109,6 +6129,21 @@ def _readings_of_a_half_no_command_recomputes():
 
     def measure(root, mod):
         """Per helper: files of this tree it opened, and whether emptying the record moves it."""
+        def ask(name):
+            """Call a helper of the copy the way a caller of it gets its value.
+
+            A definition spelled `async` answers a plain call with a coroutine, and two
+            reprs of two coroutines differ in the address they carry, so emptying the
+            record would look like it moved an answer that never read the record. That is
+            a reading of the allocator. Awaiting it here is the same reading for both
+            spellings, which is what this census claims to take: the helpers it counts are
+            the file's helpers, not the ones spelled one way.
+            """
+            helper = getattr(mod, name)
+            if inspect.iscoroutinefunction(helper):
+                return asyncio.run(helper())
+            return helper()
+
         opened = {}
         current = [None]
 
@@ -6129,7 +6164,7 @@ def _readings_of_a_half_no_command_recomputes():
             current[0] = name
             opened.setdefault(name, set())
             try:
-                before = repr(getattr(mod, name)())
+                before = repr(ask(name))
             except Exception as exc:
                 before = "raised %s" % type(exc).__name__
             out[name] = [len(opened[name]), before]
@@ -6137,7 +6172,7 @@ def _readings_of_a_half_no_command_recomputes():
             '{"declined": [], "entries": [], "how_to_verify": ""}\n', encoding="utf-8")
         for name in list(out):
             try:
-                after = repr(getattr(mod, name)())
+                after = repr(ask(name))
             except Exception as exc:
                 after = "raised %s" % type(exc).__name__
             out[name].append(out[name][1] != after)
@@ -6150,7 +6185,10 @@ def _readings_of_a_half_no_command_recomputes():
         tree = ast.parse(text)
         callers = {}
         for node in tree.body:
-            if not isinstance(node, ast.FunctionDef):
+            # A caller written `async` is a caller: the name it spells must reach this
+            # table, or a helper read only by that fragment falls out of `callers` and
+            # lands in `left` as if no line in the tree read it.
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
             if node.name.startswith("_readings_of_"):
                 continue
@@ -7591,6 +7629,12 @@ def _helpers_this_file_defines():
 
     Read from this file's own source, so the answer is a reading of the file and not of a
     list written beside it. Cached, because the file does not change under a run.
+
+    Both spellings of a definition are read: a helper the file writes with `async` is a
+    helper this file defines, and an enumeration that named only the other spelling would
+    have reported a list complete over a file it had not finished reading. An outside
+    reader found that hole; the fix is here and the same rule is in the pattern the reader
+    enumerates with, so the two counts cannot part over a spelling again.
     """
     global _HELPERS_THIS_FILE_DEFINES
     if _HELPERS_THIS_FILE_DEFINES is None:
@@ -7599,7 +7643,8 @@ def _helpers_this_file_defines():
         tree = ast.parse(pathlib.Path(__file__).read_text(encoding="utf-8"))
         found = []
         for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef) and node.name.startswith("_readings_of_"):
+            if (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    and node.name.startswith("_readings_of_")):
                 a = node.args
                 count = None if a.vararg else (
                     len(a.posonlyargs) + len(a.args) + len(a.kwonlyargs))

@@ -66,7 +66,9 @@ import argparse
 import base64
 import builtins
 import ast
+import asyncio
 import importlib.util
+import inspect
 import json
 import pathlib
 import re
@@ -77,7 +79,12 @@ import tempfile
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
-HELPER = re.compile(r"^def (_readings_of_\w+)\s*\(", re.M)
+# A definition written with `async` is still a definition. This pattern named one spelling
+# of one, so every tally that reads a file through it -- the helper census, the typed-list
+# comparison, the reach of a refusal -- would look past a helper written the other way.
+# That is an enumeration hole with no name on it: the count and the file part, and the
+# count is the one that gets printed. Both spellings are named here.
+HELPER = re.compile(r"^(?:async )?def (_readings_of_\w+)\s*\(", re.M)
 
 
 def carry(src: pathlib.Path, into: pathlib.Path, names) -> None:
@@ -160,7 +167,9 @@ def files_the_tree_reads(src: pathlib.Path) -> tuple:
     if besidethe_tree and besidethe_tree not in names:
         names.append(besidethe_tree)
     return tuple(names)
-PUBLIC = re.compile(r"^def (\w+)\s*\(", re.M)
+# The same rule for the public fragments: `defs_of` splits a source at these marks, so a
+# fragment written with `async` would be missing from every walk that reads the file.
+PUBLIC = re.compile(r"^(?:async )?def (\w+)\s*\(", re.M)
 
 
 def load(root: pathlib.Path):
@@ -226,6 +235,22 @@ def normalise(answer):
     return answer
 
 
+def _asked(mod, name: str, kwargs: dict = None):
+    """Call a helper of the copy under test, awaiting it when it is written `async`.
+
+    A definition spelled `async` answers a plain call with a coroutine, so reading it the
+    way the other spelling is read gives an object of no halves: the probe named it
+    `FAIL[NOT-TWO-HALVES] ... coroutine` where the helper was sound. A wrong diagnosis is
+    worse than the miss it replaced, and both come from the same one-spelling habit. The
+    value a caller of such a helper gets is what the caller awaits, so this awaits it: the
+    same reading for both spellings, which is what the widened patterns claim.
+    """
+    helper = getattr(mod, name)
+    if inspect.iscoroutinefunction(helper):
+        return asyncio.run(helper(**(kwargs or {})))
+    return helper(**(kwargs or {}))
+
+
 def readings(root: pathlib.Path, only: str | None = None):
     """Every helper in `fragments.py`, its two halves, and the entries that read it.
 
@@ -247,7 +272,7 @@ def readings(root: pathlib.Path, only: str | None = None):
         if only is not None and name != only:
             continue
         try:
-            answer = getattr(mod, name)()
+            answer = _asked(mod, name)
         except Exception as exc:
             # A helper that refuses because no control stands beside the tree is not a
             # broken helper: this probe names it UNREAD, so a fixture that carries the
@@ -308,9 +333,8 @@ def moved_by_its_input(mod, name: str, halves):
     spec = PERTURBATIONS.get(name)
     if spec is None:
         return None
-    helper = getattr(mod, name)
     try:
-        moved = normalise(helper(**spec))
+        moved = normalise(_asked(mod, name, spec))
     except TypeError as exc:
         return None, (f"declares the input {sorted(spec)} and will not take it: {exc}")
     except Exception as exc:  # noqa: BLE001 -- the reason is the finding
@@ -658,7 +682,8 @@ def halves_typed_rather_than_measured(source: str) -> list:
     tree = ast.parse(source)
     found = []
     for fn in ast.walk(tree):
-        if not isinstance(fn, ast.FunctionDef) or not fn.name.startswith("_readings_of_"):
+        if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)) \
+                or not fn.name.startswith("_readings_of_"):
             continue
         local = _local_names(fn)
         module, imported = _module_locals(tree)
