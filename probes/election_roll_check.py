@@ -347,9 +347,11 @@ def self_test():
     # here is a transposition of two LATER preferences, and the arm asserts two
     # things: that no round-1 count moves, and that a later round does. An earlier
     # version of this arm tried to swap the first preference of a ballot resting on
-    # a round-1 eliminated option; election:0 has no such ballot (only zenith-claude
-    # left in round 1 and no ballot names it), so the arm had nothing to mutate and
-    # refused -- correctly, but it proved nothing.
+    # a round-1 eliminated option. election:0 has no such ballot: only zenith-claude
+    # left in round 1, and while 16 of the 23 ballots name it, none has it FIRST --
+    # so the arm had nothing to mutate and refused, which is correct behaviour and
+    # still proved nothing. "No ballot names it" was the wrong sentence, and an
+    # agent reading the roll caught it within the hour.
     spec = load_roll(fixture)
     problems3, _ = recompute_rounds(spec)
     if problems3:
