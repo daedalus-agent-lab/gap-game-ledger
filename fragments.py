@@ -5768,6 +5768,16 @@ def a_witness_that_repeats_the_verdict_it_is_compared_against():
     return _readings_of_a_witness_repeating_the_verdict()["as_written"]
 
 
+class TheListIsNotTheFile(Exception):
+    """A list of helpers typed into a file is not the file it is a list about.
+
+    Raised by the helper that owns such a list when the population it names is not the
+    population the file defines, or when an argument count beside a name is not the count
+    that name takes. A typed list is completed and then rots; this is the guard that turns
+    the next new helper into a refusal instead of a silently shorter count.
+    """
+
+
 class NoControlBesideThisTree(Exception):
     """What a tree raises when the control it is read with is not beside it.
 
@@ -7553,6 +7563,14 @@ def a_control_that_varies_an_argument_its_subject_takes_none_of():
         helpers it calls green                   16           0
         helpers it calls unmeasured               0          13
 
+    Those four numbers are the day that table was written, not a reading of to-day: the
+    list below named a third of this file's helpers when the probe that reads it arrived,
+    and a count printed from it was a count of the list. The list has since been completed
+    -- every `_readings_of_*` this file defines is named in it, with the argument count it
+    takes -- and the guard beside the list raises `TheListIsNotTheFile` if the two ever
+    part again, so the next helper added to this file is a refusal and not a shorter count.
+    To read the numbers, ask the probe.
+
     A control that changes an argument and requires an answer to move needs an
     argument. On the day this class was registered no `_readings_of_*` took one: the
     helper was called with `()` and read module constants, so a repaired half that is a
@@ -7563,6 +7581,31 @@ def a_control_that_varies_an_argument_its_subject_takes_none_of():
     not here: this list is the population it reads, with the argument count of each.
     """
     return _readings_of_a_control_over_an_argument_no_helper_takes()["as_written"]
+
+
+_HELPERS_THIS_FILE_DEFINES = None
+
+
+def _helpers_this_file_defines():
+    """Every `_readings_of_*` this file defines, with the count of arguments each takes.
+
+    Read from this file's own source, so the answer is a reading of the file and not of a
+    list written beside it. Cached, because the file does not change under a run.
+    """
+    global _HELPERS_THIS_FILE_DEFINES
+    if _HELPERS_THIS_FILE_DEFINES is None:
+        import ast
+        import pathlib
+        tree = ast.parse(pathlib.Path(__file__).read_text(encoding="utf-8"))
+        found = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef) and node.name.startswith("_readings_of_"):
+                a = node.args
+                count = None if a.vararg else (
+                    len(a.posonlyargs) + len(a.args) + len(a.kwonlyargs))
+                found.append((node.name, count))
+        _HELPERS_THIS_FILE_DEFINES = sorted(found)
+    return _HELPERS_THIS_FILE_DEFINES
 
 
 def _readings_of_a_control_over_an_argument_no_helper_takes():
@@ -7579,7 +7622,7 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         ("_readings_of_a_status_the_word_beside_it_replaced", 1),
         ("_readings_of_a_witness_repeating_the_verdict", 0),
         ("_readings_of_a_census_taken_from_the_thing_it_counts", 0),
-        ("_readings_of_a_comparison_a_constant_can_satisfy", 1),
+        ("_readings_of_a_comparison_a_constant_can_satisfy", 0),
         ("_readings_of_one_verdict_on_four_machines", 0),
         ("_readings_of_counts_taken_through_a_name", 0),
         ("_readings_of_a_digest_over_two_checkouts", 0),
@@ -7597,7 +7640,7 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         ("_readings_of_a_refusal_that_names_no_rule", 0),
         ("_readings_of_an_item_certified_by_its_status_when_it_printed_nothing", 0),
         ('_readings_of_a_verdict_read_under_bash_when_the_text_names_a_shell_that_answers_differently', 0),
-        ('_readings_of_a_count_of_lines_read_as_a_count_of_what_was_printed', 0),
+        ('_readings_of_a_count_of_lines_read_as_a_count_of_what_was_printed', 1),
         ('_readings_of_a_rule_read_from_the_text_when_only_the_path_the_shell_took_decides', 0),
         ('_readings_of_a_rule_stated_over_the_whole_word_when_only_the_order_in_it_decides', 0),
         ('_readings_of_a_path_resolved_against_a_directory_a_fixture_moved_the_process_into', 0),
@@ -7607,7 +7650,37 @@ def _readings_of_a_control_over_an_argument_no_helper_takes():
         ('_readings_of_a_first_line_read_as_a_name_where_the_kernel_reads_a_program_and_one_argument', 0),
         ("_readings_of_a_vocabulary_whose_containment_only_the_end_of_the_run_reports", 0),
         ("_readings_of_a_tombstone_written_before_the_move_read_as_the_move_having_landed", 0),
+        ("_readings_of_a_check_whose_answer_depends_on_who_asks_read_as_a_property_of_the_object", 0),
+        ("_readings_of_a_copy_one_level_deep_read_through_the_original", 0),
+        ("_readings_of_a_count_of_a_copy_taken_under_a_rule_the_copy_does_not_carry", 0),
+        ("_readings_of_a_cycle_test_that_reads_one_repeated_name_as_an_oscillation", 0),
+        ("_readings_of_a_fixture_that_carries_every_kind_in_one_place", 0),
+        ("_readings_of_a_memo_that_names_the_reader_and_not_its_bytes", 0),
+        ("_readings_of_a_path_taken_as_written_read_as_a_path_inside_the_folder", 0),
+        ("_readings_of_a_probe_the_reader_cannot_parse_read_as_a_probe_that_calls_nothing", 0),
+        ("_readings_of_a_rule_read_as_its_simplest_shape", 0),
+        ("_readings_of_a_rule_read_at_one_scope_read_as_the_rule_of_the_copy", 0),
+        ("_readings_of_a_verdict_computed_and_thrown_away", 0),
+        ("_readings_of_a_walk_that_starts_late_against_a_promised_length", 0),
+        ("_readings_of_a_window_sampled_at_one_line_read_as_the_window_it_names", 0),
+        ("_readings_of_iso_timestamp_semantic_moment_vs_literal_key", 0),
     ]
+
+    # The list above is a sentence about this file, typed on a day. Measured: it named
+    # eight helpers when it was written and thirty-three when the probe that reads it
+    # arrived, while the file defined forty-seven -- so the counts printed from it below
+    # were counts of the list, and the probe that reads this helper refuses that now. This
+    # is the guard that stops it happening again in silence: the file is read here, by name
+    # and by argument count, and a helper added to this file makes this raise until the
+    # list names it.
+    written = dict(HELPERS)
+    in_the_file = dict(_helpers_this_file_defines())
+    if written != in_the_file:
+        raise TheListIsNotTheFile(
+            "the list of helpers typed into this file is not the file: never named "
+            f"{sorted(set(in_the_file) - set(written))}, not defined "
+            f"{sorted(set(written) - set(in_the_file))}, typed with another argument "
+            f"count {[(n, written[n], in_the_file[n]) for n in sorted(set(written) & set(in_the_file)) if written[n] != in_the_file[n]]}")
 
     def as_written(helpers):
         # the rule the control took: a half that does not move when the argument moves
@@ -9030,11 +9103,22 @@ def _readings_of_an_empty_substitution_read_as_a_number_the_rule_measured():
     read against the tree rather than asserted beside it, and a harness whose control
     stopped driving this shape moves this half. A tree with no harness beside it has no
     reading to give and says so.
+
+    The control prints a digest of the checkout it ran in on every verdict line, and that
+    token is REPLACED BY ITS NAME before the verdicts are recorded. Measured: the same four
+    fixtures, run in this repository and in a copy of it made from the tracked files alone,
+    differ in that token and in nothing else -- and the copy, where git cannot answer,
+makes the harness record the digest of empty input, so a missing answer arrives as a
+    value that looks like a reading. The half below is a claim about what the control
+    drives, not about which checkout ran it; a half that moved on every commit would be a
+    reading of the commit.
     """
     import pathlib
+    import re
     import subprocess
     import tempfile
 
+    CHECKOUT = re.compile(r"tree=[0-9a-f]{16}")
     HARNESS = pathlib.Path(__file__).resolve().parent / "repro" / "run_all.sh"
     if not HARNESS.exists():
         raise NoControlBesideThisTree(
@@ -9086,8 +9170,12 @@ def _readings_of_an_empty_substitution_read_as_a_number_the_rule_measured():
     def control():
         done = subprocess.run(["bash", str(HARNESS), "--empty-control"],
                               cwd=str(HARNESS.parent.parent), capture_output=True, text=True)
+        # tree=<digest> is sha16(HEAD + `git status`) of the checkout this control ran
+        # in, and it is not part of what the half claims. Normalised, not dropped: the
+        # token stays visible in the record under a name that says what it is.
         return {"exit": done.returncode,
-                "verdicts": [l.strip() for l in done.stdout.splitlines()
+                "verdicts": [CHECKOUT.sub("tree=<the checkout it ran in>", l.strip())
+                             for l in done.stdout.splitlines()
                              if l.startswith(("FAIL ", "ok   "))]}
 
     repaired = tally(READING_THAT_KEEPS_THEM_APART,
